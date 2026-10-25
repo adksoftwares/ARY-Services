@@ -41,20 +41,64 @@
 .sign-out-btn{display:flex;align-items:center;gap:5px;background:transparent;color:#7b857c;border:1px solid #e1e3dd;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:600;transition:all .18s}
 .sign-out-btn:hover{background:#fbf0f0;color:#b53838;border-color:#f0c5c5}
 
-/* Auth Modal */
-.modal-backdrop{position:fixed;inset:0;background:rgba(18,35,29,0.45);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:1000;padding:16px}
-.modal-card{background:white;border-radius:16px;width:100%;max-width:420px;box-shadow:0 20px 50px rgba(23,77,61,0.2);padding:26px;position:relative}
+/* Auth & General Modals */
+.modal-backdrop{
+  position:fixed;
+  inset:0;
+  background:rgba(18,35,29,0.55);
+  backdrop-filter:blur(4px);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:1000;
+  padding:16px;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+}
+.modal-card{
+  background:white;
+  border-radius:16px;
+  width:100%;
+  max-width:440px;
+  box-shadow:0 20px 50px rgba(23,77,61,0.22);
+  padding:24px;
+  position:relative;
+  max-height:calc(100vh - 32px);
+  max-height:calc(100dvh - 32px);
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+  margin:auto;
+  box-sizing:border-box;
+}
+
+/* Smooth modal scrollbar */
+.modal-card::-webkit-scrollbar {
+  width: 6px;
+}
+.modal-card::-webkit-scrollbar-track {
+  background: #f1f5f3;
+  border-radius: 8px;
+}
+.modal-card::-webkit-scrollbar-thumb {
+  background: #a3b8aa;
+  border-radius: 8px;
+}
+.modal-card::-webkit-scrollbar-thumb:hover {
+  background: #174d3d;
+}
+
 .modal-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px}
 .modal-header h3{font-size:20px;font-family:Manrope,sans-serif;color:#174d3d;margin:0 0 5px;font-weight:700}
 .modal-header p{font-size:12px;color:#788078;margin:0}
 .modal-close{background:transparent;border:0;color:#8b918a;cursor:pointer;padding:4px;border-radius:6px;display:grid;place-items:center}
 .modal-close:hover{background:#f3f3ee;color:#20332d}
-.modal-form{display:flex;flex-direction:column;gap:14px}
+.modal-form{display:flex;flex-direction:column;gap:14px;padding-bottom:12px}
 .modal-form label{display:flex;flex-direction:column;gap:5px}
 .modal-form label span{font-size:12px;font-weight:600;color:#3b4e45}
 .modal-form input{border:1px solid #dce2da;border-radius:9px;padding:11px 13px;font-size:13px;color:#20332d;outline:none}
 .modal-form input:focus{border-color:#174d3d;box-shadow:0 0 0 3px rgba(23,77,61,0.1)}
-.modal-submit-btn{background:#174d3d;color:white;border:0;border-radius:9px;padding:13px;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:4px;cursor:pointer;transition:background .18s}
+.modal-submit-btn{background:#174d3d;color:white;border:0;border-radius:9px;padding:13px;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:4px;cursor:pointer;transition:background .18s;box-shadow:0 2px 8px rgba(23,77,61,0.2)}
 .modal-submit-btn:hover{background:#113a2e}
 .modal-divider{display:flex;align-items:center;text-align:center;margin:3px 0}
 .modal-divider::before,.modal-divider::after{content:'';flex:1;border-bottom:1px solid #eaebe5}
@@ -63,6 +107,8 @@
 .quick-demo-btn:hover{background:#e8f1e8;border-style:solid}
 
 @media(max-width:520px){
+  .modal-backdrop{padding:8px 6px;align-items:flex-start}
+  .modal-card{max-height:calc(100dvh - 16px);max-height:calc(100vh - 16px);padding:18px 14px 28px;margin:6px auto 16px;border-radius:14px}
   .sign-in-prompt-card{flex-direction:column;align-items:stretch;padding:14px}
   .prompt-sign-in-btn{width:100%;justify-content:center}
   .user-profile{flex-wrap:wrap;justify-content:flex-end}

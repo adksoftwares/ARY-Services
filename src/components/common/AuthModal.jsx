@@ -574,6 +574,33 @@ export default function AuthModal({ onNotice }) {
                 <button type="submit" className="modal-submit-btn" disabled={isSubmitting}>
                   {isSubmitting ? 'Signing in...' : 'Sign In'} <ArrowRight size={16} />
                 </button>
+
+                <div style={{
+                  textAlign: 'center',
+                  marginTop: '12px',
+                  paddingTop: '12px',
+                  borderTop: '1px solid #edf0ec',
+                  fontSize: '12px',
+                  color: '#65736b'
+                }}>
+                  Don't have an account yet?{' '}
+                  <button
+                    type="button"
+                    onClick={() => { setAuthMode('register'); setAuthError(''); }}
+                    style={{
+                      background: 'none',
+                      border: 0,
+                      color: '#174d3d',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      textDecoration: 'underline',
+                      fontSize: '12px',
+                      padding: 0
+                    }}
+                  >
+                    Create Account / Register
+                  </button>
+                </div>
               </form>
             )}
           </div>
@@ -656,8 +683,35 @@ export default function AuthModal({ onNotice }) {
                 </label>
 
                 <button type="submit" className="modal-submit-btn" disabled={isSubmitting}>
-                  {isSubmitting ? 'Registering...' : 'Register & Continue'} <ArrowRight size={16} />
+                  {isSubmitting ? 'Registering Customer...' : 'Register as Customer'} <ArrowRight size={16} />
                 </button>
+
+                <div style={{
+                  textAlign: 'center',
+                  marginTop: '12px',
+                  paddingTop: '12px',
+                  borderTop: '1px solid #edf0ec',
+                  fontSize: '12px',
+                  color: '#65736b'
+                }}>
+                  Already have an account?{' '}
+                  <button
+                    type="button"
+                    onClick={() => { setAuthMode('login'); setAuthError(''); }}
+                    style={{
+                      background: 'none',
+                      border: 0,
+                      color: '#174d3d',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      textDecoration: 'underline',
+                      fontSize: '12px',
+                      padding: 0
+                    }}
+                  >
+                    Sign In
+                  </button>
+                </div>
               </>
             ) : (
               <>
@@ -808,15 +862,30 @@ export default function AuthModal({ onNotice }) {
                   </label>
                 </div>
 
+                <div style={{
+                  background: '#f0fdf4',
+                  border: '1px solid #bbf7d0',
+                  borderRadius: '8px',
+                  padding: '10px 12px',
+                  fontSize: '12px',
+                  color: '#166534',
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6
+                }}>
+                  🔒 Final Step: Set your login password to complete registration
+                </div>
+
                 <label>
-                  <span>Password *</span>
+                  <span>Login Password *</span>
                   <div className="password-input-wrapper">
                     <input
                       required
                       type={showRegPassword ? 'text' : 'password'}
                       value={regPassword}
                       onChange={e => setRegPassword(e.target.value)}
-                      placeholder="Create a password"
+                      placeholder="Create your provider password (min 6 characters)"
                     />
                     <button
                       type="button"
@@ -833,9 +902,47 @@ export default function AuthModal({ onNotice }) {
                   ℹ️ Provider accounts require Super Admin approval before activation.
                 </div>
 
-                <button type="submit" className="modal-submit-btn" disabled={isSubmitting}>
-                  {isSubmitting ? 'Submitting Application...' : 'Submit Provider Application'} <ArrowRight size={16} />
+                <button
+                  type="submit"
+                  className="modal-submit-btn"
+                  disabled={isSubmitting}
+                  style={{
+                    padding: '14px',
+                    fontSize: '14px',
+                    fontWeight: 700,
+                    background: '#15803d',
+                    boxShadow: '0 4px 14px rgba(22, 101, 52, 0.25)'
+                  }}
+                >
+                  {isSubmitting ? 'Submitting Registration...' : 'Register as Service Provider'} <ArrowRight size={18} />
                 </button>
+
+                <div style={{
+                  textAlign: 'center',
+                  marginTop: '12px',
+                  paddingTop: '12px',
+                  borderTop: '1px solid #edf0ec',
+                  fontSize: '12px',
+                  color: '#65736b'
+                }}>
+                  Already have an account?{' '}
+                  <button
+                    type="button"
+                    onClick={() => { setAuthMode('login'); setAuthError(''); }}
+                    style={{
+                      background: 'none',
+                      border: 0,
+                      color: '#174d3d',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      textDecoration: 'underline',
+                      fontSize: '12px',
+                      padding: 0
+                    }}
+                  >
+                    Sign In
+                  </button>
+                </div>
               </>
             )}
           </form>

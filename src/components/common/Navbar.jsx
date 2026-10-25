@@ -56,9 +56,32 @@ export default function Navbar({ onNotice }) {
           </button>
         </div>
       ) : (
-        <button className="sign-in" onClick={() => openAuthModal('login')}>
-          Sign in <ArrowRight size={16} />
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button className="sign-in" onClick={() => openAuthModal('login')}>
+            Sign in
+          </button>
+          <button
+            type="button"
+            className="register-nav-btn"
+            onClick={() => openAuthModal('register')}
+            style={{
+              background: '#174d3d',
+              color: 'white',
+              border: 0,
+              borderRadius: '8px',
+              padding: '8px 14px',
+              fontSize: '12px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px',
+              boxShadow: '0 2px 6px rgba(23,77,61,0.2)'
+            }}
+          >
+            Register <ArrowRight size={14} />
+          </button>
+        </div>
       )}
     </header>
   );

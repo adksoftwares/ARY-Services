@@ -100,9 +100,32 @@ export default function HeroSection({
                 <small>Please log in to your customer account to search local providers and book services.</small>
               </div>
             </div>
-            <button className="prompt-sign-in-btn" onClick={() => openAuthModal('login')}>
-              Sign in now <ArrowRight size={15} />
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <button className="prompt-sign-in-btn" onClick={() => openAuthModal('login')}>
+                Sign in now <ArrowRight size={15} />
+              </button>
+              <button
+                type="button"
+                className="prompt-register-btn"
+                onClick={() => openAuthModal('register')}
+                style={{
+                  background: '#f0fdf4',
+                  color: '#166534',
+                  border: '1px solid #bbf7d0',
+                  borderRadius: '9px',
+                  padding: '9px 14px',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                Register / Join ARY
+              </button>
+            </div>
           </div>
         )}
 
