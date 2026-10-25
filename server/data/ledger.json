@@ -1,5 +1,124 @@
 [
   {
+    "id": "entry-1792950455883-po1",
+    "transactionId": "tx-payout-1792950455883-akqy",
+    "account": "provider:user-provider-perera:wallet",
+    "type": "debit",
+    "amount": 2600,
+    "currency": "LKR",
+    "description": "Bank CEFT payout disbursement batch #2-abf844",
+    "timestamp": "2026-10-25T17:47:35.883Z"
+  },
+  {
+    "id": "entry-1792950455883-po2",
+    "transactionId": "tx-payout-1792950455883-akqy",
+    "account": "bank:commercial_bank_settlement",
+    "type": "credit",
+    "amount": 2600,
+    "currency": "LKR",
+    "description": "Commercial Bank of Ceylon automated electronic funds transfer for provider #user-provider-perera",
+    "timestamp": "2026-10-25T17:47:35.883Z"
+  },
+  {
+    "id": "entry-1792950454356-sp1",
+    "transactionId": "tx-dispute-split-1792950454356-capm",
+    "bookingId": "book-1792950425722",
+    "account": "vault:ary_escrow_holding",
+    "type": "debit",
+    "amount": 2000,
+    "currency": "LKR",
+    "description": "Dispute arbitration settlement for booking #425722",
+    "timestamp": "2026-10-25T17:47:34.356Z"
+  },
+  {
+    "id": "entry-1792950454356-sp2",
+    "transactionId": "tx-dispute-split-1792950454356-capm",
+    "bookingId": "book-1792950425722",
+    "account": "customer:user-1792896509898:wallet_refund",
+    "type": "credit",
+    "amount": 1000,
+    "currency": "LKR",
+    "description": "Arbitrated 50% refund credited to customer for booking #425722",
+    "timestamp": "2026-10-25T17:47:34.356Z"
+  },
+  {
+    "id": "entry-1792950454356-sp3",
+    "transactionId": "tx-dispute-split-1792950454356-capm",
+    "bookingId": "book-1792950425722",
+    "account": "provider:user-provider-perera:wallet",
+    "type": "credit",
+    "amount": 800,
+    "currency": "LKR",
+    "description": "Arbitrated partial payout credited to provider for booking #425722",
+    "timestamp": "2026-10-25T17:47:34.356Z"
+  },
+  {
+    "id": "entry-1792950454356-sp4",
+    "transactionId": "tx-dispute-split-1792950454356-capm",
+    "bookingId": "book-1792950425722",
+    "account": "platform:commission_revenue",
+    "type": "credit",
+    "amount": 200,
+    "currency": "LKR",
+    "description": "Platform mediation fee retained for booking #425722",
+    "timestamp": "2026-10-25T17:47:34.356Z"
+  },
+  {
+    "id": "entry-1792950434051-3",
+    "transactionId": "tx-rel-1792950434051-2z58",
+    "bookingId": "book-1792950425722",
+    "account": "vault:ary_escrow_holding",
+    "type": "debit",
+    "amount": 2000,
+    "currency": "LKR",
+    "description": "Release escrow vault for completed booking #425722",
+    "timestamp": "2026-10-25T17:47:14.051Z"
+  },
+  {
+    "id": "entry-1792950434051-4",
+    "transactionId": "tx-rel-1792950434051-2z58",
+    "bookingId": "book-1792950425722",
+    "account": "provider:user-provider-perera:wallet",
+    "type": "credit",
+    "amount": 1800,
+    "currency": "LKR",
+    "description": "Net earnings credited for booking #425722 (90%)",
+    "timestamp": "2026-10-25T17:47:14.051Z"
+  },
+  {
+    "id": "entry-1792950434051-5",
+    "transactionId": "tx-rel-1792950434051-2z58",
+    "bookingId": "book-1792950425722",
+    "account": "platform:commission_revenue",
+    "type": "credit",
+    "amount": 200,
+    "currency": "LKR",
+    "description": "Platform 10% commission retained for 14-Day ARY Guarantee (#425722)",
+    "timestamp": "2026-10-25T17:47:14.051Z"
+  },
+  {
+    "id": "entry-1792950425725-1",
+    "transactionId": "tx-hold-1792950425725-v3pk",
+    "bookingId": "book-1792950425722",
+    "account": "gateway:payhere:customer:user-1792896509898",
+    "type": "debit",
+    "amount": 2000,
+    "currency": "LKR",
+    "description": "Escrow hold authorized for booking #425722",
+    "timestamp": "2026-10-25T17:47:05.725Z"
+  },
+  {
+    "id": "entry-1792950425725-2",
+    "transactionId": "tx-hold-1792950425725-v3pk",
+    "bookingId": "book-1792950425722",
+    "account": "vault:ary_escrow_holding",
+    "type": "credit",
+    "amount": 2000,
+    "currency": "LKR",
+    "description": "Escrow funds held in trust for booking #425722",
+    "timestamp": "2026-10-25T17:47:05.725Z"
+  },
+  {
     "id": "entry-1792917528792-po1",
     "transactionId": "tx-payout-1792917528792-d7ia",
     "account": "provider:user-provider-perera:wallet",

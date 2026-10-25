@@ -22,7 +22,7 @@ export function AuthProvider({ children }) {
       const saved = localStorage.getItem('ary_user');
       if (saved) {
         const u = JSON.parse(saved);
-        if (u.id && (u.id.includes('demo') || u.id.includes('rejected'))) {
+        if (u && (u.status === 'rejected' || u.status === 'suspended')) {
           localStorage.removeItem('ary_user');
           return null;
         }
@@ -183,7 +183,7 @@ export function AuthProvider({ children }) {
     token: currentUser?.token,
     role,
     setRole,
-    isCustomerLoggedIn: Boolean(currentUser && currentUser.accountType === 'customer'),
+    isCustomerLoggedIn: Boolean(currentUser),
     isAuthModalOpen,
     setIsAuthModalOpen,
     authMode,

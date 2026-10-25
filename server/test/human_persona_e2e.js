@@ -61,13 +61,8 @@ async function runHumanSimulation() {
     await page.waitForSelector('.modal-card', { visible: true });
     console.log('✓ Auth Modal opened');
 
-    // 1.3 Enter full name & mobile phone, then send OTP (Testing Anti-Fraud Challenge Shield)
+    // 1.3 Enter mobile phone & send OTP (Testing Anti-Fraud Challenge Shield)
     const testCustomerPhone = '0777123456';
-    const nameInput = await page.$('input[placeholder="e.g. Shanika Fernando"]');
-    if (nameInput) {
-      await page.type('input[placeholder="e.g. Shanika Fernando"]', 'Shanika Fernando');
-      console.log('✓ Entered customer full name: Shanika Fernando');
-    }
     await page.type('input[placeholder="e.g. 077 123 4567"]', testCustomerPhone);
     console.log(`✓ Entered mobile number: ${testCustomerPhone}`);
 
