@@ -82,6 +82,14 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '1mb' }));
 
+// Path normalizer: ensures Express routes with /api prefix match even if Vercel Services rewrite strips /api
+app.use((req, _res, next) => {
+  if (req.url && !req.url.startsWith('/api') && !req.url.startsWith('/healthz')) {
+    req.url = '/api' + (req.url.startsWith('/') ? req.url : '/' + req.url);
+  }
+  next();
+});
+
 // Rate limiters for authentication endpoints to prevent brute-force attacks
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -1540,7 +1548,8 @@ app.use((err, _req, res, _next) => {
   res.status(500).json({ error: 'Internal server error.' });
 });
 
-if (!process.env.VERCEL) {
+// Listen when executed standalone, via npm start, or in Vercel Services mode where PORT is defined
+if (process.env.PORT || !process.env.VERCEL || (process.argv[1] && process.argv[1].includes('server.js'))) {
   app.listen(port, () => {
     console.log(`ARY Services API listening on port ${port}`);
   });
