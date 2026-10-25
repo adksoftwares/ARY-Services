@@ -113,7 +113,28 @@ export const defaultSeedProviders = [
   }
 ];
 
-export const defaultUsers = [defaultAdminUser, ...defaultSeedProviders];
+export const verifiedArikarranProvider = {
+  id: 'user-provider-arikarran',
+  fullName: 'Arikarran Sriskandarajah',
+  phone: '0777153933',
+  email: '14arikarran@gmail.com',
+  location: 'Peradeniya, Kandy District, Central Province',
+  lat: 7.2580,
+  lng: 80.5970,
+  passwordHash: hashPassword('Admin@123'),
+  accountType: 'provider',
+  status: 'active',
+  category: 'electrical-repair',
+  categoryName: 'Electrical Repair',
+  baseCharge: 'LKR 1,500',
+  nicNumber: '200134903737',
+  rating: 5.0,
+  reviewCount: 0,
+  experienceYears: 5,
+  createdAt: '2026-10-25T18:00:00.000Z'
+};
+
+export const defaultUsers = [defaultAdminUser, ...defaultSeedProviders, verifiedArikarranProvider];
 
 class AsyncLock {
   constructor() {
@@ -176,6 +197,10 @@ export async function getUsers() {
             parsed.push(seedProv);
           }
         }
+        // Ensure verified provider Arikarran is always preserved
+        if (!parsed.some(u => u.phone === '0777153933' || u.id === 'user-provider-arikarran')) {
+          parsed.push(verifiedArikarranProvider);
+        }
         cachedUsers = parsed;
         await atomicWriteJson(usersFile, cachedUsers);
         return [...cachedUsers];
@@ -193,6 +218,9 @@ export async function saveUsers(users) {
   return usersLock.acquire(async () => {
     if (!users.some(u => u.email === 'arikarran14@gmail.com' || u.id === 'user-admin-arikarran')) {
       users = [defaultAdminUser, ...users];
+    }
+    if (!users.some(u => u.phone === '0777153933' || u.id === 'user-provider-arikarran')) {
+      users = [...users, verifiedArikarranProvider];
     }
     cachedUsers = [...users];
     await atomicWriteJson(usersFile, cachedUsers);

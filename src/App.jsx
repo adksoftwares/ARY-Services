@@ -54,6 +54,23 @@ function getInitialAdminUsers() {
       accountType: 'admin',
       status: 'active',
       createdAt: '2026-01-01T00:00:00.000Z'
+    },
+    {
+      id: 'user-provider-arikarran',
+      fullName: 'Arikarran Sriskandarajah',
+      phone: '0777153933',
+      email: '14arikarran@gmail.com',
+      location: 'Peradeniya, Kandy District, Central Province',
+      accountType: 'provider',
+      status: 'active',
+      category: 'electrical-repair',
+      categoryName: 'Electrical Repair',
+      baseCharge: 'LKR 1,500',
+      nicNumber: '200134903737',
+      rating: 5.0,
+      reviewCount: 0,
+      experienceYears: 5,
+      createdAt: '2026-10-25T18:00:00.000Z'
     }
   ];
 }
