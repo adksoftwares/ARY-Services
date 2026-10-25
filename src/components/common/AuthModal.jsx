@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   X,
   User,
@@ -18,6 +19,7 @@ import { useAuth } from '../../context/AuthContext';
 import { fetchCurrentLocationAddress } from '../../utils/location';
 
 export default function AuthModal({ onNotice }) {
+  const navigate = useNavigate();
   const {
     isAuthModalOpen,
     closeAuthModal,
@@ -153,6 +155,11 @@ export default function AuthModal({ onNotice }) {
       if (onNotice && data.user) {
         onNotice(data.isNewUser ? `Welcome, ${data.user.fullName}! Account created.` : `Welcome back, ${data.user.fullName}!`);
       }
+      if (data.user?.accountType === 'provider') {
+        navigate('/provider');
+      } else if (data.user?.accountType === 'admin') {
+        navigate('/admin');
+      }
     } catch (err) {
       setAuthError(err.message || 'OTP verification failed.');
     } finally {
@@ -171,6 +178,11 @@ export default function AuthModal({ onNotice }) {
       resetForms();
       if (onNotice) {
         onNotice(user.accountType === 'admin' ? `Welcome back, Super Admin ${user.fullName}!` : `Welcome back, ${user.fullName}!`);
+      }
+      if (user?.accountType === 'provider') {
+        navigate('/provider');
+      } else if (user?.accountType === 'admin') {
+        navigate('/admin');
       }
     } catch (err) {
       setAuthError(err.message || 'Login failed. Please check your credentials.');

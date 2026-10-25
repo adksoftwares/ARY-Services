@@ -3,7 +3,7 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { User, LogOut, ArrowRight, Search, ClipboardList, Shield, Briefcase } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
-export default function Navbar({ onNotice }) {
+export default function Navbar({ onNotice, pendingCount = 0 }) {
   const { currentUser, openAuthModal, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -32,8 +32,24 @@ export default function Navbar({ onNotice }) {
         )}
 
         {currentUser && currentUser.accountType === 'provider' && (
-          <NavLink to="/provider" className={({ isActive }) => `nav-link-btn ${isActive ? 'active' : ''}`}>
+          <NavLink to="/provider" className={({ isActive }) => `nav-link-btn ${isActive ? 'active' : ''}`} style={{ position: 'relative' }}>
             <Briefcase size={14} /> Provider Workspace
+            {pendingCount > 0 && (
+              <span style={{
+                background: '#ef4444',
+                color: '#fff',
+                fontSize: '11px',
+                fontWeight: 800,
+                borderRadius: '12px',
+                padding: '1px 7px',
+                marginLeft: '5px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                boxShadow: '0 1px 4px rgba(239, 68, 68, 0.4)'
+              }}>
+                {pendingCount}
+              </span>
+            )}
           </NavLink>
         )}
 

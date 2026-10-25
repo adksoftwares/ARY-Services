@@ -163,7 +163,10 @@ function MainApp() {
         try {
           const data = JSON.parse(e.data);
           fetchMyBookings();
-          if (currentUser?.id === data.providerId) {
+          const userPhoneDigits = currentUser?.phone ? currentUser.phone.replace(/\D/g, '') : null;
+          const providerPhoneDigits = data.providerPhone ? data.providerPhone.replace(/\D/g, '') : null;
+          const isMe = currentUser?.id === data.providerId || (userPhoneDigits && providerPhoneDigits && userPhoneDigits === providerPhoneDigits);
+          if (isMe) {
             setNotice(`🚨 Urgent Booking Request from ${data.booking.customerName}! (${data.booking.categoryName})`);
             playAlertChime();
           }
@@ -404,9 +407,63 @@ function MainApp() {
     );
   }, [services, query]);
 
+  const pendingProviderBookings = useMemo(() => {
+    if (currentUser?.accountType !== 'provider') return 0;
+    return myBookings.filter(b => b.status === 'requested').length;
+  }, [currentUser, myBookings]);
+
   return (
     <div className="app-shell">
-      <Navbar onNotice={setNotice} />
+      <Navbar onNotice={setNotice} pendingCount={pendingProviderBookings} />
+
+      {currentUser?.accountType === 'provider' && (
+        <div style={{
+          background: 'linear-gradient(90deg, #163b2e 0%, #1e523f 100%)',
+          color: '#fff',
+          padding: '12px 18px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '12px',
+          borderBottom: '2px solid #10b981',
+          borderRadius: '10px',
+          margin: '12px 0 16px',
+          boxShadow: '0 4px 12px rgba(22, 59, 46, 0.15)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span style={{ fontSize: '1.4rem' }}>🛠️</span>
+            <div>
+              <b style={{ fontSize: '0.95rem' }}>Service Provider: {currentUser.fullName}</b>
+              <div style={{ fontSize: '0.82rem', opacity: 0.9, marginTop: '2px' }}>
+                {pendingProviderBookings > 0
+                  ? `🚨 You have ${pendingProviderBookings} new customer booking request(s) waiting for your response!`
+                  : `All customer requests are up to date. You can view past bookings, reviews, and wallet balance in your workspace.`}
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate('/provider')}
+            style={{
+              background: '#10b981',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '8px',
+              padding: '8px 16px',
+              fontWeight: 700,
+              fontSize: '0.85rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.2)'
+            }}
+          >
+            Open Provider Workspace ➔
+          </button>
+        </div>
+      )}
 
       <Routes>
         {/* Customer Marketplace / Explore Home */}

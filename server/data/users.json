@@ -107,5 +107,43 @@
     "experienceYears": 5,
     "createdAt": "2026-10-25T18:00:00.000Z",
     "updatedAt": "2026-10-25T19:41:42.856Z"
+  },
+  {
+    "id": "user-1792957932632",
+    "fullName": "Nimal Perera",
+    "phone": "0771239999",
+    "email": null,
+    "location": "Colombo",
+    "passwordHash": "c427a8a8e2a5573dcb49c4634886c4270f48baf11958269a240baa9d26ca0990",
+    "accountType": "customer",
+    "status": "active",
+    "category": null,
+    "categoryName": null,
+    "baseCharge": null,
+    "rating": null,
+    "reviewCount": null,
+    "experienceYears": null,
+    "nicNumber": null,
+    "nicDocument": null,
+    "tradeCertificate": null,
+    "kycStatus": "verified",
+    "createdAt": "2026-10-25T19:52:12.632Z"
+  },
+  {
+    "id": "user-1792958783893",
+    "fullName": "Kamal Silva",
+    "phone": "0771234567",
+    "email": null,
+    "location": "Colombo",
+    "passwordHash": "fab24a90e1349ad8cca533db4bc17186df8e049d0e04654a32881033471fdff7",
+    "accountType": "customer",
+    "status": "active",
+    "category": null,
+    "categoryName": null,
+    "baseCharge": null,
+    "rating": null,
+    "reviewCount": null,
+    "experienceYears": null,
+    "createdAt": "2026-10-25T20:06:23.894Z"
   }
 ]

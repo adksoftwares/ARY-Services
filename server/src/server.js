@@ -157,7 +157,12 @@ async function requireAuth(req, res, next) {
 
     // Real-time account active check (instant revocation on admin reject/suspend)
     const users = await getUsers();
-    const liveUser = users.find(u => u.id === decoded.id || u.phone === decoded.phone || (u.email && decoded.email && u.email.toLowerCase() === decoded.email.toLowerCase()));
+    const decodedPhoneDigits = decoded.phone ? normalizePhone(decoded.phone) : null;
+    const liveUser = users.find(u =>
+      u.id === decoded.id ||
+      (decodedPhoneDigits && u.phone && normalizePhone(u.phone) === decodedPhoneDigits) ||
+      (u.email && decoded.email && u.email.toLowerCase() === decoded.email.toLowerCase())
+    );
 
     if (!liveUser) {
       return res.status(401).json({ error: 'User account no longer exists.' });
@@ -169,6 +174,9 @@ async function requireAuth(req, res, next) {
 
     req.user = {
       ...decoded,
+      id: liveUser.id,
+      phone: liveUser.phone || decoded.phone,
+      email: liveUser.email || decoded.email,
       status: liveUser.status,
       accountType: liveUser.accountType,
       fullName: liveUser.fullName || decoded.fullName
@@ -762,19 +770,24 @@ app.patch('/api/providers/profile', requireAuth, async (req, res) => {
 app.get('/api/bookings', requireAuth, async (req, res) => {
   try {
     const { id: userId, accountType, phone } = req.user;
+    const userPhoneDigits = phone ? normalizePhone(phone) : null;
     const allBookings = await getBookings();
 
     let userBookings = [];
     if (accountType === 'admin') {
       userBookings = allBookings;
     } else if (accountType === 'provider') {
-      // Include directly assigned bookings + unassigned cascading broadcast jobs matching category
+      // Include directly assigned bookings (by providerId or matching phone) + unassigned cascading broadcast jobs matching category
       userBookings = allBookings.filter(b =>
         b.providerId === userId ||
-        (b.status === 'broadcast_pool' && (!b.declinedBy || !b.declinedBy.includes(userId)))
+        (userPhoneDigits && b.providerPhone && normalizePhone(b.providerPhone) === userPhoneDigits) ||
+        (b.status === 'broadcast_pool' && (!b.declinedBy || (!b.declinedBy.includes(userId) && (!userPhoneDigits || !b.declinedBy.includes(userPhoneDigits)))))
       );
     } else {
-      userBookings = allBookings.filter(b => b.customerId === userId || (phone && b.customerPhone === phone));
+      userBookings = allBookings.filter(b =>
+        b.customerId === userId ||
+        (userPhoneDigits && b.customerPhone && normalizePhone(b.customerPhone) === userPhoneDigits)
+      );
     }
 
     // Sort newest first
@@ -818,7 +831,11 @@ app.post('/api/bookings', requireAuth, async (req, res) => {
     }
 
     const users = await getUsers();
-    const provider = users.find(u => u.id === providerId && u.accountType === 'provider');
+    const cleanProviderIdent = normalizePhone(providerId);
+    const provider = users.find(u =>
+      (u.id === providerId || (cleanProviderIdent && u.phone && normalizePhone(u.phone) === cleanProviderIdent)) &&
+      u.accountType === 'provider'
+    );
 
     if (!provider) {
       return res.status(404).json({ error: 'Selected service provider was not found.' });
@@ -873,6 +890,7 @@ app.post('/api/bookings', requireAuth, async (req, res) => {
     broadcastEvent('booking:created', {
       booking: newBooking,
       providerId: newBooking.providerId,
+      providerPhone: newBooking.providerPhone,
       customerId: newBooking.customerId
     });
 
@@ -892,7 +910,7 @@ app.patch('/api/bookings/:id/status', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body; // 'accepted' | 'rejected' | 'in_progress' | 'completed' | 'cancelled'
-    const { id: userId, accountType } = req.user;
+    const { id: userId, accountType, phone } = req.user;
 
     const validStatuses = ['requested', 'accepted', 'rejected', 'in_progress', 'completed', 'cancelled'];
     if (!validStatuses.includes(status)) {
@@ -907,7 +925,11 @@ app.patch('/api/bookings/:id/status', requireAuth, async (req, res) => {
     }
 
     // Role-based authorization for booking changes
-    if (accountType !== 'admin' && booking.providerId !== userId && booking.customerId !== userId) {
+    const userPhoneDigits = phone ? normalizePhone(phone) : null;
+    const isProviderMatch = booking.providerId === userId || (userPhoneDigits && booking.providerPhone && normalizePhone(booking.providerPhone) === userPhoneDigits);
+    const isCustomerMatch = booking.customerId === userId || (userPhoneDigits && booking.customerPhone && normalizePhone(booking.customerPhone) === userPhoneDigits);
+
+    if (accountType !== 'admin' && !isProviderMatch && !isCustomerMatch) {
       return res.status(403).json({ error: 'You are not authorized to update this booking.' });
     }
 
@@ -977,7 +999,11 @@ app.patch('/api/bookings/:id/cancel', requireAuth, async (req, res) => {
     }
 
     // Role-based authorization
-    if (accountType !== 'admin' && booking.customerId !== userId && booking.providerId !== userId && (!phone || booking.customerPhone !== phone)) {
+    const userPhoneDigits = phone ? normalizePhone(phone) : null;
+    const isProviderMatch = booking.providerId === userId || (userPhoneDigits && booking.providerPhone && normalizePhone(booking.providerPhone) === userPhoneDigits);
+    const isCustomerMatch = booking.customerId === userId || (userPhoneDigits && booking.customerPhone && normalizePhone(booking.customerPhone) === userPhoneDigits);
+
+    if (accountType !== 'admin' && !isCustomerMatch && !isProviderMatch) {
       return res.status(403).json({ error: 'You are not authorized to cancel this booking.' });
     }
 
@@ -1064,7 +1090,10 @@ app.post('/api/bookings/:id/dispute', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'Booking not found.' });
     }
 
-    if (accountType !== 'admin' && booking.customerId !== userId && (!phone || booking.customerPhone !== phone)) {
+    const userPhoneDigits = phone ? normalizePhone(phone) : null;
+    const isCustomerMatch = booking.customerId === userId || (userPhoneDigits && booking.customerPhone && normalizePhone(booking.customerPhone) === userPhoneDigits);
+
+    if (accountType !== 'admin' && !isCustomerMatch) {
       return res.status(403).json({ error: 'You are only authorized to dispute bookings under your own account.' });
     }
 
