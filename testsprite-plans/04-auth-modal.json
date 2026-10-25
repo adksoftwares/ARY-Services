@@ -1,0 +1,20 @@
+{
+  "$schema": "https://raw.githubusercontent.com/TestSprite/testsprite-cli/v0.15.0/schemas/plan.schema.json",
+  "projectId": "e49f7fe4-87bd-46c6-b6fd-1f7d0ec3ef25",
+  "type": "frontend",
+  "name": "Sign In modal opens with role selection tabs",
+  "planSteps": [
+    {
+      "type": "action",
+      "description": "Navigate to the home page at /"
+    },
+    {
+      "type": "action",
+      "description": "Click on the 'Sign In' button in the navigation header"
+    },
+    {
+      "type": "assertion",
+      "description": "The authentication dialog opens showing Customer, Provider, and Admin tabs"
+    }
+  ]
+}

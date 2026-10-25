@@ -1,0 +1,20 @@
+{
+  "$schema": "https://raw.githubusercontent.com/TestSprite/testsprite-cli/v0.15.0/schemas/plan.schema.json",
+  "projectId": "e49f7fe4-87bd-46c6-b6fd-1f7d0ec3ef25",
+  "type": "frontend",
+  "name": "Homepage loads with service categories and navigation",
+  "planSteps": [
+    {
+      "type": "action",
+      "description": "Navigate to the home page at /"
+    },
+    {
+      "type": "assertion",
+      "description": "The navigation bar is visible with brand title and Sign In button"
+    },
+    {
+      "type": "assertion",
+      "description": "The category grid displays service cards for Food Shops, Electrical Repair, Plumbing, and Other Services"
+    }
+  ]
+}

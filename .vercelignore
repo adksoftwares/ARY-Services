@@ -1,0 +1,6 @@
+.git
+.github
+.agents
+server/test
+server/node_modules
+*.log
