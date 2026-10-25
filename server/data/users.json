@@ -40,7 +40,7 @@
     "categoryName": "Plumbing",
     "baseCharge": "LKR 1,800",
     "rating": 5,
-    "reviewCount": 4,
+    "reviewCount": 5,
     "experienceYears": 4,
     "createdAt": "2026-01-03T00:00:00.000Z"
   },
@@ -79,5 +79,24 @@
     "reviewCount": null,
     "experienceYears": null,
     "createdAt": "2026-10-25T02:48:29.899Z"
+  },
+  {
+    "id": "user-provider-quickfix",
+    "fullName": "QuickFix Carpentry & AC",
+    "phone": "0774445566",
+    "email": "quickfix@example.local",
+    "location": "Nugegoda, Colombo",
+    "lat": 6.865,
+    "lng": 79.899,
+    "passwordHash": "5719268b178034cde91d724a27509c3846e24e06a0abe3a54e7c259d2c3b1fb4",
+    "accountType": "provider",
+    "status": "active",
+    "category": "other-services",
+    "categoryName": "Other Services",
+    "baseCharge": "LKR 2,500",
+    "rating": 4.9,
+    "reviewCount": 16,
+    "experienceYears": 7,
+    "createdAt": "2026-01-05T00:00:00.000Z"
   }
 ]

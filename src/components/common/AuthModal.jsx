@@ -367,6 +367,17 @@ export default function AuthModal({ onNotice }) {
                 {!otpSent ? (
                   <>
                     <label>
+                      <span>Full Name</span>
+                      <input
+                        type="text"
+                        value={otpFullName}
+                        onChange={e => setOtpFullName(e.target.value)}
+                        placeholder="e.g. Shanika Fernando"
+                        autoFocus
+                      />
+                    </label>
+
+                    <label>
                       <span>Mobile Number</span>
                       <input
                         required
@@ -374,7 +385,6 @@ export default function AuthModal({ onNotice }) {
                         value={otpPhone}
                         onChange={e => setOtpPhone(e.target.value)}
                         placeholder="e.g. 077 123 4567"
-                        autoFocus
                       />
                     </label>
 

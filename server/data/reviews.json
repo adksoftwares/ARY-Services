@@ -1,14 +1,14 @@
 [
   {
-    "id": "rev-1792917037129-p9jkn",
-    "bookingId": "book-1792917037101",
-    "providerId": "user-1792917037086",
-    "providerName": "Test Electrician Siva",
-    "customerId": "user-1792917037070",
-    "customerName": "Kannan Kumar",
+    "id": "rev-1792917521404-mjh7v",
+    "bookingId": "book-1792917493587",
+    "providerId": "user-provider-perera",
+    "providerName": "Perera Plumbing Experts",
+    "customerId": "user-1792896509898",
+    "customerName": "Shanika Fernando",
     "rating": 5,
-    "comment": "Outstanding electrical repair under ARY 14-Day Guarantee! Very fast response.",
-    "createdAt": "2026-10-25T08:30:37.129Z"
+    "comment": "Excellent work by Perera! Fixed the short-circuit safely and cleanly.",
+    "createdAt": "2026-10-25T08:38:41.404Z"
   },
   {
     "id": "rev-1792915666865-lk0w5",
