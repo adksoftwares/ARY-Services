@@ -24,6 +24,46 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE } from '../../config';
 
+export function getProviderServicesList(user) {
+  if (!user || user.accountType !== 'provider') return [];
+  if (Array.isArray(user.services) && user.services.length > 0) {
+    return user.services;
+  }
+  const cat = (user.category || '').toLowerCase();
+  const name = (user.fullName || '').toLowerCase();
+  if (cat.includes('electric') || name.includes('electric')) {
+    return [
+      'Circuit Breakers & DB Box Fix',
+      'Power Short-Circuit Repair',
+      'Ceiling Fan & Light Installation',
+      'Wiring & Appliance Check'
+    ];
+  }
+  if (cat.includes('plumb') || name.includes('plumb')) {
+    return [
+      'Pipe Leakage & Joint Repair',
+      'Tap & Bathroom Fixtures Fitting',
+      'Water Pump & Motor Overhaul',
+      'Drainage & Sink Unclogging'
+    ];
+  }
+  if (cat.includes('food') || name.includes('food') || name.includes('grocer')) {
+    return [
+      'Fresh Groceries & Produce',
+      'Daily Essentials & Provisions',
+      'Direct Doorstep Delivery'
+    ];
+  }
+  if (cat.includes('other') || name.includes('quickfix') || name.includes('carpenter') || name.includes('ac')) {
+    return [
+      'AC Gas Top-Up & Servicing',
+      'Carpentry & Furniture Repair',
+      'Deep Cleaning & Sanitization'
+    ];
+  }
+  return [user.categoryName || 'General Contractor Services'];
+}
+
 export default function AdminWorkspace({
   adminUsers,
   setAdminUsers,
@@ -126,8 +166,9 @@ export default function AdminWorkspace({
 
   const filteredAdminUsers = useMemo(() => {
     return adminUsers.filter(u => {
+      const servicesText = getProviderServicesList(u).join(' ');
       const matchesSearch =
-        (u.fullName + ' ' + (u.email || '') + ' ' + (u.phone || '') + ' ' + (u.location || '') + ' ' + u.accountType)
+        (u.fullName + ' ' + (u.email || '') + ' ' + (u.phone || '') + ' ' + (u.location || '') + ' ' + (u.categoryName || '') + ' ' + (u.category || '') + ' ' + servicesText + ' ' + u.accountType)
           .toLowerCase()
           .includes(userSearchQuery.toLowerCase());
       const matchesRole = userRoleFilter === 'all' || u.accountType === userRoleFilter;
@@ -349,7 +390,7 @@ export default function AdminWorkspace({
                 type="text"
                 value={userSearchQuery}
                 onChange={e => setUserSearchQuery(e.target.value)}
-                placeholder="Search accounts by name, email, phone, location..."
+                placeholder="Search by name, phone, role, service (e.g. Electrical, Plumbing, AC)..."
               />
               {userSearchQuery && (
                 <button className="clear-search-btn" onClick={() => setUserSearchQuery('')}>×</button>
@@ -385,7 +426,7 @@ export default function AdminWorkspace({
               <thead>
                 <tr>
                   <th>Account Name</th>
-                  <th>Role</th>
+                  <th>Role & Services Provided</th>
                   <th>Contact Info</th>
                   <th>Location / Area</th>
                   <th>Status</th>
@@ -396,6 +437,7 @@ export default function AdminWorkspace({
               <tbody>
                 {filteredAdminUsers.map(user => {
                   const isSuper = user.email === 'arikarran14@gmail.com';
+                  const servicesList = getProviderServicesList(user);
                   return (
                     <tr key={user.id} className={isSuper ? 'super-admin-row' : ''}>
                       <td>
@@ -408,14 +450,66 @@ export default function AdminWorkspace({
                               {user.fullName}
                               {isSuper && <span className="super-tag">SUPER ADMIN</span>}
                             </b>
-                            <small className="user-id-code">ID: {user.id ? user.id.slice(0, 14) : '...'}</small>
+                            <small className="user-id-code">
+                              ID: {user.id ? user.id.slice(0, 14) : '...'}
+                              {user.accountType === 'provider' && user.categoryName && (
+                                <span style={{ marginLeft: 6, color: '#047857', fontWeight: 600 }}>
+                                  • {user.categoryName}
+                                </span>
+                              )}
+                            </small>
                           </div>
                         </div>
                       </td>
                       <td>
-                        <span className={`account-badge ${user.accountType}`}>
-                          {user.accountType === 'admin' ? '🛡️ Admin' : user.accountType === 'provider' ? '🛠️ Provider' : '👤 Customer'}
-                        </span>
+                        {user.accountType === 'provider' ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 230 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                              <span className="account-badge provider">
+                                🛠️ Service Provider
+                              </span>
+                              <span className={`service-category-tag ${user.category || 'other-services'}`}>
+                                {user.category === 'electrical-repair' ? '⚡' :
+                                 user.category === 'plumbing' ? '🚰' :
+                                 user.category === 'food-shops' ? '🛒' : '🔨'}{' '}
+                                {user.categoryName || 'Home Specialist'}
+                              </span>
+                            </div>
+
+                            {/* Services Provided Pills */}
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                              {servicesList.map((svc, idx) => (
+                                <span key={idx} className="service-pill-tag">
+                                  ✓ {svc}
+                                </span>
+                              ))}
+                            </div>
+
+                            {user.baseCharge && (
+                              <div style={{ fontSize: '11px', color: '#166534', fontWeight: 600 }}>
+                                Base Charge: <b>{user.baseCharge}</b>
+                              </div>
+                            )}
+                          </div>
+                        ) : user.accountType === 'admin' ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                            <span className="account-badge admin">
+                              🛡️ Super Admin
+                            </span>
+                            <span style={{ fontSize: '11px', color: '#64748b' }}>
+                              Full Platform & Escrow Audit
+                            </span>
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                            <span className="account-badge customer">
+                              👤 Customer
+                            </span>
+                            <span style={{ fontSize: '11px', color: '#64748b' }}>
+                              Service Seeker & Bookings
+                            </span>
+                          </div>
+                        )}
                       </td>
                       <td>
                         <div className="contact-cell">
@@ -837,7 +931,24 @@ export default function AdminWorkspace({
                 <div><b>Email:</b> {inspectedKycUser.email || 'N/A'}</div>
                 <div><b>Service Area:</b> {inspectedKycUser.location}</div>
                 <div><b>Base Rate:</b> {inspectedKycUser.baseCharge || 'LKR 1,500'}</div>
+                <div><b>Role:</b> {inspectedKycUser.accountType === 'provider' ? '🛠️ Service Provider' : inspectedKycUser.accountType}</div>
+                <div><b>Category:</b> {inspectedKycUser.categoryName || 'Home Specialist'}</div>
               </div>
+
+              {inspectedKycUser.accountType === 'provider' && (
+                <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid #e2e8f0' }}>
+                  <b style={{ fontSize: '0.8rem', color: '#334155', display: 'block', marginBottom: 6 }}>
+                    Scope of Services Provided:
+                  </b>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                    {getProviderServicesList(inspectedKycUser).map((svc, idx) => (
+                      <span key={idx} className="service-pill-tag">
+                        ✓ {svc}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ fontSize: '0.82rem', color: '#475569' }}>Sri Lanka NIC Number:</span>
                 <b style={{ fontSize: '0.9rem', color: '#0f172a', letterSpacing: 0.5, background: '#e2e8f0', padding: '2px 8px', borderRadius: 4 }}>
