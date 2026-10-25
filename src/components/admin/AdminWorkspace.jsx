@@ -19,7 +19,11 @@ import {
   AlertTriangle,
   Banknote,
   CheckCircle2,
-  Zap
+  Zap,
+  Key,
+  Eye,
+  EyeOff,
+  Copy
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE } from '../../config';
@@ -81,6 +85,14 @@ export default function AdminWorkspace({
   const [userStatusFilter, setUserStatusFilter] = useState('all'); // 'all' | 'pending' | 'active' | 'rejected'
   const [newCategory, setNewCategory] = useState('');
   const [inspectedKycUser, setInspectedKycUser] = useState(null);
+
+  // Super Admin Password Reset Modal State
+  const [passwordResetUser, setPasswordResetUser] = useState(null);
+  const [newPasswordInput, setNewPasswordInput] = useState('');
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [resetSuccessMsg, setResetSuccessMsg] = useState('');
+  const [resetError, setResetError] = useState('');
 
   const [allBookings, setAllBookings] = useState([]);
   const [isLoadingBookings, setIsLoadingBookings] = useState(false);
@@ -245,6 +257,43 @@ export default function AdminWorkspace({
       console.warn('Delete error:', e);
       if (onNotice) onNotice(`❌ Error: ${e.message}`);
     }
+  }
+
+  async function handleAdminResetPasswordSubmit(e) {
+    e.preventDefault();
+    if (!passwordResetUser || !newPasswordInput.trim()) return;
+    setIsResettingPassword(true);
+    setResetError('');
+    try {
+      const res = await fetch(`${API_BASE}/admin/users/${passwordResetUser.id}/reset-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(currentUser?.token ? { Authorization: `Bearer ${currentUser.token}` } : {})
+        },
+        body: JSON.stringify({ newPassword: newPasswordInput.trim() })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to reset password.');
+      }
+      setResetSuccessMsg(`Password successfully updated for ${passwordResetUser.fullName}!`);
+      if (onNotice) onNotice(`🔑 Password reset successfully for ${passwordResetUser.fullName}!`);
+    } catch (err) {
+      setResetError(err.message);
+    } finally {
+      setIsResettingPassword(false);
+    }
+  }
+
+  function generateRandomPassword() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789@#$';
+    let pass = 'Ary@';
+    for (let i = 0; i < 6; i++) {
+      pass += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setNewPasswordInput(pass);
+    setShowResetPassword(true);
   }
 
   function addCategory(e) {
@@ -605,6 +654,32 @@ export default function AdminWorkspace({
                               <Ban size={13} /> Block
                             </button>
                           )}
+
+                          {/* Super Admin Password Reset Button */}
+                          <button
+                            type="button"
+                            className="action-btn"
+                            style={{
+                              background: '#f8fafc',
+                              color: '#0f172a',
+                              border: '1px solid #cbd5e1',
+                              padding: '4px 8px',
+                              fontSize: '11px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 4
+                            }}
+                            onClick={() => {
+                              setPasswordResetUser(user);
+                              setNewPasswordInput('');
+                              setShowResetPassword(false);
+                              setResetSuccessMsg('');
+                              setResetError('');
+                            }}
+                            title={`Reset password for ${user.fullName}`}
+                          >
+                            <Key size={12} color="#0284c7" /> Reset PW
+                          </button>
 
                           {!isSuper ? (
                             <button
@@ -1047,6 +1122,112 @@ export default function AdminWorkspace({
                 </button>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Super Admin Password Reset Modal */}
+      {passwordResetUser && (
+        <div className="modal-backdrop" onClick={() => { setPasswordResetUser(null); setNewPasswordInput(''); setResetSuccessMsg(''); setResetError(''); }}>
+          <div className="modal-card" onClick={e => e.stopPropagation()} style={{ maxWidth: 440 }} role="dialog" aria-modal="true">
+            <div className="modal-header">
+              <div>
+                <h3>Reset Account Password</h3>
+                <p>Change login password for <b>{passwordResetUser.fullName}</b> ({passwordResetUser.accountType})</p>
+              </div>
+              <button
+                className="modal-close"
+                onClick={() => { setPasswordResetUser(null); setNewPasswordInput(''); setResetSuccessMsg(''); setResetError(''); }}
+                aria-label="Close modal"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: 12, marginBottom: 16, fontSize: '0.82rem' }}>
+              <div style={{ marginBottom: 4 }}><b>Account Name:</b> {passwordResetUser.fullName}</div>
+              {passwordResetUser.phone && <div style={{ marginBottom: 4 }}><b>Phone:</b> {passwordResetUser.phone}</div>}
+              {passwordResetUser.email && <div style={{ marginBottom: 4 }}><b>Email:</b> {passwordResetUser.email}</div>}
+              <div><b>Account Role:</b> <span className={`account-badge ${passwordResetUser.accountType}`}>{passwordResetUser.accountType}</span></div>
+            </div>
+
+            {resetError && (
+              <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', padding: '10px 14px', borderRadius: 8, fontSize: '12px', marginBottom: 14 }}>
+                {resetError}
+              </div>
+            )}
+
+            {resetSuccessMsg ? (
+              <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#166534', padding: '16px', borderRadius: 8, fontSize: '13px', textAlign: 'center' }}>
+                <div style={{ fontWeight: 700, fontSize: '15px', marginBottom: 6 }}>✓ Password Successfully Reset!</div>
+                <div style={{ fontSize: '12px', color: '#334155', marginBottom: 10 }}>New temporary password set for this account:</div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: '#fff', border: '1px solid #cbd5e1', padding: '10px 14px', borderRadius: 6, fontWeight: 700, letterSpacing: 1 }}>
+                  <code style={{ fontSize: '14px', color: '#0f172a' }}>{newPasswordInput}</code>
+                  <button
+                    type="button"
+                    style={{ background: 'none', border: 0, cursor: 'pointer', color: '#166534', padding: 2 }}
+                    onClick={() => {
+                      navigator.clipboard.writeText(newPasswordInput);
+                      if (onNotice) onNotice('Copied password to clipboard!');
+                    }}
+                    title="Copy Password"
+                  >
+                    <Copy size={16} />
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  className="modal-submit-btn"
+                  style={{ marginTop: 16 }}
+                  onClick={() => { setPasswordResetUser(null); setNewPasswordInput(''); setResetSuccessMsg(''); }}
+                >
+                  Done
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleAdminResetPasswordSubmit} className="modal-form">
+                <label>
+                  <span>New Password *</span>
+                  <div className="password-input-wrapper">
+                    <input
+                      required
+                      type={showResetPassword ? 'text' : 'password'}
+                      value={newPasswordInput}
+                      onChange={e => setNewPasswordInput(e.target.value)}
+                      placeholder="Enter new password (min 6 characters)"
+                      minLength={6}
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      className="password-toggle-btn"
+                      onClick={() => setShowResetPassword(prev => !prev)}
+                      aria-label={showResetPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showResetPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                </label>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: -4 }}>
+                  <button
+                    type="button"
+                    onClick={generateRandomPassword}
+                    style={{ background: 'none', border: 0, color: '#174d3d', fontSize: '11px', fontWeight: 600, cursor: 'pointer', textDecoration: 'underline' }}
+                  >
+                    ⚡ Generate Strong Password
+                  </button>
+                </div>
+
+                <div style={{ fontSize: '11px', color: '#64748b', background: '#f8fafc', padding: 10, borderRadius: 6, border: '1px solid #e2e8f0' }}>
+                  ℹ️ Once updated, the user will be able to log in immediately using this new password.
+                </div>
+
+                <button type="submit" className="modal-submit-btn" disabled={isResettingPassword || !newPasswordInput.trim()}>
+                  {isResettingPassword ? 'Updating Password...' : 'Save New Password'}
+                </button>
+              </form>
+            )}
           </div>
         </div>
       )}

@@ -27,7 +27,8 @@
     "rating": 4.9,
     "reviewCount": 18,
     "experienceYears": 5,
-    "createdAt": "2026-01-02T00:00:00.000Z"
+    "createdAt": "2026-01-02T00:00:00.000Z",
+    "updatedAt": "2026-10-25T19:37:50.045Z"
   },
   {
     "id": "user-provider-perera",
@@ -94,7 +95,7 @@
     "location": "Peradeniya, Kandy District, Central Province",
     "lat": 7.258,
     "lng": 80.597,
-    "passwordHash": "f8e0f43ab4943182c75709de58c76e4d0e1a41d656853074bab8c6f7eb6d4a0f",
+    "passwordHash": "65453d5baa7b1205a8dcc73feaee6016634efe44107d7bc1050a3ff686ed90c2",
     "accountType": "provider",
     "status": "active",
     "category": "electrical-repair",
@@ -104,6 +105,7 @@
     "rating": 5,
     "reviewCount": 0,
     "experienceYears": 5,
-    "createdAt": "2026-10-25T18:00:00.000Z"
+    "createdAt": "2026-10-25T18:00:00.000Z",
+    "updatedAt": "2026-10-25T19:41:42.856Z"
   }
 ]

@@ -1543,6 +1543,54 @@ app.delete('/api/admin/users/:id', requireAdmin, async (req, res) => {
   }
 });
 
+// Admin: Reset user password (PROTECTED BY REQUIRE_ADMIN)
+app.post('/api/admin/users/:id/reset-password', requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { newPassword } = req.body;
+
+    if (!newPassword || typeof newPassword !== 'string' || newPassword.trim().length < 6) {
+      return res.status(400).json({ error: 'New password must be at least 6 characters long.' });
+    }
+
+    const trimmedPassword = newPassword.trim();
+    const newPasswordHash = hashPassword(trimmedPassword);
+
+    const users = await getUsers();
+    const target = users.find(u => u.id === id);
+
+    if (!target) {
+      return res.status(404).json({ error: 'User account not found.' });
+    }
+
+    await updateUser(id, u => {
+      u.passwordHash = newPasswordHash;
+      u.updatedAt = new Date().toISOString();
+      return u;
+    });
+
+    if (pool) {
+      await pool.query(
+        'UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2',
+        [newPasswordHash, id]
+      ).catch(err => console.warn('Postgres password update warning:', err.message));
+    }
+
+    res.json({
+      status: 'ok',
+      message: `Password successfully updated for ${target.fullName}.`,
+      userId: target.id,
+      fullName: target.fullName,
+      phone: target.phone,
+      email: target.email,
+      accountType: target.accountType
+    });
+  } catch (err) {
+    console.error('Admin reset password error:', err);
+    res.status(500).json({ error: 'Failed to reset user password.' });
+  }
+});
+
 app.use((err, _req, res, _next) => {
   console.error(err);
   res.status(500).json({ error: 'Internal server error.' });
