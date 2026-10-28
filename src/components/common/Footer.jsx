@@ -11,15 +11,11 @@ export default function Footer() {
         <span className="footer-tagline">Local services, thoughtfully connected.</span>
       </div>
 
-      {/* Stylish ADK Software Solutions Signature Badge */}
-      <div className="adk-signature-badge" title="Architected & Developed by ADK Software Solutions">
-        <div className="adk-badge-content">
-          <span className="adk-dot"></span>
-          <span className="adk-prefix">Softwared by</span>
-          <strong className="adk-brand-name">
-            <span className="adk-brand-gradient">ADK Software Solutions</span>
-          </strong>
-        </div>
+      {/* Normal & Clean ADK Software Solutions Signature */}
+      <div className="adk-signature-badge">
+        <span className="adk-dot"></span>
+        <span className="adk-prefix">Softwared by</span>
+        <strong className="adk-brand-name">ADK Software Solutions</strong>
       </div>
 
       <div className="footer-right">
