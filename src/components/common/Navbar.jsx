@@ -31,7 +31,7 @@ export default function Navbar({ onNotice, pendingCount = 0 }) {
           </NavLink>
         )}
 
-        {currentUser && (
+        {currentUser && currentUser.accountType === 'driver' && (
           <NavLink to="/driver-work" className={({ isActive }) => `nav-link-btn ${isActive ? 'active' : ''}`}><Bike size={14} /> Driver Services</NavLink>
         )}
 
