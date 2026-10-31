@@ -6,7 +6,7 @@ import { API_BASE } from '../../config';
 export default function DriverWorkspace({ onNotice }) {
   const { currentUser } = useAuth();
   const [jobs,setJobs]=useState([]);
-  const [application,setApplication]=useState('food_delivery');
+  const [application,setApplication]=useState(currentUser?.driverServices?.length?currentUser.driverServices:['food_delivery']);
   const [loading,setLoading]=useState(false);
   const [error,setError]=useState('');
   async function refresh(){
@@ -17,7 +17,7 @@ export default function DriverWorkspace({ onNotice }) {
   }
   useEffect(()=>{refresh();},[currentUser?.token]);
   async function apply(){
-    try{const r=await fetch(API_BASE+'/driver-applications',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+currentUser.token},body:JSON.stringify({driverType:application})});const d=await r.json();if(!r.ok)throw new Error(d.error||'Application failed');onNotice?.('Driver application submitted for admin approval.');}
+    try{const r=await fetch(API_BASE+'/driver-applications',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+currentUser.token},body:JSON.stringify({driverTypes:application})});const d=await r.json();if(!r.ok)throw new Error(d.error||'Application failed');onNotice?.('Driver application submitted for admin approval.');}
     catch(e){setError(e.message);}
   }
   async function claim(id){
@@ -31,8 +31,8 @@ export default function DriverWorkspace({ onNotice }) {
   return <main style={{maxWidth:1050,margin:'35px auto',padding:'0 18px',minHeight:'60vh'}}>
     <span className="eyebrow">SEPARATE DRIVER OPERATIONS</span><h1 style={{fontSize:38}}>Driver <em>workspace.</em></h1>
     <section style={{padding:20,border:'1px solid #e5ebe3',borderRadius:14,background:'#fff',margin:'22px 0'}}>
-      <h3>Apply for a driver network</h3><p style={{fontSize:13,color:'#6d786f'}}>Choose one driver type. Admin approval is required before you can accept matching jobs.</p>
-      <div style={{display:'flex',gap:10,flexWrap:'wrap'}}><select value={application} onChange={e=>setApplication(e.target.value)} style={{padding:11,border:'1px solid #dce5dc',borderRadius:8}}><option value="food_delivery">Food Delivery Driver</option><option value="ride">Ride Driver</option></select><button onClick={apply} style={{padding:'11px 16px',border:0,borderRadius:8,background:'#174d3d',color:'#fff',fontWeight:700}}>Submit application</button></div>
+      <h3>Apply for a driver network</h3><p style={{fontSize:13,color:'#6d786f'}}>Your registration choices: {(currentUser?.driverServices||[]).map(t=>t==='ride'?'Ride Service':'Food Delivery').join(' + ') || 'Choose your driver services during registration'}. Admin approval is required for each selected service.</p>
+      <div style={{display:'flex',gap:10,flexWrap:'wrap'}}><button onClick={apply} style={{padding:'11px 16px',border:0,borderRadius:8,background:'#174d3d',color:'#fff',fontWeight:700}}>Submit application</button></div>
     </section>
     <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}><h2 style={{fontSize:22,margin:0}}>Available and assigned jobs</h2><button onClick={refresh} style={{padding:9,border:'1px solid #dce5dc',borderRadius:8,background:'#fff'}}><RefreshCw size={16}/></button></div>
     {error&&<p role="alert" style={{color:'#a33'}}>{error}</p>}
