@@ -39,6 +39,7 @@ import { subscribeToEvents, broadcastEvent } from './eventHub.js';
 import { calculateDistanceKm, estimateEtaMinutes, resolveCoordinatesFromLocation } from './geoService.js';
 import { issueSecurityChallenge, verifySecurityChallenge } from './securityShield.js';
 import { registerDriverServiceRoutes } from './driverServiceRoutes.js';
+import { registerGroceryRoutes } from './groceryRoutes.js';
 
 const app = express();
 const port = Number(process.env.PORT || 4000);
@@ -199,6 +200,7 @@ async function requireAdmin(req, res, next) {
 }
 
 registerDriverServiceRoutes(app, { requireAuth, requireAdmin, broadcastEvent, getBookings, getUsers });
+registerGroceryRoutes(app, { requireAuth });
 
 // Initialize atomic file storage on boot
 await initStorage();
