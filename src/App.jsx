@@ -20,6 +20,7 @@ import AuthModal from './components/common/AuthModal';
 import HeroSection from './components/customer/HeroSection';
 import CategoryGrid from './components/customer/CategoryGrid';
 import ProviderCatalog from './components/customer/ProviderCatalog';
+import GroceryMarketplace from './components/customer/GroceryMarketplace';
 import BookingModal from './components/customer/BookingModal';
 import MyBookingsList from './components/customer/MyBookingsList';
 import ReviewModal from './components/customer/ReviewModal';
@@ -496,6 +497,8 @@ function MainApp() {
               />
 
               <MobilityServices onNotice={setNotice} />
+
+              {selectedCategory?.slug === 'grocery-products' && <GroceryMarketplace />}
 
               <ProviderCatalog
                 selectedCategory={selectedCategory}
