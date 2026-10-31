@@ -231,7 +231,7 @@ export default function AuthModal({ onNotice }) {
       resetForms();
 
       if (['provider', 'driver'].includes(regAccountType)) {
-        if (onNotice) onNotice(regAccountType === 'driver' ? '📋 Driver application submitted! Admin approval is required before activation.' : '📋 Provider application submitted! Your account is pending Admin approval before activation.');
+        if (onNotice) onNotice(regAccountType === 'driver' ? '📋 Driver account created! Submit your selected driver services for Admin approval before accepting jobs.' : '📋 Provider application submitted! Your account is pending Admin approval before activation.');
       } else {
         if (onNotice && data.user) {
           onNotice(`Welcome, ${data.user.fullName}! Registered successfully.`);
