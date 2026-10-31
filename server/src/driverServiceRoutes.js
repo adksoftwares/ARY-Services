@@ -11,7 +11,7 @@ async function readJobs(){try{const d=JSON.parse(await fs.readFile(dataFile,'utf
 async function save(data){writeQueue=writeQueue.then(async()=>{await fs.mkdir(path.dirname(dataFile),{recursive:true});await fs.writeFile(dataFile,JSON.stringify(data,null,2));});await writeQueue;}
 const id=prefix=>prefix+'_'+crypto.randomUUID().replaceAll('-','').slice(0,12);
 const types=['food_delivery','ride'];
-export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadcastEvent}){
+export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadcastEvent,getBookings,getUsers}){
   app.post('/api/driver-applications',requireAuth,async(req,res)=>{
     const driverType=String(req.body?.driverType||'');
     if(!types.includes(driverType))return res.status(400).json({error:'Choose food_delivery or ride.'});
@@ -30,8 +30,12 @@ export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadc
   });
   app.post('/api/food-deliveries',requireAuth,async(req,res)=>{
     const {orderReference,restaurantName,pickupAddress,dropoffAddress,notes=''}=req.body||{};
-    if(!restaurantName||!pickupAddress||!dropoffAddress)return res.status(400).json({error:'Restaurant, pickup and delivery addresses are required.'});
-    const d=await readJobs();const job={id:id('food'),serviceType:'food_delivery',customerId:req.user.id,customerName:req.user.fullName,orderReference:String(orderReference||'').slice(0,80),restaurantName:String(restaurantName).slice(0,160),pickupAddress:String(pickupAddress).slice(0,500),destinationAddress:String(dropoffAddress).slice(0,500),notes:String(notes).slice(0,500),driverId:null,status:'requested',createdAt:new Date().toISOString()};
+    if(!orderReference||!pickupAddress||!dropoffAddress)return res.status(400).json({error:'A valid food order reference, pickup and delivery addresses are required.'});
+    const orders=await getBookings();const order=orders.find(b=>b.id===String(orderReference)&&b.customerId===req.user.id&&String(b.categorySlug||'').toLowerCase().includes('food'));
+    if(!order)return res.status(404).json({error:'Food order not found for this customer. Place a food shop order first.'});
+    if(!['accepted','preparing','ready'].includes(order.status))return res.status(409).json({error:'The restaurant must accept or prepare the food order before delivery can be requested.'});
+    const users=await getUsers();const restaurant=users.find(u=>u.id===order.providerId);
+    const d=await readJobs();const job={id:id('food'),serviceType:'food_delivery',customerId:req.user.id,customerName:req.user.fullName,orderReference:order.id,restaurantName:String(restaurantName||order.providerName||'Food Shop').slice(0,160),pickupAddress:String(pickupAddress||restaurant?.location||'').slice(0,500),destinationAddress:String(dropoffAddress).slice(0,500),notes:String(notes).slice(0,500),driverId:null,status:'requested',createdAt:new Date().toISOString()};
     d.jobs.unshift(job);await save(d);broadcastEvent?.('driver:job_created',{job});res.status(201).json({job});
   });
   app.post('/api/ride-trips',requireAuth,async(req,res)=>{
