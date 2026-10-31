@@ -37,6 +37,7 @@ export function AuthProvider({ children }) {
   const [role, setRole] = useState(() => {
     if (currentUser) {
       if (currentUser.accountType === 'provider') return 'Provider';
+      if (currentUser.accountType === 'driver') return 'Driver';
       if (currentUser.accountType === 'admin') return 'Admin';
       return 'Customer';
     }
@@ -51,6 +52,7 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     if (currentUser) {
       if (currentUser.accountType === 'provider') setRole('Provider');
+      else if (currentUser.accountType === 'driver') setRole('Driver');
       else if (currentUser.accountType === 'admin') setRole('Admin');
       else setRole('Customer');
     }
