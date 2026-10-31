@@ -191,6 +191,7 @@ export default function AdminWorkspace({
 
   const customerCount = adminUsers.filter(u => u.accountType === 'customer').length;
   const providerCount = adminUsers.filter(u => u.accountType === 'provider').length;
+  const driverCount = adminUsers.filter(u => u.accountType === 'driver').length;
   const adminCount = adminUsers.filter(u => u.accountType === 'admin').length;
   const pendingCount = adminUsers.filter(u => u.status === 'pending').length;
   const activeCount = adminUsers.filter(u => u.status === 'active').length;
@@ -388,6 +389,16 @@ export default function AdminWorkspace({
               <div className="stat-info">
                 <span className="stat-count">{providerCount}</span>
                 <span className="stat-label">Providers</span>
+              </div>
+            </div>
+            <div
+              className={`stat-card provider ${userRoleFilter === 'driver' ? 'active' : ''}`}
+              onClick={() => setUserRoleFilter('driver')}
+            >
+              <div className="stat-icon-wrap"><Bike size={20} /></div>
+              <div className="stat-info">
+                <span className="stat-count">{driverCount}</span>
+                <span className="stat-label">Drivers</span>
               </div>
             </div>
 
@@ -604,13 +615,13 @@ export default function AdminWorkspace({
                       </td>
                       <td>
                         <div className="table-actions-cell">
-                          {user.accountType === 'provider' && (
+                          {['provider', 'driver'].includes(user.accountType) && (
                             <button
                               type="button"
                               className="action-btn"
                               style={{ background: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0', padding: '4px 8px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: 4 }}
                               onClick={() => setInspectedKycUser(user)}
-                              title="Inspect Provider KYC Documents"
+                              title={user.accountType === 'driver' ? 'Inspect Driver KYC Documents' : 'Inspect Provider KYC Documents'}
                             >
                               <FileText size={12} /> KYC
                             </button>
