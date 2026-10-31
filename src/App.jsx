@@ -23,6 +23,9 @@ import BookingModal from './components/customer/BookingModal';
 import MyBookingsList from './components/customer/MyBookingsList';
 import ReviewModal from './components/customer/ReviewModal';
 import DisputeModal from './components/customer/DisputeModal';
+import MobilityServices from './components/customer/MobilityServices';
+import DriverWorkspace from './components/driver/DriverWorkspace';
+import DriverApplicationsAdmin from './components/admin/DriverApplicationsAdmin';
 
 import ProviderDashboard from './components/provider/ProviderDashboard';
 import AdminWorkspace from './components/admin/AdminWorkspace';
@@ -490,6 +493,8 @@ function MainApp() {
                 onSelectCategory={handleSelectCategory}
               />
 
+              <MobilityServices onNotice={setNotice} />
+
               <ProviderCatalog
                 selectedCategory={selectedCategory}
                 providers={availableProviders}
@@ -519,6 +524,10 @@ function MainApp() {
             </main>
           }
         />
+
+        <Route path="/driver-work" element={currentUser ? <DriverWorkspace onNotice={setNotice} /> : <Navigate to="/" replace />} />
+
+        <Route path="/admin/driver-applications" element={currentUser?.accountType === 'admin' ? <DriverApplicationsAdmin /> : <Navigate to="/" replace />} />
 
         {/* Provider Dashboard Route */}
         <Route
