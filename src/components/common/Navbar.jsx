@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { User, LogOut, ArrowRight, Search, ClipboardList, Shield, Briefcase } from 'lucide-react';
+import { User, LogOut, ArrowRight, Search, ClipboardList, Shield, Briefcase, Bike } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 export default function Navbar({ onNotice, pendingCount = 0 }) {
@@ -31,6 +31,10 @@ export default function Navbar({ onNotice, pendingCount = 0 }) {
           </NavLink>
         )}
 
+        {currentUser && (
+          <NavLink to="/driver-work" className={({ isActive }) => `nav-link-btn ${isActive ? 'active' : ''}`}><Bike size={14} /> Driver Services</NavLink>
+        )}
+
         {currentUser && currentUser.accountType === 'provider' && (
           <NavLink to="/provider" className={({ isActive }) => `nav-link-btn ${isActive ? 'active' : ''}`} style={{ position: 'relative' }}>
             <Briefcase size={14} /> Provider Workspace
@@ -54,9 +58,10 @@ export default function Navbar({ onNotice, pendingCount = 0 }) {
         )}
 
         {currentUser && currentUser.accountType === 'admin' && (
-          <NavLink to="/admin" className={({ isActive }) => `nav-link-btn ${isActive ? 'active' : ''}`}>
-            <Shield size={14} /> Super Admin
-          </NavLink>
+          <>
+            <NavLink to="/admin" className={({ isActive }) => `nav-link-btn ${isActive ? 'active' : ''}`}><Shield size={14} /> Super Admin</NavLink>
+            <NavLink to="/admin/driver-applications" className={({ isActive }) => `nav-link-btn ${isActive ? 'active' : ''}`}>Driver Approvals</NavLink>
+          </>
         )}
       </nav>
 
