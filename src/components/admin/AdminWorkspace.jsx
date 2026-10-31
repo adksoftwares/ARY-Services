@@ -523,19 +523,21 @@ export default function AdminWorkspace({
                         </div>
                       </td>
                       <td>
-                        {user.accountType === 'provider' ? (
+                        {['provider', 'driver'].includes(user.accountType) ? (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 230 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                              <span className="account-badge provider">
-                                🛠️ Service Provider
+                              <span className={user.accountType === 'driver' ? 'account-badge driver' : 'account-badge provider'}>
+                                {user.accountType === 'driver' ? '🚗 Driver' : '🛠️ Service Provider'}
                               </span>
-                              <span className={`service-category-tag ${user.category || 'other-services'}`}>
+                              {user.accountType === 'provider' && <span className={`service-category-tag ${user.category || 'other-services'}`}>
                                 {user.category === 'electrical-repair' ? '⚡' :
                                  user.category === 'plumbing' ? '🚰' :
                                  user.category === 'food-shops' ? '🛒' : '🔨'}{' '}
                                 {user.categoryName || 'Home Specialist'}
-                              </span>
+                              </span>}
                             </div>
+
+                            {user.accountType === 'driver' && <div style={{fontSize:11,color:'#166534',fontWeight:600}}>Driver services: {(user.driverServices || []).map(type => type === 'ride' ? 'Passenger Rides' : 'Food Delivery').join(' + ')}</div>}
 
                             {/* Services Provided Pills */}
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
