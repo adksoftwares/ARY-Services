@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE } from '../../config';
+import GroceryInventory from './GroceryInventory';
 
 let sharedAudioCtx = null;
 
@@ -444,7 +445,9 @@ export default function ProviderDashboard({
           <Wallet size={16} color={activeTab === 'wallet' ? '#fff' : '#059669'} />
           Earnings & Escrow Wallet
         </button>
+        {currentUser?.category === 'grocery-products' && <button type="button" onClick={() => setActiveTab('inventory')} style={{padding:'8px 16px',borderRadius:8,border:0,background:activeTab==='inventory'?'#0f172a':'#f1f5f9',color:activeTab==='inventory'?'#fff':'#475569',fontWeight:600,fontSize:'.875rem',cursor:'pointer',display:'flex',alignItems:'center',gap:6}}>🛒 Product Inventory</button>}
       </div>
+      {activeTab === 'inventory' && currentUser?.category === 'grocery-products' && <GroceryInventory />}
 
       {/* Tab 1: Job Bookings Feed */}
       {activeTab === 'jobs' && (
