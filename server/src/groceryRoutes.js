@@ -1,8 +1,11 @@
 import express from 'express';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const dataFile=path.join(process.cwd(),'server','data','grocery-products.json');
+const __dirname=path.dirname(fileURLToPath(import.meta.url));
+const dataDir=process.env.VERCEL?path.join('/tmp','ary_data'):path.join(__dirname,'..','data');
+const dataFile=path.join(dataDir,'grocery-products.json');
 let queue=Promise.resolve();
 async function readProducts(){try{const raw=await fs.readFile(dataFile,'utf8');const data=JSON.parse(raw);return Array.isArray(data)?data:[];}catch{return [];}}
 async function writeProducts(items){await fs.mkdir(path.dirname(dataFile),{recursive:true});const tmp=dataFile+'.tmp';await fs.writeFile(tmp,JSON.stringify(items,null,2));await fs.rename(tmp,dataFile);}
