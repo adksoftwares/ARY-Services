@@ -347,6 +347,7 @@ app.post('/api/auth/otp/verify', authLimiter, async (req, res) => {
           email: existingUser.email,
           location: existingUser.location || '',
           accountType: existingUser.accountType,
+          driverServices: existingUser.driverServices || [],
           status: existingUser.status,
           category: existingUser.category || null,
           categoryName: existingUser.categoryName || null,
@@ -624,6 +625,7 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
             email: user.email,
             location: user.location || '',
             accountType: user.accountType,
+            driverServices: user.driverServices || [],
             status: user.status,
             category: user.category || null,
             driverServices: user.driverServices || [],
@@ -1488,6 +1490,7 @@ app.get('/api/admin/users', requireAdmin, async (_req, res) => {
       email: u.email,
       location: u.location || 'Not specified',
       accountType: u.accountType,
+      driverServices: u.driverServices || [],
       status: u.status || 'active',
       category: u.category || null,
       categoryName: u.categoryName || null,
@@ -1522,7 +1525,7 @@ app.patch('/api/admin/users/:id/status', requireAdmin, async (req, res) => {
 
     const updated = await updateUser(id, u => {
       u.status = status;
-      if (status === 'active' && u.accountType === 'provider') {
+      if (status === 'active' && ['provider', 'driver'].includes(u.accountType)) {
         u.kycStatus = 'verified';
       }
       return u;
