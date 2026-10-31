@@ -5,6 +5,8 @@ import crypto from 'node:crypto';
 
 const dataFile = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'data', 'driver-services.json');
 let writeQueue = Promise.resolve();
+let transactionQueue = Promise.resolve();
+async function mutateJobs(mutator){let result;const task=transactionQueue.then(async()=>{const data=await readJobs();result=await mutator(data);await save(data);});transactionQueue=task.catch(()=>{});await task;return result;}
 async function readJobs(){try{const d=JSON.parse(await fs.readFile(dataFile,'utf8'));return {applications:d.applications||[],jobs:d.jobs||[]};}catch{return {applications:[],jobs:[]};}}
 async function save(data){writeQueue=writeQueue.then(async()=>{await fs.mkdir(path.dirname(dataFile),{recursive:true});await fs.writeFile(dataFile,JSON.stringify(data,null,2));});await writeQueue;}
 const id=prefix=>prefix+'_'+crypto.randomUUID().replaceAll('-','').slice(0,12);
@@ -45,11 +47,17 @@ export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadc
     res.json({jobs,approvedDriverTypes:approved});
   });
   app.post('/api/driver-jobs/:id/claim',requireAuth,async(req,res)=>{
-    const d=await readJobs();const job=d.jobs.find(j=>j.id===req.params.id);if(!job)return res.status(404).json({error:'Job not found.'});
-    const approved=d.applications.some(a=>a.userId===req.user.id&&a.driverType===job.serviceType&&a.status==='approved');
-    if(!approved)return res.status(403).json({error:'You are not approved for this driver network.'});
-    if(job.status!=='requested'||job.driverId)return res.status(409).json({error:'This job has already been accepted by another driver.'});
-    job.driverId=req.user.id;job.driverName=req.user.fullName;job.status='accepted';job.acceptedAt=new Date().toISOString();await save(d);broadcastEvent?.('driver:job_updated',{job});res.json({job});
+    try{
+      const result=await mutateJobs(d=>{
+        const job=d.jobs.find(j=>j.id===req.params.id);if(!job)return {status:404,error:'Job not found.'};
+        const approved=d.applications.some(a=>a.userId===req.user.id&&a.driverType===job.serviceType&&a.status==='approved');
+        if(!approved)return {status:403,error:'You are not approved for this driver network.'};
+        if(job.status!=='requested'||job.driverId)return {status:409,error:'This job has already been accepted by another driver.'};
+        job.driverId=req.user.id;job.driverName=req.user.fullName;job.status='accepted';job.acceptedAt=new Date().toISOString();return {status:200,job};
+      });
+      if(result.error)return res.status(result.status).json({error:result.error});
+      broadcastEvent?.('driver:job_updated',{job:result.job});return res.json({job:result.job});
+    }catch(error){return res.status(500).json({error:'Could not claim driver job.'});}
   });
   app.patch('/api/driver-jobs/:id/status',requireAuth,async(req,res)=>{
     const status=String(req.body?.status||'');if(!['picked_up','completed'].includes(status))return res.status(400).json({error:'Unsupported job status.'});
