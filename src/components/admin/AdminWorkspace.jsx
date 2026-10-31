@@ -4,6 +4,7 @@ import {
   LayoutDashboard,
   User,
   Briefcase,
+  Bike,
   Shield,
   Search,
   RefreshCw,
