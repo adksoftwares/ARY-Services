@@ -817,7 +817,7 @@ export default function AuthModal({ onNotice }) {
                     <option value="food-shops">Food Shops & Groceries</option>
                     <option value="other-services">Other Services (AC, Cleaning, Carpentry)</option>
                   </select>
-                </label>
+                </label>}
 
                 {regAccountType === 'provider' && <label>
                   <span>Base Service / Inspection Charge</span>
@@ -827,7 +827,7 @@ export default function AuthModal({ onNotice }) {
                     onChange={e => setRegBaseCharge(e.target.value)}
                     placeholder="e.g. LKR 1,500"
                   />
-                </label>
+                </label>}
 
                 {regAccountType === 'driver' && <section style={{background:'#f0f7f3',border:'1px solid #cfe3d6',borderRadius:10,padding:12,margin:'8px 0 12px'}}>
                   <b style={{fontSize:13,color:'#174d3d'}}>Choose your driver services *</b>
