@@ -198,7 +198,7 @@ async function requireAdmin(req, res, next) {
   });
 }
 
-registerDriverServiceRoutes(app, { requireAuth, requireAdmin, broadcastEvent });
+registerDriverServiceRoutes(app, { requireAuth, requireAdmin, broadcastEvent, getBookings, getUsers });
 
 // Initialize atomic file storage on boot
 await initStorage();
