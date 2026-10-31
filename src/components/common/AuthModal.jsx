@@ -815,6 +815,7 @@ export default function AuthModal({ onNotice }) {
                     <option value="electrical-repair">Electrical Repair</option>
                     <option value="plumbing">Plumbing</option>
                     <option value="food-shops">Food Shops & Groceries</option>
+                    <option value="grocery-products">Grocery Products / Mini Mart</option>
                     <option value="other-services">Other Services (AC, Cleaning, Carpentry)</option>
                   </select>
                 </label>}
