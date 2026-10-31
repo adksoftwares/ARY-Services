@@ -13,7 +13,8 @@ import {
   PhoneCall,
   CheckCircle2,
   RefreshCw,
-  ShieldCheck
+  ShieldCheck,
+  Bike
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { fetchCurrentLocationAddress } from '../../utils/location';
@@ -68,6 +69,7 @@ export default function AuthModal({ onNotice }) {
   const [regNicNumber, setRegNicNumber] = useState('');
   const [regNicDoc, setRegNicDoc] = useState('');
   const [regTradeCert, setRegTradeCert] = useState('');
+  const [regDriverServices, setRegDriverServices] = useState(['food_delivery']);
 
   function handleFileUpload(e, setter) {
     const file = e.target.files?.[0];
@@ -211,6 +213,7 @@ export default function AuthModal({ onNotice }) {
         location: regLocation.trim(),
         password: regAccountType === 'customer' ? (regPassword || 'customer123') : regPassword,
         accountType: regAccountType,
+        driverServices: regAccountType === 'driver' ? regDriverServices : [],
         category: regAccountType === 'provider' ? regCategory : null,
         categoryName: regAccountType === 'provider' ? (
           regCategory === 'electrical-repair' ? 'Electrical Repair' :
@@ -218,19 +221,17 @@ export default function AuthModal({ onNotice }) {
           regCategory === 'food-shops' ? 'Food Shops' : 'Other Services'
         ) : null,
         baseCharge: regAccountType === 'provider' ? regBaseCharge : null,
-        nicNumber: regAccountType === 'provider' ? regNicNumber.trim() : null,
-        nicDocument: regAccountType === 'provider' ? regNicDoc : null,
-        tradeCertificate: regAccountType === 'provider' ? regTradeCert : null
+        nicNumber: ['provider', 'driver'].includes(regAccountType) ? regNicNumber.trim() : null,
+        nicDocument: ['provider', 'driver'].includes(regAccountType) ? regNicDoc : null,
+        tradeCertificate: ['provider', 'driver'].includes(regAccountType) ? regTradeCert : null
       };
 
       const data = await register(payload);
       closeAuthModal();
       resetForms();
 
-      if (regAccountType === 'provider') {
-        if (onNotice) {
-          onNotice('📋 Provider application submitted! Your account is pending Admin approval before activation.');
-        }
+      if (['provider', 'driver'].includes(regAccountType)) {
+        if (onNotice) onNotice(regAccountType === 'driver' ? '📋 Driver application submitted! Admin approval is required before activation.' : '📋 Provider application submitted! Your account is pending Admin approval before activation.');
       } else {
         if (onNotice && data.user) {
           onNotice(`Welcome, ${data.user.fullName}! Registered successfully.`);
@@ -279,6 +280,7 @@ export default function AuthModal({ onNotice }) {
     setRegNicNumber('');
     setRegNicDoc('');
     setRegTradeCert('');
+    setRegDriverServices(['food_delivery']);
   }
 
   return (
@@ -290,7 +292,7 @@ export default function AuthModal({ onNotice }) {
             <p>
               {authMode === 'login'
                 ? 'Enter your phone number or credentials to continue.'
-                : 'Register as a Customer or Service Provider.'}
+                : 'Register as a Customer, Service Provider or Driver.'}
             </p>
           </div>
           <button className="modal-close" onClick={closeAuthModal} aria-label="Close modal">
@@ -636,6 +638,13 @@ export default function AuthModal({ onNotice }) {
                 >
                   <Briefcase size={15} /> Service Provider
                 </button>
+                <button
+                  type="button"
+                  className={`type-btn ${regAccountType === 'driver' ? 'selected' : ''}`}
+                  onClick={() => setRegAccountType('driver')}
+                >
+                  <Bike size={15} /> Driver
+                </button>
               </div>
             </label>
 
@@ -787,7 +796,7 @@ export default function AuthModal({ onNotice }) {
                   </div>
                 </label>
 
-                <label>
+                {regAccountType === 'provider' && <label>
                   <span>Primary Service Category *</span>
                   <select
                     value={regCategory}
@@ -810,7 +819,7 @@ export default function AuthModal({ onNotice }) {
                   </select>
                 </label>
 
-                <label>
+                {regAccountType === 'provider' && <label>
                   <span>Base Service / Inspection Charge</span>
                   <input
                     type="text"
@@ -819,6 +828,12 @@ export default function AuthModal({ onNotice }) {
                     placeholder="e.g. LKR 1,500"
                   />
                 </label>
+
+                {regAccountType === 'driver' && <section style={{background:'#f0f7f3',border:'1px solid #cfe3d6',borderRadius:10,padding:12,margin:'8px 0 12px'}}>
+                  <b style={{fontSize:13,color:'#174d3d'}}>Choose your driver services *</b>
+                  <p style={{fontSize:12,color:'#647268',margin:'5px 0 10px'}}>Register for one service or both using a single Driver Account.</p>
+                  {[["ride","Passenger Ride Service"],["food_delivery","Food Delivery Service"]].map(([value,label]) => <label key={value} style={{display:'flex',alignItems:'center',gap:8,margin:'8px 0',fontSize:13}}><input type="checkbox" checked={regDriverServices.includes(value)} onChange={e=>setRegDriverServices(prev=>e.target.checked?[...prev,value]:prev.filter(x=>x!==value))}/>{label}</label>)}
+                </section>}
 
                 {/* Sri Lankan KYC Verification */}
                 <div style={{
@@ -897,7 +912,7 @@ export default function AuthModal({ onNotice }) {
                       type={showRegPassword ? 'text' : 'password'}
                       value={regPassword}
                       onChange={e => setRegPassword(e.target.value)}
-                      placeholder="Create your provider password (min 6 characters)"
+                      placeholder={regAccountType === 'driver' ? 'Create your driver password (min 6 characters)' : 'Create your provider password (min 6 characters)'}
                     />
                     <button
                       type="button"
@@ -911,7 +926,7 @@ export default function AuthModal({ onNotice }) {
                 </label>
 
                 <div className="provider-helper-note">
-                  ℹ️ Provider accounts require Super Admin approval before activation.
+                  ℹ️ {regAccountType === 'driver' ? 'Driver accounts require Super Admin approval before activation.' : 'Provider accounts require Super Admin approval before activation.'}
                 </div>
 
                 <button
@@ -926,7 +941,7 @@ export default function AuthModal({ onNotice }) {
                     boxShadow: '0 4px 14px rgba(22, 101, 52, 0.25)'
                   }}
                 >
-                  {isSubmitting ? 'Submitting Registration...' : 'Register as Service Provider'} <ArrowRight size={18} />
+                  {isSubmitting ? 'Submitting Registration...' : (regAccountType === 'driver' ? 'Register as Driver' : 'Register as Service Provider')} <ArrowRight size={18} />
                 </button>
 
                 <div style={{
