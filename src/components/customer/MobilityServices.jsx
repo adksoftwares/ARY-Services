@@ -40,8 +40,8 @@ export default function MobilityServices({ onNotice }) {
     <div style={{display:'grid',gridTemplateColumns:'minmax(0,1fr) minmax(220px,.55fr)',gap:18,alignItems:'start'}}>
       <form onSubmit={submit} style={{background:'#fff',border:'1px solid #e7ece5',borderRadius:14,padding:20,display:'grid',gap:12}}>
         {mode==='food' ? <>
-          <b style={{display:'flex',alignItems:'center',gap:8,color:'#244333'}}><PackageCheck size={18}/> Request a food delivery driver</b>
-          <label style={{fontSize:12,fontWeight:600}}>Order reference (if available)<input style={inputStyle} value={form.orderReference} onChange={e=>change('orderReference',e.target.value)} placeholder="Restaurant order number"/></label>
+          <b style={{display:'flex',alignItems:'center',gap:8,color:'#244333'}}><PackageCheck size={18}/> Request a food delivery driver</b><p style={{fontSize:11,color:'#718076',margin:0}}>First place a Food Shops order and wait until the shop accepts it. Then enter that booking ID here.</p>
+          <label style={{fontSize:12,fontWeight:600}}>Order reference (if available)<input style={inputStyle} value={form.orderReference} onChange={e=>change('orderReference',e.target.value)} placeholder="Paste your food shop booking ID" required/></label>
           <label style={{fontSize:12,fontWeight:600}}>Restaurant / food shop<input required style={inputStyle} value={form.restaurantName} onChange={e=>change('restaurantName',e.target.value)} placeholder="Restaurant name"/></label>
           <label style={{fontSize:12,fontWeight:600}}>Pickup address<input required style={inputStyle} value={form.pickupAddress} onChange={e=>change('pickupAddress',e.target.value)} placeholder="Restaurant pickup location"/></label>
           <label style={{fontSize:12,fontWeight:600}}>Customer delivery address<input required style={inputStyle} value={form.dropoffAddress} onChange={e=>change('dropoffAddress',e.target.value)} placeholder="Where should the food be delivered?"/></label>
