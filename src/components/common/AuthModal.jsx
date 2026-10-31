@@ -218,7 +218,8 @@ export default function AuthModal({ onNotice }) {
         categoryName: regAccountType === 'provider' ? (
           regCategory === 'electrical-repair' ? 'Electrical Repair' :
           regCategory === 'plumbing' ? 'Plumbing' :
-          regCategory === 'food-shops' ? 'Food Shops' : 'Other Services'
+          regCategory === 'food-shops' ? 'Food Shops' :
+          regCategory === 'grocery-products' ? 'Grocery Products / Mini Mart' : 'Other Services'
         ) : null,
         baseCharge: regAccountType === 'provider' ? regBaseCharge : null,
         nicNumber: ['provider', 'driver'].includes(regAccountType) ? regNicNumber.trim() : null,
