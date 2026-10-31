@@ -6,7 +6,8 @@ import {
   Wrench,
   Sparkles,
   Search,
-  ClipboardList
+  ClipboardList,
+  Package
 } from 'lucide-react';
 
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -34,7 +35,8 @@ const initialServices = [
   { id: 1, name: 'Food Shops', slug: 'food-shops', description: 'Explore local shops and place an order', icon: ShoppingBasket, color: 'peach' },
   { id: 2, name: 'Electrical Repair', slug: 'electrical-repair', description: 'Electricians for home and business', icon: Zap, color: 'yellow' },
   { id: 3, name: 'Plumbing', slug: 'plumbing', description: 'Repairs, fittings and maintenance', icon: Wrench, color: 'blue' },
-  { id: 4, name: 'Other Services', slug: 'other-services', description: 'Discover more services near you', icon: Sparkles, color: 'lilac' },
+  { id: 4, name: 'Grocery Products', slug: 'grocery-products', description: 'Shop everyday grocery items by weight, volume and pack size', icon: Package, color: 'peach' },
+  { id: 5, name: 'Other Services', slug: 'other-services', description: 'Discover more services near you', icon: Sparkles, color: 'lilac' },
 ];
 
 function getInitialAdminUsers() {
