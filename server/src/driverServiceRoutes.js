@@ -13,13 +13,17 @@ const id=prefix=>prefix+'_'+crypto.randomUUID().replaceAll('-','').slice(0,12);
 const types=['food_delivery','ride'];
 export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadcastEvent,getBookings,getUsers}){
   app.post('/api/driver-applications',requireAuth,async(req,res)=>{
-    const driverType=String(req.body?.driverType||'');
-    if(!types.includes(driverType))return res.status(400).json({error:'Choose food_delivery or ride.'});
-    const data=await readJobs();
-    const existing=data.applications.find(a=>a.userId===req.user.id&&a.driverType===driverType&&a.status==='pending');
-    if(existing)return res.status(200).json({application:existing,message:'Application is already pending.'});
-    const application={id:id('drvapp'),userId:req.user.id,driverName:req.user.fullName,driverType,status:'pending',createdAt:new Date().toISOString()};
-    data.applications.push(application);await save(data);res.status(201).json({application});
+    if(req.user.accountType!=='driver')return res.status(403).json({error:'Only registered Driver accounts can apply to driver networks.'});
+    const requested=Array.isArray(req.body?.driverTypes)?req.body.driverTypes:[req.body?.driverType];
+    const driverTypes=[...new Set(requested.map(String).filter(type=>types.includes(type)))];
+    if(!driverTypes.length)return res.status(400).json({error:'Choose Ride, Food Delivery, or both.'});
+    const data=await readJobs();const applications=[];
+    for(const driverType of driverTypes){
+      let existing=data.applications.find(a=>a.userId===req.user.id&&a.driverType===driverType&&['pending','approved'].includes(a.status));
+      if(!existing){existing={id:id('drvapp'),userId:req.user.id,driverName:req.user.fullName,driverType,status:'pending',createdAt:new Date().toISOString()};data.applications.push(existing);}
+      applications.push(existing);
+    }
+    await save(data);res.status(201).json({applications});
   });
   app.get('/api/admin/driver-applications',requireAdmin,async(_req,res)=>{const d=await readJobs();res.json({applications:d.applications});});
   app.patch('/api/admin/driver-applications/:id',requireAdmin,async(req,res)=>{
@@ -46,11 +50,13 @@ export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadc
     d.jobs.unshift(job);await save(d);broadcastEvent?.('driver:job_created',{job});res.status(201).json({job});
   });
   app.get('/api/driver-jobs',requireAuth,async(req,res)=>{
+    if(req.user.accountType!=='driver')return res.status(403).json({error:'Driver account required.'});
     const d=await readJobs();const approved=d.applications.filter(a=>a.userId===req.user.id&&a.status==='approved').map(a=>a.driverType);
     const jobs=d.jobs.filter(j=>approved.includes(j.serviceType)&&(j.status==='requested'||j.driverId===req.user.id));
     res.json({jobs,approvedDriverTypes:approved});
   });
   app.post('/api/driver-jobs/:id/claim',requireAuth,async(req,res)=>{
+    if(req.user.accountType!=='driver')return res.status(403).json({error:'Driver account required.'});
     try{
       const result=await mutateJobs(d=>{
         const job=d.jobs.find(j=>j.id===req.params.id);if(!job)return {status:404,error:'Job not found.'};
@@ -64,6 +70,7 @@ export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadc
     }catch(error){return res.status(500).json({error:'Could not claim driver job.'});}
   });
   app.patch('/api/driver-jobs/:id/status',requireAuth,async(req,res)=>{
+    if(req.user.accountType!=='driver')return res.status(403).json({error:'Driver account required.'});
     const status=String(req.body?.status||'');if(!['picked_up','completed'].includes(status))return res.status(400).json({error:'Unsupported job status.'});
     const d=await readJobs();const job=d.jobs.find(j=>j.id===req.params.id);if(!job)return res.status(404).json({error:'Job not found.'});
     if(job.driverId!==req.user.id)return res.status(403).json({error:'Only the assigned driver can update this job.'});
