@@ -497,7 +497,7 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
     if (role === 'driver' && selectedDriverServices.length === 0) return res.status(400).json({ error: 'Select Ride Service, Food Delivery Service, or both.' });
 
     // Provider and driver accounts require Admin approval before activation
-    const initialStatus = ['provider', 'driver'].includes(role) ? 'pending' : 'active';
+    const initialStatus = role === 'provider' ? 'pending' : 'active';
 
     const newUser = {
       id: 'user-' + Date.now(),
@@ -548,7 +548,7 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
       message: role === 'provider'
         ? 'Provider application submitted! Admin approval is required before your account becomes active.'
         : role === 'driver'
-          ? 'Driver application submitted! Admin approval is required before your account becomes active.'
+          ? 'Driver account created. Submit your selected driver services for Admin approval before accepting jobs.'
           : 'Account created successfully.',
       user: {
         id: newUser.id,
