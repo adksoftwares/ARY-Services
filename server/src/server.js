@@ -316,7 +316,7 @@ app.post('/api/auth/otp/verify', authLimiter, async (req, res) => {
     if (existingUser) {
       if (existingUser.status === 'pending') {
         return res.status(403).json({
-          error: 'Your service provider account is pending Admin approval. You will receive access once approved by the Super Admin.',
+          error: user.accountType === 'driver' ? 'Your Driver account is pending Admin approval. You will receive access once approved by the Super Admin.' : 'Your service provider account is pending Admin approval. You will receive access once approved by the Super Admin.',
           accountStatus: 'pending'
         });
       }
@@ -438,10 +438,11 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
       baseCharge = 'LKR 1,500',
       nicNumber,
       nicDocument,
-      tradeCertificate
+      tradeCertificate,
+      driverServices = []
     } = req.body;
 
-    const role = ['customer', 'provider', 'admin'].includes(accountType) ? accountType : 'customer';
+    const role = ['customer', 'provider', 'driver', 'admin'].includes(accountType) ? accountType : 'customer';
     const cleanEmail = email ? email.trim().toLowerCase() : null;
     const cleanPhone = phone ? phone.trim() : (cleanEmail ? cleanEmail.split('@')[0] : '');
     const cleanLocation = (location || '').trim();
@@ -457,7 +458,7 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
 
     // Sri Lankan NIC verification for service providers
     let cleanNic = null;
-    if (role === 'provider' && nicNumber) {
+    if (['provider', 'driver'].includes(role) && nicNumber) {
       const trimmedNic = String(nicNumber).trim().toUpperCase();
       const isValidNic = /^([0-9]{9}[V|X]|[0-9]{12})$/.test(trimmedNic);
       if (!isValidNic) {
@@ -491,8 +492,11 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
       }
     }
 
-    // Service providers require admin verification and approval before becoming active
-    const initialStatus = role === 'provider' ? 'pending' : 'active';
+    const selectedDriverServices = role === 'driver' && Array.isArray(driverServices) ? [...new Set(driverServices.filter(type => ['food_delivery', 'ride'].includes(type)))] : [];
+    if (role === 'driver' && selectedDriverServices.length === 0) return res.status(400).json({ error: 'Select Ride Service, Food Delivery Service, or both.' });
+
+    // Provider and driver accounts require Admin approval before activation
+    const initialStatus = ['provider', 'driver'].includes(role) ? 'pending' : 'active';
 
     const newUser = {
       id: 'user-' + Date.now(),
@@ -503,6 +507,7 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
       passwordHash: hashPassword(effectivePassword),
       accountType: role,
       status: initialStatus,
+      driverServices: selectedDriverServices,
       category: role === 'provider' ? category : null,
       categoryName: role === 'provider' ? categoryName : null,
       baseCharge: role === 'provider' ? baseCharge : null,
@@ -512,7 +517,7 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
       nicNumber: cleanNic,
       nicDocument: nicDocument || null,
       tradeCertificate: tradeCertificate || null,
-      kycStatus: role === 'provider' ? (cleanNic ? 'pending' : 'unverified') : 'verified',
+      kycStatus: ['provider', 'driver'].includes(role) ? (cleanNic ? 'pending' : 'unverified') : 'verified',
       createdAt: new Date().toISOString()
     };
 
@@ -541,7 +546,9 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
       token,
       message: role === 'provider'
         ? 'Provider application submitted! Admin approval is required before your account becomes active.'
-        : 'Account created successfully.',
+        : role === 'driver'
+          ? 'Driver application submitted! Admin approval is required before your account becomes active.'
+          : 'Account created successfully.',
       user: {
         id: newUser.id,
         fullName: newUser.fullName,
@@ -551,6 +558,7 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
         accountType: newUser.accountType,
         status: newUser.status,
         category: newUser.category,
+        driverServices: newUser.driverServices || [],
         categoryName: newUser.categoryName,
         baseCharge: newUser.baseCharge,
         token
@@ -618,6 +626,7 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
             accountType: user.accountType,
             status: user.status,
             category: user.category || null,
+            driverServices: user.driverServices || [],
             categoryName: user.categoryName || null,
             baseCharge: user.baseCharge || null,
             token
