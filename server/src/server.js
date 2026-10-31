@@ -181,6 +181,8 @@ async function requireAuth(req, res, next) {
       email: liveUser.email || decoded.email,
       status: liveUser.status,
       accountType: liveUser.accountType,
+      category: liveUser.category || null,
+      categoryName: liveUser.categoryName || null,
       fullName: liveUser.fullName || decoded.fullName
     };
     next();
