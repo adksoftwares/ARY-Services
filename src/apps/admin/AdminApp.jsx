@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from '../../context/AuthContext';
 import { API_BASE } from '../../config';
 import AdminWorkspace from '../../components/admin/AdminWorkspace';
 import DriverApplicationsAdmin from '../../components/admin/DriverApplicationsAdmin';
+import RoleApplicationsAdmin from '../../components/admin/RoleApplicationsAdmin';
 import AuthModal from '../../components/common/AuthModal';
 import Footer from '../../components/common/Footer';
 
@@ -66,6 +67,7 @@ function AdminPortal() {
         <nav className="header-nav-links">
           <button className="nav-link-btn" onClick={() => setActiveSection('workspace')}><LayoutDashboard size={14}/> Admin workspace</button>
           <button className="nav-link-btn" onClick={() => setActiveSection('drivers')}><Bike size={14}/> Driver approvals</button>
+          <button className="nav-link-btn" onClick={() => setActiveSection('roles')}><Users size={14}/> Role applications</button>
         </nav>
         <div className="user-profile">
           <span className="user-badge"><UserRound size={14}/><span>{currentUser.fullName}</span></span>
@@ -74,7 +76,7 @@ function AdminPortal() {
       </> : <button className="sign-in" onClick={() => openAuthModal('login')}><LogIn size={14}/> Admin sign in</button>}
     </header>
 
-    {isAdmin ? activeSection === 'drivers' ? <DriverApplicationsAdmin/> : <AdminWorkspace
+    {isAdmin ? activeSection === 'drivers' ? <DriverApplicationsAdmin/> : activeSection === 'roles' ? <RoleApplicationsAdmin/> : <AdminWorkspace
       adminUsers={adminUsers}
       setAdminUsers={setAdminUsers}
       services={services}
