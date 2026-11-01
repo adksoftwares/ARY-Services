@@ -360,6 +360,8 @@ app.post('/api/auth/otp/verify', authLimiter, async (req, res) => {
           email: existingUser.email,
           location: existingUser.location || '',
           accountType: existingUser.accountType,
+          roles: [...new Set([...(Array.isArray(existingUser.roles) ? existingUser.roles : []), existingUser.accountType].filter(Boolean))],
+          roleApplications: existingUser.roleApplications || {},
           driverServices: existingUser.driverServices || [],
           status: existingUser.status,
           category: existingUser.category || null,
@@ -542,6 +544,8 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
         id: newUser.id,
         fullName: newUser.fullName,
         accountType: newUser.accountType,
+        roles: [newUser.accountType],
+        roleApplications: {},
         status: newUser.status,
         nicNumber: cleanNic
       }
@@ -638,6 +642,8 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
             email: user.email,
             location: user.location || '',
             accountType: user.accountType,
+            roles: [...new Set([...(Array.isArray(user.roles) ? user.roles : []), user.accountType].filter(Boolean))],
+            roleApplications: user.roleApplications || {},
             driverServices: user.driverServices || [],
             status: user.status,
             category: user.category || null,
@@ -676,7 +682,7 @@ app.get('/api/providers', async (req, res) => {
     const { category, query, location, lat, lng, radiusKm } = req.query;
     const users = await getUsers();
 
-    let providers = users.filter(u => u.accountType === 'provider' && u.status === 'active');
+    let providers = users.filter(u => (u.accountType === 'provider' || (Array.isArray(u.roles) && u.roles.includes('provider'))) && (u.accountType === 'provider' ? u.status === 'active' : u.providerStatus === 'active'));
 
     if (category && category !== 'all') {
       providers = providers.filter(p => p.category === category || (p.categoryName && p.categoryName.toLowerCase().includes(category.toLowerCase())));
