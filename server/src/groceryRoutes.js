@@ -1,6 +1,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { mutatePersistentState, readPersistentState } from './storage.js';
+import { broadcastEvent } from './eventHub.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const stateFile = path.join(here, '..', 'data', 'grocery-marketplace.json');
@@ -155,6 +156,7 @@ export function registerGroceryRoutes(app, { requireAuth }) {
         state.orders.unshift(order);
         return order;
       });
+      broadcastEvent('grocery:order_created', { orderId: outcome.id, providerId: outcome.providerId });
       res.status(201).json({ order: outcome, message: 'Order placed. Pay cash to the delivery person on arrival.' });
     } catch (error) {
       res.status(409).json({ error: error.message || 'Could not place this order.' });
@@ -205,6 +207,7 @@ export function registerGroceryRoutes(app, { requireAuth }) {
       });
       if (result.missing) return res.status(404).json({ error: 'Order not found.' });
       if (result.invalid) return res.status(409).json({ error: 'That order status transition is not allowed.' });
+      broadcastEvent('grocery:order_updated', { orderId: result.order.id, providerId: result.order.providerId, status: result.order.status });
       res.json({ order: result.order });
     } catch { res.status(500).json({ error: 'Could not update order status.' }); }
   });
