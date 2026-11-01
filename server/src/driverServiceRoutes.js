@@ -138,18 +138,23 @@ export function registerDriverServiceRoutes(app, { requireAuth, requireAdmin, br
     if (!['accepted', 'preparing', 'ready'].includes(order.status)) return res.status(409).json({ error: 'The shop must accept or prepare the food order before delivery can be requested.' });
     const users = await getUsers();
     const restaurant = users.find(u => u.id === order.providerId);
+    const pickupPin = String(crypto.randomInt(0, 1000000)).padStart(6, '0');
+    const deliveryPin = String(crypto.randomInt(0, 1000000)).padStart(6, '0');
     const job = {
       id: id('food'), serviceType: 'food_delivery', customerId: req.user.id, customerName: req.user.fullName,
       orderReference: order.id, restaurantName: String(order.providerName || 'Food Shop').slice(0, 160),
       pickupAddress: String(pickupAddress).slice(0, 500), destinationAddress: String(dropoffAddress).slice(0, 500),
       pickupLocation: validPoint(pickupLocation) ? cleanPoint(pickupLocation) : null,
       destinationLocation: validPoint(dropoffLocation) ? cleanPoint(dropoffLocation) : null,
-      notes: String(notes).slice(0, 500), driverId: null, status: 'requested', createdAt: now()
+      notes: String(notes).slice(0, 500), driverId: null, status: 'requested',
+      startPinHash: pinHash(pickupPin), deliveryPinHash: pinHash(deliveryPin),
+      startPinForCustomer: pickupPin, deliveryPinForCustomer: deliveryPin, pinAttempts: 0, deliveryPinAttempts: 0,
+      createdAt: now()
     };
     if (!restaurant) return res.status(409).json({ error: 'The shop account is no longer available.' });
     await mutateJobs(d => { d.jobs.unshift(job); });
     broadcastEvent?.('driver:job_created', { job });
-    res.status(201).json({ job });
+    res.status(201).json({ job: { ...publicJob(job, req.user.id), pickupPin, deliveryPin } });
   });
 
   app.post('/api/ride-trips', requireAuth, async (req, res) => {
