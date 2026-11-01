@@ -28,9 +28,9 @@ const verifyPin = (pin, hash) => {
 };
 function fareFor(distanceKm, serviceType = 'ride') {
   const prefix = serviceType === 'ride' ? 'RIDE' : 'DELIVERY';
-  const base = Number(process.env[prefix + '_BASE_FARE_LKR']);
-  const perKm = Number(process.env[prefix + '_PER_KM_LKR']);
-  const minimum = Number(process.env[prefix + '_MIN_FARE_LKR']);
+  const keys = [prefix + '_BASE_FARE_LKR', prefix + '_PER_KM_LKR', prefix + '_MIN_FARE_LKR'];
+  if (keys.some(key => !String(process.env[key] ?? '').trim())) return null;
+  const [base, perKm, minimum] = keys.map(key => Number(process.env[key]));
   if (![base, perKm, minimum].every(Number.isFinite) || base < 0 || perKm < 0 || minimum < 0) return null;
   const distanceCharge = Math.ceil(distanceKm * perKm);
   const total = Math.max(minimum, Math.ceil(base + distanceCharge));
