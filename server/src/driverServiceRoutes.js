@@ -193,6 +193,7 @@ export function registerDriverServiceRoutes(app, { requireAuth, requireAdmin, br
     const fare = fareFor(distanceKm, 'parcel_delivery');
     if (!fare) return res.status(503).json({ error: 'Parcel pricing is not configured. ARY cannot accept this parcel until delivery pricing is configured.' });
     const startPin = String(crypto.randomInt(0, 1000000)).padStart(6, '0');
+    const deliveryPin = String(crypto.randomInt(0, 1000000)).padStart(6, '0');
     const job = {
       id: id('parcel'), serviceType: 'parcel_delivery', customerId: req.user.id, customerName: req.user.fullName,
       pickupAddress: String(pickupAddress).slice(0, 500), destinationAddress: String(destinationAddress).slice(0, 500),
@@ -200,11 +201,12 @@ export function registerDriverServiceRoutes(app, { requireAuth, requireAdmin, br
       parcelType: String(parcelType).slice(0, 60), weightKg: weight, notes: String(notes).slice(0, 500),
       pickupLocation: cleanPoint(pickupLocation), destinationLocation: cleanPoint(destinationLocation),
       distanceKm, etaMinutes: estimateEtaMinutes(distanceKm), fare, driverId: null, driverLocation: null,
-      status: 'requested', pickupPinHash: pinHash(startPin), pickupPinForCustomer: startPin, pinAttempts: 0, createdAt: now()
+      status: 'requested', pickupPinHash: pinHash(startPin), deliveryPinHash: pinHash(deliveryPin),
+      pickupPinForCustomer: startPin, deliveryPinForCustomer: deliveryPin, pinAttempts: 0, deliveryPinAttempts: 0, createdAt: now()
     };
     await mutateJobs(d => { d.jobs.unshift(job); });
     broadcastEvent?.('driver:job_created', { job: publicJob(job, 'dispatch') });
-    res.status(201).json({ job: { ...publicJob(job, req.user.id), pickupPin: startPin } });
+    res.status(201).json({ job: { ...publicJob(job, req.user.id), pickupPin: startPin, deliveryPin } });
   });
 
   app.get('/api/driver-jobs', requireAuth, async (req, res) => {
