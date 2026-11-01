@@ -905,8 +905,13 @@ app.post('/api/bookings', requireAuth, async (req, res) => {
     const baseAmount = parseInt(rawDigits, 10) || 1500;
     const platformFee = Math.round(baseAmount * 0.10);
     const providerPayout = baseAmount - platformFee;
-    const paymentMethod = req.body.paymentMethod === 'cash' ? 'cash' : 'escrow_online';
-    const paymentStatus = paymentMethod === 'escrow_online' ? 'escrow_held' : 'pending_cash';
+    const paymentMethod = req.body.paymentMethod === 'escrow_online' ? 'escrow_online' : 'cash';
+    if (paymentMethod === 'escrow_online') {
+      return res.status(503).json({
+        error: 'Online escrow is temporarily unavailable until the ARY PayHere merchant account and verified payment callback are configured. Please choose Direct Cash.'
+      });
+    }
+    const paymentStatus = 'pending_cash';
 
     const newBooking = {
       id: 'book-' + Date.now(),
@@ -936,14 +941,7 @@ app.post('/api/bookings', requireAuth, async (req, res) => {
 
     await addBooking(newBooking);
 
-    // Record double-entry financial ledger transaction for online escrow
-    if (paymentMethod === 'escrow_online') {
-      await recordEscrowHold({
-        bookingId: newBooking.id,
-        customerId: customer.id,
-        amount: baseAmount
-      });
-    }
+    // Escrow ledger entries are written only after a verified payment-provider callback.
 
     // Instant Real-Time SSE Dispatch to Provider & Admins
     broadcastEvent('booking:created', {
