@@ -121,11 +121,16 @@ if (!JWT_SECRET || Buffer.byteLength(JWT_SECRET) < 32) {
 
 let pool;
 if (process.env.DATABASE_URL) {
-  pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
-  setActivePostgresPool(pool);
-  initPostgresTables(pool).catch(err => {
-    console.warn('PostgreSQL auto-schema initialization notice:', err.message);
+  pool = new pg.Pool({
+    connectionString: process.env.DATABASE_URL,
+    max: Number(process.env.PG_POOL_MAX || 10),
+    idleTimeoutMillis: 30_000,
+    connectionTimeoutMillis: 10_000,
+    ...(process.env.PGSSL === 'true' ? { ssl: { rejectUnauthorized: true } } : {})
   });
+  setActivePostgresPool(pool);
+  // Schema must exist before storage initialization performs any database reads.
+  await initPostgresTables(pool);
 }
 
 // Token generation & verification using native Node.js crypto (HS256)
@@ -259,14 +264,15 @@ app.get('/api/healthz/liveness', (_req, res) => {
 
 app.get('/api/healthz/readiness', async (_req, res) => {
   try {
+    if (pool) await pool.query('SELECT 1');
     await initStorage();
     res.json({
       status: 'ready',
-      storage: 'online',
-      pool: pool ? 'connected' : 'file-fallback'
+      storage: pool ? 'postgresql' : 'local-file-fallback',
+      database: pool ? 'connected' : 'not-configured'
     });
-  } catch (err) {
-    res.status(503).json({ status: 'unhealthy', error: err.message });
+  } catch {
+    res.status(503).json({ status: 'not_ready', error: 'Storage health check failed.' });
   }
 });
 
