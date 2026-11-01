@@ -30,8 +30,7 @@ import {
   initPostgresTables,
   setActivePostgresPool,
   verifyPassword,
-  hashPassword,
-  defaultAdminUser
+  hashPassword
 } from './storage.js';
 
 import { sendOtp, verifyOtp, normalizePhone } from './otpService.js';
@@ -72,14 +71,16 @@ const allowedOrigins = [
   'http://127.0.0.1:5173',
   'http://localhost:5174',
   'http://127.0.0.1:5174',
-  process.env.CLIENT_ORIGIN
-].filter(Boolean);
+  ...(process.env.CLIENT_ORIGIN || '').split(',').map(value => value.trim()).filter(Boolean)
+];
 
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
-    if (/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) return callback(null, true);
-    callback(null, true);
+    if (process.env.NODE_ENV !== 'production' && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error('Origin is not allowed by the ARY Services CORS policy.'));
   },
   credentials: true
 }));
@@ -110,7 +111,10 @@ const otpLimiter = rateLimit({
   message: { error: 'Too many OTP requests from this network. Please try again later.' }
 });
 
-const JWT_SECRET = process.env.JWT_SECRET || 'ary_super_secret_jwt_salt_2026';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET || Buffer.byteLength(JWT_SECRET) < 32) {
+  throw new Error('JWT_SECRET must be configured with at least 32 characters.');
+}
 
 let pool;
 if (process.env.DATABASE_URL) {
@@ -134,9 +138,13 @@ function verifyToken(token) {
   const parts = token.split('.');
   if (parts.length !== 3) return null;
   const [header, body, signature] = parts;
-  const expectedSig = crypto.createHmac('sha256', JWT_SECRET).update(`${header}.${body}`).digest('base64url');
-  if (signature !== expectedSig) return null;
+  const expectedSig = crypto.createHmac('sha256', JWT_SECRET).update(`${header}.${body}`).digest();
+  let suppliedSig;
+  try { suppliedSig = Buffer.from(signature, 'base64url'); } catch { return null; }
+  if (suppliedSig.length !== expectedSig.length || !crypto.timingSafeEqual(suppliedSig, expectedSig)) return null;
   try {
+    const decodedHeader = JSON.parse(Buffer.from(header, 'base64url').toString('utf-8'));
+    if (decodedHeader.alg !== 'HS256' || decodedHeader.typ !== 'JWT') return null;
     const payload = JSON.parse(Buffer.from(body, 'base64url').toString('utf-8'));
     if (payload.exp && payload.exp < Date.now()) return null;
     return payload;
