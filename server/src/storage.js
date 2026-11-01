@@ -152,6 +152,34 @@ let cachedReviews = null;
 let cachedLedger = null;
 
 async function atomicWriteJson(filePath, data) {
+  if (activePostgresPool) {
+    const collection = path.basename(filePath, '.json');
+    const client = await activePostgresPool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [collection]);
+      await client.query('DELETE FROM ary_documents WHERE collection = $1', [collection]);
+      if (Array.isArray(data) && data.length) {
+        const values = [];
+        const placeholders = data.map((item, index) => {
+          const offset = index * 4;
+          values.push(collection, String(item.id ?? index), index, JSON.stringify(item));
+          return `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}::jsonb)`;
+        });
+        await client.query(
+          `INSERT INTO ary_documents (collection, record_id, position, payload) VALUES ${placeholders.join(', ')}`,
+          values
+        );
+      }
+      await client.query('COMMIT');
+      return;
+    } catch (error) {
+      await client.query('ROLLBACK').catch(() => {});
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
   await fs.mkdir(path.dirname(filePath), { recursive: true });
   const tempPath = `${filePath}.tmp.${Date.now()}.${Math.random().toString(36).slice(2)}`;
   const jsonStr = JSON.stringify(data, null, 2);
@@ -170,6 +198,20 @@ async function atomicWriteJson(filePath, data) {
   }
 }
 
+async function readJsonArray(filePath) {
+  if (activePostgresPool) {
+    const collection = path.basename(filePath, '.json');
+    const result = await activePostgresPool.query(
+      'SELECT payload FROM ary_documents WHERE collection = $1 ORDER BY position ASC',
+      [collection]
+    );
+    return result.rows.map(row => row.payload);
+  }
+  const raw = await fs.readFile(filePath, 'utf-8');
+  const parsed = JSON.parse(raw);
+  return Array.isArray(parsed) ? parsed : [];
+}
+
 export async function getUsers() {
   return usersLock.acquire(async () => {
     if (cachedUsers !== null) {
@@ -177,8 +219,7 @@ export async function getUsers() {
     }
     try {
       await fs.mkdir(dataDir, { recursive: true });
-      const raw = await fs.readFile(usersFile, 'utf-8');
-      const parsed = JSON.parse(raw);
+      const parsed = await readJsonArray(usersFile);
       if (Array.isArray(parsed) && parsed.length > 0) {
         // Provision an Admin only when deployment credentials are explicitly configured.
         if (defaultAdminUser && !parsed.some(u => u.email === defaultAdminUser.email || u.id === defaultAdminUser.id)) {
@@ -223,8 +264,7 @@ export async function addUser(newUser) {
   return usersLock.acquire(async () => {
     const current = cachedUsers !== null ? cachedUsers : await (async () => {
       try {
-        const raw = await fs.readFile(usersFile, 'utf-8');
-        const parsed = JSON.parse(raw);
+        const parsed = await readJsonArray(usersFile);
         return Array.isArray(parsed) ? parsed : [...defaultUsers];
       } catch {
         return [...defaultUsers];
@@ -241,8 +281,7 @@ export async function updateUser(id, updater) {
   return usersLock.acquire(async () => {
     const current = cachedUsers !== null ? cachedUsers : await (async () => {
       try {
-        const raw = await fs.readFile(usersFile, 'utf-8');
-        const parsed = JSON.parse(raw);
+        const parsed = await readJsonArray(usersFile);
         return Array.isArray(parsed) ? parsed : [...defaultUsers];
       } catch {
         return [...defaultUsers];
@@ -263,8 +302,7 @@ export async function deleteUser(id) {
   return usersLock.acquire(async () => {
     const current = cachedUsers !== null ? cachedUsers : await (async () => {
       try {
-        const raw = await fs.readFile(usersFile, 'utf-8');
-        const parsed = JSON.parse(raw);
+        const parsed = await readJsonArray(usersFile);
         return Array.isArray(parsed) ? parsed : [...defaultUsers];
       } catch {
         return [...defaultUsers];
@@ -284,8 +322,7 @@ export async function getBookings() {
     }
     try {
       await fs.mkdir(dataDir, { recursive: true });
-      const raw = await fs.readFile(bookingsFile, 'utf-8');
-      const parsed = JSON.parse(raw);
+      const parsed = await readJsonArray(bookingsFile);
       if (Array.isArray(parsed)) {
         cachedBookings = parsed;
         return [...cachedBookings];
@@ -311,8 +348,7 @@ export async function addBooking(newBooking) {
   return bookingsLock.acquire(async () => {
     const current = cachedBookings !== null ? cachedBookings : await (async () => {
       try {
-        const raw = await fs.readFile(bookingsFile, 'utf-8');
-        return JSON.parse(raw);
+        return await readJsonArray(bookingsFile);
       } catch {
         return [];
       }
@@ -328,8 +364,7 @@ export async function updateBooking(id, updater) {
   return bookingsLock.acquire(async () => {
     const current = cachedBookings !== null ? cachedBookings : await (async () => {
       try {
-        const raw = await fs.readFile(bookingsFile, 'utf-8');
-        return JSON.parse(raw);
+        return await readJsonArray(bookingsFile);
       } catch {
         return [];
       }
@@ -352,8 +387,7 @@ export async function getReviews() {
     }
     try {
       await fs.mkdir(dataDir, { recursive: true });
-      const raw = await fs.readFile(reviewsFile, 'utf-8');
-      const parsed = JSON.parse(raw);
+      const parsed = await readJsonArray(reviewsFile);
       if (Array.isArray(parsed)) {
         cachedReviews = parsed;
         return [...cachedReviews];
@@ -371,8 +405,7 @@ export async function addReview(newReview) {
   return reviewsLock.acquire(async () => {
     const current = cachedReviews !== null ? cachedReviews : await (async () => {
       try {
-        const raw = await fs.readFile(reviewsFile, 'utf-8');
-        return JSON.parse(raw);
+        return await readJsonArray(reviewsFile);
       } catch {
         return [];
       }
@@ -419,8 +452,7 @@ export async function getLedgerEntries() {
     }
     try {
       await fs.mkdir(dataDir, { recursive: true });
-      const raw = await fs.readFile(ledgerFile, 'utf-8');
-      const parsed = JSON.parse(raw);
+      const parsed = await readJsonArray(ledgerFile);
       if (Array.isArray(parsed)) {
         cachedLedger = parsed;
         return [...cachedLedger];
@@ -436,8 +468,7 @@ export async function addLedgerEntries(entries) {
   return ledgerLock.acquire(async () => {
     const current = cachedLedger !== null ? cachedLedger : await (async () => {
       try {
-        const raw = await fs.readFile(ledgerFile, 'utf-8');
-        return JSON.parse(raw);
+        return await readJsonArray(ledgerFile);
       } catch {
         return [];
       }
@@ -769,6 +800,17 @@ export async function initPostgresTables(pool) {
         description TEXT,
         timestamp TIMESTAMP WITH TIME ZONE DEFAULT NOW()
       );
+
+      CREATE TABLE IF NOT EXISTS ary_documents (
+        collection VARCHAR(80) NOT NULL,
+        record_id VARCHAR(160) NOT NULL,
+        position BIGINT NOT NULL,
+        payload JSONB NOT NULL,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        PRIMARY KEY (collection, record_id)
+      );
+      CREATE INDEX IF NOT EXISTS ary_documents_collection_position_idx
+        ON ary_documents (collection, position);
     `);
   } finally {
     client.release();
