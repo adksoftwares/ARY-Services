@@ -31,7 +31,7 @@ This is a development starter, not production-ready software. Authentication, pr
 
 ## Dedicated app entries
 
-The original root application remains available at `/`. Dedicated Customer and Provider app entries are included in the Vite multi-page build.
+The original root application remains available at `/`. Dedicated Customer, Provider and Driver app entries are included in the Vite multi-page build.
 
 Run the same development server:
 
@@ -42,7 +42,8 @@ npm run dev
 
 - Customer app: `http://localhost:5173/customer.html`
 - Provider app: `http://localhost:5173/provider.html`
-- Original app (including Admin and Driver areas): `http://localhost:5173/`
+- Driver app: `http://localhost:5173/driver.html`
+- Original app (including Admin): `http://localhost:5173/`
 
 ### Customer app
 The Customer entry reuses ARY's existing customer components and shared API/auth services, including service discovery, grocery marketplace, mobility services, provider booking, booking history, reviews and disputes.
@@ -50,4 +51,7 @@ The Customer entry reuses ARY's existing customer components and shared API/auth
 ### Provider app
 The Provider entry reuses ARY's existing provider workspace and shared API/auth services. It includes job bookings and response actions, customer ratings and reviews, earnings/escrow wallet, incoming job alerts, and the existing Grocery Inventory module for grocery providers. Provider activation remains subject to the existing Admin approval process.
 
-The original root app and its existing features have not been removed or replaced. Driver and Admin dedicated entries are still future extraction stages. Build/runtime integration should be verified in the project environment before deployment.
+### Driver app
+The Driver entry reuses the existing DriverWorkspace and its API workflows for driver applications, Admin approval, eligible ride/delivery jobs, job acceptance and job status updates. Driver activation and service eligibility remain controlled by the existing Admin approval process.
+
+The original root app and its existing features have not been removed or replaced. Admin's dedicated entry is the remaining extraction stage. Build/runtime integration should be verified in the project environment before deployment. Build/runtime integration should be verified in the project environment before deployment.
