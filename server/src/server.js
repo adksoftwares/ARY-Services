@@ -120,6 +120,10 @@ if (!JWT_SECRET || Buffer.byteLength(JWT_SECRET) < 32) {
 }
 
 let pool;
+if (process.env.NODE_ENV === 'production' && !process.env.DATABASE_URL) {
+  throw new Error('DATABASE_URL is required in production; file storage is not durable.');
+}
+
 if (process.env.DATABASE_URL) {
   pool = new pg.Pool({
     connectionString: process.env.DATABASE_URL,
