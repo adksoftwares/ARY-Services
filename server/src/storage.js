@@ -55,6 +55,7 @@ export const defaultAdminUser = process.env.ADMIN_EMAIL && process.env.ADMIN_PAS
 export const defaultSeedProviders = process.env.NODE_ENV === 'production' ? [] : [
   {
     id: 'user-provider-kumar',
+    passwordHash: process.env.NODE_ENV === 'production' ? undefined : hashPassword('KumarPass@123'),
     fullName: 'Master Electrician Kumar',
     phone: '0779998877',
     email: 'kumar.electric@example.local',
@@ -73,6 +74,7 @@ export const defaultSeedProviders = process.env.NODE_ENV === 'production' ? [] :
   },
   {
     id: 'user-provider-perera',
+    passwordHash: process.env.NODE_ENV === 'production' ? undefined : hashPassword('PereraPass@123'),
     fullName: 'Perera Plumbing Experts',
     phone: '0772223344',
     email: 'perera.plumb@example.local',
@@ -91,6 +93,7 @@ export const defaultSeedProviders = process.env.NODE_ENV === 'production' ? [] :
   },
   {
     id: 'user-provider-fresh',
+    passwordHash: process.env.NODE_ENV === 'production' ? undefined : hashPassword('FreshPass@123'),
     fullName: 'Lanka Fresh Groceries',
     phone: '0773334455',
     email: 'fresh.food@example.local',
@@ -109,6 +112,7 @@ export const defaultSeedProviders = process.env.NODE_ENV === 'production' ? [] :
   },
   {
     id: 'user-provider-quickfix',
+    passwordHash: process.env.NODE_ENV === 'production' ? undefined : hashPassword('QuickPass@123'),
     fullName: 'QuickFix Carpentry & AC',
     phone: '0774445566',
     email: 'quickfix@example.local',
