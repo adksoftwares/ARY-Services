@@ -175,7 +175,7 @@ async function requireAuth(req, res, next) {
       return res.status(403).json({ error: 'This account has been deactivated or rejected by the administration.' });
     }
 
-    const availableRoles = [...new Set([...(Array.isArray(liveUser.roles) ? liveUser.roles : []), liveUser.accountType].filter(Boolean))];
+    const availableRoles = [...new Set([...(liveUser.accountType === 'admin' ? [] : ['customer']), ...(Array.isArray(liveUser.roles) ? liveUser.roles : []), liveUser.accountType].filter(Boolean))];
     const activeRole = decoded.accountType || liveUser.accountType;
     if (!availableRoles.includes(activeRole)) {
       return res.status(403).json({ error: 'This role is not approved for your account.' });
