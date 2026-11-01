@@ -16,7 +16,10 @@ import {
   addReview,
   getLedgerEntries,
   addLedgerEntries,
-  getWalletBalance
+  getWalletBalance,
+  readPersistentState,
+  writePersistentState,
+  mutatePersistentState
 } from '../src/storage.js';
 
 if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is required for the PostgreSQL storage integration test.');
@@ -68,6 +71,17 @@ try {
     { id: `${suffix}-debit`, transactionId: suffix, account: `${suffix}-wallet`, type: 'debit', amount: 250, currency: 'LKR' }
   ]);
   assert.equal(await getWalletBalance(`${suffix}-wallet`), 750, 'Ledger balance should be calculated from PostgreSQL records');
+
+  const dispatchKey = `${suffix}-dispatch`;
+  await writePersistentState(dispatchKey, '/tmp/ary-postgres-test-dispatch.json', { applications: [], jobs: [], counter: 0 });
+  await Promise.all(Array.from({ length: 20 }, () =>
+    mutatePersistentState(dispatchKey, '/tmp/ary-postgres-test-dispatch.json', { applications: [], jobs: [], counter: 0 }, state => {
+      state.counter += 1;
+      return state.counter;
+    })
+  ));
+  const dispatchState = await readPersistentState(dispatchKey, '/tmp/ary-postgres-test-dispatch.json', {});
+  assert.equal(dispatchState.counter, 20, 'Concurrent dispatch state mutations must serialize across PostgreSQL connections');
 
   await saveBookings((await getBookings()).filter(item => item.id !== booking.id));
   await deleteUser(user.id);
