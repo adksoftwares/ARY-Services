@@ -103,6 +103,15 @@ Before moving any feature, map its current UI, API routes, data ownership and pe
 - Keep secrets and personal data out of source control and logs.
 - Do not describe a migration stage as complete until its code and integration checks are actually complete.
 
-## Current repository baseline
+## Current repository baseline and extraction progress
 
-The repository currently contains a single Vite/React frontend with role-based Customer, Provider, Driver and Admin experiences, plus an Express API and storage/database support. This document records the approved target structure; it does not claim that the four applications have already been extracted or that the platform is production-ready.
+The repository contains the original root Vite/React application with role-based Customer, Provider, Driver and Admin experiences, plus an Express API and storage/database support.
+
+Dedicated multi-page Vite entries are now present for:
+- `/` — original combined application, retained as the compatibility entry.
+- `/customer.html` — dedicated Customer app reusing the existing customer components and API.
+- `/provider.html` — dedicated Provider app reusing the existing ProviderDashboard and GroceryInventory components and API.
+
+The Provider app currently provides the existing booking queue/status actions, reviews, earnings/escrow wallet, incoming booking alerts and grocery inventory for grocery providers. Provider activation remains subject to the existing Admin approval process. The Driver and Admin dedicated entries have not yet been extracted.
+
+These entries are an incremental migration, not a claim of production readiness. Build/runtime and end-to-end integration checks remain necessary before release.
