@@ -38,6 +38,9 @@ export function verifyPassword(password, storedHash) {
 }
 
 // Admin bootstrap is opt-in and must be configured through deployment secrets.
+if (process.env.ADMIN_PASSWORD && Buffer.byteLength(process.env.ADMIN_PASSWORD) < 14) {
+  throw new Error('ADMIN_PASSWORD must contain at least 14 characters.');
+}
 export const defaultAdminUser = process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD
   ? {
       id: 'ary-bootstrap-admin',
