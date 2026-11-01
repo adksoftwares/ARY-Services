@@ -29,10 +29,11 @@ console.log('--- 1. Testing Storage & Mutex Concurrency ---');
 await initStorage();
 const initialUsers = await getUsers();
 assert(Array.isArray(initialUsers), 'Users should be an array');
-assert(initialUsers.some(u => u.email === 'arikarran14@gmail.com'), 'Admin user must exist');
+if (defaultAdminUser) assert(initialUsers.some(u => u.email === defaultAdminUser.email), 'Configured bootstrap Admin must exist');
+else assert(!initialUsers.some(u => u.accountType === 'admin'), 'No default Admin account may be created without deployment credentials');
 assert(initialUsers.some(u => u.accountType === 'provider' && u.category === 'electrical-repair'), 'Seed electrical provider must exist');
 assert(initialUsers.some(u => u.accountType === 'provider' && u.category === 'plumbing'), 'Seed plumbing provider must exist');
-console.log('✓ Storage initialized, default admin user & seed providers confirmed');
+console.log('✓ Storage initialized; Admin provisioning is environment-controlled and demo providers are available');
 
 // Concurrency Test: 30 concurrent user creations
 console.log('Running 30 concurrent atomic writes...');
@@ -144,7 +145,15 @@ const API_URL = `http://localhost:${TEST_PORT}/api`;
 
 const serverProc = spawn('node', ['src/server.js'], {
   cwd: new URL('..', import.meta.url),
-  env: { ...process.env, PORT: String(TEST_PORT) },
+  env: {
+    ...process.env,
+    NODE_ENV: 'test',
+    PORT: String(TEST_PORT),
+    JWT_SECRET: process.env.JWT_SECRET || 'ary-test-jwt-secret-value-at-least-32-chars',
+    OTP_SHIELD_SECRET: process.env.OTP_SHIELD_SECRET || 'ary-test-otp-shield-secret-at-least-32-chars',
+    ADMIN_EMAIL: process.env.ADMIN_EMAIL || 'ary-test-admin@example.local',
+    ADMIN_PASSWORD: process.env.ADMIN_PASSWORD || 'TestOnly_Admin_Password_123!'
+  },
   stdio: 'pipe'
 });
 
@@ -193,11 +202,12 @@ try {
   console.log('Testing interactive two-step customer OTP sign-up flow...');
   const newCustPhone = '0775' + Date.now().toString().slice(-6);
 
-  // Step A: Send OTP
+  // Step A: Obtain a one-time anti-abuse challenge, then send OTP.
+  const customerShield = await (await fetch(`${API_URL}/auth/shield/challenge`)).json();
   const otpSendRes = await fetch(`${API_URL}/auth/otp/send`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ phone: newCustPhone })
+    body: JSON.stringify({ phone: newCustPhone, shieldToken: customerShield.token })
   });
   const otpSendData = await otpSendRes.json();
   assert.equal(otpSendRes.status, 200);
@@ -260,8 +270,8 @@ try {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      identifier: 'arikarran14@gmail.com',
-      password: 'Admin@123'
+      identifier: process.env.ADMIN_EMAIL || 'ary-test-admin@example.local',
+      password: process.env.ADMIN_PASSWORD || 'TestOnly_Admin_Password_123!'
     })
   });
   const adminLoginData = await adminLoginRes.json();
