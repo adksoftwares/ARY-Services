@@ -22,17 +22,20 @@ export function verifyPassword(password, storedHash) {
   return hashPassword(password) === storedHash;
 }
 
-export const defaultAdminUser = {
-  id: 'user-admin-arikarran',
-  fullName: 'Arikarran',
-  phone: '0771414141',
-  email: 'arikarran14@gmail.com',
-  location: 'Headquarters, Admin Desk',
-  passwordHash: hashPassword('Admin@123'),
-  accountType: 'admin',
-  status: 'active',
-  createdAt: '2026-01-01T00:00:00.000Z'
-};
+// Admin bootstrap is opt-in and must be configured through deployment secrets.
+export const defaultAdminUser = process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD
+  ? {
+      id: 'ary-bootstrap-admin',
+      fullName: process.env.ADMIN_NAME || 'ARY Super Admin',
+      phone: process.env.ADMIN_PHONE || '',
+      email: process.env.ADMIN_EMAIL.trim().toLowerCase(),
+      location: 'ARY Headquarters',
+      passwordHash: hashPassword(process.env.ADMIN_PASSWORD),
+      accountType: 'admin',
+      status: 'active',
+      createdAt: new Date().toISOString()
+    }
+  : null;
 
 export const defaultSeedProviders = [
   {
@@ -43,7 +46,6 @@ export const defaultSeedProviders = [
     location: 'Bambalapitiya, Colombo',
     lat: 6.8920,
     lng: 79.8560,
-    passwordHash: hashPassword('KumarPass@123'),
     accountType: 'provider',
     status: 'active',
     category: 'electrical-repair',
@@ -62,7 +64,6 @@ export const defaultSeedProviders = [
     location: 'Colombo 03',
     lat: 6.8970,
     lng: 79.8550,
-    passwordHash: hashPassword('PereraPass@123'),
     accountType: 'provider',
     status: 'active',
     category: 'plumbing',
@@ -81,7 +82,6 @@ export const defaultSeedProviders = [
     location: 'Colombo 04',
     lat: 6.8850,
     lng: 79.8600,
-    passwordHash: hashPassword('FreshPass@123'),
     accountType: 'provider',
     status: 'active',
     category: 'food-shops',
@@ -100,7 +100,6 @@ export const defaultSeedProviders = [
     location: 'Nugegoda, Colombo',
     lat: 6.8650,
     lng: 79.8990,
-    passwordHash: hashPassword('QuickPass@123'),
     accountType: 'provider',
     status: 'active',
     category: 'other-services',
@@ -113,28 +112,7 @@ export const defaultSeedProviders = [
   }
 ];
 
-export const verifiedArikarranProvider = {
-  id: 'user-provider-arikarran',
-  fullName: 'Arikarran Sriskandarajah',
-  phone: '0777153933',
-  email: '14arikarran@gmail.com',
-  location: 'Peradeniya, Kandy District, Central Province',
-  lat: 7.2580,
-  lng: 80.5970,
-  passwordHash: hashPassword('Admin@123'),
-  accountType: 'provider',
-  status: 'active',
-  category: 'electrical-repair',
-  categoryName: 'Electrical Repair',
-  baseCharge: 'LKR 1,500',
-  nicNumber: '200134903737',
-  rating: 5.0,
-  reviewCount: 0,
-  experienceYears: 5,
-  createdAt: '2026-10-25T18:00:00.000Z'
-};
-
-export const defaultUsers = [defaultAdminUser, ...defaultSeedProviders, verifiedArikarranProvider];
+export const defaultUsers = [...(defaultAdminUser ? [defaultAdminUser] : []), ...defaultSeedProviders];
 
 class AsyncLock {
   constructor() {
@@ -187,19 +165,15 @@ export async function getUsers() {
       const raw = await fs.readFile(usersFile, 'utf-8');
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        // Ensure default admin user is always preserved
-        if (!parsed.some(u => u.email === 'arikarran14@gmail.com' || u.id === 'user-admin-arikarran')) {
+        // Provision an Admin only when deployment credentials are explicitly configured.
+        if (defaultAdminUser && !parsed.some(u => u.email === defaultAdminUser.email || u.id === defaultAdminUser.id)) {
           parsed.unshift(defaultAdminUser);
         }
-        // Ensure all default seed providers exist so categories are always populated
+        // Ensure demo catalog providers exist so local preview categories are populated
         for (const seedProv of defaultSeedProviders) {
           if (!parsed.some(u => u.id === seedProv.id)) {
             parsed.push(seedProv);
           }
-        }
-        // Ensure verified provider Arikarran is always preserved
-        if (!parsed.some(u => u.phone === '0777153933' || u.id === 'user-provider-arikarran')) {
-          parsed.push(verifiedArikarranProvider);
         }
         cachedUsers = parsed;
         await atomicWriteJson(usersFile, cachedUsers);
@@ -216,11 +190,8 @@ export async function getUsers() {
 
 export async function saveUsers(users) {
   return usersLock.acquire(async () => {
-    if (!users.some(u => u.email === 'arikarran14@gmail.com' || u.id === 'user-admin-arikarran')) {
+    if (defaultAdminUser && !users.some(u => u.email === defaultAdminUser.email || u.id === defaultAdminUser.id)) {
       users = [defaultAdminUser, ...users];
-    }
-    if (!users.some(u => u.phone === '0777153933' || u.id === 'user-provider-arikarran')) {
-      users = [...users, verifiedArikarranProvider];
     }
     cachedUsers = [...users];
     await atomicWriteJson(usersFile, cachedUsers);
