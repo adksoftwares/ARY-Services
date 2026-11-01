@@ -52,8 +52,8 @@ function AdminPortal() {
     if (!isAdmin) return undefined;
     const events = new EventSource(`${API_BASE}/events`);
     const refresh = () => fetchAdminUsers();
-    events.addEventListener('user:status_changed', refresh);
-    events.addEventListener('driver:application_updated', refresh);
+    events.addEventListener('driver:application_created', refresh);
+    events.addEventListener('driver:application_reviewed', refresh);
     return () => events.close();
   }, [isAdmin, fetchAdminUsers]);
 
