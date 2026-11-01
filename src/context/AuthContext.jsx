@@ -182,6 +182,35 @@ export function AuthProvider({ children }) {
     return data;
   }
 
+
+  async function switchRole(nextRole) {
+    if (!currentUser?.token) throw new Error('Please sign in first.');
+    const res = await fetch(`${API_BASE}/auth/active-role`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${currentUser.token}` },
+      body: JSON.stringify({ role: String(nextRole).toLowerCase() })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Could not switch account role.');
+    persistUser(data.user);
+    setRole(nextRole === 'provider' ? 'Provider' : nextRole === 'driver' ? 'Driver' : 'Customer');
+    return data.user;
+  }
+
+  async function applyForRole(roleName, details = {}) {
+    if (!currentUser?.token) throw new Error('Please sign in first.');
+    const res = await fetch(`${API_BASE}/account/role-applications`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${currentUser.token}` },
+      body: JSON.stringify({ role: String(roleName).toLowerCase(), details })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Could not submit role application.');
+    const updated = { ...currentUser, roleApplications: { ...(currentUser.roleApplications || {}), [roleName]: data.application } };
+    persistUser(updated);
+    return data;
+  }
+
   const value = {
     currentUser,
     token: currentUser?.token,
@@ -198,6 +227,8 @@ export function AuthProvider({ children }) {
     closeAuthModal,
     login,
     register,
+    switchRole,
+    applyForRole,
     sendOtp,
     verifyOtpAndLogin,
     persistUser,
