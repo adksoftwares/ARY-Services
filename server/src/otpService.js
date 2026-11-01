@@ -18,13 +18,13 @@ const hasTwilioVerify = Object.values(twilioConfig).every(Boolean);
 
 export function normalizePhone(phone) {
   if (!phone || typeof phone !== 'string') return '';
-  const trimmed = phone.trim().replace(/^(\\+94|0094)/, '0');
-  return trimmed.replace(/\\D/g, '');
+  const trimmed = phone.trim().replace(/^(\+94|0094)/, '0');
+  return trimmed.replace(/\D/g, '');
 }
 
 function toE164(phone) {
   const clean = normalizePhone(phone);
-  if (/^0\\d{9}$/.test(clean)) return `+94${clean.slice(1)}`;
+  if (/^0\d{9}$/.test(clean)) return `+94${clean.slice(1)}`;
   return '';
 }
 
@@ -120,7 +120,7 @@ export async function verifyOtp(phone, inputCode) {
   const cleanPhone = normalizePhone(phone);
   const e164 = toE164(phone);
   if (!cleanPhone || !e164) return { valid: false, error: 'A valid Sri Lankan mobile phone number is required.' };
-  if (!inputCode || typeof inputCode !== 'string' || !/^\\d{6}$/.test(inputCode.trim())) {
+  if (!inputCode || typeof inputCode !== 'string' || !/^\d{6}$/.test(inputCode.trim())) {
     return { valid: false, error: 'Please enter a valid 6-digit code.' };
   }
 
