@@ -3,7 +3,7 @@ const PROVIDER_CATEGORIES = new Set(['electrical-repair', 'plumbing', 'food-shop
 const DRIVER_TYPES = new Set(['food_delivery', 'ride']);
 
 function rolesFor(user) {
-  return [...new Set([...(Array.isArray(user.roles) ? user.roles : []), user.accountType].filter(Boolean))];
+  return [...new Set([...(user.accountType === 'admin' ? [] : ['customer']), ...(Array.isArray(user.roles) ? user.roles : []), user.accountType].filter(Boolean))];
 }
 
 function publicUser(user, token, activeRole = user.accountType) {
