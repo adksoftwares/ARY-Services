@@ -70,3 +70,8 @@ All four dedicated entries use the same `ary_user` browser session key and the s
 Copy `server/.env.example` to `server/.env` and replace every placeholder with unique secrets. The API refuses to start if `JWT_SECRET` or `OTP_SHIELD_SECRET` is missing or shorter than 32 characters. Configure `ADMIN_EMAIL` and `ADMIN_PASSWORD` to provision the first Super Admin account; there is no shared default Admin password. Set `CLIENT_ORIGIN` to the exact deployed frontend origin(s), comma-separated when more than one is needed.
 
 OTP codes are exposed by the simulator only outside production. A production SMS provider must be configured before real customer verification can be used. Do not commit `.env`, runtime user records, identity documents, or payment data.
+
+
+### Storage and deployment notes
+
+When `DATABASE_URL` is configured, account, booking, review, ledger and driver-dispatch state is stored in PostgreSQL using the shared `ary_documents` persistence layer. Production startup requires PostgreSQL; the local JSON adapter is reserved for local development and tests. Set `PG_POOL_MAX` and `PGSSL` for deployment connection-pool/TLS policy. Run `node test/postgresStorage.js` from the `server` directory to verify the PostgreSQL adapter against a disposable test database.
