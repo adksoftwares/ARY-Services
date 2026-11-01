@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE } from '../../config';
-import { API_BASE } from '../../config';
 
 export default function DriverApplicationsAdmin(){
  const {currentUser}=useAuth();const [items,setItems]=useState([]);const [error,setError]=useState('');
