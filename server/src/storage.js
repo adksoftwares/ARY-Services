@@ -218,7 +218,7 @@ async function readJsonArray(filePath) {
 
 export async function getUsers() {
   return usersLock.acquire(async () => {
-    if (cachedUsers !== null) {
+    if (cachedUsers !== null && !activePostgresPool) {
       return [...cachedUsers];
     }
     try {
@@ -266,7 +266,7 @@ export async function findUser(predicate) {
 
 export async function addUser(newUser) {
   return usersLock.acquire(async () => {
-    const current = cachedUsers !== null ? cachedUsers : await (async () => {
+    const current = activePostgresPool ? await readJsonArray(usersFile) : cachedUsers !== null ? cachedUsers : await (async () => {
       try {
         const parsed = await readJsonArray(usersFile);
         return Array.isArray(parsed) ? parsed : [...defaultUsers];
@@ -283,7 +283,7 @@ export async function addUser(newUser) {
 
 export async function updateUser(id, updater) {
   return usersLock.acquire(async () => {
-    const current = cachedUsers !== null ? cachedUsers : await (async () => {
+    const current = activePostgresPool ? await readJsonArray(usersFile) : cachedUsers !== null ? cachedUsers : await (async () => {
       try {
         const parsed = await readJsonArray(usersFile);
         return Array.isArray(parsed) ? parsed : [...defaultUsers];
@@ -304,7 +304,7 @@ export async function updateUser(id, updater) {
 
 export async function deleteUser(id) {
   return usersLock.acquire(async () => {
-    const current = cachedUsers !== null ? cachedUsers : await (async () => {
+    const current = activePostgresPool ? await readJsonArray(usersFile) : cachedUsers !== null ? cachedUsers : await (async () => {
       try {
         const parsed = await readJsonArray(usersFile);
         return Array.isArray(parsed) ? parsed : [...defaultUsers];
@@ -321,7 +321,7 @@ export async function deleteUser(id) {
 
 export async function getBookings() {
   return bookingsLock.acquire(async () => {
-    if (cachedBookings !== null) {
+    if (cachedBookings !== null && !activePostgresPool) {
       return [...cachedBookings];
     }
     try {
@@ -350,7 +350,7 @@ export async function saveBookings(bookings) {
 
 export async function addBooking(newBooking) {
   return bookingsLock.acquire(async () => {
-    const current = cachedBookings !== null ? cachedBookings : await (async () => {
+    const current = activePostgresPool ? await readJsonArray(bookingsFile) : cachedBookings !== null ? cachedBookings : await (async () => {
       try {
         return await readJsonArray(bookingsFile);
       } catch {
@@ -366,7 +366,7 @@ export async function addBooking(newBooking) {
 
 export async function updateBooking(id, updater) {
   return bookingsLock.acquire(async () => {
-    const current = cachedBookings !== null ? cachedBookings : await (async () => {
+    const current = activePostgresPool ? await readJsonArray(bookingsFile) : cachedBookings !== null ? cachedBookings : await (async () => {
       try {
         return await readJsonArray(bookingsFile);
       } catch {
@@ -386,7 +386,7 @@ export async function updateBooking(id, updater) {
 
 export async function getReviews() {
   return reviewsLock.acquire(async () => {
-    if (cachedReviews !== null) {
+    if (cachedReviews !== null && !activePostgresPool) {
       return [...cachedReviews];
     }
     try {
@@ -407,7 +407,7 @@ export async function getReviews() {
 
 export async function addReview(newReview) {
   return reviewsLock.acquire(async () => {
-    const current = cachedReviews !== null ? cachedReviews : await (async () => {
+    const current = activePostgresPool ? await readJsonArray(reviewsFile) : cachedReviews !== null ? cachedReviews : await (async () => {
       try {
         return await readJsonArray(reviewsFile);
       } catch {
@@ -451,7 +451,7 @@ export async function getReviewByBooking(bookingId) {
 // ---------------------------------------------------------------------
 export async function getLedgerEntries() {
   return ledgerLock.acquire(async () => {
-    if (cachedLedger !== null) {
+    if (cachedLedger !== null && !activePostgresPool) {
       return [...cachedLedger];
     }
     try {
@@ -470,7 +470,7 @@ export async function getLedgerEntries() {
 
 export async function addLedgerEntries(entries) {
   return ledgerLock.acquire(async () => {
-    const current = cachedLedger !== null ? cachedLedger : await (async () => {
+    const current = activePostgresPool ? await readJsonArray(ledgerFile) : cachedLedger !== null ? cachedLedger : await (async () => {
       try {
         return await readJsonArray(ledgerFile);
       } catch {
