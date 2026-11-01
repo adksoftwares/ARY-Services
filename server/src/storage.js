@@ -821,6 +821,95 @@ export async function initPostgresTables(pool) {
   }
 }
 
+let persistentStateQueue = Promise.resolve();
+
+export async function readPersistentState(collection, fallbackFile, fallbackValue = {}) {
+  if (activePostgresPool) {
+    const result = await activePostgresPool.query(
+      'SELECT payload FROM ary_documents WHERE collection = $1 AND record_id = $2',
+      [collection, 'state']
+    );
+    return result.rows[0]?.payload ?? structuredClone(fallbackValue);
+  }
+  try {
+    return JSON.parse(await fs.readFile(fallbackFile, 'utf-8'));
+  } catch {
+    return structuredClone(fallbackValue);
+  }
+}
+
+export async function writePersistentState(collection, fallbackFile, value) {
+  if (activePostgresPool) {
+    const client = await activePostgresPool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [collection]);
+      await client.query(
+        `INSERT INTO ary_documents (collection, record_id, position, payload, updated_at)
+         VALUES ($1, $2, 0, $3::jsonb, NOW())
+         ON CONFLICT (collection, record_id)
+         DO UPDATE SET payload = EXCLUDED.payload, updated_at = NOW()`,
+        [collection, 'state', JSON.stringify(value)]
+      );
+      await client.query('COMMIT');
+    } catch (error) {
+      await client.query('ROLLBACK').catch(() => {});
+      throw error;
+    } finally {
+      client.release();
+    }
+    return value;
+  }
+  const task = persistentStateQueue.then(async () => {
+    await fs.mkdir(path.dirname(fallbackFile), { recursive: true });
+    await fs.writeFile(fallbackFile, JSON.stringify(value, null, 2), 'utf-8');
+  });
+  persistentStateQueue = task.catch(() => {});
+  await task;
+  return value;
+}
+
+export async function mutatePersistentState(collection, fallbackFile, fallbackValue, mutator) {
+  if (activePostgresPool) {
+    const client = await activePostgresPool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [collection]);
+      const result = await client.query(
+        'SELECT payload FROM ary_documents WHERE collection = $1 AND record_id = $2 FOR UPDATE',
+        [collection, 'state']
+      );
+      const state = result.rows[0]?.payload ?? structuredClone(fallbackValue);
+      const outcome = await mutator(state);
+      await client.query(
+        `INSERT INTO ary_documents (collection, record_id, position, payload, updated_at)
+         VALUES ($1, $2, 0, $3::jsonb, NOW())
+         ON CONFLICT (collection, record_id)
+         DO UPDATE SET payload = EXCLUDED.payload, updated_at = NOW()`,
+        [collection, 'state', JSON.stringify(state)]
+      );
+      await client.query('COMMIT');
+      return outcome;
+    } catch (error) {
+      await client.query('ROLLBACK').catch(() => {});
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+  const task = persistentStateQueue.then(async () => {
+    let state;
+    try { state = JSON.parse(await fs.readFile(fallbackFile, 'utf-8')); }
+    catch { state = structuredClone(fallbackValue); }
+    const outcome = await mutator(state);
+    await fs.mkdir(path.dirname(fallbackFile), { recursive: true });
+    await fs.writeFile(fallbackFile, JSON.stringify(state, null, 2), 'utf-8');
+    return outcome;
+  });
+  persistentStateQueue = task.catch(() => {});
+  return task;
+}
+
 export async function getLedgerByBooking(bookingId) {
   const all = await getLedgerEntries();
   return all.filter(e => e.bookingId === bookingId);
