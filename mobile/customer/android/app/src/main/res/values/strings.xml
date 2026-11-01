@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">ARY Services</string>
+    <string name="title_activity_main">ARY Services</string>
+    <string name="package_name">com.aryservices.customer</string>
+    <string name="custom_url_scheme">com.aryservices.customer</string>
+</resources>

@@ -1,0 +1,9 @@
+{
+  "appId": "com.aryservices.customer",
+  "appName": "ARY Services",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https",
+    "cleartext": true
+  }
+}

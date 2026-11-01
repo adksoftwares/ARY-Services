@@ -221,7 +221,6 @@ export default function BookingModal({
                   border: `2px solid ${paymentMethod === 'escrow_online' ? '#059669' : '#e2e8f0'}`,
                   borderRadius: 8,
                   padding: '10px 12px',
-                  cursor: 'pointer',
                   background: paymentMethod === 'escrow_online' ? '#ecfdf5' : '#fff',
                   transition: 'all 0.15s ease'
                 }}

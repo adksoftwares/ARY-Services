@@ -7,7 +7,11 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "testsprite": "testsprite"
+    "testsprite": "testsprite",
+    "build:mobile": "node scripts/build-mobile.mjs all",
+    "build:mobile:customer": "node scripts/build-mobile.mjs customer",
+    "build:mobile:driver": "node scripts/build-mobile.mjs driver",
+    "build:mobile:provider": "node scripts/build-mobile.mjs provider"
   },
   "dependencies": {
     "cors": "^2.8.5",
@@ -21,6 +25,9 @@
     "react-router-dom": "^7.18.4"
   },
   "devDependencies": {
+    "@capacitor/android": "^8.6.0",
+    "@capacitor/cli": "^8.6.0",
+    "@capacitor/core": "^8.6.0",
     "@testsprite/testsprite-cli": "^0.15.0",
     "@vitejs/plugin-react": "^4.3.4",
     "puppeteer-core": "^25.16.0",

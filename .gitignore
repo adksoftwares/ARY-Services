@@ -1,6 +1,15 @@
 node_modules/
 server/node_modules/
 dist/
+mobile/*/dist/
+local.properties
+**/local.properties
+.gradle/
+**/.gradle/
+build/
+**/build/
+*.apk
+*.aab
 .env
 .env.*
 !.env.example

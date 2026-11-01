@@ -1,0 +1,9 @@
+{
+  "appId": "com.aryservices.driver",
+  "appName": "ARY Driver",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https",
+    "cleartext": true
+  }
+}
