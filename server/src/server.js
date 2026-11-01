@@ -297,9 +297,9 @@ app.post('/api/auth/otp/send', otpLimiter, async (req, res) => {
       return res.status(400).json({ error: 'Security verification failed. Please refresh the verification challenge and try again.' });
     }
 
-    const result = sendOtp(phone);
+    const result = await sendOtp(phone);
     if (!result.success) {
-      return res.status(429).json({ error: result.error, waitSeconds: result.waitSeconds });
+      return res.status(result.unavailable ? 503 : 429).json({ error: result.error, waitSeconds: result.waitSeconds });
     }
 
     res.json({
@@ -333,9 +333,9 @@ app.post('/api/auth/otp/verify', authLimiter, async (req, res) => {
         return res.status(400).json({ error: 'Mobile phone number and 6-digit verification code are required.' });
       }
 
-      const verification = verifyOtp(phone, otp);
+      const verification = await verifyOtp(phone, otp);
       if (!verification.valid) {
-        return res.status(400).json({ error: verification.error });
+        return res.status(verification.unavailable ? 503 : 400).json({ error: verification.error });
       }
 
       cleanPhone = verification.phone;
