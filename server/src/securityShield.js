@@ -1,59 +1,49 @@
-// Anti-Fraud Bot & SMS Gateway Protection Shield
-// Protects phone OTP endpoints against SMS toll-fraud pumping and automated scripts.
-
+// Anti-fraud challenge signing for OTP endpoints.
+// Configure OTP_SHIELD_SECRET with a unique random value of at least 32 characters.
 import crypto from 'node:crypto';
 
-const SHIELD_SECRET = 'ary_sms_shield_salt_2026';
+const SHIELD_SECRET = process.env.OTP_SHIELD_SECRET;
+if (!SHIELD_SECRET || Buffer.byteLength(SHIELD_SECRET) < 32) {
+  throw new Error('OTP_SHIELD_SECRET must be configured with at least 32 characters.');
+}
+
 const usedChallenges = new Set();
+const CHALLENGE_TTL_MS = 5 * 60 * 1000;
 
 export function issueSecurityChallenge() {
-  const challengeId = `pow-${Date.now()}-${crypto.randomBytes(6).toString('hex')}`;
+  const challengeId = `pow-${Date.now()}-${crypto.randomBytes(16).toString('hex')}`;
   const timestamp = Date.now();
   const signature = crypto.createHmac('sha256', SHIELD_SECRET)
     .update(`${challengeId}.${timestamp}`)
     .digest('hex');
 
-  const token = `${challengeId}.${timestamp}.${signature}`;
-
   return {
     challengeId,
-    token,
-    expiresInSeconds: 300
+    token: `${challengeId}.${timestamp}.${signature}`,
+    expiresInSeconds: CHALLENGE_TTL_MS / 1000
   };
 }
 
 export function verifySecurityChallenge(token) {
   if (!token || typeof token !== 'string') return false;
-  if (token === 'dev-shield-bypass-token') return true;
-
   const parts = token.split('.');
   if (parts.length !== 3) return false;
 
   const [challengeId, timestampStr, signature] = parts;
   const timestamp = Number(timestampStr);
-
-  // Check 5-minute expiry
-  if (isNaN(timestamp) || Date.now() > timestamp + 5 * 60 * 1000) {
+  if (!Number.isSafeInteger(timestamp) || Date.now() - timestamp > CHALLENGE_TTL_MS || timestamp > Date.now() + 30_000) {
     return false;
   }
 
-  // Check signature
-  const expectedSig = crypto.createHmac('sha256', SHIELD_SECRET)
+  const expected = crypto.createHmac('sha256', SHIELD_SECRET)
     .update(`${challengeId}.${timestamp}`)
-    .digest('hex');
+    .digest();
+  let supplied;
+  try { supplied = Buffer.from(signature, 'hex'); } catch { return false; }
+  if (supplied.length !== expected.length || !crypto.timingSafeEqual(supplied, expected)) return false;
 
-  if (signature !== expectedSig) {
-    return false;
-  }
-
-  // Single-use check to prevent replay attacks
-  if (usedChallenges.has(challengeId)) {
-    return false;
-  }
+  if (usedChallenges.has(challengeId)) return false;
   usedChallenges.add(challengeId);
-
-  // Auto clean up after 10 minutes
-  setTimeout(() => usedChallenges.delete(challengeId), 10 * 60 * 1000);
-
+  setTimeout(() => usedChallenges.delete(challengeId), CHALLENGE_TTL_MS * 2).unref?.();
   return true;
 }
