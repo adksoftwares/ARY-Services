@@ -23,20 +23,24 @@ export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadc
     const requested=Array.isArray(req.body?.driverTypes)?req.body.driverTypes:[req.body?.driverType];
     const driverTypes=[...new Set(requested.map(String).filter(type=>types.includes(type)))];
     if(!driverTypes.length)return res.status(400).json({error:'Choose Ride, Food Delivery, or both.'});
-    const data=await readJobs();const applications=[];
-    for(const driverType of driverTypes){
-      let existing=data.applications.find(a=>a.userId===req.user.id&&a.driverType===driverType&&['pending','approved'].includes(a.status));
-      if(!existing){existing={id:id('drvapp'),userId:req.user.id,driverName:req.user.fullName,driverType,status:'pending',createdAt:new Date().toISOString()};data.applications.push(existing);}
-      applications.push(existing);
-    }
-    await save(data);broadcastEvent?.('driver:application_created',{userId:req.user.id,applications});res.status(201).json({applications});
+    const applications=await mutateJobs(data=>{
+      const submitted=[];
+      for(const driverType of driverTypes){
+        let existing=data.applications.find(a=>a.userId===req.user.id&&a.driverType===driverType&&['pending','approved'].includes(a.status));
+        if(!existing){existing={id:id('drvapp'),userId:req.user.id,driverName:req.user.fullName,driverType,status:'pending',createdAt:new Date().toISOString()};data.applications.push(existing);}
+        submitted.push(existing);
+      }
+      return submitted;
+    });
+    broadcastEvent?.('driver:application_created',{userId:req.user.id,applications});res.status(201).json({applications});
   });
   app.get('/api/admin/driver-applications',requireAdmin,async(_req,res)=>{const d=await readJobs();res.json({applications:d.applications});});
   app.patch('/api/admin/driver-applications/:id',requireAdmin,async(req,res)=>{
     const status=String(req.body?.status||'');
     if(!['approved','rejected'].includes(status))return res.status(400).json({error:'Status must be approved or rejected.'});
-    const d=await readJobs();const a=d.applications.find(x=>x.id===req.params.id);if(!a)return res.status(404).json({error:'Application not found.'});
-    a.status=status;a.reviewedAt=new Date().toISOString();a.reviewedBy=req.user.id;await save(d);broadcastEvent?.('driver:application_reviewed',{userId:a.userId,application:a});res.json({application:a});
+    const a=await mutateJobs(d=>{const item=d.applications.find(x=>x.id===req.params.id);if(!item)return null;item.status=status;item.reviewedAt=new Date().toISOString();item.reviewedBy=req.user.id;return item;});
+    if(!a)return res.status(404).json({error:'Application not found.'});
+    broadcastEvent?.('driver:application_reviewed',{userId:a.userId,application:a});res.json({application:a});
   });
   app.post('/api/food-deliveries',requireAuth,async(req,res)=>{
     const {orderReference,restaurantName,pickupAddress,dropoffAddress,notes=''}=req.body||{};
@@ -45,15 +49,17 @@ export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadc
     if(!order)return res.status(404).json({error:'Food order not found for this customer. Place a food shop order first.'});
     if(!['accepted','preparing','ready'].includes(order.status))return res.status(409).json({error:'The restaurant must accept or prepare the food order before delivery can be requested.'});
     const users=await getUsers();const restaurant=users.find(u=>u.id===order.providerId);
-    const d=await readJobs();const job={id:id('food'),serviceType:'food_delivery',customerId:req.user.id,customerName:req.user.fullName,orderReference:order.id,restaurantName:String(restaurantName||order.providerName||'Food Shop').slice(0,160),pickupAddress:String(pickupAddress||restaurant?.location||'').slice(0,500),destinationAddress:String(dropoffAddress).slice(0,500),notes:String(notes).slice(0,500),driverId:null,status:'requested',createdAt:new Date().toISOString()};
-    d.jobs.unshift(job);await save(d);broadcastEvent?.('driver:job_created',{job});res.status(201).json({job});
+    const job={id:id('food'),serviceType:'food_delivery',customerId:req.user.id,customerName:req.user.fullName,orderReference:order.id,restaurantName:String(restaurantName||order.providerName||'Food Shop').slice(0,160),pickupAddress:String(pickupAddress||restaurant?.location||'').slice(0,500),destinationAddress:String(dropoffAddress).slice(0,500),notes:String(notes).slice(0,500),driverId:null,status:'requested',createdAt:new Date().toISOString()};
+    await mutateJobs(d=>{d.jobs.unshift(job);});
+    broadcastEvent?.('driver:job_created',{job});res.status(201).json({job});
   });
   app.post('/api/ride-trips',requireAuth,async(req,res)=>{
     const {pickupAddress,destinationAddress,passengerCount=1,notes=''}=req.body||{};
     const count=Number(passengerCount);
     if(!pickupAddress||!destinationAddress||!Number.isInteger(count)||count<1||count>6)return res.status(400).json({error:'Valid pickup, destination and passenger count (1-6) are required.'});
-    const d=await readJobs();const job={id:id('ride'),serviceType:'ride',customerId:req.user.id,customerName:req.user.fullName,pickupAddress:String(pickupAddress).slice(0,500),destinationAddress:String(destinationAddress).slice(0,500),passengerCount:count,notes:String(notes).slice(0,500),driverId:null,status:'requested',createdAt:new Date().toISOString()};
-    d.jobs.unshift(job);await save(d);broadcastEvent?.('driver:job_created',{job});res.status(201).json({job});
+    const job={id:id('ride'),serviceType:'ride',customerId:req.user.id,customerName:req.user.fullName,pickupAddress:String(pickupAddress).slice(0,500),destinationAddress:String(destinationAddress).slice(0,500),passengerCount:count,notes:String(notes).slice(0,500),driverId:null,status:'requested',createdAt:new Date().toISOString()};
+    await mutateJobs(d=>{d.jobs.unshift(job);});
+    broadcastEvent?.('driver:job_created',{job});res.status(201).json({job});
   });
   app.get('/api/driver-jobs',requireAuth,async(req,res)=>{
     if(req.user.accountType!=='driver')return res.status(403).json({error:'Driver account required.'});
@@ -78,10 +84,14 @@ export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadc
   app.patch('/api/driver-jobs/:id/status',requireAuth,async(req,res)=>{
     if(req.user.accountType!=='driver')return res.status(403).json({error:'Driver account required.'});
     const status=String(req.body?.status||'');if(!['picked_up','completed'].includes(status))return res.status(400).json({error:'Unsupported job status.'});
-    const d=await readJobs();const job=d.jobs.find(j=>j.id===req.params.id);if(!job)return res.status(404).json({error:'Job not found.'});
-    if(job.driverId!==req.user.id)return res.status(403).json({error:'Only the assigned driver can update this job.'});
-    const allowed=job.status==='accepted'&&status==='picked_up'||job.status==='picked_up'&&status==='completed';
-    if(!allowed)return res.status(409).json({error:'Invalid job status transition.'});
-    job.status=status;job.updatedAt=new Date().toISOString();await save(d);broadcastEvent?.('driver:job_updated',{job});res.json({job});
+    const result=await mutateJobs(d=>{
+      const job=d.jobs.find(j=>j.id===req.params.id);if(!job)return {status:404,error:'Job not found.'};
+      if(job.driverId!==req.user.id)return {status:403,error:'Only the assigned driver can update this job.'};
+      const allowed=job.status==='accepted'&&status==='picked_up'||job.status==='picked_up'&&status==='completed';
+      if(!allowed)return {status:409,error:'Invalid job status transition.'};
+      job.status=status;job.updatedAt=new Date().toISOString();return {status:200,job};
+    });
+    if(result.error)return res.status(result.status).json({error:result.error});
+    broadcastEvent?.('driver:job_updated',{job:result.job});res.json({job:result.job});
   });
 }
