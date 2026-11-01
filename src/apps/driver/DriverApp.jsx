@@ -8,7 +8,7 @@ import AuthModal from '../../components/common/AuthModal';
 import Footer from '../../components/common/Footer';
 
 function DriverPortal() {
-  const { currentUser, openAuthModal, logout } = useAuth();
+  const { currentUser, openAuthModal, logout, switchRole } = useAuth();
   const navigate = useNavigate();
   const [notice, setNotice] = useState('');
   const isDriver = currentUser?.accountType === 'driver';
@@ -42,6 +42,7 @@ function DriverPortal() {
       </nav>
       {isDriver ? <div className="user-profile">
         <span className="user-badge"><UserRound size={14}/><span>{currentUser.fullName}</span></span>
+        {(currentUser.roles || []).includes('customer') && <button className="sign-in" onClick={async () => { try { await switchRole('customer'); window.location.href = '/'; } catch (error) { setNotice(error.message); } }}>Customer app</button>}
         <button className="sign-out-btn" onClick={() => { logout(); navigate('/'); }}><LogOut size={14}/> Sign out</button>
       </div> : <button className="sign-in" onClick={() => openAuthModal('login')}><LogIn size={14}/> Driver sign in</button>}
     </header>
