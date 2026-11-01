@@ -640,26 +640,9 @@ try {
     })
   });
   const escrowBookData = await escrowBookRes.json();
-  assert.equal(escrowBookRes.status, 200);
-  assert.equal(escrowBookData.booking.paymentMethod, 'escrow_online');
-  assert.equal(escrowBookData.booking.paymentStatus, 'escrow_held');
-  assert.equal(escrowBookData.booking.baseAmount, 2000);
-  assert.equal(escrowBookData.booking.platformFee, 200); // 10% platform commission
-  assert.equal(escrowBookData.booking.providerPayout, 1800); // 90% net provider payout
-  console.log('✓ Digital Escrow verified: 10% platform commission (LKR 200) and 90% payout (LKR 1,800) held safely');
-
-  // Test 4: Provider completes job -> Escrow released
-  const releaseRes = await fetch(`${API_URL}/bookings/${escrowBookData.booking.id}/status`, {
-    method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${adminToken}`
-    },
-    body: JSON.stringify({ status: 'completed' })
-  });
-  const releaseData = await releaseRes.json();
-  assert.equal(releaseData.booking.paymentStatus, 'released_to_provider');
-  console.log('✓ Escrow Release verified: Completion automatically released payout to provider');
+  assert.equal(escrowBookRes.status, 503, 'Online escrow must not be simulated as paid before a verified payment gateway callback exists');
+  assert.match(escrowBookData.error, /PayHere merchant account/i);
+  console.log('✓ Payment safety: unconfigured online escrow is rejected; no fake escrow hold or provider payout is recorded');
 
   // Test 5: Provider KYC Validation (Sri Lankan NIC Format)
   const invalidNicRes = await fetch(`${API_URL}/auth/register`, {
