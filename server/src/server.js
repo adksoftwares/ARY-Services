@@ -329,7 +329,7 @@ app.post('/api/auth/otp/verify', authLimiter, async (req, res) => {
     if (existingUser) {
       if (existingUser.status === 'pending') {
         return res.status(403).json({
-          error: user.accountType === 'driver' ? 'Your Driver account is pending Admin approval. You will receive access once approved by the Super Admin.' : 'Your service provider account is pending Admin approval. You will receive access once approved by the Super Admin.',
+          error: existingUser.accountType === 'driver' ? 'Your Driver account is pending Admin approval. You will receive access once approved by the Super Admin.' : 'Your service provider account is pending Admin approval. You will receive access once approved by the Super Admin.',
           accountStatus: 'pending'
         });
       }
@@ -574,6 +574,8 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
         email: newUser.email,
         location: newUser.location,
         accountType: newUser.accountType,
+        roles: [newUser.accountType],
+        roleApplications: {},
         status: newUser.status,
         category: newUser.category,
         driverServices: newUser.driverServices || [],
