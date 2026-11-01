@@ -60,27 +60,27 @@ The Admin entry reuses ARY's existing AdminWorkspace and DriverApplicationsAdmin
 
 ARY's existing marketplace features are retained in the dedicated app components. The root route now points to Customer instead of loading the retired monolithic entry. Build/runtime integration must be verified before deployment.
 
-
 ## Shared session and integration
 All four dedicated entries use the same `ary_user` browser session key and the shared `API_BASE` configuration. Login, logout and account changes are synchronized between ARY tabs through the browser storage event. Authentication is verified by the API; the frontend no longer creates a local Admin session when API login fails. Driver application submission and review events are broadcast through the existing SSE hub so the Admin queue and Driver portal can refresh/notify in real time.
 
-
 ## Required backend environment
-
 Copy `server/.env.example` to `server/.env` and replace every placeholder with unique secrets. The API refuses to start if `JWT_SECRET` or `OTP_SHIELD_SECRET` is missing or shorter than 32 characters. Configure `ADMIN_EMAIL` and `ADMIN_PASSWORD` to provision the first Super Admin account; there is no shared default Admin password. Set `CLIENT_ORIGIN` to the exact deployed frontend origin(s), comma-separated when more than one is needed.
 
 OTP codes are exposed by the simulator only outside production. A production SMS provider must be configured before real customer verification can be used. Do not commit `.env`, runtime user records, identity documents, or payment data.
 
-
 ### Storage and deployment notes
-
-When `DATABASE_URL` is configured, account, booking, review, ledger and driver-dispatch state is stored in PostgreSQL using the shared `ary_documents` persistence layer. Production startup requires PostgreSQL; the local JSON adapter is reserved for local development and tests. Set `PG_POOL_MAX` and `PGSSL` for deployment connection-pool/TLS policy. Run `node test/postgresStorage.js` from the `server` directory to verify the PostgreSQL adapter against a disposable test database.
-
+When `DATABASE_URL` is configured, account, booking, review, ledger and driver-dispatch state is stored in PostgreSQL using the shared `ary_documents` persistence layer. Production startup requires PostgreSQL; the local JSON adapter is reserved for local development and tests. Set `PG_POOL_MAX` and `PGSSL` for deployment connection-pool/TLS policy.
 
 ## Production SMS OTP (Twilio Verify)
-
 The API supports Twilio Verify for real production SMS delivery. Set `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, and `TWILIO_VERIFY_SERVICE_SID` in the server environment. Use a Twilio Verify Service configured for SMS and ensure the Twilio account is permitted to send to Sri Lankan mobile numbers. Phone numbers are normalized to Sri Lankan E.164 format (`+94XXXXXXXXX`).
 
 Production never falls back to the in-memory development OTP simulator: if Twilio credentials are missing or the provider is unavailable, OTP send/verification returns a service-unavailable response. Development continues to use the local simulator and its `devCode` response. Keep Twilio credentials in deployment secrets only; never commit them.
 
 See [Production setup](docs/PRODUCTION-SETUP.md) for the deployment environment checklist.
+
+## PickMe-inspired ARY hybrid platform
+ARY's product direction combines mobility/transport, commerce/delivery and local services. PickMe is used as a benchmark for useful workflows, not as a source to copy branding, code or exact screens. The detailed feature requirements and implementation order are maintained in [PickMe-inspired Hybrid Platform Requirements](docs/PICKME-HYBRID-PLATFORM-REQUIREMENTS.md).
+
+The integration must preserve ARY's existing provider onboarding and Admin approvals, NSN/address/operating-mode details, separate approval for additional provider services, Sri Lankan grocery inventory, and existing role experiences. Useful additions include nearby driver matching, fare estimates, trip PINs, live job tracking, shop discovery, cart and order fulfilment, parcel proof-of-delivery, provider inventory/earnings tools, Admin analytics, disputes, SOS and notifications.
+
+Online payment, PayHere and escrow remain excluded until explicitly approved and connected to a real payment provider. No UI or ledger entry may claim a payment or wallet balance that has not actually been confirmed.

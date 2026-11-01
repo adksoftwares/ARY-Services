@@ -734,15 +734,16 @@ app.get('/api/providers', async (req, res) => {
     const sanitized = providers.map(p => {
       let pLat = p.lat;
       let pLng = p.lng;
-      if (!pLat || !pLng) {
+      if (pLat === undefined || pLat === null || pLng === undefined || pLng === null) {
         const resolved = resolveCoordinatesFromLocation(p.location);
-        pLat = resolved.lat;
-        pLng = resolved.lng;
+        pLat = resolved?.lat ?? null;
+        pLng = resolved?.lng ?? null;
       }
 
       let distanceKm = null;
       let etaMinutes = null;
-      if (customerLat !== null && customerLng !== null && !isNaN(customerLat) && !isNaN(customerLng)) {
+      if (customerLat !== null && customerLng !== null && !isNaN(customerLat) && !isNaN(customerLng)
+        && pLat !== null && pLng !== null) {
         distanceKm = calculateDistanceKm(customerLat, customerLng, pLat, pLng);
         etaMinutes = estimateEtaMinutes(distanceKm);
       }

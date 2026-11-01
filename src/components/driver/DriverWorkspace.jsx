@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Bike, PackageCheck, RefreshCw, CheckCircle2, MapPin, ArrowUpRight } from 'lucide-react';
+import { Bike, PackageCheck, RefreshCw, CheckCircle2, MapPin, ArrowUpRight, Power, Package } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE } from '../../config';
 
 const DRIVER_OPTIONS = [
   { value: 'ride', label: 'Passenger rides', description: 'Accept and complete passenger trips', icon: Bike },
-  { value: 'food_delivery', label: 'Food delivery', description: 'Collect orders and deliver them to customers', icon: PackageCheck }
+  { value: 'food_delivery', label: 'Food delivery', description: 'Collect orders and deliver them to customers', icon: PackageCheck },\n  { value: 'parcel_delivery', label: 'Parcel delivery', description: 'Collect and deliver customer parcels', icon: Package }
 ];
 
 export default function DriverWorkspace({ onNotice }) {
@@ -16,7 +16,7 @@ export default function DriverWorkspace({ onNotice }) {
   );
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState('');\n  const [online, setOnline] = useState(false);\n  const [availabilityBusy, setAvailabilityBusy] = useState(false);
 
   const refresh = useCallback(async () => {
     if (!currentUser?.token) return;
@@ -28,7 +28,7 @@ export default function DriverWorkspace({ onNotice }) {
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || 'Could not load driver jobs.');
-      setJobs(data.jobs || []);
+      setJobs(data.jobs || []);\n      setOnline(Boolean(data.online));
     } catch (err) {
       setError(err.message || 'Could not load driver jobs.');
     } finally {
@@ -48,6 +48,40 @@ export default function DriverWorkspace({ onNotice }) {
       events.close();
     };
   }, [currentUser?.token, refresh]);
+
+  async function setAvailability(nextOnline) {
+    setAvailabilityBusy(true);
+    setError('');
+    try {
+      const response = await fetch(`${API_BASE}/driver/availability`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${currentUser.token}` },
+        body: JSON.stringify({ online: nextOnline })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Could not update availability.');
+      setOnline(Boolean(data.availability?.online));
+      onNotice?.(nextOnline ? 'You are online and eligible for approved jobs.' : 'You are offline and will not receive new job offers.');
+      await refresh();
+    } catch (err) { setError(err.message || 'Could not update availability.'); }
+    finally { setAvailabilityBusy(false); }
+  }
+
+  async function verifyPin(jobId, endpoint, promptText) {
+    const pin = window.prompt(promptText);
+    if (!pin) return;
+    try {
+      const response = await fetch(`${API_BASE}/driver-jobs/${encodeURIComponent(jobId)}/${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${currentUser.token}` },
+        body: JSON.stringify({ pin: pin.trim() })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'PIN verification failed.');
+      await refresh();
+      onNotice?.('PIN verified. Job status updated.');
+    } catch (err) { setError(err.message || 'PIN verification failed.'); }
+  }
 
   function toggleService(value) {
     setSelectedServices(previous => previous.includes(value)
@@ -143,6 +177,11 @@ export default function DriverWorkspace({ onNotice }) {
         </div>
       </section>
 
+      <section style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 14, flexWrap: 'wrap', padding: 16, margin: '0 0 22px', border: '1px solid #e5ebe3', borderRadius: 14, background: online ? '#f0f8f1' : '#fff' }}>
+        <div><b style={{ color: '#263b31' }}>Driver availability</b><p style={{ margin: '4px 0 0', color: '#6d786f', fontSize: 12 }}>{online ? 'You are visible to dispatch for approved services.' : 'Go online when you are ready to receive jobs.'}</p></div>
+        <button onClick={() => setAvailability(!online)} disabled={availabilityBusy} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, border: 0, borderRadius: 9, padding: '11px 16px', color: '#fff', background: online ? '#9a3d36' : '#174d3d', fontWeight: 700, cursor: availabilityBusy ? 'wait' : 'pointer' }}><Power size={16}/>{availabilityBusy ? 'Updating…' : online ? 'Go offline' : 'Go online'}</button>
+      </section>
+
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 14 }}>
         <div><h2 style={{ fontSize: 22, margin: 0 }}>Available and assigned jobs</h2><p style={{ fontSize: 12, color: '#788078', margin: '5px 0 0' }}>New jobs refresh automatically when the dispatch system sends an update.</p></div>
         <button onClick={refresh} disabled={loading} aria-label="Refresh jobs" style={{ padding: 10, border: '1px solid #dce5dc', borderRadius: 9, background: '#fff', color: '#174d3d' }}><RefreshCw size={16}/></button>
@@ -159,7 +198,7 @@ export default function DriverWorkspace({ onNotice }) {
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
             <b style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#263b31' }}>
               {job.serviceType === 'food_delivery' ? <PackageCheck size={17}/> : <Bike size={17}/>}
-              {job.serviceType === 'food_delivery' ? 'Food Delivery' : 'Passenger Ride'} · {job.id}
+              {job.serviceType === 'food_delivery' ? 'Food Delivery' : job.serviceType === 'parcel_delivery' ? 'Parcel Delivery' : 'Passenger Ride'} · {job.id}
             </b>
             <span className="status-pill muted">{String(job.status || 'requested').replaceAll('_', ' ')}</span>
           </div>
@@ -167,10 +206,13 @@ export default function DriverWorkspace({ onNotice }) {
             <b>Pickup:</b> {job.pickupAddress}<br/><b>Drop-off:</b> {job.destinationAddress}
           </p>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {job.status === 'requested' && <button onClick={() => claim(job.id)} className="register-nav-btn">Accept job <ArrowUpRight size={14}/></button>}
-            {job.status === 'accepted' && <button onClick={() => update(job.id, 'picked_up')} className="register-nav-btn">Picked up / passenger onboard</button>}
-            {job.status === 'picked_up' && <button onClick={() => update(job.id, 'completed')} className="register-nav-btn">Complete trip / delivery</button>}
-            {job.status === 'completed' && <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#27724b', fontSize: 12 }}><CheckCircle2 size={15}/> Completed</span>}
+            {job.status === 'requested' && <button onClick={() => claim(job.id)} disabled={!online} className="register-nav-btn">Accept job <ArrowUpRight size={14}/></button>}
+            {job.status === 'accepted' && <button onClick={() => update(job.id, job.serviceType === 'ride' ? 'arrived' : 'arrived_pickup')} className="register-nav-btn">Arrived at pickup</button>}
+            {['arrived', 'arrived_pickup'].includes(job.status) && <button onClick={() => verifyPin(job.id, 'verify-pickup', 'Enter the customer pickup PIN')} className="register-nav-btn">Verify pickup PIN</button>}
+            {job.status === 'in_progress' && <button onClick={() => verifyPin(job.id, 'verify-delivery', 'Enter the customer trip completion PIN')} className="register-nav-btn">Complete trip · verify PIN</button>}
+            {job.status === 'picked_up' && <button onClick={() => update(job.id, 'in_transit')} className="register-nav-btn">Start delivery</button>}
+            {job.status === 'in_transit' && <button onClick={() => verifyPin(job.id, 'verify-delivery', 'Enter recipient delivery PIN')} className="register-nav-btn">Verify delivery PIN</button>}
+            {['completed', 'delivered'].includes(job.status) && <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#27724b', fontSize: 12 }}><CheckCircle2 size={15}/> Completed</span>}
           </div>
         </article>
       ))}
