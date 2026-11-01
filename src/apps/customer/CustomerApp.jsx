@@ -10,6 +10,8 @@ import GroceryMarketplace from '../../components/customer/GroceryMarketplace';
 import MobilityServices from '../../components/customer/MobilityServices';
 import BookingModal from '../../components/customer/BookingModal';
 import MyBookingsList from '../../components/customer/MyBookingsList';
+import ReviewModal from '../../components/customer/ReviewModal';
+import DisputeModal from '../../components/customer/DisputeModal';
 import AuthModal from '../../components/common/AuthModal';
 import Footer from '../../components/common/Footer';
 
@@ -54,6 +56,8 @@ function CustomerWorkspace() {
   const [notice, setNotice] = useState('');
   const [bookingProvider, setBookingProvider] = useState(null);
   const [bookingOpen, setBookingOpen] = useState(false);
+  const [reviewBooking, setReviewBooking] = useState(null);
+  const [disputeBookingItem, setDisputeBookingItem] = useState(null);
 
   const fetchProviders = useCallback(async (category = selectedCategory?.slug, search = query, location = coords) => {
     setLoadingProviders(true);
@@ -181,12 +185,14 @@ function CustomerWorkspace() {
       <Route path="/bookings" element={currentUser?.accountType === 'customer' ? <main style={{minHeight:'60vh',padding:'20px 0'}}>
         <MyBookingsList bookings={bookings} isLoading={loadingBookings} onRefresh={fetchBookings}
           onCancelBooking={cancelBooking} onDisputeBooking={disputeBooking}
-          onOpenDisputeModal={booking => disputeBooking(booking.id)}
-          onExploreServices={() => navigate('/')} onOpenReviewModal={() => setNotice('Review workflow will be connected in the next customer-app extraction step.')}/>
+          onOpenDisputeModal={booking => setDisputeBookingItem(booking)}
+          onExploreServices={() => navigate('/')} onOpenReviewModal={booking => setReviewBooking(booking)}/>
       </main> : <Navigate to="/" replace/>}/>
       <Route path="*" element={<Navigate to="/" replace/>}/>
     </Routes>
     <AuthModal onNotice={setNotice}/>
+    <ReviewModal isOpen={Boolean(reviewBooking)} onClose={() => setReviewBooking(null)} booking={reviewBooking} onReviewSuccess={() => { setReviewBooking(null); setNotice('Thank you for your review.'); fetchBookings(); }}/>
+    <DisputeModal isOpen={Boolean(disputeBookingItem)} onClose={() => setDisputeBookingItem(null)} booking={disputeBookingItem} onDisputeSuccess={() => { setDisputeBookingItem(null); setNotice('Dispute submitted for Admin review.'); fetchBookings(); }}/>
     <BookingModal isOpen={bookingOpen} onClose={() => setBookingOpen(false)} provider={bookingProvider}
       selectedCategory={selectedCategory} initialAddress={address}
       onBookingSuccess={(_booking, provider) => { setBookingOpen(false); setNotice(`Booking request sent to ${provider.fullName}.`); navigate('/bookings'); fetchBookings(); }}/>
