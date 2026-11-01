@@ -1,0 +1,43 @@
+name: ARY Services CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main, feature/ary-production-grade-experience]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ary-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend-build:
+    name: Frontend production build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+
+  backend-integration:
+    name: Backend integration suite
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - run: npm ci
+        working-directory: server
+      - name: Run backend integration tests
+        run: node test/verify.js
+        working-directory: server
