@@ -52,7 +52,7 @@ export const defaultAdminUser = process.env.ADMIN_EMAIL && process.env.ADMIN_PAS
     }
   : null;
 
-export const defaultSeedProviders = [
+export const defaultSeedProviders = process.env.NODE_ENV === 'production' ? [] : [
   {
     id: 'user-provider-kumar',
     fullName: 'Master Electrician Kumar',
