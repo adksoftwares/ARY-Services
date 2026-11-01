@@ -40,6 +40,7 @@ import { calculateDistanceKm, estimateEtaMinutes, resolveCoordinatesFromLocation
 import { issueSecurityChallenge, verifySecurityChallenge } from './securityShield.js';
 import { registerDriverServiceRoutes } from './driverServiceRoutes.js';
 import { registerGroceryRoutes } from './groceryRoutes.js';
+import { registerRoleAccessRoutes } from './roleAccessRoutes.js';
 
 const app = express();
 const port = Number(process.env.PORT || 4000);
@@ -174,13 +175,20 @@ async function requireAuth(req, res, next) {
       return res.status(403).json({ error: 'This account has been deactivated or rejected by the administration.' });
     }
 
+    const availableRoles = [...new Set([...(Array.isArray(liveUser.roles) ? liveUser.roles : []), liveUser.accountType].filter(Boolean))];
+    const activeRole = decoded.accountType || liveUser.accountType;
+    if (!availableRoles.includes(activeRole)) {
+      return res.status(403).json({ error: 'This role is not approved for your account.' });
+    }
+
     req.user = {
       ...decoded,
       id: liveUser.id,
       phone: liveUser.phone || decoded.phone,
       email: liveUser.email || decoded.email,
       status: liveUser.status,
-      accountType: liveUser.accountType,
+      accountType: decoded.accountType || liveUser.accountType,
+      roles: Array.isArray(liveUser.roles) ? liveUser.roles : [liveUser.accountType],
       category: liveUser.category || null,
       categoryName: liveUser.categoryName || null,
       fullName: liveUser.fullName || decoded.fullName
@@ -202,6 +210,7 @@ async function requireAdmin(req, res, next) {
 }
 
 registerDriverServiceRoutes(app, { requireAuth, requireAdmin, broadcastEvent, getBookings, getUsers });
+registerRoleAccessRoutes(app, { requireAuth, requireAdmin, getUsers, updateUser, generateToken, broadcastEvent });
 registerGroceryRoutes(app, { requireAuth });
 
 // Initialize atomic file storage on boot
