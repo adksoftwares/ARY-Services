@@ -240,6 +240,8 @@ try {
   assert.equal(otpVerifyStep1.status, 200);
   assert.equal(step1Data.needsRegistration, true, 'Server signals new user needs to provide profile name');
   assert(step1Data.registrationToken, 'Server provides registrationToken for step 2');
+  const registrationTokenPayload = JSON.parse(Buffer.from(step1Data.registrationToken.split('.')[1], 'base64url').toString('utf8'));
+  assert(registrationTokenPayload.exp > Date.now() && registrationTokenPayload.exp <= Date.now() + 5 * 60 * 1000 + 1000, 'New-customer registration token must expire within five minutes');
   console.log('✓ Step B: POST /api/auth/otp/verify returned needsRegistration: true with registrationToken');
 
   // Step C: User inputs their name and submits using registrationToken (without re-entering OTP)
