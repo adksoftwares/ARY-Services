@@ -280,9 +280,9 @@ app.post('/api/auth/otp/send', otpLimiter, async (req, res) => {
       return res.status(400).json({ error: 'Mobile phone number is required.' });
     }
 
-    // Verify anti-bot security challenge if token provided
-    if (shieldToken && !verifySecurityChallenge(shieldToken)) {
-      return res.status(400).json({ error: 'Security verification failed. Please solve the security challenge.' });
+    // Every OTP request must present a valid, single-use anti-abuse challenge.
+    if (!shieldToken || !verifySecurityChallenge(shieldToken)) {
+      return res.status(400).json({ error: 'Security verification failed. Please refresh the verification challenge and try again.' });
     }
 
     const result = sendOtp(phone);
