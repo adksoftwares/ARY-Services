@@ -75,3 +75,12 @@ OTP codes are exposed by the simulator only outside production. A production SMS
 ### Storage and deployment notes
 
 When `DATABASE_URL` is configured, account, booking, review, ledger and driver-dispatch state is stored in PostgreSQL using the shared `ary_documents` persistence layer. Production startup requires PostgreSQL; the local JSON adapter is reserved for local development and tests. Set `PG_POOL_MAX` and `PGSSL` for deployment connection-pool/TLS policy. Run `node test/postgresStorage.js` from the `server` directory to verify the PostgreSQL adapter against a disposable test database.
+
+
+## Production SMS OTP (Twilio Verify)
+
+The API supports Twilio Verify for real production SMS delivery. Set `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, and `TWILIO_VERIFY_SERVICE_SID` in the server environment. Use a Twilio Verify Service configured for SMS and ensure the Twilio account is permitted to send to Sri Lankan mobile numbers. Phone numbers are normalized to Sri Lankan E.164 format (`+94XXXXXXXXX`).
+
+Production never falls back to the in-memory development OTP simulator: if Twilio credentials are missing or the provider is unavailable, OTP send/verification returns a service-unavailable response. Development continues to use the local simulator and its `devCode` response. Keep Twilio credentials in deployment secrets only; never commit them.
+
+See [Production setup](docs/PRODUCTION-SETUP.md) for the deployment environment checklist.
