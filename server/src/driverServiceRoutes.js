@@ -1,14 +1,20 @@
-import fs from 'node:fs/promises';
+import crypto from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import crypto from 'node:crypto';
+import { readPersistentState, writePersistentState, mutatePersistentState } from './storage.js';
 
 const dataFile = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'data', 'driver-services.json');
-let writeQueue = Promise.resolve();
-let transactionQueue = Promise.resolve();
-async function mutateJobs(mutator){let result;const task=transactionQueue.then(async()=>{const data=await readJobs();result=await mutator(data);await save(data);});transactionQueue=task.catch(()=>{});await task;return result;}
-async function readJobs(){try{const d=JSON.parse(await fs.readFile(dataFile,'utf8'));return {applications:d.applications||[],jobs:d.jobs||[]};}catch{return {applications:[],jobs:[]};}}
-async function save(data){writeQueue=writeQueue.then(async()=>{await fs.mkdir(path.dirname(dataFile),{recursive:true});await fs.writeFile(dataFile,JSON.stringify(data,null,2));});await writeQueue;}
+const emptyDriverState = { applications: [], jobs: [] };
+async function mutateJobs(mutator) {
+  return mutatePersistentState('driver-services', dataFile, emptyDriverState, mutator);
+}
+async function readJobs() {
+  const state = await readPersistentState('driver-services', dataFile, emptyDriverState);
+  return { applications: state.applications || [], jobs: state.jobs || [] };
+}
+async function save(data) {
+  return writePersistentState('driver-services', dataFile, data);
+}
 const id=prefix=>prefix+'_'+crypto.randomUUID().replaceAll('-','').slice(0,12);
 const types=['food_delivery','ride'];
 export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadcastEvent,getBookings,getUsers}){
