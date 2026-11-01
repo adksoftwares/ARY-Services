@@ -6,14 +6,14 @@ function rolesFor(user) {
   return [...new Set([...(Array.isArray(user.roles) ? user.roles : []), user.accountType].filter(Boolean))];
 }
 
-function publicUser(user, token) {
+function publicUser(user, token, activeRole = user.accountType) {
   return {
     id: user.id,
     fullName: user.fullName,
     phone: user.phone,
     email: user.email,
     location: user.location || '',
-    accountType: user.accountType,
+    accountType: activeRole,
     roles: rolesFor(user),
     roleApplications: user.roleApplications || {},
     status: user.status,
@@ -50,7 +50,7 @@ export function registerRoleAccessRoutes(app, { requireAuth, requireAdmin, getUs
       id: user.id, fullName: user.fullName, phone: user.phone,
       email: user.email, accountType: requestedRole
     });
-    res.json({ user: publicUser(user, token), token, activeRole: requestedRole });
+    res.json({ user: publicUser(user, token, requestedRole), token, activeRole: requestedRole });
   });
 
   // A signed-in Customer can request an additional Provider or Driver role without creating a duplicate account.
