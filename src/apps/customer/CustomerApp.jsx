@@ -12,6 +12,7 @@ import BookingModal from '../../components/customer/BookingModal';
 import MyBookingsList from '../../components/customer/MyBookingsList';
 import ReviewModal from '../../components/customer/ReviewModal';
 import DisputeModal from '../../components/customer/DisputeModal';
+import AccountRoleRequest from '../../components/customer/AccountRoleRequest';
 import AuthModal from '../../components/common/AuthModal';
 import Footer from '../../components/common/Footer';
 
@@ -190,6 +191,7 @@ function CustomerWorkspace() {
       </main> : <Navigate to="/" replace/>}/>
       <Route path="*" element={<Navigate to="/" replace/>}/>
     </Routes>
+    <AccountRoleRequest onNotice={setNotice}/>
     <AuthModal onNotice={setNotice}/>
     <ReviewModal isOpen={Boolean(reviewBooking)} onClose={() => setReviewBooking(null)} booking={reviewBooking} onReviewSuccess={() => { setReviewBooking(null); setNotice('Thank you for your review.'); fetchBookings(); }}/>
     <DisputeModal isOpen={Boolean(disputeBookingItem)} onClose={() => setDisputeBookingItem(null)} booking={disputeBookingItem} onDisputeSuccess={() => { setDisputeBookingItem(null); setNotice('Dispute submitted for Admin review.'); fetchBookings(); }}/>
