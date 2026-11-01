@@ -3,19 +3,6 @@ import { API_BASE } from '../config.js';
 
 const AuthContext = createContext(null);
 
-const defaultAdminUsers = [
-  {
-    id: 'user-admin-arikarran',
-    fullName: 'Arikarran',
-    email: 'arikarran14@gmail.com',
-    phone: '0771414141',
-    location: 'Headquarters, Admin Desk',
-    accountType: 'admin',
-    status: 'active',
-    createdAt: '2026-01-01T00:00:00.000Z'
-  }
-];
-
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(() => {
     try {
@@ -47,6 +34,27 @@ export function AuthProvider({ children }) {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState('login'); // 'login' | 'register'
   const [authError, setAuthError] = useState('');
+
+  // Keep independently opened ARY apps in sync through the shared browser session.
+  useEffect(() => {
+    function syncSharedSession(event) {
+      if (event.key !== 'ary_user') return;
+      let nextUser = null;
+      if (event.newValue) {
+        try {
+          const parsed = JSON.parse(event.newValue);
+          if (parsed && !['rejected', 'suspended'].includes(parsed.status)) nextUser = parsed;
+        } catch {
+          nextUser = null;
+        }
+      }
+      setCurrentUser(nextUser);
+      setRole(nextUser?.accountType === 'provider' ? 'Provider' : nextUser?.accountType === 'driver' ? 'Driver' : nextUser?.accountType === 'admin' ? 'Admin' : 'Customer');
+      if (!nextUser) setIsAuthModalOpen(false);
+    }
+    window.addEventListener('storage', syncSharedSession);
+    return () => window.removeEventListener('storage', syncSharedSession);
+  }, []);
 
   // Keep role in sync with currentUser
   useEffect(() => {
@@ -150,13 +158,7 @@ export function AuthProvider({ children }) {
       persistUser(data.user);
       return data.user;
     } catch (err) {
-      // Local fallback for offline / test resilience
-      const cleanIdent = (identifier || '').trim().toLowerCase();
-      if (cleanIdent === 'arikarran14@gmail.com' && password === 'Admin@123') {
-        const adminUser = defaultAdminUsers[0];
-        persistUser(adminUser);
-        return adminUser;
-      }
+      // Authentication must always be verified by the API. Never create a local fallback session.
       throw err;
     }
   }
