@@ -125,3 +125,24 @@ The four browser entries share the existing AuthContext implementation, API base
 Driver application creation and Admin review now emit explicit SSE events (`driver:application_created` and `driver:application_reviewed`). The Admin application queue refreshes on those events, and the Driver portal displays a notice when its application is reviewed. Driver job events continue using the existing `driver:job_created` and `driver:job_updated` names.
 
 **Role model limitation:** the current backend user record still has one `accountType` value per account. This work synchronizes the same account session across app entries; it does not yet grant multiple roles to one account. A multi-role account model requires a deliberate backend authorization and migration change and must not be simulated in the browser.
+
+
+## Multi-role accounts (incremental implementation)
+
+A single Customer identity can request additional Provider or Driver access without registering a second phone/email account. The original account remains available while each additional role is reviewed separately.
+
+### Role lifecycle
+- Legacy accounts remain compatible: their existing `accountType` is treated as their initial role when no `roles` array exists.
+- Approved roles are stored in `roles`; role requests are stored independently in `roleApplications`.
+- Provider approval sets `providerStatus=active` and copies the reviewed provider profile details. The existing account-level Customer status is not changed.
+- Driver role approval grants access to the Driver app. Driver network applications (Ride / Food Delivery) remain a separate approval step before jobs can be claimed.
+- Admin cannot be requested through the public role application API.
+
+### API
+- `GET /api/auth/roles` — approved roles, pending/reviewed role applications, and active role.
+- `POST /api/auth/active-role` — issues a signed session token for an already-approved role only.
+- `POST /api/account/role-applications` — submit a Provider or Driver role request for the signed-in account.
+- `GET /api/admin/role-applications` — Admin-only pending role request queue.
+- `PATCH /api/admin/role-applications/:userId/:role` — Admin-only approval or rejection.
+
+The server validates the active role against the live account record on every authenticated request. A role value stored in browser state alone does not grant access. Existing single-role accounts and the existing Driver network approval process are retained.
