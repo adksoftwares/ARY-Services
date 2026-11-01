@@ -40,6 +40,7 @@ import { calculateDistanceKm, estimateEtaMinutes, resolveCoordinatesFromLocation
 import { issueSecurityChallenge, verifySecurityChallenge } from './securityShield.js';
 import { registerDriverServiceRoutes } from './driverServiceRoutes.js';
 import { registerGroceryRoutes } from './groceryRoutes.js';
+import { registerRoleAccessRoutes } from './roleAccessRoutes.js';
 
 const app = express();
 const port = Number(process.env.PORT || 4000);
@@ -174,13 +175,20 @@ async function requireAuth(req, res, next) {
       return res.status(403).json({ error: 'This account has been deactivated or rejected by the administration.' });
     }
 
+    const availableRoles = [...new Set([...(liveUser.accountType === 'admin' ? [] : ['customer']), ...(Array.isArray(liveUser.roles) ? liveUser.roles : []), liveUser.accountType].filter(Boolean))];
+    const activeRole = decoded.accountType || liveUser.accountType;
+    if (!availableRoles.includes(activeRole)) {
+      return res.status(403).json({ error: 'This role is not approved for your account.' });
+    }
+
     req.user = {
       ...decoded,
       id: liveUser.id,
       phone: liveUser.phone || decoded.phone,
       email: liveUser.email || decoded.email,
       status: liveUser.status,
-      accountType: liveUser.accountType,
+      accountType: decoded.accountType || liveUser.accountType,
+      roles: [...new Set([...(liveUser.accountType === 'admin' ? [] : ['customer']), ...(Array.isArray(liveUser.roles) ? liveUser.roles : []), liveUser.accountType].filter(Boolean))],
       category: liveUser.category || null,
       categoryName: liveUser.categoryName || null,
       fullName: liveUser.fullName || decoded.fullName
@@ -202,6 +210,7 @@ async function requireAdmin(req, res, next) {
 }
 
 registerDriverServiceRoutes(app, { requireAuth, requireAdmin, broadcastEvent, getBookings, getUsers });
+registerRoleAccessRoutes(app, { requireAuth, requireAdmin, getUsers, updateUser, generateToken, broadcastEvent });
 registerGroceryRoutes(app, { requireAuth });
 
 // Initialize atomic file storage on boot
@@ -320,7 +329,7 @@ app.post('/api/auth/otp/verify', authLimiter, async (req, res) => {
     if (existingUser) {
       if (existingUser.status === 'pending') {
         return res.status(403).json({
-          error: user.accountType === 'driver' ? 'Your Driver account is pending Admin approval. You will receive access once approved by the Super Admin.' : 'Your service provider account is pending Admin approval. You will receive access once approved by the Super Admin.',
+          error: existingUser.accountType === 'driver' ? 'Your Driver account is pending Admin approval. You will receive access once approved by the Super Admin.' : 'Your service provider account is pending Admin approval. You will receive access once approved by the Super Admin.',
           accountStatus: 'pending'
         });
       }
@@ -351,6 +360,8 @@ app.post('/api/auth/otp/verify', authLimiter, async (req, res) => {
           email: existingUser.email,
           location: existingUser.location || '',
           accountType: existingUser.accountType,
+          roles: [...new Set([...(existingUser.accountType === 'admin' ? [] : ['customer']), ...(Array.isArray(existingUser.roles) ? existingUser.roles : []), existingUser.accountType].filter(Boolean))],
+          roleApplications: existingUser.roleApplications || {},
           driverServices: existingUser.driverServices || [],
           status: existingUser.status,
           category: existingUser.category || null,
@@ -447,7 +458,10 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
       driverServices = []
     } = req.body;
 
-    const role = ['customer', 'provider', 'driver', 'admin'].includes(accountType) ? accountType : 'customer';
+    if (String(accountType).toLowerCase() === 'admin') {
+      return res.status(403).json({ error: 'Admin accounts can only be provisioned by an existing authorized administrator.' });
+    }
+    const role = ['customer', 'provider', 'driver'].includes(accountType) ? accountType : 'customer';
     const cleanEmail = email ? email.trim().toLowerCase() : null;
     const cleanPhone = phone ? phone.trim() : (cleanEmail ? cleanEmail.split('@')[0] : '');
     const cleanLocation = (location || '').trim();
@@ -533,6 +547,8 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
         id: newUser.id,
         fullName: newUser.fullName,
         accountType: newUser.accountType,
+        roles: [...new Set([...(newUser.accountType === 'admin' ? [] : ['customer']), newUser.accountType])],
+        roleApplications: {},
         status: newUser.status,
         nicNumber: cleanNic
       }
@@ -561,6 +577,8 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
         email: newUser.email,
         location: newUser.location,
         accountType: newUser.accountType,
+        roles: [newUser.accountType],
+        roleApplications: {},
         status: newUser.status,
         category: newUser.category,
         driverServices: newUser.driverServices || [],
@@ -629,6 +647,8 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
             email: user.email,
             location: user.location || '',
             accountType: user.accountType,
+            roles: [...new Set([...(user.accountType === 'admin' ? [] : ['customer']), ...(Array.isArray(user.roles) ? user.roles : []), user.accountType].filter(Boolean))],
+            roleApplications: user.roleApplications || {},
             driverServices: user.driverServices || [],
             status: user.status,
             category: user.category || null,
@@ -667,7 +687,7 @@ app.get('/api/providers', async (req, res) => {
     const { category, query, location, lat, lng, radiusKm } = req.query;
     const users = await getUsers();
 
-    let providers = users.filter(u => u.accountType === 'provider' && u.status === 'active');
+    let providers = users.filter(u => (u.accountType === 'provider' || (Array.isArray(u.roles) && u.roles.includes('provider'))) && (u.accountType === 'provider' ? u.status === 'active' : u.providerStatus === 'active'));
 
     if (category && category !== 'all') {
       providers = providers.filter(p => p.category === category || (p.categoryName && p.categoryName.toLowerCase().includes(category.toLowerCase())));
@@ -1236,7 +1256,7 @@ app.post('/api/admin/payouts/settle', requireAdmin, async (req, res) => {
   try {
     const minThreshold = Number(req.body.minThreshold) || 1000;
     const users = await getUsers();
-    const providers = users.filter(u => u.accountType === 'provider' && u.status === 'active');
+    const providers = users.filter(u => (u.accountType === 'provider' && u.status === 'active') || (Array.isArray(u.roles) && u.roles.includes('provider') && u.providerStatus === 'active' && !['rejected','suspended'].includes(u.status)));
 
     const disbursements = [];
     for (const p of providers) {
@@ -1494,6 +1514,10 @@ app.get('/api/admin/users', requireAdmin, async (_req, res) => {
       email: u.email,
       location: u.location || 'Not specified',
       accountType: u.accountType,
+      roles: [...new Set([...(Array.isArray(u.roles) ? u.roles : []), u.accountType].filter(Boolean))],
+      roleApplications: u.roleApplications || {},
+      providerStatus: u.providerStatus || (u.accountType === 'provider' ? u.status : null),
+      driverStatus: u.driverStatus || (u.accountType === 'driver' ? u.status : null),
       driverServices: u.driverServices || [],
       status: u.status || 'active',
       category: u.category || null,

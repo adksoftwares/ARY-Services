@@ -23,14 +23,14 @@ export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadc
       if(!existing){existing={id:id('drvapp'),userId:req.user.id,driverName:req.user.fullName,driverType,status:'pending',createdAt:new Date().toISOString()};data.applications.push(existing);}
       applications.push(existing);
     }
-    await save(data);res.status(201).json({applications});
+    await save(data);broadcastEvent?.('driver:application_created',{userId:req.user.id,applications});res.status(201).json({applications});
   });
   app.get('/api/admin/driver-applications',requireAdmin,async(_req,res)=>{const d=await readJobs();res.json({applications:d.applications});});
   app.patch('/api/admin/driver-applications/:id',requireAdmin,async(req,res)=>{
     const status=String(req.body?.status||'');
     if(!['approved','rejected'].includes(status))return res.status(400).json({error:'Status must be approved or rejected.'});
     const d=await readJobs();const a=d.applications.find(x=>x.id===req.params.id);if(!a)return res.status(404).json({error:'Application not found.'});
-    a.status=status;a.reviewedAt=new Date().toISOString();a.reviewedBy=req.user.id;await save(d);res.json({application:a});
+    a.status=status;a.reviewedAt=new Date().toISOString();a.reviewedBy=req.user.id;await save(d);broadcastEvent?.('driver:application_reviewed',{userId:a.userId,application:a});res.json({application:a});
   });
   app.post('/api/food-deliveries',requireAuth,async(req,res)=>{
     const {orderReference,restaurantName,pickupAddress,dropoffAddress,notes=''}=req.body||{};
