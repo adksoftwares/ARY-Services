@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { readPersistentState, writePersistentState, mutatePersistentState } from './storage.js';
+import { readPersistentState, mutatePersistentState } from './storage.js';
 
 const dataFile = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'data', 'driver-services.json');
 const emptyDriverState = { applications: [], jobs: [] };
@@ -11,9 +11,6 @@ async function mutateJobs(mutator) {
 async function readJobs() {
   const state = await readPersistentState('driver-services', dataFile, emptyDriverState);
   return { applications: state.applications || [], jobs: state.jobs || [] };
-}
-async function save(data) {
-  return writePersistentState('driver-services', dataFile, data);
 }
 const id=prefix=>prefix+'_'+crypto.randomUUID().replaceAll('-','').slice(0,12);
 const types=['food_delivery','ride'];
