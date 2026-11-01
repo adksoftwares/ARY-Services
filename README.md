@@ -59,3 +59,7 @@ The Driver entry reuses the existing DriverWorkspace and its API workflows for d
 The Admin entry reuses ARY's existing AdminWorkspace and DriverApplicationsAdmin components. It includes registered account management, service categories, dispute arbitration, CEFT payout settlement and driver application approvals. Admin access is restricted in the UI to signed-in Admin accounts; backend authorization remains essential.
 
 The original root app and its existing features have not been removed or replaced. All four dedicated application entry pages are now present. Build/runtime integration should be verified in the project environment before deployment. Build/runtime integration should be verified in the project environment before deployment.
+
+
+## Shared session and integration
+All four dedicated entries use the same `ary_user` browser session key and the shared `API_BASE` configuration. Login, logout and account changes are synchronized between ARY tabs through the browser storage event. Authentication is verified by the API; the frontend no longer creates a local Admin session when API login fails. Driver application submission and review events are broadcast through the existing SSE hub so the Admin queue and Driver portal can refresh/notify in real time.
