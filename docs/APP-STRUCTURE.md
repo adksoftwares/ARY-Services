@@ -124,7 +124,7 @@ The four browser entries share the existing AuthContext implementation, API base
 
 Driver application creation and Admin review now emit explicit SSE events (`driver:application_created` and `driver:application_reviewed`). The Admin application queue refreshes on those events, and the Driver portal displays a notice when its application is reviewed. Driver job events continue using the existing `driver:job_created` and `driver:job_updated` names.
 
-**Role model limitation:** the current backend user record still has one `accountType` value per account. This work synchronizes the same account session across app entries; it does not yet grant multiple roles to one account. A multi-role account model requires a deliberate backend authorization and migration change and must not be simulated in the browser.
+**Role model:** the legacy `accountType` remains the active role encoded in the signed session for backward compatibility. Approved additional roles are stored separately in `roles`, and role applications are stored in `roleApplications`. Non-admin accounts also receive the baseline Customer experience. The backend validates each requested active role against the live account record; frontend-only role selection cannot grant access.
 
 
 ## Multi-role accounts (incremental implementation)
