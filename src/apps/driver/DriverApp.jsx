@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Link, useNavigate } from 'react-router-dom';
 import { Bike, LogIn, LogOut, ShieldCheck, UserRound } from 'lucide-react';
 import { AuthProvider, useAuth } from '../../context/AuthContext';
+import { API_BASE } from '../../config';
 import DriverWorkspace from '../../components/driver/DriverWorkspace';
 import AuthModal from '../../components/common/AuthModal';
 import Footer from '../../components/common/Footer';
@@ -14,7 +15,7 @@ function DriverPortal() {
 
   useEffect(() => {
     if (!isDriver) return undefined;
-    const events = new EventSource('/api/events');
+    const events = new EventSource(`${API_BASE}/events`);
     const refreshNotice = (event) => {
       try {
         const data = JSON.parse(event.data || '{}');
