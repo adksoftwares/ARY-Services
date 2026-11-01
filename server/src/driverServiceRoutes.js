@@ -37,9 +37,12 @@ function fareFor(distanceKm, serviceType = 'ride') {
   return { currency: 'LKR', baseFare: base, distanceKm, perKmRate: perKm, distanceCharge, total, pricingVersion: process.env[prefix + '_PRICING_VERSION'] || '1' };
 }
 function publicJob(job, viewerId) {
-  const { startPinHash, pinAttempts, ...safe } = job;
-  if (job.customerId === viewerId) safe.startPin = job.startPinForCustomer || null;
-  delete safe.startPinForCustomer;
+  const { startPinHash, pickupPinHash, deliveryPinHash, pinAttempts, deliveryPinAttempts, startPinForCustomer, deliveryPinForCustomer, pickupPinForCustomer, ...safe } = job;
+  if (job.customerId === viewerId) {
+    safe.startPin = startPinForCustomer || null;
+    safe.deliveryPin = deliveryPinForCustomer || null;
+    safe.pickupPin = pickupPinForCustomer || null;
+  }
   return safe;
 }
 function driverTypeForJob(job) {
