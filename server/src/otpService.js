@@ -78,14 +78,16 @@ export function sendOtp(phone) {
     attempts: 0
   });
 
-  console.log(`[SMS OTP Gateway Simulator] 📱 Sent 6-digit OTP [${code}] to phone: ${cleanPhone}`);
+  if (process.env.NODE_ENV !== 'production') {
+    console.info(`[SMS OTP development simulator] Code generated for ${cleanPhone}.`);
+  }
 
   return {
     success: true,
     message: `Verification code sent to ${phone}. Valid for 5 minutes.`,
     phone: cleanPhone,
     expiresInSeconds: 300,
-    devCode: code // Exposed for development & local verification
+    ...(process.env.NODE_ENV === 'production' ? {} : { devCode: code })
   };
 }
 
