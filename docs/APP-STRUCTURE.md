@@ -117,3 +117,11 @@ Dedicated multi-page Vite entries are now present for:
 The Provider app currently provides the existing booking queue/status actions, reviews, earnings/escrow wallet, incoming booking alerts and grocery inventory for grocery providers. Provider activation remains subject to the existing Admin approval process. The Driver app reuses the existing driver application submission, Admin approval, job listing, job claim and job status workflows. The Admin dashboard reuses the existing account management, service category management, dispute arbitration, CEFT payout settlement and driver application approval workflows. All four dedicated app entry pages are now present; build/runtime and end-to-end integration checks remain necessary.
 
 These entries are an incremental migration, not a claim of production readiness. Build/runtime and end-to-end integration checks remain necessary before release.
+
+
+## Shared identity and cross-app session
+The four browser entries share the existing AuthContext implementation, API base configuration and `ary_user` session storage key. The AuthProvider listens for browser storage events so login/logout changes in one ARY tab update other open ARY apps. API authentication remains authoritative; a failed API login must never create a frontend-only Admin session.
+
+Driver application creation and Admin review now emit explicit SSE events (`driver:application_created` and `driver:application_reviewed`). The Admin application queue refreshes on those events, and the Driver portal displays a notice when its application is reviewed. Driver job events continue using the existing `driver:job_created` and `driver:job_updated` names.
+
+**Role model limitation:** the current backend user record still has one `accountType` value per account. This work synchronizes the same account session across app entries; it does not yet grant multiple roles to one account. A multi-role account model requires a deliberate backend authorization and migration change and must not be simulated in the browser.
