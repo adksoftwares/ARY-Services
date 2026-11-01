@@ -16,14 +16,16 @@ export default function AccountRoleRequest({ onNotice }) {
   const [driverServices, setDriverServices] = useState(['ride']);
   const [busy, setBusy] = useState(false);
 
-  if (!currentUser) return null;
-  const roles = currentUser.roles || [currentUser.accountType];
-  const applications = currentUser.roleApplications || {};
+  const roles = currentUser?.roles || (currentUser ? [currentUser.accountType] : []);
+  const applications = currentUser?.roleApplications || {};
 
   useEffect(() => {
+    if (!currentUser) return;
     if (roles.includes('provider') && !roles.includes('driver')) setRole('driver');
     else if (!roles.includes('provider')) setRole('provider');
-  }, [currentUser.id, currentUser.accountType, currentUser.roles?.join(',')]);
+  }, [currentUser?.id, currentUser?.accountType, currentUser?.roles?.join(',')]);
+
+  if (!currentUser) return null;
 
   async function submit(event) {
     event.preventDefault();
