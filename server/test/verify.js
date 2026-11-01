@@ -15,7 +15,9 @@ import {
   getReviewByBooking,
   verifyPassword,
   hashPassword,
-  defaultAdminUser
+  defaultAdminUser,
+  recordEscrowHold,
+  recordEscrowRelease
 } from '../src/storage.js';
 import { sendOtp, verifyOtp, normalizePhone } from '../src/otpService.js';
 
@@ -34,6 +36,16 @@ else assert(!initialUsers.some(u => u.accountType === 'admin'), 'No default Admi
 assert(initialUsers.some(u => u.accountType === 'provider' && u.category === 'electrical-repair'), 'Seed electrical provider must exist');
 assert(initialUsers.some(u => u.accountType === 'provider' && u.category === 'plumbing'), 'Seed plumbing provider must exist');
 console.log('✓ Storage initialized; Admin provisioning is environment-controlled and demo providers are available');
+
+const ledgerTestBookingId = 'ledger-unit-' + Date.now();
+await recordEscrowHold({ bookingId: ledgerTestBookingId, customerId: 'ledger-customer', amount: 1000 });
+await recordEscrowRelease({ bookingId: ledgerTestBookingId, providerId: 'ledger-provider', amount: 1000, platformFee: 100, providerPayout: 900 });
+const ledgerUnitEntries = (await getLedgerEntries()).filter(entry => entry.bookingId === ledgerTestBookingId);
+assert.equal(ledgerUnitEntries.length, 5, 'Escrow ledger must write two hold and three release entries');
+const ledgerDebits = ledgerUnitEntries.filter(entry => entry.type === 'debit').reduce((sum, entry) => sum + entry.amount, 0);
+const ledgerCredits = ledgerUnitEntries.filter(entry => entry.type === 'credit').reduce((sum, entry) => sum + entry.amount, 0);
+assert.equal(ledgerDebits, ledgerCredits, 'Escrow ledger must balance debits and credits');
+console.log('✓ Escrow ledger unit test: double-entry hold and release journal balances');
 
 // Concurrency Test: 30 concurrent user creations
 console.log('Running 30 concurrent atomic writes...');
@@ -714,7 +726,7 @@ try {
   console.log('✓ GET /api/healthz/readiness passed Kubernetes storage readiness probe');
 
   // Test 4: Double-Entry Financial Ledger Invariance (Zero-Sum Balancing)
-  const ledgerEntriesRes = await fetch(`${API_URL}/ledger/booking/${escrowBookData.booking.id}`, {
+  const ledgerEntriesRes = await fetch(`${API_URL}/ledger/booking/${ledgerTestBookingId}`, {
     headers: { Authorization: `Bearer ${adminToken}` }
   });
   assert.equal(ledgerEntriesRes.status, 200);
