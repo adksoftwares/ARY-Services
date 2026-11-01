@@ -66,11 +66,14 @@ app.use((req, res, next) => {
   next();
 });
 
-const allowedOrigins = [
+const developmentOrigins = process.env.NODE_ENV === 'production' ? [] : [
   'http://localhost:5173',
   'http://127.0.0.1:5173',
   'http://localhost:5174',
-  'http://127.0.0.1:5174',
+  'http://127.0.0.1:5174'
+];
+const allowedOrigins = [
+  ...developmentOrigins,
   ...(process.env.CLIENT_ORIGIN || '').split(',').map(value => value.trim()).filter(Boolean)
 ];
 
