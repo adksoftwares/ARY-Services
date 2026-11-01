@@ -10,4 +10,6 @@ coverage/
 .agents/
 .claude/
 .cursor/
-\n# Runtime user, booking, review and ledger data must never be committed.\n/server/data/\n
+
+# Runtime user, booking, review and ledger data must never be committed.
+/server/data/
