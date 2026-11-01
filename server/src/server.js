@@ -1256,7 +1256,7 @@ app.post('/api/admin/payouts/settle', requireAdmin, async (req, res) => {
   try {
     const minThreshold = Number(req.body.minThreshold) || 1000;
     const users = await getUsers();
-    const providers = users.filter(u => u.accountType === 'provider' && u.status === 'active');
+    const providers = users.filter(u => (u.accountType === 'provider' && u.status === 'active') || (Array.isArray(u.roles) && u.roles.includes('provider') && u.providerStatus === 'active' && !['rejected','suspended'].includes(u.status)));
 
     const disbursements = [];
     for (const p of providers) {
