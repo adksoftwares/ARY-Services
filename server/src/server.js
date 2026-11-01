@@ -139,7 +139,7 @@ if (process.env.DATABASE_URL) {
 // Token generation & verification using native Node.js crypto (HS256)
 function generateToken(payload) {
   const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
-  const body = Buffer.from(JSON.stringify({ ...payload, exp: Date.now() + 90 * 24 * 60 * 60 * 1000 })).toString('base64url');
+  const body = Buffer.from(JSON.stringify({ ...payload, exp: payload.exp || Date.now() + 90 * 24 * 60 * 60 * 1000 })).toString('base64url');
   const signature = crypto.createHmac('sha256', JWT_SECRET).update(`${header}.${body}`).digest('base64url');
   return `${header}.${body}.${signature}`;
 }
@@ -396,7 +396,8 @@ app.post('/api/auth/otp/verify', authLimiter, async (req, res) => {
     if (!fullName || !fullName.trim()) {
       const regToken = generateToken({
         phone: cleanPhone,
-        purpose: 'customer_registration'
+        purpose: 'customer_registration',
+        exp: Date.now() + 5 * 60 * 1000
       });
       return res.json({
         status: 'ok',
