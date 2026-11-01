@@ -28,6 +28,7 @@ function DriverPortal() {
     };
     events.addEventListener('driver:job_created', refreshNotice);
     events.addEventListener('driver:job_updated', refreshNotice);
+    events.addEventListener('driver:application_reviewed', refreshNotice);
     return () => events.close();
   }, [isDriver, currentUser?.id]);
 
