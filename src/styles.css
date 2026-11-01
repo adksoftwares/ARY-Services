@@ -747,3 +747,97 @@
 
 
 
+
+
+/* ------------------------------------------------------------------
+   ARY Services - shared production UI polish
+   Keeps the existing visual identity while tightening consistency,
+   responsive behaviour, keyboard access and touch targets.
+------------------------------------------------------------------- */
+:root {
+  --ary-ink: #18352b;
+  --ary-muted: #6e7d73;
+  --ary-green: #174d3d;
+  --ary-line: #e4e9e2;
+  --ary-surface: #ffffff;
+  --ary-canvas: #f8faf7;
+  --ary-radius: 14px;
+  --ary-shadow: 0 12px 32px rgba(23, 55, 40, .055);
+}
+html { scroll-behavior: smooth; }
+body { color: var(--ary-ink); background: var(--ary-canvas); }
+button, input, select, textarea { font: inherit; }
+button:focus-visible, a:focus-visible, input:focus-visible,
+select:focus-visible, textarea:focus-visible {
+  outline: 3px solid rgba(44, 125, 89, .28);
+  outline-offset: 2px;
+}
+button:disabled { cursor: not-allowed; opacity: .62; }
+.app-shell { width: min(100%, 1600px); }
+.topbar {
+  position: sticky; top: 0; z-index: 30;
+  background: rgba(248, 250, 247, .94);
+  backdrop-filter: blur(16px);
+}
+.brand { min-width: max-content; }
+.header-nav-links { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.nav-link-btn, .sign-out-btn, .locate-inline-btn {
+  min-height: 40px; border-radius: 9px; transition: background .18s ease, border-color .18s ease, transform .18s ease;
+}
+.nav-link-btn:hover, .sign-out-btn:hover, .locate-inline-btn:hover { background: #edf3ed; }
+.user-profile { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.user-badge { max-width: 220px; }
+.user-badge span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hero { align-items: center; }
+.search-panel, .category-card, .provider-card, .dashboard-card,
+.modal-card, .dispute-modal-card, .providers-section {
+  box-shadow: var(--ary-shadow);
+}
+.category-card, .provider-card, .dashboard-card { border-radius: var(--ary-radius); }
+input, select, textarea {
+  min-height: 42px;
+  border-color: #dce5dc;
+  border-radius: 9px;
+}
+textarea { min-height: 100px; }
+table { min-width: 620px; }
+[role="alert"] { border-radius: 10px; }
+.toast { z-index: 100; }
+.site-footer { margin-top: 42px; }
+@media (max-width: 980px) {
+  .app-shell { padding-left: 4%; padding-right: 4%; }
+  .topbar { min-height: 72px; height: auto; padding: 12px 0; flex-wrap: wrap; }
+  .header-nav-links { order: 3; width: 100%; overflow-x: auto; flex-wrap: nowrap; padding-bottom: 3px; }
+  .header-nav-links > * { flex: 0 0 auto; }
+  .hero { grid-template-columns: 1fr; padding: 48px 0; min-height: unset; }
+  .hero-visual { max-width: 560px; width: 100%; margin: 0 auto; }
+}
+@media (max-width: 640px) {
+  .app-shell { padding-left: 16px; padding-right: 16px; }
+  .topbar { gap: 10px; }
+  .brand { font-size: 16px; }
+  .brand-mark { width: 32px; height: 32px; }
+  .sign-in, .sign-out-btn { min-height: 42px; padding: 10px 12px; }
+  .user-profile { width: 100%; justify-content: space-between; }
+  .user-badge { max-width: calc(100% - 110px); }
+  h1 { letter-spacing: -1.4px; }
+  .hero { gap: 22px; padding: 34px 0; }
+  .search-panel { flex-wrap: wrap; padding: 10px; }
+  .search-panel > * { min-width: 0; }
+  .search-panel button { min-height: 44px; }
+  .providers-header, .dashboard-heading,
+  .section-heading-row { align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+  .provider-grid, .category-grid { grid-template-columns: 1fr !important; }
+  .modal-overlay { padding: 12px !important; align-items: flex-end !important; }
+  .modal-card, .dispute-modal-card {
+    width: 100% !important; max-width: 100% !important;
+    max-height: min(90dvh, 820px) !important; overflow-y: auto;
+    border-radius: 18px 18px 12px 12px !important;
+  }
+  .toast { left: 12px !important; right: 12px !important; bottom: 12px !important; width: auto !important; }
+  .site-footer { align-items: flex-start; text-align: left; }
+  .footer-left { align-items: flex-start; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}

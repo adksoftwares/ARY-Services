@@ -17,7 +17,6 @@ import {
   addReview,
   getReviewsByProvider,
   getReviewByBooking,
-  recordEscrowHold,
   recordEscrowRelease,
   recordDisputeRefund,
   recordDisputeSplit,
@@ -30,8 +29,7 @@ import {
   initPostgresTables,
   setActivePostgresPool,
   verifyPassword,
-  hashPassword,
-  defaultAdminUser
+  hashPassword
 } from './storage.js';
 
 import { sendOtp, verifyOtp, normalizePhone } from './otpService.js';
@@ -67,19 +65,24 @@ app.use((req, res, next) => {
   next();
 });
 
-const allowedOrigins = [
+const developmentOrigins = process.env.NODE_ENV === 'production' ? [] : [
   'http://localhost:5173',
   'http://127.0.0.1:5173',
   'http://localhost:5174',
-  'http://127.0.0.1:5174',
-  process.env.CLIENT_ORIGIN
-].filter(Boolean);
+  'http://127.0.0.1:5174'
+];
+const allowedOrigins = [
+  ...developmentOrigins,
+  ...(process.env.CLIENT_ORIGIN || '').split(',').map(value => value.trim()).filter(Boolean)
+];
 
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
-    if (/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) return callback(null, true);
-    callback(null, true);
+    if (process.env.NODE_ENV !== 'production' && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error('Origin is not allowed by the ARY Services CORS policy.'));
   },
   credentials: true
 }));
@@ -110,21 +113,33 @@ const otpLimiter = rateLimit({
   message: { error: 'Too many OTP requests from this network. Please try again later.' }
 });
 
-const JWT_SECRET = process.env.JWT_SECRET || 'ary_super_secret_jwt_salt_2026';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET || Buffer.byteLength(JWT_SECRET) < 32) {
+  throw new Error('JWT_SECRET must be configured with at least 32 characters.');
+}
 
 let pool;
+if (process.env.NODE_ENV === 'production' && !process.env.DATABASE_URL) {
+  throw new Error('DATABASE_URL is required in production; file storage is not durable.');
+}
+
 if (process.env.DATABASE_URL) {
-  pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
-  setActivePostgresPool(pool);
-  initPostgresTables(pool).catch(err => {
-    console.warn('PostgreSQL auto-schema initialization notice:', err.message);
+  pool = new pg.Pool({
+    connectionString: process.env.DATABASE_URL,
+    max: Number(process.env.PG_POOL_MAX || 10),
+    idleTimeoutMillis: 30_000,
+    connectionTimeoutMillis: 10_000,
+    ...(process.env.PGSSL === 'true' ? { ssl: { rejectUnauthorized: true } } : {})
   });
+  setActivePostgresPool(pool);
+  // Schema must exist before storage initialization performs any database reads.
+  await initPostgresTables(pool);
 }
 
 // Token generation & verification using native Node.js crypto (HS256)
 function generateToken(payload) {
   const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
-  const body = Buffer.from(JSON.stringify({ ...payload, exp: Date.now() + 90 * 24 * 60 * 60 * 1000 })).toString('base64url');
+  const body = Buffer.from(JSON.stringify({ ...payload, exp: payload.exp || Date.now() + 90 * 24 * 60 * 60 * 1000 })).toString('base64url');
   const signature = crypto.createHmac('sha256', JWT_SECRET).update(`${header}.${body}`).digest('base64url');
   return `${header}.${body}.${signature}`;
 }
@@ -134,9 +149,13 @@ function verifyToken(token) {
   const parts = token.split('.');
   if (parts.length !== 3) return null;
   const [header, body, signature] = parts;
-  const expectedSig = crypto.createHmac('sha256', JWT_SECRET).update(`${header}.${body}`).digest('base64url');
-  if (signature !== expectedSig) return null;
+  const expectedSig = crypto.createHmac('sha256', JWT_SECRET).update(`${header}.${body}`).digest();
+  let suppliedSig;
+  try { suppliedSig = Buffer.from(signature, 'base64url'); } catch { return null; }
+  if (suppliedSig.length !== expectedSig.length || !crypto.timingSafeEqual(suppliedSig, expectedSig)) return null;
   try {
+    const decodedHeader = JSON.parse(Buffer.from(header, 'base64url').toString('utf-8'));
+    if (decodedHeader.alg !== 'HS256' || decodedHeader.typ !== 'JWT') return null;
     const payload = JSON.parse(Buffer.from(body, 'base64url').toString('utf-8'));
     if (payload.exp && payload.exp < Date.now()) return null;
     return payload;
@@ -248,14 +267,15 @@ app.get('/api/healthz/liveness', (_req, res) => {
 
 app.get('/api/healthz/readiness', async (_req, res) => {
   try {
+    if (pool) await pool.query('SELECT 1');
     await initStorage();
     res.json({
       status: 'ready',
-      storage: 'online',
-      pool: pool ? 'connected' : 'file-fallback'
+      storage: pool ? 'postgresql' : 'local-file-fallback',
+      database: pool ? 'connected' : 'not-configured'
     });
-  } catch (err) {
-    res.status(503).json({ status: 'unhealthy', error: err.message });
+  } catch {
+    res.status(503).json({ status: 'not_ready', error: 'Storage health check failed.' });
   }
 });
 
@@ -272,14 +292,14 @@ app.post('/api/auth/otp/send', otpLimiter, async (req, res) => {
       return res.status(400).json({ error: 'Mobile phone number is required.' });
     }
 
-    // Verify anti-bot security challenge if token provided
-    if (shieldToken && !verifySecurityChallenge(shieldToken)) {
-      return res.status(400).json({ error: 'Security verification failed. Please solve the security challenge.' });
+    // Every OTP request must present a valid, single-use anti-abuse challenge.
+    if (!shieldToken || !verifySecurityChallenge(shieldToken)) {
+      return res.status(400).json({ error: 'Security verification failed. Please refresh the verification challenge and try again.' });
     }
 
-    const result = sendOtp(phone);
+    const result = await sendOtp(phone);
     if (!result.success) {
-      return res.status(429).json({ error: result.error, waitSeconds: result.waitSeconds });
+      return res.status(result.unavailable ? 503 : 429).json({ error: result.error, waitSeconds: result.waitSeconds });
     }
 
     res.json({
@@ -313,9 +333,9 @@ app.post('/api/auth/otp/verify', authLimiter, async (req, res) => {
         return res.status(400).json({ error: 'Mobile phone number and 6-digit verification code are required.' });
       }
 
-      const verification = verifyOtp(phone, otp);
+      const verification = await verifyOtp(phone, otp);
       if (!verification.valid) {
-        return res.status(400).json({ error: verification.error });
+        return res.status(verification.unavailable ? 503 : 400).json({ error: verification.error });
       }
 
       cleanPhone = verification.phone;
@@ -376,7 +396,8 @@ app.post('/api/auth/otp/verify', authLimiter, async (req, res) => {
     if (!fullName || !fullName.trim()) {
       const regToken = generateToken({
         phone: cleanPhone,
-        purpose: 'customer_registration'
+        purpose: 'customer_registration',
+        exp: Date.now() + 5 * 60 * 1000
       });
       return res.json({
         status: 'ok',
@@ -884,8 +905,13 @@ app.post('/api/bookings', requireAuth, async (req, res) => {
     const baseAmount = parseInt(rawDigits, 10) || 1500;
     const platformFee = Math.round(baseAmount * 0.10);
     const providerPayout = baseAmount - platformFee;
-    const paymentMethod = req.body.paymentMethod === 'cash' ? 'cash' : 'escrow_online';
-    const paymentStatus = paymentMethod === 'escrow_online' ? 'escrow_held' : 'pending_cash';
+    const paymentMethod = req.body.paymentMethod === 'escrow_online' ? 'escrow_online' : 'cash';
+    if (paymentMethod === 'escrow_online') {
+      return res.status(503).json({
+        error: 'Online escrow is temporarily unavailable until the ARY PayHere merchant account and verified payment callback are configured. Please choose Direct Cash.'
+      });
+    }
+    const paymentStatus = 'pending_cash';
 
     const newBooking = {
       id: 'book-' + Date.now(),
@@ -915,14 +941,7 @@ app.post('/api/bookings', requireAuth, async (req, res) => {
 
     await addBooking(newBooking);
 
-    // Record double-entry financial ledger transaction for online escrow
-    if (paymentMethod === 'escrow_online') {
-      await recordEscrowHold({
-        bookingId: newBooking.id,
-        customerId: customer.id,
-        amount: baseAmount
-      });
-    }
+    // Escrow ledger entries are written only after a verified payment-provider callback.
 
     // Instant Real-Time SSE Dispatch to Provider & Admins
     broadcastEvent('booking:created', {

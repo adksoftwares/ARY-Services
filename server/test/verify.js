@@ -13,9 +13,12 @@ import {
   addReview,
   getReviewsByProvider,
   getReviewByBooking,
+  getLedgerEntries,
   verifyPassword,
   hashPassword,
-  defaultAdminUser
+  defaultAdminUser,
+  recordEscrowHold,
+  recordEscrowRelease
 } from '../src/storage.js';
 import { sendOtp, verifyOtp, normalizePhone } from '../src/otpService.js';
 
@@ -29,10 +32,21 @@ console.log('--- 1. Testing Storage & Mutex Concurrency ---');
 await initStorage();
 const initialUsers = await getUsers();
 assert(Array.isArray(initialUsers), 'Users should be an array');
-assert(initialUsers.some(u => u.email === 'arikarran14@gmail.com'), 'Admin user must exist');
+if (defaultAdminUser) assert(initialUsers.some(u => u.email === defaultAdminUser.email), 'Configured bootstrap Admin must exist');
+else assert(!initialUsers.some(u => u.accountType === 'admin'), 'No default Admin account may be created without deployment credentials');
 assert(initialUsers.some(u => u.accountType === 'provider' && u.category === 'electrical-repair'), 'Seed electrical provider must exist');
 assert(initialUsers.some(u => u.accountType === 'provider' && u.category === 'plumbing'), 'Seed plumbing provider must exist');
-console.log('✓ Storage initialized, default admin user & seed providers confirmed');
+console.log('✓ Storage initialized; Admin provisioning is environment-controlled and demo providers are available');
+
+const ledgerTestBookingId = 'ledger-unit-' + Date.now();
+await recordEscrowHold({ bookingId: ledgerTestBookingId, customerId: 'ledger-customer', amount: 1000 });
+await recordEscrowRelease({ bookingId: ledgerTestBookingId, providerId: 'user-provider-kumar', amount: 1000, platformFee: 100, providerPayout: 900 });
+const ledgerUnitEntries = (await getLedgerEntries()).filter(entry => entry.bookingId === ledgerTestBookingId);
+assert.equal(ledgerUnitEntries.length, 5, 'Escrow ledger must write two hold and three release entries');
+const ledgerDebits = ledgerUnitEntries.filter(entry => entry.type === 'debit').reduce((sum, entry) => sum + entry.amount, 0);
+const ledgerCredits = ledgerUnitEntries.filter(entry => entry.type === 'credit').reduce((sum, entry) => sum + entry.amount, 0);
+assert.equal(ledgerDebits, ledgerCredits, 'Escrow ledger must balance debits and credits');
+console.log('✓ Escrow ledger unit test: double-entry hold and release journal balances');
 
 // Concurrency Test: 30 concurrent user creations
 console.log('Running 30 concurrent atomic writes...');
@@ -144,7 +158,15 @@ const API_URL = `http://localhost:${TEST_PORT}/api`;
 
 const serverProc = spawn('node', ['src/server.js'], {
   cwd: new URL('..', import.meta.url),
-  env: { ...process.env, PORT: String(TEST_PORT) },
+  env: {
+    ...process.env,
+    NODE_ENV: 'test',
+    PORT: String(TEST_PORT),
+    JWT_SECRET: process.env.JWT_SECRET || 'ary-test-jwt-secret-value-at-least-32-chars',
+    OTP_SHIELD_SECRET: process.env.OTP_SHIELD_SECRET || 'ary-test-otp-shield-secret-at-least-32-chars',
+    ADMIN_EMAIL: process.env.ADMIN_EMAIL || 'ary-test-admin@example.local',
+    ADMIN_PASSWORD: process.env.ADMIN_PASSWORD || 'TestOnly_Admin_Password_123!'
+  },
   stdio: 'pipe'
 });
 
@@ -193,11 +215,12 @@ try {
   console.log('Testing interactive two-step customer OTP sign-up flow...');
   const newCustPhone = '0775' + Date.now().toString().slice(-6);
 
-  // Step A: Send OTP
+  // Step A: Obtain a one-time anti-abuse challenge, then send OTP.
+  const customerShield = await (await fetch(`${API_URL}/auth/shield/challenge`)).json();
   const otpSendRes = await fetch(`${API_URL}/auth/otp/send`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ phone: newCustPhone })
+    body: JSON.stringify({ phone: newCustPhone, shieldToken: customerShield.token })
   });
   const otpSendData = await otpSendRes.json();
   assert.equal(otpSendRes.status, 200);
@@ -217,6 +240,8 @@ try {
   assert.equal(otpVerifyStep1.status, 200);
   assert.equal(step1Data.needsRegistration, true, 'Server signals new user needs to provide profile name');
   assert(step1Data.registrationToken, 'Server provides registrationToken for step 2');
+  const registrationTokenPayload = JSON.parse(Buffer.from(step1Data.registrationToken.split('.')[1], 'base64url').toString('utf8'));
+  assert(registrationTokenPayload.exp > Date.now() && registrationTokenPayload.exp <= Date.now() + 5 * 60 * 1000 + 1000, 'New-customer registration token must expire within five minutes');
   console.log('✓ Step B: POST /api/auth/otp/verify returned needsRegistration: true with registrationToken');
 
   // Step C: User inputs their name and submits using registrationToken (without re-entering OTP)
@@ -260,8 +285,8 @@ try {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      identifier: 'arikarran14@gmail.com',
-      password: 'Admin@123'
+      identifier: process.env.ADMIN_EMAIL || 'ary-test-admin@example.local',
+      password: process.env.ADMIN_PASSWORD || 'TestOnly_Admin_Password_123!'
     })
   });
   const adminLoginData = await adminLoginRes.json();
@@ -630,26 +655,9 @@ try {
     })
   });
   const escrowBookData = await escrowBookRes.json();
-  assert.equal(escrowBookRes.status, 200);
-  assert.equal(escrowBookData.booking.paymentMethod, 'escrow_online');
-  assert.equal(escrowBookData.booking.paymentStatus, 'escrow_held');
-  assert.equal(escrowBookData.booking.baseAmount, 2000);
-  assert.equal(escrowBookData.booking.platformFee, 200); // 10% platform commission
-  assert.equal(escrowBookData.booking.providerPayout, 1800); // 90% net provider payout
-  console.log('✓ Digital Escrow verified: 10% platform commission (LKR 200) and 90% payout (LKR 1,800) held safely');
-
-  // Test 4: Provider completes job -> Escrow released
-  const releaseRes = await fetch(`${API_URL}/bookings/${escrowBookData.booking.id}/status`, {
-    method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${adminToken}`
-    },
-    body: JSON.stringify({ status: 'completed' })
-  });
-  const releaseData = await releaseRes.json();
-  assert.equal(releaseData.booking.paymentStatus, 'released_to_provider');
-  console.log('✓ Escrow Release verified: Completion automatically released payout to provider');
+  assert.equal(escrowBookRes.status, 503, 'Online escrow must not be simulated as paid before a verified payment gateway callback exists');
+  assert.match(escrowBookData.error, /PayHere merchant account/i);
+  console.log('✓ Payment safety: unconfigured online escrow is rejected; no fake escrow hold or provider payout is recorded');
 
   // Test 5: Provider KYC Validation (Sri Lankan NIC Format)
   const invalidNicRes = await fetch(`${API_URL}/auth/register`, {
@@ -721,7 +729,7 @@ try {
   console.log('✓ GET /api/healthz/readiness passed Kubernetes storage readiness probe');
 
   // Test 4: Double-Entry Financial Ledger Invariance (Zero-Sum Balancing)
-  const ledgerEntriesRes = await fetch(`${API_URL}/ledger/booking/${escrowBookData.booking.id}`, {
+  const ledgerEntriesRes = await fetch(`${API_URL}/ledger/booking/${ledgerTestBookingId}`, {
     headers: { Authorization: `Bearer ${adminToken}` }
   });
   assert.equal(ledgerEntriesRes.status, 200);
@@ -905,7 +913,7 @@ try {
   assert(geofence1KmData.providers.length < 4, 'Out-of-range providers must be excluded by 1km geofence');
   console.log(`✓ Geofencing boundary verified: 1km filter returned ${geofence1KmData.providers.length} providers (out-of-range excluded)`);
 
-  // Test 2: Customer Cancellation with Call-Out Fee Invariance
+  // Test 2: Online escrow-dependent actions stay unavailable without verified gateway funds.
   const cancelCustPhone = '0774445566';
   const cCustShield = await (await fetch(`${API_URL}/auth/shield/challenge`)).json();
   const cCustOtp = await (await fetch(`${API_URL}/auth/otp/send`, {
@@ -921,10 +929,7 @@ try {
 
   const cancelBookRes = await fetch(`${API_URL}/bookings`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${cCustAuth.token}`
-    },
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cCustAuth.token}` },
     body: JSON.stringify({
       providerId: 'user-provider-kumar',
       categorySlug: 'electrical-repair',
@@ -933,51 +938,13 @@ try {
       paymentMethod: 'escrow_online'
     })
   });
-  const cancelBooking = (await cancelBookRes.json()).booking;
+  assert.equal(cancelBookRes.status, 503, 'An escrow-dependent booking must not be created without real payment confirmation');
+  console.log('✓ Cancellation safety: no unpaid online escrow booking is created');
 
-  // Kumar starts the job (in_progress)
-  await fetch(`${API_URL}/bookings/${cancelBooking.id}/status`, {
-    method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${kumarAuth.token}`
-    },
-    body: JSON.stringify({ status: 'in_progress' })
-  });
-
-  // Customer cancels while in_progress -> LKR 500 call-out fee credited to provider, remainder refunded
-  const cancelActionRes = await fetch(`${API_URL}/bookings/${cancelBooking.id}/cancel`, {
-    method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${cCustAuth.token}`
-    },
-    body: JSON.stringify({ reason: 'Client emergency, had to leave premises' })
-  });
-  assert.equal(cancelActionRes.status, 200);
-  const cancelData = await cancelActionRes.json();
-  assert.equal(cancelData.booking.status, 'cancelled');
-  assert.equal(cancelData.booking.paymentStatus, 'cancelled_callout_fee_paid');
-
-  // Verify ledger zero-sum invariance for call-out fee cancellation
-  const cancelLedgerRes = await fetch(`${API_URL}/ledger/booking/${cancelBooking.id}`, {
-    headers: { Authorization: `Bearer ${adminToken}` }
-  });
-  const cancelLedger = await cancelLedgerRes.json();
-  const coEntries = cancelLedger.entries.filter(e => e.transactionId && e.transactionId.startsWith('tx-callout'));
-  assert.equal(coEntries.length, 3, 'Call-out cancellation must have 3 entries (vault debit, provider credit, customer credit)');
-  const coDebits = coEntries.filter(e => e.type === 'debit').reduce((s, e) => s + e.amount, 0);
-  const coCredits = coEntries.filter(e => e.type === 'credit').reduce((s, e) => s + e.amount, 0);
-  assert.equal(coDebits, coCredits, 'Call-out cancellation transaction must balance zero-sum');
-  console.log('✓ Cancellation Engine verified: LKR 500 call-out fee awarded to provider, remainder refunded with zero-sum ledger balance');
-
-  // Test 3: Customer Dispute & Escrow Freeze
+  // Test 3: Dispute workflows cannot freeze funds that were never collected.
   const disputeBookRes = await fetch(`${API_URL}/bookings`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${cCustAuth.token}`
-    },
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cCustAuth.token}` },
     body: JSON.stringify({
       providerId: 'user-provider-perera',
       categorySlug: 'plumbing',
@@ -986,52 +953,8 @@ try {
       paymentMethod: 'escrow_online'
     })
   });
-  const disputeBooking = (await disputeBookRes.json()).booking;
-
-  const fileDisputeRes = await fetch(`${API_URL}/bookings/${disputeBooking.id}/dispute`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${cCustAuth.token}`
-    },
-    body: JSON.stringify({
-      reason: 'Leak became worse after repair attempt, water damage to cabinet'
-    })
-  });
-  assert.equal(fileDisputeRes.status, 200);
-  const fileDisputeData = await fileDisputeRes.json();
-  assert.equal(fileDisputeData.booking.status, 'disputed');
-  assert.equal(fileDisputeData.booking.paymentStatus, 'disputed_frozen');
-  console.log('✓ Escrow Dispute Lifecycle verified: Booking status=disputed and paymentStatus=disputed_frozen');
-
-  // Test 4: Super Admin Dispute Arbitration (50/50 Mediated Split)
-  const arbitrateRes = await fetch(`${API_URL}/admin/bookings/${disputeBooking.id}/arbitrate`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${adminToken}`
-    },
-    body: JSON.stringify({
-      action: 'split_50_50',
-      notes: 'Admin mediated settlement: 50% refund to customer, 40% provider materials, 10% platform fee'
-    })
-  });
-  assert.equal(arbitrateRes.status, 200);
-  const arbitrateData = await arbitrateRes.json();
-  assert.equal(arbitrateData.booking.status, 'settled_split');
-  assert.equal(arbitrateData.booking.paymentStatus, 'partial_refund_split');
-
-  // Verify double-entry ledger balance for mediated split
-  const splitLedgerRes = await fetch(`${API_URL}/ledger/booking/${disputeBooking.id}`, {
-    headers: { Authorization: `Bearer ${adminToken}` }
-  });
-  const splitLedger = await splitLedgerRes.json();
-  const splitEntries = splitLedger.entries.filter(e => e.transactionId && e.transactionId.startsWith('tx-dispute-split'));
-  assert(splitEntries.length >= 3, 'Dispute split must record customer refund, provider payout, and platform fee');
-  const spDebits = splitEntries.filter(e => e.type === 'debit').reduce((s, e) => s + e.amount, 0);
-  const spCredits = splitEntries.filter(e => e.type === 'credit').reduce((s, e) => s + e.amount, 0);
-  assert.equal(spDebits, spCredits, 'Mediated split ledger entries must strictly balance zero-sum');
-  console.log('✓ Admin Dispute Arbitration verified: 50/50 mediated split settled with zero-sum double-entry ledger balance');
+  assert.equal(disputeBookRes.status, 503, 'An escrow dispute cannot be opened before funds are actually held');
+  console.log('✓ Dispute safety: no fake escrow freeze or arbitration is recorded');
 
   // Test 5: Automated CEFT Bank Payout Settlement Run
   const payoutRunRes = await fetch(`${API_URL}/admin/payouts/settle`, {

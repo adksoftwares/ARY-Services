@@ -111,7 +111,9 @@ export default function AuthModal({ onNotice }) {
       setSimulatedSmsCode(data.devCode || '');
       setResendCooldown(30);
       if (onNotice) {
-        onNotice(`📱 SMS Sent! Simulation Code: [ ${data.devCode} ]`);
+        onNotice(data.devCode
+          ? `SMS simulation code: ${data.devCode}`
+          : 'Verification code sent. Please check your phone.');
       }
     } catch (err) {
       setAuthError(err.message || 'Could not send verification code.');
@@ -211,7 +213,7 @@ export default function AuthModal({ onNotice }) {
         phone: regPhone.trim(),
         email: regAccountType === 'customer' ? null : (regEmail.trim() || null),
         location: regLocation.trim(),
-        password: regAccountType === 'customer' ? (regPassword || 'customer123') : regPassword,
+        password: regPassword,
         accountType: regAccountType,
         driverServices: regAccountType === 'driver' ? regDriverServices : [],
         category: regAccountType === 'provider' ? regCategory : null,

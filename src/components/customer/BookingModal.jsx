@@ -18,7 +18,7 @@ export default function BookingModal({
   const [bookingDate, setBookingDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [bookingTimeSlot, setBookingTimeSlot] = useState('Morning (9 AM - 12 PM)');
   const [bookingProblem, setBookingProblem] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState('escrow_online'); // 'escrow_online' | 'cash'
+  const [paymentMethod, setPaymentMethod] = useState('cash'); // Online escrow stays disabled until PayHere is verified
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
   const [error, setError] = useState('');
@@ -213,8 +213,11 @@ export default function BookingModal({
             </span>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
               <div
-                onClick={() => setPaymentMethod('escrow_online')}
+                aria-disabled="true"
                 style={{
+                  opacity: 0.55,
+                  cursor: 'not-allowed',
+                  pointerEvents: 'none',
                   border: `2px solid ${paymentMethod === 'escrow_online' ? '#059669' : '#e2e8f0'}`,
                   borderRadius: 8,
                   padding: '10px 12px',
@@ -225,10 +228,10 @@ export default function BookingModal({
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, fontSize: '0.85rem', color: '#065f46' }}>
                   <ShieldCheck size={16} color="#059669" />
-                  <span>Online Escrow</span>
+                  <span>Online Escrow · Coming soon</span>
                 </div>
                 <p style={{ margin: '4px 0 0', fontSize: '0.74rem', color: '#047857', lineHeight: 1.3 }}>
-                  Protected by 14-Day ARY Workmanship Guarantee. Released only when satisfied.
+                  Available after PayHere merchant verification and payment callback setup.
                 </p>
               </div>
 
@@ -255,7 +258,7 @@ export default function BookingModal({
           </div>
 
           <div style={{ fontSize: '11.5px', color: '#68776d', margin: '4px 0 14px', lineHeight: 1.4 }}>
-            ℹ️ The provider will receive this request with your registered contact number (<b>{currentUser?.phone}</b>) to confirm the appointment.
+            ℹ️ Online payments are not active yet. Choose Direct Cash; escrow will be enabled after payment gateway verification. The provider will receive this request with your registered contact number (<b>{currentUser?.phone}</b>) to confirm the appointment.
           </div>
 
           <button type="submit" className="modal-submit-btn" disabled={isSubmitting}>

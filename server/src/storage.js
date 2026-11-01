@@ -13,37 +13,58 @@ const reviewsFile = path.join(dataDir, 'reviews.json');
 const ledgerFile = path.join(dataDir, 'ledger.json');
 
 export function hashPassword(password) {
-  const salt = 'ary_salt_2026';
-  return crypto.pbkdf2Sync(password, salt, 1000, 32, 'sha256').toString('hex');
+  const salt = crypto.randomBytes(16);
+  const derived = crypto.scryptSync(String(password), salt, 64);
+  return 'scrypt$' + salt.toString('hex') + '$' + derived.toString('hex');
 }
 
 export function verifyPassword(password, storedHash) {
-  if (!storedHash) return false;
-  return hashPassword(password) === storedHash;
+  if (typeof password !== 'string' || typeof storedHash !== 'string' || !storedHash) return false;
+  if (storedHash.startsWith('scrypt$')) {
+    const parts = storedHash.split('$');
+    const saltHex = parts[1];
+    const hashHex = parts[2];
+    if (!saltHex || !hashHex || !/^[a-f0-9]+$/i.test(saltHex) || !/^[a-f0-9]+$/i.test(hashHex)) return false;
+    const salt = Buffer.from(saltHex, 'hex');
+    const expected = Buffer.from(hashHex, 'hex');
+    if (salt.length !== 16 || expected.length !== 64) return false;
+    const actual = crypto.scryptSync(password, salt, expected.length);
+    return crypto.timingSafeEqual(actual, expected);
+  }
+  if (!/^[a-f0-9]{64}$/i.test(storedHash)) return false;
+  const legacy = crypto.pbkdf2Sync(password, 'ary_salt_2026', 1000, 32, 'sha256');
+  const expected = Buffer.from(storedHash, 'hex');
+  return legacy.length === expected.length && crypto.timingSafeEqual(legacy, expected);
 }
 
-export const defaultAdminUser = {
-  id: 'user-admin-arikarran',
-  fullName: 'Arikarran',
-  phone: '0771414141',
-  email: 'arikarran14@gmail.com',
-  location: 'Headquarters, Admin Desk',
-  passwordHash: hashPassword('Admin@123'),
-  accountType: 'admin',
-  status: 'active',
-  createdAt: '2026-01-01T00:00:00.000Z'
-};
+// Admin bootstrap is opt-in and must be configured through deployment secrets.
+if (process.env.ADMIN_PASSWORD && Buffer.byteLength(process.env.ADMIN_PASSWORD) < 14) {
+  throw new Error('ADMIN_PASSWORD must contain at least 14 characters.');
+}
+export const defaultAdminUser = process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD
+  ? {
+      id: 'ary-bootstrap-admin',
+      fullName: process.env.ADMIN_NAME || 'ARY Super Admin',
+      phone: process.env.ADMIN_PHONE || '',
+      email: process.env.ADMIN_EMAIL.trim().toLowerCase(),
+      location: 'ARY Headquarters',
+      passwordHash: hashPassword(process.env.ADMIN_PASSWORD),
+      accountType: 'admin',
+      status: 'active',
+      createdAt: new Date().toISOString()
+    }
+  : null;
 
-export const defaultSeedProviders = [
+export const defaultSeedProviders = process.env.NODE_ENV === 'production' ? [] : [
   {
     id: 'user-provider-kumar',
+    passwordHash: process.env.NODE_ENV === 'production' ? undefined : hashPassword('KumarPass@123'),
     fullName: 'Master Electrician Kumar',
     phone: '0779998877',
     email: 'kumar.electric@example.local',
     location: 'Bambalapitiya, Colombo',
     lat: 6.8920,
     lng: 79.8560,
-    passwordHash: hashPassword('KumarPass@123'),
     accountType: 'provider',
     status: 'active',
     category: 'electrical-repair',
@@ -56,13 +77,13 @@ export const defaultSeedProviders = [
   },
   {
     id: 'user-provider-perera',
+    passwordHash: process.env.NODE_ENV === 'production' ? undefined : hashPassword('PereraPass@123'),
     fullName: 'Perera Plumbing Experts',
     phone: '0772223344',
     email: 'perera.plumb@example.local',
     location: 'Colombo 03',
     lat: 6.8970,
     lng: 79.8550,
-    passwordHash: hashPassword('PereraPass@123'),
     accountType: 'provider',
     status: 'active',
     category: 'plumbing',
@@ -75,13 +96,13 @@ export const defaultSeedProviders = [
   },
   {
     id: 'user-provider-fresh',
+    passwordHash: process.env.NODE_ENV === 'production' ? undefined : hashPassword('FreshPass@123'),
     fullName: 'Lanka Fresh Groceries',
     phone: '0773334455',
     email: 'fresh.food@example.local',
     location: 'Colombo 04',
     lat: 6.8850,
     lng: 79.8600,
-    passwordHash: hashPassword('FreshPass@123'),
     accountType: 'provider',
     status: 'active',
     category: 'food-shops',
@@ -94,13 +115,13 @@ export const defaultSeedProviders = [
   },
   {
     id: 'user-provider-quickfix',
+    passwordHash: process.env.NODE_ENV === 'production' ? undefined : hashPassword('QuickPass@123'),
     fullName: 'QuickFix Carpentry & AC',
     phone: '0774445566',
     email: 'quickfix@example.local',
     location: 'Nugegoda, Colombo',
     lat: 6.8650,
     lng: 79.8990,
-    passwordHash: hashPassword('QuickPass@123'),
     accountType: 'provider',
     status: 'active',
     category: 'other-services',
@@ -113,28 +134,7 @@ export const defaultSeedProviders = [
   }
 ];
 
-export const verifiedArikarranProvider = {
-  id: 'user-provider-arikarran',
-  fullName: 'Arikarran Sriskandarajah',
-  phone: '0777153933',
-  email: '14arikarran@gmail.com',
-  location: 'Peradeniya, Kandy District, Central Province',
-  lat: 7.2580,
-  lng: 80.5970,
-  passwordHash: hashPassword('Admin@123'),
-  accountType: 'provider',
-  status: 'active',
-  category: 'electrical-repair',
-  categoryName: 'Electrical Repair',
-  baseCharge: 'LKR 1,500',
-  nicNumber: '200134903737',
-  rating: 5.0,
-  reviewCount: 0,
-  experienceYears: 5,
-  createdAt: '2026-10-25T18:00:00.000Z'
-};
-
-export const defaultUsers = [defaultAdminUser, ...defaultSeedProviders, verifiedArikarranProvider];
+export const defaultUsers = [...(defaultAdminUser ? [defaultAdminUser] : []), ...defaultSeedProviders];
 
 class AsyncLock {
   constructor() {
@@ -159,6 +159,34 @@ let cachedReviews = null;
 let cachedLedger = null;
 
 async function atomicWriteJson(filePath, data) {
+  if (activePostgresPool) {
+    const collection = path.basename(filePath, '.json');
+    const client = await activePostgresPool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [collection]);
+      await client.query('DELETE FROM ary_documents WHERE collection = $1', [collection]);
+      if (Array.isArray(data) && data.length) {
+        const values = [];
+        const placeholders = data.map((item, index) => {
+          const offset = index * 4;
+          values.push(collection, String(item.id ?? index), index, JSON.stringify(item));
+          return `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}::jsonb)`;
+        });
+        await client.query(
+          `INSERT INTO ary_documents (collection, record_id, position, payload) VALUES ${placeholders.join(', ')}`,
+          values
+        );
+      }
+      await client.query('COMMIT');
+      return;
+    } catch (error) {
+      await client.query('ROLLBACK').catch(() => {});
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
   await fs.mkdir(path.dirname(filePath), { recursive: true });
   const tempPath = `${filePath}.tmp.${Date.now()}.${Math.random().toString(36).slice(2)}`;
   const jsonStr = JSON.stringify(data, null, 2);
@@ -177,29 +205,38 @@ async function atomicWriteJson(filePath, data) {
   }
 }
 
+async function readJsonArray(filePath) {
+  if (activePostgresPool) {
+    const collection = path.basename(filePath, '.json');
+    const result = await activePostgresPool.query(
+      'SELECT payload FROM ary_documents WHERE collection = $1 ORDER BY position ASC',
+      [collection]
+    );
+    return result.rows.map(row => row.payload);
+  }
+  const raw = await fs.readFile(filePath, 'utf-8');
+  const parsed = JSON.parse(raw);
+  return Array.isArray(parsed) ? parsed : [];
+}
+
 export async function getUsers() {
   return usersLock.acquire(async () => {
-    if (cachedUsers !== null) {
+    if (cachedUsers !== null && !activePostgresPool) {
       return [...cachedUsers];
     }
     try {
       await fs.mkdir(dataDir, { recursive: true });
-      const raw = await fs.readFile(usersFile, 'utf-8');
-      const parsed = JSON.parse(raw);
+      const parsed = await readJsonArray(usersFile);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        // Ensure default admin user is always preserved
-        if (!parsed.some(u => u.email === 'arikarran14@gmail.com' || u.id === 'user-admin-arikarran')) {
+        // Provision an Admin only when deployment credentials are explicitly configured.
+        if (defaultAdminUser && !parsed.some(u => u.email === defaultAdminUser.email || u.id === defaultAdminUser.id)) {
           parsed.unshift(defaultAdminUser);
         }
-        // Ensure all default seed providers exist so categories are always populated
+        // Ensure demo catalog providers exist so local preview categories are populated
         for (const seedProv of defaultSeedProviders) {
           if (!parsed.some(u => u.id === seedProv.id)) {
             parsed.push(seedProv);
           }
-        }
-        // Ensure verified provider Arikarran is always preserved
-        if (!parsed.some(u => u.phone === '0777153933' || u.id === 'user-provider-arikarran')) {
-          parsed.push(verifiedArikarranProvider);
         }
         cachedUsers = parsed;
         await atomicWriteJson(usersFile, cachedUsers);
@@ -216,11 +253,8 @@ export async function getUsers() {
 
 export async function saveUsers(users) {
   return usersLock.acquire(async () => {
-    if (!users.some(u => u.email === 'arikarran14@gmail.com' || u.id === 'user-admin-arikarran')) {
+    if (defaultAdminUser && !users.some(u => u.email === defaultAdminUser.email || u.id === defaultAdminUser.id)) {
       users = [defaultAdminUser, ...users];
-    }
-    if (!users.some(u => u.phone === '0777153933' || u.id === 'user-provider-arikarran')) {
-      users = [...users, verifiedArikarranProvider];
     }
     cachedUsers = [...users];
     await atomicWriteJson(usersFile, cachedUsers);
@@ -235,10 +269,9 @@ export async function findUser(predicate) {
 
 export async function addUser(newUser) {
   return usersLock.acquire(async () => {
-    const current = cachedUsers !== null ? cachedUsers : await (async () => {
+    const current = activePostgresPool ? await readJsonArray(usersFile) : cachedUsers !== null ? cachedUsers : await (async () => {
       try {
-        const raw = await fs.readFile(usersFile, 'utf-8');
-        const parsed = JSON.parse(raw);
+        const parsed = await readJsonArray(usersFile);
         return Array.isArray(parsed) ? parsed : [...defaultUsers];
       } catch {
         return [...defaultUsers];
@@ -253,10 +286,9 @@ export async function addUser(newUser) {
 
 export async function updateUser(id, updater) {
   return usersLock.acquire(async () => {
-    const current = cachedUsers !== null ? cachedUsers : await (async () => {
+    const current = activePostgresPool ? await readJsonArray(usersFile) : cachedUsers !== null ? cachedUsers : await (async () => {
       try {
-        const raw = await fs.readFile(usersFile, 'utf-8');
-        const parsed = JSON.parse(raw);
+        const parsed = await readJsonArray(usersFile);
         return Array.isArray(parsed) ? parsed : [...defaultUsers];
       } catch {
         return [...defaultUsers];
@@ -275,10 +307,9 @@ export async function updateUser(id, updater) {
 
 export async function deleteUser(id) {
   return usersLock.acquire(async () => {
-    const current = cachedUsers !== null ? cachedUsers : await (async () => {
+    const current = activePostgresPool ? await readJsonArray(usersFile) : cachedUsers !== null ? cachedUsers : await (async () => {
       try {
-        const raw = await fs.readFile(usersFile, 'utf-8');
-        const parsed = JSON.parse(raw);
+        const parsed = await readJsonArray(usersFile);
         return Array.isArray(parsed) ? parsed : [...defaultUsers];
       } catch {
         return [...defaultUsers];
@@ -293,13 +324,12 @@ export async function deleteUser(id) {
 
 export async function getBookings() {
   return bookingsLock.acquire(async () => {
-    if (cachedBookings !== null) {
+    if (cachedBookings !== null && !activePostgresPool) {
       return [...cachedBookings];
     }
     try {
       await fs.mkdir(dataDir, { recursive: true });
-      const raw = await fs.readFile(bookingsFile, 'utf-8');
-      const parsed = JSON.parse(raw);
+      const parsed = await readJsonArray(bookingsFile);
       if (Array.isArray(parsed)) {
         cachedBookings = parsed;
         return [...cachedBookings];
@@ -323,10 +353,9 @@ export async function saveBookings(bookings) {
 
 export async function addBooking(newBooking) {
   return bookingsLock.acquire(async () => {
-    const current = cachedBookings !== null ? cachedBookings : await (async () => {
+    const current = activePostgresPool ? await readJsonArray(bookingsFile) : cachedBookings !== null ? cachedBookings : await (async () => {
       try {
-        const raw = await fs.readFile(bookingsFile, 'utf-8');
-        return JSON.parse(raw);
+        return await readJsonArray(bookingsFile);
       } catch {
         return [];
       }
@@ -340,10 +369,9 @@ export async function addBooking(newBooking) {
 
 export async function updateBooking(id, updater) {
   return bookingsLock.acquire(async () => {
-    const current = cachedBookings !== null ? cachedBookings : await (async () => {
+    const current = activePostgresPool ? await readJsonArray(bookingsFile) : cachedBookings !== null ? cachedBookings : await (async () => {
       try {
-        const raw = await fs.readFile(bookingsFile, 'utf-8');
-        return JSON.parse(raw);
+        return await readJsonArray(bookingsFile);
       } catch {
         return [];
       }
@@ -361,13 +389,12 @@ export async function updateBooking(id, updater) {
 
 export async function getReviews() {
   return reviewsLock.acquire(async () => {
-    if (cachedReviews !== null) {
+    if (cachedReviews !== null && !activePostgresPool) {
       return [...cachedReviews];
     }
     try {
       await fs.mkdir(dataDir, { recursive: true });
-      const raw = await fs.readFile(reviewsFile, 'utf-8');
-      const parsed = JSON.parse(raw);
+      const parsed = await readJsonArray(reviewsFile);
       if (Array.isArray(parsed)) {
         cachedReviews = parsed;
         return [...cachedReviews];
@@ -383,10 +410,9 @@ export async function getReviews() {
 
 export async function addReview(newReview) {
   return reviewsLock.acquire(async () => {
-    const current = cachedReviews !== null ? cachedReviews : await (async () => {
+    const current = activePostgresPool ? await readJsonArray(reviewsFile) : cachedReviews !== null ? cachedReviews : await (async () => {
       try {
-        const raw = await fs.readFile(reviewsFile, 'utf-8');
-        return JSON.parse(raw);
+        return await readJsonArray(reviewsFile);
       } catch {
         return [];
       }
@@ -428,13 +454,12 @@ export async function getReviewByBooking(bookingId) {
 // ---------------------------------------------------------------------
 export async function getLedgerEntries() {
   return ledgerLock.acquire(async () => {
-    if (cachedLedger !== null) {
+    if (cachedLedger !== null && !activePostgresPool) {
       return [...cachedLedger];
     }
     try {
       await fs.mkdir(dataDir, { recursive: true });
-      const raw = await fs.readFile(ledgerFile, 'utf-8');
-      const parsed = JSON.parse(raw);
+      const parsed = await readJsonArray(ledgerFile);
       if (Array.isArray(parsed)) {
         cachedLedger = parsed;
         return [...cachedLedger];
@@ -448,10 +473,9 @@ export async function getLedgerEntries() {
 
 export async function addLedgerEntries(entries) {
   return ledgerLock.acquire(async () => {
-    const current = cachedLedger !== null ? cachedLedger : await (async () => {
+    const current = activePostgresPool ? await readJsonArray(ledgerFile) : cachedLedger !== null ? cachedLedger : await (async () => {
       try {
-        const raw = await fs.readFile(ledgerFile, 'utf-8');
-        return JSON.parse(raw);
+        return await readJsonArray(ledgerFile);
       } catch {
         return [];
       }
@@ -783,10 +807,110 @@ export async function initPostgresTables(pool) {
         description TEXT,
         timestamp TIMESTAMP WITH TIME ZONE DEFAULT NOW()
       );
+
+      CREATE TABLE IF NOT EXISTS ary_documents (
+        collection VARCHAR(80) NOT NULL,
+        record_id VARCHAR(160) NOT NULL,
+        position BIGINT NOT NULL,
+        payload JSONB NOT NULL,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        PRIMARY KEY (collection, record_id)
+      );
+      CREATE INDEX IF NOT EXISTS ary_documents_collection_position_idx
+        ON ary_documents (collection, position);
     `);
   } finally {
     client.release();
   }
+}
+
+let persistentStateQueue = Promise.resolve();
+
+export async function readPersistentState(collection, fallbackFile, fallbackValue = {}) {
+  if (activePostgresPool) {
+    const result = await activePostgresPool.query(
+      'SELECT payload FROM ary_documents WHERE collection = $1 AND record_id = $2',
+      [collection, 'state']
+    );
+    return result.rows[0]?.payload ?? structuredClone(fallbackValue);
+  }
+  try {
+    return JSON.parse(await fs.readFile(fallbackFile, 'utf-8'));
+  } catch {
+    return structuredClone(fallbackValue);
+  }
+}
+
+export async function writePersistentState(collection, fallbackFile, value) {
+  if (activePostgresPool) {
+    const client = await activePostgresPool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [collection]);
+      await client.query(
+        `INSERT INTO ary_documents (collection, record_id, position, payload, updated_at)
+         VALUES ($1, $2, 0, $3::jsonb, NOW())
+         ON CONFLICT (collection, record_id)
+         DO UPDATE SET payload = EXCLUDED.payload, updated_at = NOW()`,
+        [collection, 'state', JSON.stringify(value)]
+      );
+      await client.query('COMMIT');
+    } catch (error) {
+      await client.query('ROLLBACK').catch(() => {});
+      throw error;
+    } finally {
+      client.release();
+    }
+    return value;
+  }
+  const task = persistentStateQueue.then(async () => {
+    await fs.mkdir(path.dirname(fallbackFile), { recursive: true });
+    await fs.writeFile(fallbackFile, JSON.stringify(value, null, 2), 'utf-8');
+  });
+  persistentStateQueue = task.catch(() => {});
+  await task;
+  return value;
+}
+
+export async function mutatePersistentState(collection, fallbackFile, fallbackValue, mutator) {
+  if (activePostgresPool) {
+    const client = await activePostgresPool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [collection]);
+      const result = await client.query(
+        'SELECT payload FROM ary_documents WHERE collection = $1 AND record_id = $2 FOR UPDATE',
+        [collection, 'state']
+      );
+      const state = result.rows[0]?.payload ?? structuredClone(fallbackValue);
+      const outcome = await mutator(state);
+      await client.query(
+        `INSERT INTO ary_documents (collection, record_id, position, payload, updated_at)
+         VALUES ($1, $2, 0, $3::jsonb, NOW())
+         ON CONFLICT (collection, record_id)
+         DO UPDATE SET payload = EXCLUDED.payload, updated_at = NOW()`,
+        [collection, 'state', JSON.stringify(state)]
+      );
+      await client.query('COMMIT');
+      return outcome;
+    } catch (error) {
+      await client.query('ROLLBACK').catch(() => {});
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+  const task = persistentStateQueue.then(async () => {
+    let state;
+    try { state = JSON.parse(await fs.readFile(fallbackFile, 'utf-8')); }
+    catch { state = structuredClone(fallbackValue); }
+    const outcome = await mutator(state);
+    await fs.mkdir(path.dirname(fallbackFile), { recursive: true });
+    await fs.writeFile(fallbackFile, JSON.stringify(state, null, 2), 'utf-8');
+    return outcome;
+  });
+  persistentStateQueue = task.catch(() => {});
+  return task;
 }
 
 export async function getLedgerByBooking(bookingId) {
