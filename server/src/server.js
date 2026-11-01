@@ -458,7 +458,10 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
       driverServices = []
     } = req.body;
 
-    const role = ['customer', 'provider', 'driver', 'admin'].includes(accountType) ? accountType : 'customer';
+    if (String(accountType).toLowerCase() === 'admin') {
+      return res.status(403).json({ error: 'Admin accounts can only be provisioned by an existing authorized administrator.' });
+    }
+    const role = ['customer', 'provider', 'driver'].includes(accountType) ? accountType : 'customer';
     const cleanEmail = email ? email.trim().toLowerCase() : null;
     const cleanPhone = phone ? phone.trim() : (cleanEmail ? cleanEmail.split('@')[0] : '');
     const cleanLocation = (location || '').trim();
