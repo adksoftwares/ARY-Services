@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BriefcaseBusiness, Bike, ArrowRight, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -19,6 +19,11 @@ export default function AccountRoleRequest({ onNotice }) {
   if (!currentUser) return null;
   const roles = currentUser.roles || [currentUser.accountType];
   const applications = currentUser.roleApplications || {};
+
+  useEffect(() => {
+    if (roles.includes('provider') && !roles.includes('driver')) setRole('driver');
+    else if (!roles.includes('provider')) setRole('provider');
+  }, [currentUser.id, currentUser.accountType, currentUser.roles?.join(',')]);
 
   async function submit(event) {
     event.preventDefault();
@@ -51,7 +56,7 @@ export default function AccountRoleRequest({ onNotice }) {
       {roles.includes('provider') && currentUser.accountType !== 'provider' && <button className="sign-in" onClick={()=>openRole('provider')}><BriefcaseBusiness size={14}/> Open Provider app</button>}
       {roles.includes('driver') && currentUser.accountType !== 'driver' && <button className="sign-in" onClick={()=>openRole('driver')}><Bike size={14}/> Open Driver app</button>}
       {['provider','driver'].some(r=>applications[r]?.status==='pending') && <span style={{fontSize:12,color:'#8a5a12'}}>Additional role application pending Admin review</span>}
-      {!roles.includes('provider') && !roles.includes('driver') && <button className="sign-in" onClick={()=>setOpen(v=>!v)}><ShieldCheck size={14}/> Apply for Provider / Driver role</button>}
+      {(!roles.includes('provider') || !roles.includes('driver')) && <button className="sign-in" onClick={()=>setOpen(v=>!v)}><ShieldCheck size={14}/> Apply for an additional role</button>}
       {(roles.includes('provider') || roles.includes('driver')) && <button className="sign-in" onClick={()=>setOpen(v=>!v)}>Request another role</button>}
     </div>
     {open && <form onSubmit={submit} style={{marginTop:14,background:'#fff',border:'1px solid #e5ebe2',borderRadius:14,padding:18,display:'grid',gap:12}}>
