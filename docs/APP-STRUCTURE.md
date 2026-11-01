@@ -112,7 +112,8 @@ Dedicated multi-page Vite entries are now present for:
 - `/customer.html` — dedicated Customer app reusing the existing customer components and API.
 - `/provider.html` — dedicated Provider app reusing the existing ProviderDashboard and GroceryInventory components and API.
 - `/driver.html` — dedicated Driver app reusing the existing DriverWorkspace and driver application/job APIs.
+- `/admin.html` — dedicated Admin dashboard reusing the existing AdminWorkspace and DriverApplicationsAdmin components.
 
-The Provider app currently provides the existing booking queue/status actions, reviews, earnings/escrow wallet, incoming booking alerts and grocery inventory for grocery providers. Provider activation remains subject to the existing Admin approval process. The Driver app reuses the existing driver application submission, Admin approval, job listing, job claim and job status workflows. The Admin dedicated entry has not yet been extracted.
+The Provider app currently provides the existing booking queue/status actions, reviews, earnings/escrow wallet, incoming booking alerts and grocery inventory for grocery providers. Provider activation remains subject to the existing Admin approval process. The Driver app reuses the existing driver application submission, Admin approval, job listing, job claim and job status workflows. The Admin dashboard reuses the existing account management, service category management, dispute arbitration, CEFT payout settlement and driver application approval workflows. All four dedicated app entry pages are now present; build/runtime and end-to-end integration checks remain necessary.
 
 These entries are an incremental migration, not a claim of production readiness. Build/runtime and end-to-end integration checks remain necessary before release.
