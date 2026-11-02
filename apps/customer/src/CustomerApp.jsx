@@ -204,7 +204,7 @@ function CustomerWorkspace() {
     } catch (error) { setNotice(error.message); }
   }
 
-  return <div className="app-shell">
+  return <div className="app-shell customer-app-shell">
     <CustomerHeader/>
     <Routes>
       <Route path="/" element={<main>

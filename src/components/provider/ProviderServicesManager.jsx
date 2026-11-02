@@ -59,7 +59,7 @@ export default function ProviderServicesManager() {
   }
 
   const available = categories.filter(item => item.slug !== data.primaryCategory?.categorySlug && !data.approvedServices.some(service => service.categorySlug === item.slug));
-  return <section style={{margin:'22px auto',maxWidth:1180,padding:18,border:'1px solid #dce5dc',borderRadius:14,background:'#fff'}}>
+  return <section className="provider-services-manager" style={{margin:'22px auto',maxWidth:1180,padding:18,border:'1px solid #dce5dc',borderRadius:14,background:'#fff'}}>
     <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:10,flexWrap:'wrap'}}>
       <div><span style={{fontSize:11,fontWeight:800,letterSpacing:1,color:'#56806a'}}>SERVICE CATALOG</span><h2 style={{margin:'4px 0',fontSize:19,color:'#173b2f'}}><BriefcaseBusiness size={18} style={{verticalAlign:'middle',marginRight:7}}/>Add another service</h2><p style={{margin:0,fontSize:12,color:'#64748b'}}>New service categories appear to customers only after Admin approval.</p></div>
       <button type="button" onClick={load} style={{border:'1px solid #dce5dc',background:'#fff',borderRadius:8,padding:'8px 10px',display:'flex',gap:6,alignItems:'center'}}><RefreshCw size={13}/> Refresh</button>

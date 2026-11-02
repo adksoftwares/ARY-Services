@@ -198,7 +198,7 @@ export default function DriverWorkspace({ onNotice }) {
   }
 
   return (
-    <main style={{ maxWidth: 1050, margin: '35px auto', padding: '0 18px', minHeight: '60vh' }}>
+    <main className="driver-workspace" style={{ maxWidth: 1050, margin: '35px auto', padding: '0 18px', minHeight: '60vh' }}>
       <span className="eyebrow">DRIVER OPERATIONS</span>
       <h1 style={{ fontSize: 38 }}>Driver <em>workspace.</em></h1>
       <section style={{ padding: 22, border: '1px solid #e5ebe3', borderRadius: 16, background: '#fff', margin: '22px 0', boxShadow: '0 8px 24px rgba(24,55,39,.04)' }}>

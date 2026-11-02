@@ -21,7 +21,7 @@ function DriverPortal() {
     return subscribeToAppEvents(currentUser?.token, { 'driver:job_created': notify, 'driver:job_updated': notify, 'driver:application_reviewed': notify });
   }, [isDriver, currentUser?.id]);
 
-  return <div className="app-shell">
+  return <div className="app-shell driver-app-shell">
     <header className="topbar">
       <Link to="/" className="brand" aria-label="ARY Services Driver home">
         <span className="brand-mark">A</span><span>ARY <b>Driver</b></span>
