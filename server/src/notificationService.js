@@ -60,9 +60,10 @@ export async function persistEventNotifications(eventType, payload = {}) {
   const now = new Date().toISOString();
   await mutatePersistentState('notifications', notificationsFile, EMPTY, stored => {
     if (!Array.isArray(stored)) throw new Error('Notification storage is invalid.');
-    const additions = adminBroadcast
-      ? [{ id: 'ntf-' + crypto.randomUUID(), recipientId: null, audience: 'admin', ...description, eventType, readAt: null, createdAt: now }]
-      : recipients.map(recipientId => ({ id: 'ntf-' + crypto.randomUUID(), recipientId, audience: 'user', ...description, eventType, readAt: null, createdAt: now }));
+    const additions = [
+      ...(adminBroadcast ? [{ id: 'ntf-' + crypto.randomUUID(), recipientId: null, audience: 'admin', ...description, eventType, readAt: null, createdAt: now }] : []),
+      ...recipients.map(recipientId => ({ id: 'ntf-' + crypto.randomUUID(), recipientId, audience: 'user', ...description, eventType, readAt: null, createdAt: now }))
+    ];
     stored.unshift(...additions);
     if (stored.length > 5000) stored.length = 5000;
   });
