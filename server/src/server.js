@@ -1111,6 +1111,70 @@ app.patch('/api/bookings/:id/status', requireAuth, async (req, res) => {
   }
 });
 
+// Customer proposes a new booking date/time; provider or Admin confirms it.
+app.post('/api/bookings/:id/reschedule', requireAuth, async (req, res) => {
+  try {
+    if (req.user.accountType !== 'customer') return res.status(403).json({ error: 'Customer account required.' });
+    const { date, time, reason } = req.body || {};
+    const allowedTimes = ['Morning (9 AM - 12 PM)', 'Afternoon (1 PM - 5 PM)', 'Evening (5 PM - 8 PM)', 'Emergency (ASAP)'];
+    const parsed = new Date(String(date || '') + 'T00:00:00Z');
+    const localToday = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Colombo' }).format(new Date());
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(date || '')) || Number.isNaN(parsed.getTime()) ||
+      parsed.toISOString().slice(0, 10) !== date || date < localToday || !allowedTimes.includes(time)) {
+      return res.status(400).json({ error: 'Choose a valid future date and an available time slot.' });
+    }
+    const bookings = await getBookings();
+    const booking = bookings.find(item => item.id === req.params.id);
+    if (!booking) return res.status(404).json({ error: 'Booking not found.' });
+    if (booking.customerId !== req.user.id) return res.status(403).json({ error: 'You can only reschedule your own booking.' });
+    if (!['requested', 'accepted'].includes(booking.status)) return res.status(409).json({ error: 'Only pending or accepted bookings can be rescheduled.' });
+    if (booking.rescheduleRequest?.status === 'pending') return res.status(409).json({ error: 'A reschedule request is already awaiting provider response.' });
+    const updated = await updateBooking(booking.id, current => {
+      current.rescheduleRequest = {
+        date, time, reason: String(reason || '').trim().slice(0, 300),
+        status: 'pending', requestedAt: new Date().toISOString()
+      };
+      current.updatedAt = new Date().toISOString();
+      return current;
+    });
+    publishEvent('booking:reschedule_requested', { bookingId: booking.id, customerId: booking.customerId, providerId: booking.providerId, status: 'pending' });
+    return res.json({ booking: updated, message: 'Reschedule request sent to the service provider.' });
+  } catch (error) {
+    console.error('Reschedule request error:', error);
+    return res.status(500).json({ error: 'Could not submit reschedule request.' });
+  }
+});
+
+app.patch('/api/bookings/:id/reschedule', requireAuth, async (req, res) => {
+  try {
+    const decision = String(req.body?.decision || '');
+    if (!['accept', 'reject'].includes(decision)) return res.status(400).json({ error: 'Choose accept or reject.' });
+    const bookings = await getBookings();
+    const booking = bookings.find(item => item.id === req.params.id);
+    if (!booking) return res.status(404).json({ error: 'Booking not found.' });
+    const isAdmin = req.user.accountType === 'admin';
+    if (!isAdmin && (req.user.accountType !== 'provider' || booking.providerId !== req.user.id)) {
+      return res.status(403).json({ error: 'Only the assigned provider or Admin can decide this request.' });
+    }
+    if (booking.rescheduleRequest?.status !== 'pending') return res.status(409).json({ error: 'No pending reschedule request exists.' });
+    const updated = await updateBooking(booking.id, current => {
+      const request = current.rescheduleRequest;
+      if (decision === 'accept') {
+        current.bookingDate = request.date;
+        current.bookingTime = request.time;
+      }
+      current.rescheduleRequest = { ...request, status: decision === 'accept' ? 'accepted' : 'rejected', decidedAt: new Date().toISOString(), decidedBy: req.user.id };
+      current.updatedAt = new Date().toISOString();
+      return current;
+    });
+    publishEvent('booking:reschedule_decided', { bookingId: booking.id, customerId: booking.customerId, providerId: booking.providerId, status: updated.rescheduleRequest.status });
+    return res.json({ booking: updated, message: decision === 'accept' ? 'New booking time confirmed.' : 'Reschedule request declined.' });
+  } catch (error) {
+    console.error('Reschedule decision error:', error);
+    return res.status(500).json({ error: 'Could not update reschedule request.' });
+  }
+});
+
 // Customer / Provider / Admin cancels a booking with technician call-out compensation rules
 app.patch('/api/bookings/:id/cancel', requireAuth, async (req, res) => {
   try {
