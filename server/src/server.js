@@ -922,20 +922,20 @@ app.post('/api/providers/services', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'Choose a valid category and provide a service name, at least 10 characters of description and a whole-number LKR price.' });
     }
     if (categorySlug === req.user.category) return res.status(409).json({ error: 'This is already your primary provider category.' });
+    const requestId = crypto.randomUUID();
     const updated = await updateUser(req.user.id, user => {
       user.serviceRequests = Array.isArray(user.serviceRequests) ? user.serviceRequests : [];
       const duplicate = user.serviceRequests.some(item => item.categorySlug === categorySlug && item.serviceName.toLowerCase() === serviceName.toLowerCase() && ['pending', 'approved'].includes(item.status));
       if (duplicate) return user;
       user.serviceRequests.unshift({
-        id: crypto.randomUUID(), categorySlug, categoryName: PROVIDER_SERVICE_CATEGORIES.get(categorySlug),
+        id: requestId, categorySlug, categoryName: PROVIDER_SERVICE_CATEGORIES.get(categorySlug),
         serviceName, description, baseCharge: amount, status: 'pending',
         requestedAt: new Date().toISOString()
       });
       return user;
     });
-    const request = (updated?.serviceRequests || []).find(item => item.categorySlug === categorySlug && item.serviceName.toLowerCase() === serviceName.toLowerCase() && item.status === 'pending');
-    if (!request) return res.status(500).json({ error: 'Could not save service request.' });
-    if (request.status !== 'pending') return res.status(409).json({ error: 'This service request already exists.' });
+    const request = (updated?.serviceRequests || []).find(item => item.id === requestId);
+    if (!request) return res.status(409).json({ error: 'A matching service request is already pending or approved.' });
     publishEvent('provider:service_request_created', { providerId: req.user.id, requestId: request.id });
     return res.status(201).json({ request, message: 'Additional service request sent to Admin for approval.' });
   } catch (error) {
