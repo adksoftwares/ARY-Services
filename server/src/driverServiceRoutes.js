@@ -7,7 +7,14 @@ import { cleanSriLankaCoordinates, isDriverPresenceFresh, rankJobsForDriver } fr
 const dataFile = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'data', 'driver-services.json');
 const emptyDriverState = { applications: [], jobs: [], presence: {} };
 async function mutateJobs(mutator) {
-  return mutatePersistentState('driver-services', dataFile, emptyDriverState, mutator);
+  return mutatePersistentState('driver-services', dataFile, emptyDriverState, state => {
+    // Backward-compatible migration for existing persisted records created
+    // before driver presence tracking was introduced.
+    state.applications = Array.isArray(state.applications) ? state.applications : [];
+    state.jobs = Array.isArray(state.jobs) ? state.jobs : [];
+    state.presence = state.presence && typeof state.presence === 'object' ? state.presence : {};
+    return mutator(state);
+  });
 }
 async function readJobs() {
   const state = await readPersistentState('driver-services', dataFile, emptyDriverState);
