@@ -584,7 +584,10 @@ try {
       fullName: 'Rogue Contractor',
       phone: roguePhone,
       password: 'password123',
-      accountType: 'provider'
+      accountType: 'provider',
+      nsnNumber: 'NSN-ROGUE-001',
+      operatingMode: 'mobile',
+      nicNumber: '199512345678'
     })
   });
   const rogueData = await rogueRegRes.json();
@@ -671,6 +674,8 @@ try {
       phone: '0775551122',
       password: 'pass123456',
       accountType: 'provider',
+      nsnNumber: 'NSN-INVALID-001',
+      operatingMode: 'shop',
       nicNumber: '12345-invalid'
     })
   });
@@ -685,6 +690,8 @@ try {
       phone: '0775551122',
       password: 'pass123456',
       accountType: 'provider',
+      nsnNumber: 'NSN-VALID-001',
+      operatingMode: 'shop',
       nicNumber: '951234567V'
     })
   });
