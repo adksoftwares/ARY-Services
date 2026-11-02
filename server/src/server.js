@@ -37,7 +37,7 @@ import { sendOtp, verifyOtp, normalizePhone } from './otpService.js';
 import { subscribeToEvents, broadcastEvent } from './eventHub.js';
 import { calculateDistanceKm, estimateEtaMinutes, resolveCoordinatesFromLocation } from './geoService.js';
 import { issueSecurityChallenge, verifySecurityChallenge } from './securityShield.js';
-import { registerDriverServiceRoutes } from './driverServiceRoutes.js';
+import { registerDriverServiceRoutes, createGroceryOrderDeliveryJob, cancelGroceryOrderDeliveryJob } from './driverServiceRoutes.js';
 import { registerGroceryRoutes } from './groceryRoutes.js';
 import { registerRoleAccessRoutes } from './roleAccessRoutes.js';
 import { listNotifications, markNotificationRead, markAllNotificationsRead, persistEventNotifications } from './notificationService.js';
@@ -269,7 +269,7 @@ app.patch('/api/notifications/:id/read', requireAuth, async (req, res) => {
 
 registerDriverServiceRoutes(app, { requireAuth, requireAdmin, broadcastEvent: publishEvent, getBookings, getUsers });
 registerRoleAccessRoutes(app, { requireAuth, requireAdmin, getUsers, updateUser, generateToken, broadcastEvent: publishEvent });
-registerGroceryRoutes(app, { requireAuth, broadcastEvent: publishEvent });
+registerGroceryRoutes(app, { requireAuth, broadcastEvent: publishEvent, getUsers, createGroceryOrderDeliveryJob, cancelGroceryOrderDeliveryJob });
 
 // Initialize atomic file storage on boot
 await initStorage();
