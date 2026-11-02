@@ -85,7 +85,8 @@ export default function ProviderDashboard({
   bookings,
   isLoading,
   onRefresh,
-  onUpdateStatus
+  onUpdateStatus,
+  onDecideReschedule
 }) {
   const { currentUser } = useAuth();
   const [activeTab, setActiveTab] = useState('jobs'); // 'jobs' | 'reviews' | 'wallet'
@@ -659,6 +660,16 @@ export default function ProviderDashboard({
                       </div>
                     )}
 
+                    {b.rescheduleRequest?.status === 'pending' && (
+                      <div style={{margin:'10px 0',padding:12,border:'1px solid #f2d4a5',background:'#fffaf0',borderRadius:9}}>
+                        <b style={{fontSize:12,color:'#854d0e'}}>Customer requested a new time</b>
+                        <p style={{fontSize:12,color:'#6b5b43',margin:'5px 0 9px'}}>{b.rescheduleRequest.date} · {b.rescheduleRequest.time}{b.rescheduleRequest.reason ? ` · ${b.rescheduleRequest.reason}` : ''}</p>
+                        <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                          <button type="button" className="booking-action-btn accept" onClick={()=>onDecideReschedule?.(b.id,'accept')}>Confirm new time</button>
+                          <button type="button" className="booking-action-btn reject" onClick={()=>onDecideReschedule?.(b.id,'reject')}>Decline change</button>
+                        </div>
+                      </div>
+                    )}
                     <div className="booking-actions-row">
                       {b.status === 'requested' && (
                         <>
