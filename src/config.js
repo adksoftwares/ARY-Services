@@ -16,7 +16,7 @@ const getApiBase = () => {
       (window.location.protocol === 'https:' && window.location.hostname === 'localhost' && !window.location.port)
     );
     if (isCapacitor) {
-      return 'http://localhost:4000/api';
+      throw new Error('ARY Services mobile API is not configured. Build with ARY_API_BASE set to your deployed HTTPS /api endpoint.');
     }
   }
 
