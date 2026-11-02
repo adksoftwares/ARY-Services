@@ -23,8 +23,9 @@ export function rankJobsForDriver(jobs, presence, now = Date.now()) {
     const distanceKm = fresh && target ? calculateDistanceKm(presence.lat, presence.lng, target.lat, target.lng) : null;
     return { ...job, distanceKm, etaMinutes: distanceKm === null ? null : estimateEtaMinutes(distanceKm) };
   }).sort((a, b) => {
-    if (a.driverId && !b.driverId) return -1;
-    if (b.driverId && !a.driverId) return 1;
+    const aAssigned = Boolean(a.driverId);
+    const bAssigned = Boolean(b.driverId);
+    if (aAssigned !== bAssigned) return aAssigned ? -1 : 1;
     if (a.distanceKm === null) return 1;
     if (b.distanceKm === null) return -1;
     return a.distanceKm - b.distanceKm;
