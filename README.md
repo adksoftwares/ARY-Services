@@ -127,3 +127,8 @@ Ride and food-delivery requests can include optional browser GPS coordinates. Ap
 
 
 - Optional ride and parcel fare estimates are available only when the corresponding LKR base, per-kilometre and minimum rates are configured in the server environment. Estimates use straight-line GPS distance and must not be presented as road-route quotes.
+
+
+## Road routing
+
+ARY can request road distance and duration from a self-hosted OSRM-compatible service through `GET /api/mobility/route`. Configure `ROUTING_BASE_URL` to an HTTPS endpoint. The application does not silently substitute straight-line distance when road routing is unavailable. Driver proximity sorting remains a straight-line approximation and must be labelled as such in the UI.
