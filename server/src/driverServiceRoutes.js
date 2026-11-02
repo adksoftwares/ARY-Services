@@ -37,7 +37,7 @@ function safeMobilityJob(job, viewerId = null) {
     if (pickupPinForCustomer) safe.pickupPin = pickupPinForCustomer;
     if (deliveryPinForCustomer) safe.deliveryPin = deliveryPinForCustomer;
   }
-  if (viewerId !== job.customerId && viewerId !== job.driverId) { delete safe.pickupContact; delete safe.recipientContact; }
+  if (!viewerId || (viewerId !== job.customerId && viewerId !== job.driverId)) { delete safe.pickupContact; delete safe.recipientContact; }
   return safe;
 }
 export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadcastEvent,getBookings,getUsers}){
