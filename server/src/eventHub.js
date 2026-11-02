@@ -13,7 +13,7 @@ function canReceive(client, eventType, payload = {}) {
   }
   if (eventType.startsWith('driver:')) {
     if (client.role === 'driver' && eventType === 'driver:job_created') return true;
-    return client.role === 'driver' && (userId === payload.driverId || userId === payload.userId || userId === job.driverId) ||
+    return (client.role === 'driver' && (userId === payload.driverId || userId === payload.userId || userId === job.driverId)) ||
       userId === payload.customerId || userId === job.customerId;
   }
   if (eventType.startsWith('grocery:')) {
@@ -47,9 +47,18 @@ export function subscribeToEvents(req, res, identity) {
   res.write(`event: connected\ndata: {"status":"connected"}\n\n`);
   const heartbeat = setInterval(() => {
     try { res.write(': keepalive\n\n'); }
-    catch { clearInterval(heartbeat); clients.delete(client); }
+    catch { cleanup(); }
   }, 25000);
-  req.on('close', () => { clearInterval(heartbeat); clients.delete(client); });
+  const expiry = setTimeout(() => {
+    cleanup();
+    res.end();
+  }, Math.max(1, identity.exp - Date.now()));
+  function cleanup() {
+    clearInterval(heartbeat);
+    clearTimeout(expiry);
+    clients.delete(client);
+  }
+  req.on('close', cleanup);
 }
 
 export function broadcastEvent(eventType, payload = {}) {
