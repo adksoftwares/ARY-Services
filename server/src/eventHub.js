@@ -12,7 +12,7 @@ function canReceive(client, eventType, payload = {}) {
       userId === (payload.providerId || booking.providerId);
   }
   if (eventType.startsWith('driver:')) {
-    return client.role === 'driver' && (userId === payload.driverId || userId === job.driverId) ||
+    return client.role === 'driver' && (userId === payload.driverId || userId === payload.userId || userId === job.driverId) ||
       userId === payload.customerId || userId === job.customerId;
   }
   if (eventType.startsWith('grocery:')) {
