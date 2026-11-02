@@ -512,6 +512,9 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
     if (role === 'provider' && (!cleanNsn || cleanNsn.length > 40 || !['shop', 'online', 'mobile'].includes(cleanOperatingMode))) {
       return res.status(400).json({ error: 'Provider registration requires an NSN number and a valid operating mode (shop, online or mobile).' });
     }
+    if (['provider', 'driver'].includes(role) && !String(nicNumber || '').trim()) {
+      return res.status(400).json({ error: 'A National Identity Card number is required for Provider and Driver registration.' });
+    }
 
     // Sri Lankan NIC verification for service providers
     let cleanNic = null;
