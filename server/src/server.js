@@ -890,25 +890,20 @@ app.patch('/api/providers/profile', requireAuth, async (req, res) => {
 // Bookings: List bookings for current user (Customer, Provider, or Admin)
 app.get('/api/bookings', requireAuth, async (req, res) => {
   try {
-    const { id: userId, accountType, phone } = req.user;
-    const userPhoneDigits = phone ? normalizePhone(phone) : null;
+    const { id: userId, accountType } = req.user;
     const allBookings = await getBookings();
 
     let userBookings = [];
     if (accountType === 'admin') {
       userBookings = allBookings;
     } else if (accountType === 'provider') {
-      // Include directly assigned bookings (by providerId or matching phone) + unassigned cascading broadcast jobs matching category
+      // Only immutable account IDs grant access to assigned or broadcast jobs.
       userBookings = allBookings.filter(b =>
         b.providerId === userId ||
-        (userPhoneDigits && b.providerPhone && normalizePhone(b.providerPhone) === userPhoneDigits) ||
-        (b.status === 'broadcast_pool' && (!b.declinedBy || (!b.declinedBy.includes(userId) && (!userPhoneDigits || !b.declinedBy.includes(userPhoneDigits)))))
+        (b.status === 'broadcast_pool' && (!b.declinedBy || !b.declinedBy.includes(userId)))
       );
     } else {
-      userBookings = allBookings.filter(b =>
-        b.customerId === userId ||
-        (userPhoneDigits && b.customerPhone && normalizePhone(b.customerPhone) === userPhoneDigits)
-      );
+      userBookings = allBookings.filter(b => b.customerId === userId);
     }
 
     // Sort newest first
@@ -1179,7 +1174,7 @@ app.patch('/api/bookings/:id/reschedule', requireAuth, async (req, res) => {
 app.patch('/api/bookings/:id/cancel', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
-    const { id: userId, accountType, phone } = req.user;
+    const { id: userId, accountType } = req.user;
     const { reason } = req.body;
 
     const bookings = await getBookings();
@@ -1190,7 +1185,6 @@ app.patch('/api/bookings/:id/cancel', requireAuth, async (req, res) => {
     }
 
     // Role-based authorization
-    const userPhoneDigits = phone ? normalizePhone(phone) : null;
     const isProviderMatch = booking.providerId === userId;
     const isCustomerMatch = booking.customerId === userId;
 
@@ -1267,7 +1261,7 @@ app.patch('/api/bookings/:id/cancel', requireAuth, async (req, res) => {
 app.post('/api/bookings/:id/dispute', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
-    const { id: userId, accountType, phone } = req.user;
+    const { id: userId, accountType } = req.user;
     const { reason, evidence } = req.body;
 
     if (!reason || !reason.trim()) {
@@ -1281,7 +1275,6 @@ app.post('/api/bookings/:id/dispute', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'Booking not found.' });
     }
 
-    const userPhoneDigits = phone ? normalizePhone(phone) : null;
     const isCustomerMatch = booking.customerId === userId;
 
     if (accountType !== 'admin' && !isCustomerMatch) {
