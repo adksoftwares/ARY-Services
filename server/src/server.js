@@ -42,6 +42,14 @@ import { registerGroceryRoutes } from './groceryRoutes.js';
 import { registerRoleAccessRoutes } from './roleAccessRoutes.js';
 import { listNotifications, markNotificationRead, markAllNotificationsRead, persistEventNotifications } from './notificationService.js';
 
+const PROVIDER_SERVICE_CATEGORIES = new Map([
+  ['food-shops', 'Food Shops'],
+  ['electrical-repair', 'Electrical Repair'],
+  ['plumbing', 'Plumbing'],
+  ['grocery-products', 'Grocery Products'],
+  ['other-services', 'Other Services']
+]);
+
 const app = express();
 const port = Number(process.env.PORT || 4000);
 
@@ -758,7 +766,8 @@ app.get('/api/service-categories', async (_req, res) => {
       { id: 1, name: 'Food Shops', slug: 'food-shops', description: 'Fresh groceries, baked goods and snacks', icon: 'UtensilsCrossed', color: 'peach' },
       { id: 2, name: 'Electrical Repair', slug: 'electrical-repair', description: 'Fast diagnostics for lights, wiring and appliances', icon: 'Zap', color: 'yellow' },
       { id: 3, name: 'Plumbing', slug: 'plumbing', description: 'Repairs, fittings and leak maintenance', icon: 'Wrench', color: 'blue' },
-      { id: 4, name: 'Other Services', slug: 'other-services', description: 'Carpentry, painting, AC and house help', icon: 'Sparkles', color: 'lilac' }
+      { id: 4, name: 'Other Services', slug: 'other-services', description: 'Carpentry, painting, AC and house help', icon: 'Sparkles', color: 'lilac' },
+      { id: 5, name: 'Grocery Products', slug: 'grocery-products', description: 'Everyday grocery items and household essentials', icon: 'ShoppingBasket', color: 'green' }
     ],
     source: 'active'
   });
@@ -773,7 +782,7 @@ app.get('/api/providers', async (req, res) => {
     let providers = users.filter(u => (u.accountType === 'provider' || (Array.isArray(u.roles) && u.roles.includes('provider'))) && (u.accountType === 'provider' ? u.status === 'active' : u.providerStatus === 'active'));
 
     if (category && category !== 'all') {
-      providers = providers.filter(p => p.category === category || (p.categoryName && p.categoryName.toLowerCase().includes(category.toLowerCase())));
+      providers = providers.filter(p => p.category === category || (p.categoryName && p.categoryName.toLowerCase().includes(category.toLowerCase())) || (Array.isArray(p.approvedServices) && p.approvedServices.some(service => service.categorySlug === category)));
     }
 
     if (query) {
@@ -820,6 +829,7 @@ app.get('/api/providers', async (req, res) => {
         etaMinutes,
         category: p.category || 'general',
         categoryName: p.categoryName || 'General Services',
+        approvedServices: (Array.isArray(p.approvedServices) ? p.approvedServices : []).map(service => ({ categorySlug: service.categorySlug, categoryName: service.categoryName, serviceName: service.serviceName, description: service.description, baseCharge: service.baseCharge })),
         baseCharge: p.baseCharge || 'LKR 1,500',
         rating: p.rating !== undefined ? Number(p.rating) : 5.0,
         reviewCount: p.reviewCount !== undefined ? Number(p.reviewCount) : 0,
@@ -896,6 +906,90 @@ app.patch('/api/providers/profile', requireAuth, async (req, res) => {
   }
 });
 
+// Provider requests approval before listing an additional service category.
+app.post('/api/providers/services', requireAuth, async (req, res) => {
+  try {
+    if (req.user.accountType !== 'provider' || req.user.status !== 'active') return res.status(403).json({ error: 'An active provider account is required.' });
+    const categorySlug = String(req.body?.categorySlug || '');
+    const serviceName = String(req.body?.serviceName || '').trim().slice(0, 120);
+    const description = String(req.body?.description || '').trim().slice(0, 1000);
+    const amount = Number(req.body?.baseCharge);
+    if (!PROVIDER_SERVICE_CATEGORIES.has(categorySlug) || !serviceName || serviceName.length < 2 || description.length < 10 ||
+      !Number.isSafeInteger(amount) || amount < 1 || amount > 10000000) {
+      return res.status(400).json({ error: 'Choose a valid category and provide a service name, at least 10 characters of description and a whole-number LKR price.' });
+    }
+    if (categorySlug === req.user.category) return res.status(409).json({ error: 'This is already your primary provider category.' });
+    const updated = await updateUser(req.user.id, user => {
+      user.serviceRequests = Array.isArray(user.serviceRequests) ? user.serviceRequests : [];
+      const duplicate = user.serviceRequests.some(item => item.categorySlug === categorySlug && item.serviceName.toLowerCase() === serviceName.toLowerCase() && ['pending', 'approved'].includes(item.status));
+      if (duplicate) return user;
+      user.serviceRequests.unshift({
+        id: crypto.randomUUID(), categorySlug, categoryName: PROVIDER_SERVICE_CATEGORIES.get(categorySlug),
+        serviceName, description, baseCharge: amount, status: 'pending',
+        requestedAt: new Date().toISOString()
+      });
+      return user;
+    });
+    const request = (updated?.serviceRequests || []).find(item => item.categorySlug === categorySlug && item.serviceName.toLowerCase() === serviceName.toLowerCase());
+    if (!request) return res.status(500).json({ error: 'Could not save service request.' });
+    if (request.status !== 'pending') return res.status(409).json({ error: 'This service request already exists.' });
+    publishEvent('provider:service_request_created', { providerId: req.user.id, requestId: request.id });
+    return res.status(201).json({ request, message: 'Additional service request sent to Admin for approval.' });
+  } catch (error) {
+    console.error('Provider service request error:', error);
+    return res.status(500).json({ error: 'Could not submit additional service request.' });
+  }
+});
+
+app.get('/api/providers/services/mine', requireAuth, async (req, res) => {
+  if (req.user.accountType !== 'provider') return res.status(403).json({ error: 'Provider account required.' });
+  const users = await getUsers();
+  const provider = users.find(user => user.id === req.user.id);
+  if (!provider) return res.status(404).json({ error: 'Provider account not found.' });
+  return res.json({
+    primaryCategory: { categorySlug: provider.category, categoryName: provider.categoryName },
+    approvedServices: Array.isArray(provider.approvedServices) ? provider.approvedServices : [],
+    requests: Array.isArray(provider.serviceRequests) ? provider.serviceRequests : []
+  });
+});
+
+app.get('/api/admin/provider-service-requests', requireAdmin, async (_req, res) => {
+  const users = await getUsers();
+  const requests = users.flatMap(user => (Array.isArray(user.serviceRequests) ? user.serviceRequests : [])
+    .filter(request => request.status === 'pending')
+    .map(request => ({ ...request, providerId: user.id, providerName: user.fullName, providerLocation: user.location })));
+  return res.json({ requests });
+});
+
+app.patch('/api/admin/provider-service-requests/:userId/:requestId', requireAdmin, async (req, res) => {
+  const decision = String(req.body?.status || '');
+  if (!['approved', 'rejected'].includes(decision)) return res.status(400).json({ error: 'Choose approved or rejected.' });
+  const users = await getUsers();
+  const target = users.find(user => user.id === req.params.userId);
+  const request = target?.serviceRequests?.find(item => item.id === req.params.requestId);
+  if (!target || !request || request.status !== 'pending') return res.status(404).json({ error: 'Pending service request not found.' });
+  const updated = await updateUser(target.id, user => {
+    const current = (user.serviceRequests || []).find(item => item.id === req.params.requestId);
+    if (!current || current.status !== 'pending') return user;
+    current.status = decision;
+    current.reviewedAt = new Date().toISOString();
+    current.reviewedBy = req.user.id;
+    if (decision === 'approved') {
+      user.approvedServices = Array.isArray(user.approvedServices) ? user.approvedServices : [];
+      const exists = user.approvedServices.some(item => item.categorySlug === current.categorySlug && item.serviceName.toLowerCase() === current.serviceName.toLowerCase());
+      if (!exists) user.approvedServices.push({
+        id: current.id, categorySlug: current.categorySlug, categoryName: current.categoryName,
+        serviceName: current.serviceName, description: current.description, baseCharge: current.baseCharge,
+        approvedAt: current.reviewedAt
+      });
+    }
+    return user;
+  });
+  const reviewed = updated?.serviceRequests?.find(item => item.id === req.params.requestId);
+  publishEvent('provider:service_request_reviewed', { providerId: target.id, status: decision, requestId: req.params.requestId });
+  return res.json({ request: reviewed, approvedServices: updated?.approvedServices || [] });
+});
+
 // Bookings: List bookings for current user (Customer, Provider, or Admin)
 app.get('/api/bookings', requireAuth, async (req, res) => {
   try {
@@ -907,9 +1001,10 @@ app.get('/api/bookings', requireAuth, async (req, res) => {
       userBookings = allBookings;
     } else if (accountType === 'provider') {
       // Only immutable account IDs grant access to assigned or broadcast jobs.
+      const approvedCategories = new Set([req.user.category, ...(Array.isArray(req.user.approvedServices) ? req.user.approvedServices.map(service => service.categorySlug) : [])]);
       userBookings = allBookings.filter(b =>
         b.providerId === userId ||
-        (b.status === 'broadcast_pool' && b.categorySlug === req.user.category && (!b.declinedBy || !b.declinedBy.includes(userId)))
+        (b.status === 'broadcast_pool' && approvedCategories.has(b.categorySlug) && (!b.declinedBy || !b.declinedBy.includes(userId)))
       );
     } else {
       userBookings = allBookings.filter(b => b.customerId === userId);
@@ -957,7 +1052,7 @@ app.post('/api/bookings', requireAuth, async (req, res) => {
     }
 
     const users = await getUsers();
-    const provider = users.find(u => u.id === providerId && u.accountType === 'provider' && u.status === 'active');
+    const provider = users.find(u => u.id === providerId && u.accountType === 'provider' && u.status === 'active' && (u.category === categorySlug || (Array.isArray(u.approvedServices) && u.approvedServices.some(service => service.categorySlug === categorySlug))));
 
     if (!provider) {
       return res.status(404).json({ error: 'Selected service provider was not found.' });
