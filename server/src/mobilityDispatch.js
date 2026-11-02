@@ -31,3 +31,30 @@ export function rankJobsForDriver(jobs, presence, now = Date.now()) {
     return a.distanceKm - b.distanceKm;
   });
 }
+
+/** Build a compact, privacy-minimised snapshot for authenticated Admin dispatch monitoring. */
+export function buildAdminDispatchSnapshot(jobs, applications, presence, now = Date.now()) {
+  const approvedByDriver = new Map();
+  for (const application of applications || []) {
+    if (application.status !== 'approved') continue;
+    const current = approvedByDriver.get(application.userId) || { driverName: application.driverName || 'Approved driver', networks: [] };
+    if (!current.networks.includes(application.driverType)) current.networks.push(application.driverType);
+    approvedByDriver.set(application.userId, current);
+  }
+  const drivers = Object.entries(presence || {}).flatMap(([driverId, location]) => {
+    const approval = approvedByDriver.get(driverId);
+    if (!approval || !isDriverPresenceFresh(location, now)) return [];
+    return [{ driverId, driverName: approval.driverName, networks: approval.networks, lat: location.lat, lng: location.lng, updatedAt: location.updatedAt }];
+  });
+  const activeJobs = (jobs || []).filter(job => !['completed', 'cancelled'].includes(job.status)).map(job => ({
+    id: job.id, serviceType: job.serviceType, status: job.status, customerName: job.customerName,
+    pickupAddress: job.pickupAddress, destinationAddress: job.destinationAddress,
+    driverId: job.driverId || null, driverName: job.driverName || null, createdAt: job.createdAt,
+    updatedAt: job.updatedAt || job.acceptedAt || null
+  }));
+  return { drivers, activeJobs, summary: {
+    onlineDrivers: drivers.length,
+    unassignedJobs: activeJobs.filter(job => job.status === 'requested').length,
+    assignedJobs: activeJobs.filter(job => Boolean(job.driverId)).length
+  }};
+}

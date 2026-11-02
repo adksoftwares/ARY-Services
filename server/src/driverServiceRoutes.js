@@ -2,7 +2,7 @@ import crypto from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readPersistentState, mutatePersistentState } from './storage.js';
-import { cleanSriLankaCoordinates, isDriverPresenceFresh, rankJobsForDriver } from './mobilityDispatch.js';
+import { cleanSriLankaCoordinates, isDriverPresenceFresh, rankJobsForDriver, buildAdminDispatchSnapshot } from './mobilityDispatch.js';
 
 const dataFile = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'data', 'driver-services.json');
 const emptyDriverState = { applications: [], jobs: [], presence: {} };
@@ -152,5 +152,25 @@ export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadc
     });
     if(result.error)return res.status(result.status).json({error:result.error});
     broadcastEvent?.('driver:job_updated',{job:result.job});res.json({job:result.job});
+  });
+  // Admin-only operational view: expose dispatch health without account/KYC/payment data.
+  app.get('/api/admin/driver-dispatch',requireAdmin,async(_req,res)=>{
+    const d=await readJobs();
+    return res.json(buildAdminDispatchSnapshot(d.jobs,d.applications,d.presence));
+  });
+  // An assigned driver may release a job only before pickup; completed/picked-up trips are immutable here.
+  app.patch('/api/driver-jobs/:id/cancel',requireAuth,async(req,res)=>{
+    if(req.user.accountType!=='driver')return res.status(403).json({error:'Driver account required.'});
+    const reason=String(req.body?.reason||'').trim().slice(0,240);
+    const result=await mutateJobs(d=>{
+      const job=d.jobs.find(item=>item.id===req.params.id);
+      if(!job)return {status:404,error:'Job not found.'};
+      if(job.driverId!==req.user.id)return {status:403,error:'Only the assigned driver can release this job.'};
+      if(job.status!=='accepted')return {status:409,error:'A driver can release a job only before pickup.'};
+      job.status='cancelled';job.cancelledAt=new Date().toISOString();job.cancelledBy='driver';job.cancellationReason=reason||'Driver released before pickup';job.driverId=null;job.driverName=null;
+      return {status:200,job};
+    });
+    if(result.error)return res.status(result.status).json({error:result.error});
+    broadcastEvent?.('driver:job_updated',{job:result.job});return res.json({job:result.job});
   });
 }
