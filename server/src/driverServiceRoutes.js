@@ -2,7 +2,7 @@ import crypto from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readPersistentState, mutatePersistentState } from './storage.js';
-import { cleanSriLankaCoordinates, isDriverPresenceFresh, rankJobsForDriver } from './mobilityDispatch.js';
+import { cleanSriLankaCoordinates, isDriverPresenceFresh, rankJobsForDriver, buildAdminDispatchSnapshot } from './mobilityDispatch.js';
 
 const dataFile = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'data', 'driver-services.json');
 const emptyDriverState = { applications: [], jobs: [], presence: {} };
