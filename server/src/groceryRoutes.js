@@ -65,8 +65,10 @@ async function getProducts() {
 
 async function mutateProducts(mutator) {
   return mutatePersistentState(COLLECTION, dataFile, EMPTY_PRODUCTS, async (stored) => {
-    const products = Array.isArray(stored) ? stored : [];
-    return mutator(products);
+    if (!Array.isArray(stored)) {
+      throw new Error('Grocery inventory storage is invalid; refusing to overwrite existing data.');
+    }
+    return mutator(stored);
   });
 }
 
