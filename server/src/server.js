@@ -160,7 +160,12 @@ function verifyToken(token) {
     const payload = JSON.parse(Buffer.from(body, 'base64url').toString('utf-8'));
     if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return null;
     if (!Number.isFinite(payload.exp) || payload.exp <= Date.now()) return null;
-    if (typeof payload.id !== 'string' || !payload.id.trim()) return null;
+    const isRegistrationToken = payload.purpose === 'customer_registration';
+    if (isRegistrationToken) {
+      if (typeof payload.phone !== 'string' || !payload.phone.trim()) return null;
+    } else if (typeof payload.id !== 'string' || !payload.id.trim()) {
+      return null;
+    }
     return payload;
   } catch {
     return null;
