@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { BrowserRouter, Link, useNavigate } from 'react-router-dom';
-import { BriefcaseBusiness, LogIn, LogOut, RefreshCw, ShieldCheck, UserRound, ArrowLeftRight } from 'lucide-react';
+import { BriefcaseBusiness, LogIn, LogOut, RefreshCw, ShieldCheck, UserRound, ArrowLeftRight, Wifi, WifiOff } from 'lucide-react';
 import { AuthProvider, useAuth } from '../../context/AuthContext';
 import { API_BASE } from '../../config';
 import { subscribeToAppEvents } from '../../utils/events';
@@ -9,7 +9,6 @@ import AuthModal from '../../components/common/AuthModal';
 import Footer from '../../components/common/Footer';
 import NotificationCenter from '../../components/common/NotificationCenter';
 import OfflineBanner from '../../components/common/OfflineBanner';
-import ProviderServicesManager from '../../components/provider/ProviderServicesManager';
 import { ThemeToggle, Button, LanguageSwitcher } from '../../design-system';
 import { LanguageProvider } from '../../utils/i18n';
 
@@ -19,6 +18,43 @@ function ProviderWorkspace() {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState('');
+  const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
+
+  // Network online/offline monitor
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // Hardware Back Button for Capacitor on Android
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.Capacitor?.Plugins?.App) {
+      const handleBackButton = () => {
+        // If modals are open, the back button dismisses them
+        const openBackdrop = document.querySelector('.modal-backdrop');
+        if (openBackdrop) {
+          const closeBtn = openBackdrop.querySelector('button[aria-label="Close"]') ||
+                           openBackdrop.querySelector('button');
+          if (closeBtn) {
+            closeBtn.click();
+            return;
+          }
+        }
+        if (window.history.length > 1) {
+          window.history.back();
+        } else {
+          window.Capacitor.Plugins.App.exitApp();
+        }
+      };
+      window.Capacitor.Plugins.App.addListener('backButton', handleBackButton);
+    }
+  }, []);
 
   const fetchBookings = useCallback(async () => {
     if (!currentUser?.token || currentUser.accountType !== 'provider') {
@@ -96,22 +132,25 @@ function ProviderWorkspace() {
   const isProvider = currentUser?.accountType === 'provider';
 
   return (
-    <div className="app-shell">
+    <div className="provider-app-shell">
       <OfflineBanner />
       <header className="topbar">
         <Link to="/" className="brand" aria-label="ARY Services Provider home">
           <span className="brand-mark">A</span><span>ARY <b>Provider</b></span>
         </Link>
         <nav className="header-nav-links">
-          <span className="nav-link-btn"><BriefcaseBusiness size={14}/> Provider workspace</span>
+          <span className="nav-link-btn active"><BriefcaseBusiness size={14}/> Partner Workspace</span>
         </nav>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <LanguageSwitcher />
           <ThemeToggle />
           {isProvider ? (
             <div className="user-profile">
               <NotificationCenter/>
-              <span className="user-badge"><UserRound size={14}/><span>{currentUser.fullName}</span></span>
+              <span className="user-badge" title="Verified Trade Partner">
+                <UserRound size={14}/>
+                <span>{currentUser.fullName}</span>
+              </span>
               {(currentUser.roles || []).includes('customer') && (
                 <button
                   type="button"
@@ -145,16 +184,15 @@ function ProviderWorkspace() {
       </header>
 
       {isProvider ? (
-        <>
-          <ProviderServicesManager/>
-          <ProviderDashboard
-            bookings={bookings}
-            isLoading={loading}
-            onRefresh={fetchBookings}
-            onUpdateStatus={updateBookingStatus}
-            onDecideReschedule={decideReschedule}
-          />
-        </>
+        <ProviderDashboard
+          bookings={bookings}
+          isLoading={loading}
+          onRefresh={fetchBookings}
+          onUpdateStatus={updateBookingStatus}
+          onDecideReschedule={decideReschedule}
+          notice={notice}
+          onSetNotice={setNotice}
+        />
       ) : (
         <main style={{ maxWidth: 840, margin: '56px auto', padding: '0 20px', minHeight: '52vh' }}>
           <section style={{
@@ -183,7 +221,7 @@ function ProviderWorkspace() {
             <h1 style={{ color: 'var(--color-brand-900, #173b2f)', margin: '8px 0 12px', fontSize: '1.9rem' }}>
               Your business, one workspace.
             </h1>
-            <p style={{ color: 'var(--color-neutral-600, #647368)', maxWidth: 540, margin: '0 auto 24px', lineHeight: 1.7, fontSize: '0.95rem' }}>
+            <p style={{ color: 'var(--color-neutral-600, #64748b)', maxWidth: 540, margin: '0 auto 24px', lineHeight: 1.7, fontSize: '0.95rem' }}>
               Sign in with your approved Service Provider account to manage bookings, customer reviews, earnings and grocery inventory. New provider applications are verified by admin compliance.
             </p>
             <Button

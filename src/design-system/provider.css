@@ -1,0 +1,604 @@
+/**
+ * ARY Services - Provider App Styling
+ * Mobile-first, responsive, token-driven styles for Provider Workspace
+ */
+
+/* ==========================================================================
+   1. Provider App Shell & Layout
+   ========================================================================== */
+
+.provider-app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-surface-subtle, #f8faf8);
+  color: var(--color-text, #173b2f);
+}
+
+.provider-layout-body {
+  display: flex;
+  flex: 1;
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+/* Desktop Sidebar (>= 1024px) */
+.provider-sidebar {
+  display: none;
+  width: 250px;
+  flex-shrink: 0;
+  background: var(--color-surface, #ffffff);
+  border-right: 1px solid var(--color-border-subtle, #e5ebe2);
+  padding: var(--space-5, 20px) var(--space-4, 16px);
+  position: sticky;
+  top: 60px;
+  height: calc(100vh - 60px);
+  overflow-y: auto;
+}
+
+@media (min-width: 1024px) {
+  .provider-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4, 16px);
+  }
+}
+
+.provider-sidebar-header {
+  padding-bottom: var(--space-3, 12px);
+  border-bottom: 1px solid var(--color-border-subtle, #edf2ee);
+}
+
+.provider-sidebar-title {
+  font-size: var(--font-size-xs, 12px);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-neutral-500, #64748b);
+  margin-bottom: var(--space-2, 8px);
+}
+
+.provider-nav-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1, 4px);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.provider-nav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3, 12px);
+  padding: 10px 14px;
+  border-radius: var(--radius-md, 8px);
+  font-size: var(--font-size-sm, 14px);
+  font-weight: 600;
+  color: var(--color-neutral-700, #334155);
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  transition: all var(--transition-fast, 150ms cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+.provider-nav-item:hover {
+  background: var(--color-brand-50, #edf7f2);
+  color: var(--color-brand-800, #154636);
+}
+
+.provider-nav-item.active {
+  background: var(--color-brand-600, #174d3d);
+  color: #ffffff;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(23, 77, 61, 0.2);
+}
+
+.provider-nav-badge {
+  margin-left: auto;
+  font-size: var(--font-size-xs, 11px);
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: var(--radius-full, 9999px);
+  background: var(--color-danger-500, #ef4444);
+  color: #ffffff;
+}
+
+.provider-nav-item.active .provider-nav-badge {
+  background: #ffffff;
+  color: var(--color-danger-600, #dc2626);
+}
+
+/* Main Content Area */
+.provider-content-area {
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-4, 16px);
+  padding-bottom: calc(76px + var(--sab, 0px));
+}
+
+@media (min-width: 1024px) {
+  .provider-content-area {
+    padding: var(--space-6, 24px) var(--space-8, 32px);
+    padding-bottom: var(--space-8, 32px);
+  }
+}
+
+/* Mobile Bottom Navigation (< 1024px) */
+.provider-bottom-nav {
+  display: flex;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: calc(62px + var(--sab, 0px));
+  padding-bottom: var(--sab, 0px);
+  background: var(--color-surface, #ffffff);
+  border-top: 1px solid var(--color-border-subtle, #e5ebe2);
+  box-shadow: 0 -4px 16px rgba(18, 43, 31, 0.07);
+  z-index: var(--z-sticky, 200);
+}
+
+@media (min-width: 1024px) {
+  .provider-bottom-nav {
+    display: none;
+  }
+}
+
+.provider-bottom-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  background: transparent;
+  border: 0;
+  color: var(--color-neutral-500, #64748b);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  position: relative;
+  min-height: 48px;
+  padding: 6px 0;
+  touch-action: manipulation;
+  transition: color var(--transition-fast, 150ms);
+}
+
+.provider-bottom-tab.active {
+  color: var(--color-brand-600, #174d3d);
+  font-weight: 700;
+}
+
+.provider-bottom-tab-badge {
+  position: absolute;
+  top: 6px;
+  right: calc(50% - 16px);
+  background: var(--color-danger-500, #ef4444);
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
+  border-radius: 999px;
+  padding: 1px 5px;
+  min-width: 16px;
+  text-align: center;
+  line-height: 14px;
+}
+
+/* ==========================================================================
+   2. Provider Header & Availability Toggle
+   ========================================================================== */
+
+.provider-stats-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4, 16px);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-5, 20px);
+  background: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-border-subtle, #e5ebe2);
+  border-radius: var(--radius-lg, 12px);
+  padding: var(--space-4, 16px) var(--space-5, 20px);
+}
+
+.provider-profile-summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3, 12px);
+}
+
+.provider-avatar-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--color-brand-600, #174d3d);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.provider-heading-name {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--color-brand-900, #173b2f);
+}
+
+.provider-category-subtitle {
+  font-size: 0.82rem;
+  color: var(--color-neutral-500, #64748b);
+}
+
+.provider-quick-toggles {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.availability-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  border-radius: var(--radius-full, 9999px);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition-fast, 150ms);
+  border: 1px solid transparent;
+}
+
+.availability-toggle-btn.available {
+  background: var(--color-success-50, #edf7f2);
+  color: var(--color-success-700, #047857);
+  border-color: var(--color-success-200, #b7decb);
+}
+
+.availability-toggle-btn.paused {
+  background: var(--color-neutral-100, #f1f5f9);
+  color: var(--color-neutral-600, #475569);
+  border-color: var(--color-neutral-300, #cbd5e1);
+}
+
+/* ==========================================================================
+   3. KPI Grid & Metric Cards
+   ========================================================================== */
+
+.provider-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-3, 12px);
+  margin-bottom: var(--space-5, 20px);
+}
+
+@media (min-width: 768px) {
+  .provider-kpi-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-4, 16px);
+  }
+}
+
+.provider-kpi-card {
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-border-subtle, #e5ebe2);
+  border-radius: var(--radius-lg, 12px);
+}
+
+.kpi-icon-wrap {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md, 8px);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.kpi-icon-wrap.brand { background: var(--color-brand-50, #edf7f2); color: var(--color-brand-600, #174d3d); }
+.kpi-icon-wrap.warning { background: var(--color-warning-50, #fffbeb); color: var(--color-warning-600, #d97706); }
+.kpi-icon-wrap.success { background: var(--color-success-50, #ecfdf5); color: var(--color-success-600, #059669); }
+.kpi-icon-wrap.star { background: #fefce8; color: #ca8a04; }
+
+.kpi-data {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.kpi-val {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--color-neutral-900, #0f172a);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kpi-label {
+  font-size: 0.75rem;
+  color: var(--color-neutral-500, #64748b);
+  margin-top: 2px;
+}
+
+/* ==========================================================================
+   4. Jobs Feed & Cards
+   ========================================================================== */
+
+.job-card {
+  background: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-border-subtle, #e5ebe2);
+  border-radius: var(--radius-lg, 12px);
+  padding: var(--space-5, 20px);
+  transition: box-shadow var(--transition-fast, 150ms);
+}
+
+.job-card:hover {
+  box-shadow: 0 4px 16px rgba(20, 45, 32, 0.06);
+}
+
+.job-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--color-surface-subtle, #f8faf8);
+  border: 1px solid var(--color-border-subtle, #e5ebe2);
+  border-radius: var(--radius-md, 8px);
+  font-size: 0.85rem;
+  margin: 14px 0;
+}
+
+@media (min-width: 640px) {
+  .job-detail-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 900px) {
+  .job-detail-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.job-actions-row {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--color-border-subtle, #edf2ee);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Quote Composer Card */
+.quote-composer-card {
+  background: var(--color-neutral-50, #f8fafc);
+  border: 1px solid var(--color-border-subtle, #e2e8f0);
+  border-radius: var(--radius-md, 8px);
+  padding: 14px;
+  margin-top: 14px;
+}
+
+.quote-preview-callout {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid var(--color-brand-200, #b7decb);
+  border-radius: var(--radius-md, 8px);
+  padding: 10px 14px;
+  margin-top: 10px;
+  font-size: 0.82rem;
+}
+
+/* ==========================================================================
+   5. Grocery Orders Kanban Board
+   ========================================================================== */
+
+.grocery-board-container {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+@media (min-width: 768px) {
+  .grocery-board-container {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1200px) {
+  .grocery-board-container {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.grocery-column {
+  background: var(--color-surface-subtle, #f8faf8);
+  border: 1px solid var(--color-border-subtle, #e5ebe2);
+  border-radius: var(--radius-lg, 12px);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 280px;
+}
+
+.grocery-column-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 8px;
+  border-bottom: 1.5px solid var(--color-border-subtle, #e5ebe2);
+}
+
+.grocery-column-title {
+  font-size: 0.85rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-neutral-700, #334155);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.grocery-order-card {
+  background: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-border-subtle, #e5ebe2);
+  border-radius: var(--radius-md, 8px);
+  padding: 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.grocery-item-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  color: var(--color-neutral-700, #334155);
+}
+
+/* ==========================================================================
+   6. Grocery Inventory Management
+   ========================================================================== */
+
+.inventory-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.inventory-search-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-border, #cbd5e1);
+  border-radius: var(--radius-md, 8px);
+  padding: 8px 12px;
+  flex: 1;
+  min-width: 240px;
+}
+
+.inventory-search-input {
+  border: 0;
+  outline: 0;
+  font-size: 16px;
+  width: 100%;
+  background: transparent;
+  color: inherit;
+}
+
+.inventory-card-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+@media (min-width: 640px) {
+  .inventory-card-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .inventory-card-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.inventory-product-card {
+  background: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-border-subtle, #e5ebe2);
+  border-radius: var(--radius-md, 8px);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.inventory-product-card.low-stock {
+  border-color: var(--color-warning-300, #fde68a);
+  background: #fffdfa;
+}
+
+.stock-stepper-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stock-stepper-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm, 6px);
+  border: 1px solid var(--color-border, #cbd5e1);
+  background: var(--color-surface, #ffffff);
+  color: var(--color-neutral-800, #1e293b);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.stock-stepper-btn:hover {
+  background: var(--color-neutral-100, #f1f5f9);
+}
+
+/* ==========================================================================
+   7. Form Inputs & Safe Area Overrides
+   ========================================================================== */
+
+.provider-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.provider-form-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--color-neutral-700, #334155);
+}
+
+.provider-form-input,
+.provider-form-select,
+.provider-form-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border, #cbd5e1);
+  border-radius: var(--radius-md, 8px);
+  background: var(--color-surface, #ffffff);
+  font-size: 16px; /* Prevents auto-zoom on mobile */
+  color: var(--color-text, #173b2f);
+  box-sizing: border-box;
+}
+
+.provider-form-input:focus,
+.provider-form-select:focus,
+.provider-form-textarea:focus {
+  outline: 0;
+  border-color: var(--color-brand-600, #174d3d);
+  box-shadow: 0 0 0 3px rgba(23, 77, 61, 0.12);
+}

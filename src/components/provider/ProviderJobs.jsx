@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Check,
   Ban,
@@ -13,9 +13,12 @@ import {
   User,
   Send,
   Star,
-  FileText
+  FileText,
+  Filter,
+  ExternalLink,
+  Info
 } from 'lucide-react';
-import { Card, Badge, Button, Stepper, StatusPill, EmptyState, Skeleton } from '../../design-system';
+import { Card, Badge, Button, Stepper, StatusPill, EmptyState, Skeleton, ConfirmDialog, SegmentedControl } from '../../design-system';
 
 function getSlaStatus(createdAt) {
   if (!createdAt) return null;
@@ -24,7 +27,7 @@ function getSlaStatus(createdAt) {
 
   if (remainingMinutes > 0) {
     return {
-      text: `${remainingMinutes}m remaining (30-min SLA)`,
+      text: `${remainingMinutes}m remaining (30m SLA)`,
       urgent: remainingMinutes <= 10,
       overdue: false
     };
@@ -45,13 +48,31 @@ export default function ProviderJobs({
   onSendQuote,
   claimingJobId = null
 }) {
+  const [filterTab, setFilterTab] = useState('all'); // 'all' | 'pending' | 'active' | 'completed' | 'broadcast'
   const [quoteDrafts, setQuoteDrafts] = useState({});
   const [quoteNotes, setQuoteNotes] = useState({});
   const [quoteBusy, setQuoteBusy] = useState('');
   const [quoteError, setQuoteError] = useState({});
+  const [confirmDeclineId, setConfirmDeclineId] = useState(null);
 
-  const broadcastJobs = bookings.filter(b => b.status === 'broadcast_pool');
-  const directBookings = bookings.filter(b => b.status !== 'broadcast_pool');
+  const broadcastJobs = useMemo(() => bookings.filter(b => b.status === 'broadcast_pool'), [bookings]);
+  const directBookings = useMemo(() => bookings.filter(b => b.status !== 'broadcast_pool'), [bookings]);
+
+  const filteredBookings = useMemo(() => {
+    switch (filterTab) {
+      case 'pending':
+        return directBookings.filter(b => b.status === 'requested');
+      case 'active':
+        return directBookings.filter(b => ['accepted', 'in_progress'].includes(b.status));
+      case 'completed':
+        return directBookings.filter(b => b.status === 'completed');
+      case 'broadcast':
+        return broadcastJobs;
+      case 'all':
+      default:
+        return directBookings;
+    }
+  }, [filterTab, directBookings, broadcastJobs]);
 
   async function handleQuoteSubmit(booking, e) {
     e.preventDefault();
@@ -97,10 +118,21 @@ export default function ProviderJobs({
     );
   }
 
+  const filterOptions = [
+    { value: 'all', label: `All (${directBookings.length})` },
+    { value: 'pending', label: `Pending (${directBookings.filter(b => b.status === 'requested').length})` },
+    { value: 'active', label: `Active (${directBookings.filter(b => ['accepted', 'in_progress'].includes(b.status)).length})` },
+    { value: 'completed', label: `Completed (${directBookings.filter(b => b.status === 'completed').length})` }
+  ];
+
+  if (broadcastJobs.length > 0) {
+    filterOptions.push({ value: 'broadcast', label: `Broadcast Pool (${broadcastJobs.length})` });
+  }
+
   return (
     <div className="provider-jobs-container" style={{ display: 'grid', gap: '20px' }}>
-      {/* 1. Cascading Broadcast Pool Section */}
-      {broadcastJobs.length > 0 && (
+      {/* 1. Cascading Broadcast Pool Section (High Priority Banner) */}
+      {broadcastJobs.length > 0 && filterTab !== 'broadcast' && (
         <Card style={{
           background: 'linear-gradient(135deg, var(--color-warning-50, #fef3c7) 0%, #fffbeb 100%)',
           border: '1.5px solid var(--color-warning-400, #f59e0b)',
@@ -114,15 +146,14 @@ export default function ProviderJobs({
                 borderRadius: '50%',
                 width: 32,
                 height: 32,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: 800
+                display: 'grid',
+                placeItems: 'center',
+                flexShrink: 0
               }}>
                 <Zap size={18} />
               </div>
               <div>
-                <b style={{ color: 'var(--color-warning-900, #92400e)', fontSize: '1rem' }}>
+                <b style={{ color: 'var(--color-warning-900, #92400e)', fontSize: '0.95rem' }}>
                   {broadcastJobs.length} Open Broadcast Job{broadcastJobs.length > 1 ? 's' : ''} in Your Category
                 </b>
                 <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: 'var(--color-warning-800, #78350f)' }}>
@@ -134,7 +165,7 @@ export default function ProviderJobs({
           </div>
 
           <div style={{ display: 'grid', gap: 10 }}>
-            {broadcastJobs.map(b => (
+            {broadcastJobs.slice(0, 2).map(b => (
               <div
                 key={b.id}
                 style={{
@@ -152,19 +183,13 @@ export default function ProviderJobs({
                 <div style={{ flex: 1, minWidth: 260 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                     <b style={{ color: 'var(--color-neutral-900, #1e293b)', fontSize: '0.95rem' }}>{b.categoryName || 'Service Job'}</b>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--color-neutral-500, #64748b)' }}>#{b.id}</span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--color-neutral-500, #64748b)' }}>#{b.id.slice(-6)}</span>
                     <Badge variant="success" dot={false}>{b.baseCharge || 'LKR 1,500'}</Badge>
                   </div>
                   <div style={{ fontSize: '0.82rem', color: 'var(--color-neutral-600, #475569)', display: 'flex', gap: 14, flexWrap: 'wrap' }}>
                     <span><MapPin size={13} style={{ verticalAlign: 'middle', marginRight: 4 }} />{b.serviceAddress}</span>
                     <span><Calendar size={13} style={{ verticalAlign: 'middle', marginRight: 4 }} />{b.bookingDate} ({b.bookingTime})</span>
-                    <span><User size={13} style={{ verticalAlign: 'middle', marginRight: 4 }} />{b.customerName}</span>
                   </div>
-                  {b.problemDescription && (
-                    <p style={{ margin: '6px 0 0', fontSize: '0.82rem', color: 'var(--color-neutral-700, #334155)', fontStyle: 'italic' }}>
-                      "{b.problemDescription}"
-                    </p>
-                  )}
                 </div>
 
                 <Button
@@ -181,25 +206,41 @@ export default function ProviderJobs({
         </Card>
       )}
 
-      {/* 2. Direct Bookings Feed */}
-      {directBookings.length > 0 ? (
+      {/* 2. Filter Tabs */}
+      <div style={{ maxWidth: 640 }}>
+        <SegmentedControl
+          options={filterOptions}
+          value={filterTab}
+          onChange={setFilterTab}
+        />
+      </div>
+
+      {/* 3. Bookings Feed */}
+      {filteredBookings.length > 0 ? (
         <div style={{ display: 'grid', gap: '16px' }}>
-          {directBookings.map(b => {
+          {filteredBookings.map(b => {
+            const isBroadcast = b.status === 'broadcast_pool';
             const sla = b.status === 'requested' ? getSlaStatus(b.createdAt) : null;
             const stepIndex = getStepIndex(b.status);
+            const currentAmount = quoteDrafts[b.id] ?? b.quote?.amount ?? b.baseAmount ?? 1500;
+            const feePreview = Math.round(Number(currentAmount) * 0.1);
+            const netPreview = Number(currentAmount) - feePreview;
 
             return (
-              <Card key={b.id} style={{ padding: '20px' }}>
+              <Card key={b.id} className="job-card">
                 {/* Header Row */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12, marginBottom: 14 }}>
                   <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                       <h3 style={{ margin: 0, fontSize: '1.05rem', color: 'var(--color-brand-900, #173b2f)' }}>
                         {b.categoryName || 'Service Request'}
                       </h3>
                       <span style={{ fontSize: '0.75rem', color: 'var(--color-neutral-500, #64748b)' }}>
-                        #{b.id}
+                        #{b.id.slice(-6)}
                       </span>
+                      <Badge variant="brand" dot={false}>
+                        {b.baseCharge || 'LKR 1,500'}
+                      </Badge>
                     </div>
                     <div style={{ fontSize: '0.8rem', color: 'var(--color-neutral-500, #64748b)', marginTop: 2 }}>
                       Created: {new Date(b.createdAt || Date.now()).toLocaleString()}
@@ -216,42 +257,41 @@ export default function ProviderJobs({
                   </div>
                 </div>
 
-                {/* Progress Stepper */}
-                <div style={{ margin: '14px 0 18px', padding: '12px 16px', background: 'var(--color-neutral-50, #f8fafc)', borderRadius: 'var(--radius-md, 8px)' }}>
-                  <Stepper
-                    currentStep={stepIndex}
-                    steps={[
-                      { label: 'Requested' },
-                      { label: 'Accepted' },
-                      { label: 'In Progress' },
-                      { label: 'Completed' }
-                    ]}
-                  />
-                </div>
+                {/* Progress Stepper (Only for direct claimed/accepted bookings) */}
+                {!isBroadcast && (
+                  <div style={{ margin: '14px 0 16px', padding: '12px 16px', background: 'var(--color-neutral-50, #f8fafc)', borderRadius: 'var(--radius-md, 8px)' }}>
+                    <Stepper
+                      currentStep={stepIndex}
+                      steps={[
+                        { label: 'Requested' },
+                        { label: 'Accepted' },
+                        { label: 'In Progress' },
+                        { label: 'Completed' }
+                      ]}
+                    />
+                  </div>
+                )}
 
-                {/* Details Grid */}
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                  gap: '12px',
-                  padding: '14px',
-                  background: 'var(--color-surface, #fff)',
-                  border: '1px solid var(--color-border-subtle, #e5e7eb)',
-                  borderRadius: 'var(--radius-md, 8px)',
-                  fontSize: '0.85rem'
-                }}>
+                {/* Details Grid: Customer info shown per visibility rules */}
+                <div className="job-detail-grid">
                   <div>
                     <span style={{ color: 'var(--color-neutral-500, #64748b)', fontSize: '0.75rem', display: 'block' }}>Customer</span>
-                    <b style={{ color: 'var(--color-neutral-900, #0f172a)' }}>{b.customerName}</b>
+                    <b style={{ color: 'var(--color-neutral-900, #0f172a)' }}>
+                      {isBroadcast ? 'Confidential (Unassigned)' : (b.customerName || 'Ary Client')}
+                    </b>
                   </div>
                   <div>
                     <span style={{ color: 'var(--color-neutral-500, #64748b)', fontSize: '0.75rem', display: 'block' }}>Contact Phone</span>
-                    <a
-                      href={`tel:${b.customerPhone}`}
-                      style={{ color: 'var(--color-brand-600, #174d3d)', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}
-                    >
-                      <Phone size={13} /> {b.customerPhone} (Call)
-                    </a>
+                    {isBroadcast ? (
+                      <span style={{ color: 'var(--color-neutral-500, #64748b)', fontStyle: 'italic' }}>Visible after claiming</span>
+                    ) : (
+                      <a
+                        href={`tel:${b.customerPhone}`}
+                        style={{ color: 'var(--color-brand-600, #174d3d)', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                      >
+                        <Phone size={13} /> {b.customerPhone} (Call)
+                      </a>
+                    )}
                   </div>
                   <div>
                     <span style={{ color: 'var(--color-neutral-500, #64748b)', fontSize: '0.75rem', display: 'block' }}>Schedule</span>
@@ -259,14 +299,21 @@ export default function ProviderJobs({
                   </div>
                   <div>
                     <span style={{ color: 'var(--color-neutral-500, #64748b)', fontSize: '0.75rem', display: 'block' }}>Location</span>
-                    <span style={{ fontWeight: 600, color: 'var(--color-brand-800, #154636)' }}>{b.serviceAddress}</span>
+                    <a
+                      href={`https://maps.google.com/?q=${encodeURIComponent(b.serviceAddress || 'Sri Lanka')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ fontWeight: 600, color: 'var(--color-brand-700, #174d3d)', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                    >
+                      <MapPin size={13} /> {b.serviceAddress} <ExternalLink size={11} />
+                    </a>
                   </div>
                 </div>
 
                 {/* Customer Problem / Notes */}
                 {b.problemDescription && (
                   <div style={{
-                    marginTop: 12,
+                    marginTop: 10,
                     padding: '10px 14px',
                     background: 'var(--color-neutral-50, #f8fafc)',
                     borderLeft: '3px solid var(--color-brand-500, #174d3d)',
@@ -282,7 +329,7 @@ export default function ProviderJobs({
                   </div>
                 )}
 
-                {/* Reschedule Request Notice */}
+                {/* Reschedule Request Notice & Decision */}
                 {b.rescheduleRequest?.status === 'pending' && (
                   <div style={{
                     marginTop: 14,
@@ -291,8 +338,8 @@ export default function ProviderJobs({
                     background: 'var(--color-warning-50, #fffbeb)',
                     borderRadius: 'var(--radius-md, 8px)'
                   }}>
-                    <b style={{ fontSize: '0.85rem', color: 'var(--color-warning-900, #78350f)' }}>
-                      Customer Requested a Reschedule
+                    <b style={{ fontSize: '0.85rem', color: 'var(--color-warning-900, #78350f)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <AlertTriangle size={15} color="#d97706" /> Customer Requested a Reschedule
                     </b>
                     <p style={{ fontSize: '0.82rem', color: 'var(--color-warning-800, #92400e)', margin: '4px 0 10px' }}>
                       Proposed new time: <b>{b.rescheduleRequest.date} ({b.rescheduleRequest.time})</b>
@@ -317,7 +364,7 @@ export default function ProviderJobs({
                   </div>
                 )}
 
-                {/* Quote Status & Composer */}
+                {/* Quote Status Display */}
                 {b.quote?.status === 'pending' && (
                   <div style={{
                     marginTop: 14,
@@ -352,30 +399,24 @@ export default function ProviderJobs({
                   </div>
                 )}
 
-                {/* Quote Composer Form (when applicable) */}
+                {/* Quote Composer Form (Available on requested/accepted before in_progress) */}
                 {['requested', 'accepted'].includes(b.status) &&
                   (b.quote?.status !== 'pending' || Date.parse(b.quote.validUntil || '') <= Date.now()) &&
                   b.quote?.status !== 'accepted' && (
                     <form
                       onSubmit={(e) => handleQuoteSubmit(b, e)}
-                      style={{
-                        marginTop: 14,
-                        padding: '14px',
-                        border: '1px solid var(--color-border-subtle, #e2e8f0)',
-                        background: 'var(--color-neutral-50, #f8fafc)',
-                        borderRadius: 'var(--radius-md, 8px)'
-                      }}
+                      className="quote-composer-card"
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
                         <FileText size={15} color="var(--color-brand-600, #174d3d)" />
                         <b style={{ fontSize: '0.85rem', color: 'var(--color-neutral-800, #1e293b)' }}>
-                          Send or Revise Service Quote
+                          Send Custom Service Quote
                         </b>
                       </div>
                       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(120px, 170px) 1fr', gap: 10 }}>
-                        <div>
-                          <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-neutral-700, #334155)', marginBottom: 4 }}>
-                            Amount (LKR)
+                        <div className="provider-form-group">
+                          <label className="provider-form-label">
+                            Quote Amount (LKR)
                           </label>
                           <input
                             type="number"
@@ -385,38 +426,34 @@ export default function ProviderJobs({
                             required
                             value={quoteDrafts[b.id] ?? b.quote?.amount ?? b.baseAmount ?? ''}
                             onChange={(e) => setQuoteDrafts(prev => ({ ...prev, [b.id]: e.target.value }))}
-                            style={{
-                              width: '100%',
-                              padding: '8px 10px',
-                              border: '1px solid var(--color-border, #cbd5e1)',
-                              borderRadius: 'var(--radius-sm, 6px)',
-                              fontSize: '1rem',
-                              background: '#fff'
-                            }}
+                            className="provider-form-input"
                           />
                         </div>
-                        <div>
-                          <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-neutral-700, #334155)', marginBottom: 4 }}>
+                        <div className="provider-form-group">
+                          <label className="provider-form-label">
                             Work Included & Scope
                           </label>
                           <input
                             type="text"
                             minLength={5}
                             required
-                            placeholder="Labour, spare parts, and warranty scope"
+                            placeholder="e.g. Labour, spare parts, and warranty scope"
                             value={quoteNotes[b.id] ?? b.quote?.description ?? ''}
                             onChange={(e) => setQuoteNotes(prev => ({ ...prev, [b.id]: e.target.value }))}
-                            style={{
-                              width: '100%',
-                              padding: '8px 10px',
-                              border: '1px solid var(--color-border, #cbd5e1)',
-                              borderRadius: 'var(--radius-sm, 6px)',
-                              fontSize: '1rem',
-                              background: '#fff'
-                            }}
+                            className="provider-form-input"
                           />
                         </div>
                       </div>
+
+                      {/* Live Quote Breakdown Preview */}
+                      <div className="quote-preview-callout">
+                        <span>Customer pays: <b>LKR {Number(currentAmount || 0).toLocaleString()}</b></span>
+                        <span style={{ color: 'var(--color-neutral-500, #64748b)' }}>ARY 10% fee: - LKR {feePreview.toLocaleString()}</span>
+                        <span style={{ color: 'var(--color-success-700, #047857)', fontWeight: 700 }}>
+                          Your Net Payout: LKR {netPreview.toLocaleString()}
+                        </span>
+                      </div>
+
                       {quoteError[b.id] && (
                         <div style={{ color: 'var(--color-danger-600, #dc2626)', fontSize: '0.75rem', marginTop: 6 }}>
                           {quoteError[b.id]}
@@ -434,108 +471,110 @@ export default function ProviderJobs({
                     </form>
                   )}
 
-                {/* Customer Review display if already rated */}
-                {b.review && (
-                  <div style={{
-                    marginTop: 12,
-                    padding: '10px 14px',
-                    background: 'var(--color-brand-50, #edf7f2)',
-                    border: '1px solid var(--color-brand-200, #b7decb)',
-                    borderRadius: 'var(--radius-md, 8px)'
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                      <span style={{ color: '#d97706', fontWeight: 700, fontSize: '0.85rem' }}>
-                        ⭐ {b.review.rating}/5 Client Rating
-                      </span>
-                      <span style={{ fontSize: '0.75rem', color: '#64748b', marginLeft: 'auto' }}>
-                        {new Date(b.review.createdAt).toLocaleDateString()}
-                      </span>
-                    </div>
-                    {b.review.comment && (
-                      <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--color-brand-900, #0c2d23)', fontStyle: 'italic' }}>
-                        "{b.review.comment}"
-                      </p>
-                    )}
-                  </div>
-                )}
-
-                {/* Action Row */}
-                <div style={{
-                  marginTop: 16,
-                  paddingTop: 14,
-                  borderTop: '1px solid var(--color-border-subtle, #f1f5f9)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 10,
-                  flexWrap: 'wrap'
-                }}>
-                  {b.status === 'requested' && (
-                    <>
-                      <Button
-                        variant="primary"
-                        onClick={() => onUpdateStatus?.(b.id, 'accepted')}
-                      >
-                        <Check size={16} /> Accept Job
-                      </Button>
-                      <Button
-                        variant="danger"
-                        onClick={() => onUpdateStatus?.(b.id, 'rejected')}
-                      >
-                        <Ban size={16} /> Decline
-                      </Button>
-                    </>
-                  )}
-
-                  {b.status === 'accepted' && (
-                    <>
-                      <Button
-                        variant="primary"
-                        onClick={() => onUpdateStatus?.(b.id, 'in_progress')}
-                      >
-                        <Zap size={16} /> Start Job
-                      </Button>
-                      <Button
-                        variant="secondary"
-                        onClick={() => onUpdateStatus?.(b.id, 'completed')}
-                      >
-                        <CheckCheck size={16} /> Mark Completed
-                      </Button>
-                    </>
-                  )}
-
-                  {b.status === 'in_progress' && (
+                {/* Allowed Transitions Action Row */}
+                <div className="job-actions-row">
+                  {isBroadcast ? (
                     <Button
                       variant="primary"
-                      onClick={() => onUpdateStatus?.(b.id, 'completed')}
+                      onClick={() => onClaimJob?.(b.id)}
+                      loading={claimingJobId === b.id}
                     >
-                      <CheckCheck size={16} /> Mark as Finished
+                      <Zap size={15} /> Claim This Broadcast Job
                     </Button>
-                  )}
+                  ) : (
+                    <>
+                      {b.status === 'requested' && (
+                        <>
+                          <Button
+                            variant="primary"
+                            onClick={() => onUpdateStatus?.(b.id, 'accepted')}
+                          >
+                            <Check size={16} /> Accept Job
+                          </Button>
+                          <Button
+                            variant="danger"
+                            onClick={() => setConfirmDeclineId(b.id)}
+                          >
+                            <Ban size={16} /> Decline
+                          </Button>
+                        </>
+                      )}
 
-                  {b.status === 'completed' && (
-                    <span style={{
-                      fontSize: '0.85rem',
-                      color: 'var(--color-success-700, #047857)',
-                      fontWeight: 700,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 6
-                    }}>
-                      <CheckCircle2 size={16} /> Service Completed Successfully
-                    </span>
+                      {b.status === 'accepted' && (
+                        <>
+                          <Button
+                            variant="primary"
+                            onClick={() => onUpdateStatus?.(b.id, 'in_progress')}
+                          >
+                            <Zap size={16} /> Start Job
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            onClick={() => onUpdateStatus?.(b.id, 'completed')}
+                          >
+                            <CheckCheck size={16} /> Mark Completed
+                          </Button>
+                        </>
+                      )}
+
+                      {b.status === 'in_progress' && (
+                        <Button
+                          variant="primary"
+                          onClick={() => onUpdateStatus?.(b.id, 'completed')}
+                        >
+                          <CheckCheck size={16} /> Mark as Finished
+                        </Button>
+                      )}
+
+                      {b.status === 'completed' && (
+                        <span style={{
+                          fontSize: '0.85rem',
+                          color: 'var(--color-success-700, #047857)',
+                          fontWeight: 700,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6
+                        }}>
+                          <CheckCircle2 size={16} /> Service Completed Successfully
+                        </span>
+                      )}
+
+                      {['rejected', 'cancelled'].includes(b.status) && (
+                        <span style={{ fontSize: '0.85rem', color: 'var(--color-neutral-500, #64748b)' }}>
+                          Job {b.status === 'rejected' ? 'Declined' : 'Cancelled'}
+                        </span>
+                      )}
+                    </>
                   )}
                 </div>
               </Card>
             );
           })}
         </div>
-      ) : broadcastJobs.length === 0 ? (
+      ) : (
         <EmptyState
           icon={AlertTriangle}
-          title="No customer booking requests yet"
-          description="When customers in your service area request your expertise, their bookings will appear here instantly in real time."
+          title="No booking requests in this category"
+          description="When new customer requests arrive, they will be listed here instantly in real time."
         />
-      ) : null}
+      )}
+
+      {/* Confirm Decline Modal */}
+      <ConfirmDialog
+        isOpen={Boolean(confirmDeclineId)}
+        title="Decline Booking Request?"
+        message="Declining will pass this booking to the next available provider in your area. Are you sure you cannot attend to this job?"
+        confirmLabel="Yes, Decline"
+        cancelLabel="Keep Request"
+        variant="danger"
+        onConfirm={() => {
+          if (confirmDeclineId) {
+            onUpdateStatus?.(confirmDeclineId, 'rejected');
+            setConfirmDeclineId(null);
+          }
+        }}
+        onCancel={() => setConfirmDeclineId(null)}
+      />
     </div>
   );
 }

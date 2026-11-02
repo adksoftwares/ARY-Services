@@ -1,24 +1,43 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
+  LayoutDashboard,
   Briefcase,
-  Star,
+  FileText,
+  Calendar,
   Wallet,
+  Star,
+  Layers,
   ShoppingBag,
   Package,
+  User,
   Bell,
+  RefreshCw,
   AlertTriangle,
-  RefreshCw
+  Menu,
+  X,
+  Volume2,
+  VolumeX,
+  Vibrate,
+  ShieldCheck,
+  ArrowRight
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE } from '../../config';
-import { SegmentedControl, Button } from '../../design-system';
-import ProviderStatsHeader from './ProviderStatsHeader';
-import ProviderVerificationBanner from './ProviderVerificationBanner';
+import { subscribeToAppEvents } from '../../utils/events';
+import { Button, Badge, Modal } from '../../design-system';
+
+// Feature Views
+import ProviderOverview from './ProviderOverview';
 import ProviderJobs from './ProviderJobs';
+import ProviderQuotes from './ProviderQuotes';
+import ProviderSchedule from './ProviderSchedule';
 import ProviderWallet from './ProviderWallet';
 import ProviderReviews from './ProviderReviews';
+import ProviderServicesManager from './ProviderServicesManager';
 import GroceryInventory from './GroceryInventory';
 import GroceryOrders from './GroceryOrders';
+import ProviderProfile from './ProviderProfile';
 
 let sharedAudioCtx = null;
 
@@ -55,8 +74,16 @@ function playAlertChime() {
     osc.start();
     osc.stop(ctx.currentTime + 0.35);
   } catch (e) {
-    // Autoplay restrictions or headless browser
+    // Silent fallback
   }
+}
+
+function triggerHapticVibration() {
+  try {
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      navigator.vibrate([150, 80, 150]);
+    }
+  } catch (e) {}
 }
 
 export default function ProviderDashboard({
@@ -64,39 +91,71 @@ export default function ProviderDashboard({
   isLoading = false,
   onRefresh,
   onUpdateStatus,
-  onDecideReschedule
+  onDecideReschedule,
+  notice = '',
+  onSetNotice
 }) {
-  const { currentUser } = useAuth();
-  const [activeTab, setActiveTab] = useState('jobs'); // 'jobs' | 'reviews' | 'wallet' | 'orders' | 'inventory'
+  const { currentUser, switchRole, logout } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+
+  // Active view tab from URL search params: ?tab=overview
+  const activeTab = searchParams.get('tab') || 'overview';
+
   const [providerReviews, setProviderReviews] = useState([]);
   const [isLoadingReviews, setIsLoadingReviews] = useState(false);
   const [ledgerEntries, setLedgerEntries] = useState([]);
   const [walletBalance, setWalletBalance] = useState(0);
-  const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
   const [claimingJobId, setClaimingJobId] = useState(null);
-  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Network offline detection
-  useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
+  // Sound, vibration, and availability state persisted in localStorage
+  const [soundEnabled, setSoundEnabled] = useState(() => {
+    return typeof localStorage !== 'undefined' ? localStorage.getItem('ary_provider_sound') !== 'false' : true;
+  });
+  const [vibrationEnabled, setVibrationEnabled] = useState(() => {
+    return typeof localStorage !== 'undefined' ? localStorage.getItem('ary_provider_vibration') !== 'false' : true;
+  });
+  const [isAvailable, setIsAvailable] = useState(() => {
+    return typeof localStorage !== 'undefined' ? localStorage.getItem('ary_provider_available') !== 'false' : true;
+  });
 
-  const pendingRequests = bookings.filter(b => b.status === 'requested');
+  const isGrocery = currentUser?.category === 'grocery-products';
+  const pendingRequests = useMemo(() => bookings.filter(b => b.status === 'requested'), [bookings]);
 
-  // Trigger audio alert when new requests arrive
-  useEffect(() => {
-    if (pendingRequests.length > 0 && soundEnabled) {
-      playAlertChime();
+  // Tab navigation helper
+  const handleNavigateTab = useCallback((tabName) => {
+    setSearchParams({ tab: tabName });
+    setIsMobileMenuOpen(false);
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-  }, [pendingRequests.length, soundEnabled]);
+  }, [setSearchParams]);
 
+  // Audio and sound toggles
+  function toggleSound() {
+    getOrCreateAudioContext();
+    const next = !soundEnabled;
+    setSoundEnabled(next);
+    localStorage.setItem('ary_provider_sound', String(next));
+    if (next) playAlertChime();
+  }
+
+  function toggleVibration() {
+    const next = !vibrationEnabled;
+    setVibrationEnabled(next);
+    localStorage.setItem('ary_provider_vibration', String(next));
+    if (next) triggerHapticVibration();
+  }
+
+  function toggleAvailability() {
+    const next = !isAvailable;
+    setIsAvailable(next);
+    localStorage.setItem('ary_provider_available', String(next));
+    onSetNotice?.(next ? 'Status set to Accepting Bookings.' : 'Status set to Paused.');
+  }
+
+  // Fetch reviews when on reviews tab or overview
   const fetchReviews = useCallback(async () => {
     if (!currentUser?.id) return;
     setIsLoadingReviews(true);
@@ -107,12 +166,13 @@ export default function ProviderDashboard({
         setProviderReviews(data.reviews || []);
       }
     } catch (e) {
-      console.warn('Could not fetch provider reviews:', e);
+      console.warn('Could not fetch reviews:', e);
     } finally {
       setIsLoadingReviews(false);
     }
   }, [currentUser?.id]);
 
+  // Fetch ledger entries
   const fetchWalletLedger = useCallback(async () => {
     if (!currentUser?.token) return;
     try {
@@ -125,18 +185,44 @@ export default function ProviderDashboard({
         setLedgerEntries(data.entries || []);
       }
     } catch (e) {
-      console.warn('Could not fetch ledger entries:', e);
+      console.warn('Could not fetch wallet ledger:', e);
     }
   }, [currentUser?.token]);
 
   useEffect(() => {
-    if (activeTab === 'reviews') {
+    if (activeTab === 'reviews' || activeTab === 'overview') {
       fetchReviews();
-    } else if (activeTab === 'wallet') {
+    }
+    if (activeTab === 'wallet' || activeTab === 'overview') {
       fetchWalletLedger();
     }
   }, [activeTab, fetchReviews, fetchWalletLedger]);
 
+  // Trigger alert on new bookings via SSE
+  useEffect(() => {
+    if (!currentUser?.token || currentUser.accountType !== 'provider') return undefined;
+
+    const handleNewBooking = () => {
+      onRefresh?.();
+      onSetNotice?.('New customer booking request arrived!');
+      if (soundEnabled) playAlertChime();
+      if (vibrationEnabled) triggerHapticVibration();
+    };
+
+    const handleNewGroceryOrder = () => {
+      onRefresh?.();
+      onSetNotice?.('New grocery order received!');
+      if (soundEnabled) playAlertChime();
+      if (vibrationEnabled) triggerHapticVibration();
+    };
+
+    return subscribeToAppEvents(currentUser.token, {
+      'booking:created': handleNewBooking,
+      'grocery:order_created': handleNewGroceryOrder
+    });
+  }, [currentUser, soundEnabled, vibrationEnabled, onRefresh, onSetNotice]);
+
+  // Claim job handler
   async function handleClaimJob(jobId) {
     if (!currentUser?.token) return;
     setClaimingJobId(jobId);
@@ -150,17 +236,19 @@ export default function ProviderDashboard({
       });
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error || 'Failed to claim job.');
+        onSetNotice?.(data.error || 'Failed to claim job.');
       } else {
+        onSetNotice?.('Job claimed successfully! Details added to your active jobs.');
         onRefresh?.();
       }
     } catch (err) {
-      alert('Could not claim job: ' + err.message);
+      onSetNotice?.('Could not claim job: ' + err.message);
     } finally {
       setClaimingJobId(null);
     }
   }
 
+  // Quote submit handler
   async function handleSendQuote(booking, amount, description) {
     try {
       const response = await fetch(`${API_BASE}/bookings/${encodeURIComponent(booking.id)}/quote`, {
@@ -173,9 +261,10 @@ export default function ProviderDashboard({
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || 'Could not send quote.');
+      onSetNotice?.(`Quote of LKR ${Number(amount).toLocaleString()} sent to client.`);
       onRefresh?.();
     } catch (error) {
-      alert(error.message || 'Could not send quote.');
+      onSetNotice?.(error.message || 'Could not send quote.');
     }
   }
 
@@ -183,175 +272,309 @@ export default function ProviderDashboard({
     ? (providerReviews.reduce((sum, r) => sum + Number(r.rating || 0), 0) / providerReviews.length).toFixed(1)
     : (currentUser?.rating ? Number(currentUser.rating).toFixed(1) : '5.0');
 
-  const tabOptions = [
-    { value: 'jobs', label: `Jobs (${bookings.length})` },
-    { value: 'reviews', label: `Reviews (${providerReviews.length || currentUser?.reviewCount || 0})` },
-    { value: 'wallet', label: 'Wallet & Earnings' }
+  // Navigation Items Definition
+  const navItems = [
+    { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+    { id: 'jobs', label: 'Jobs', icon: Briefcase, badge: pendingRequests.length > 0 ? pendingRequests.length : null },
+    { id: 'quotes', label: 'Quotes', icon: FileText },
+    { id: 'schedule', label: 'Schedule', icon: Calendar },
+    { id: 'wallet', label: 'Earnings & Wallet', icon: Wallet },
+    { id: 'reviews', label: 'Client Reviews', icon: Star },
+    { id: 'services', label: 'Services Catalog', icon: Layers }
   ];
 
-  if (currentUser?.category === 'grocery-products') {
-    tabOptions.push(
-      { value: 'orders', label: 'Grocery Orders' },
-      { value: 'inventory', label: 'Product Inventory' }
+  if (isGrocery) {
+    navItems.push(
+      { id: 'orders', label: 'Grocery Orders', icon: ShoppingBag },
+      { id: 'inventory', label: 'Product Inventory', icon: Package }
     );
   }
 
-  return (
-    <main className="dashboard" style={{ maxWidth: 1120, margin: '0 auto', padding: '24px 20px', minHeight: '80vh' }}>
-      {/* Offline Alert Banner */}
-      {!isOnline && (
-        <div style={{
-          background: 'var(--color-warning-50, #fffbeb)',
-          border: '1px solid var(--color-warning-300, #fde68a)',
-          borderRadius: 'var(--radius-md, 8px)',
-          padding: '10px 16px',
-          marginBottom: 16,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-          fontSize: '0.85rem',
-          color: 'var(--color-warning-900, #92400e)'
-        }}>
-          <AlertTriangle size={18} color="#d97706" />
-          <span><b>Offline Resilience Mode:</b> Intermittent or no connection. Actions will synchronize when connection is restored.</span>
-        </div>
-      )}
+  navItems.push({ id: 'profile', label: 'Profile & Settings', icon: User });
 
-      {/* Urgent Incoming Booking Alert Banner */}
-      {pendingRequests.length > 0 && (
-        <div style={{
-          background: 'var(--color-danger-50, #fef2f2)',
-          border: '1.5px solid var(--color-danger-300, #fca5a5)',
-          borderRadius: 'var(--radius-lg, 12px)',
-          padding: '14px 20px',
-          marginBottom: 20,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: 12,
-          boxShadow: '0 4px 14px rgba(239, 68, 68, 0.12)'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{
-              background: 'var(--color-danger-600, #dc2626)',
-              color: '#fff',
-              borderRadius: '50%',
-              width: 36,
-              height: 36,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0
-            }}>
-              <Bell size={18} />
+  return (
+    <div className="provider-layout-body">
+      {/* 1. Desktop Responsive Sidebar (>= 1024px) */}
+      <aside className="provider-sidebar">
+        <div className="provider-sidebar-header">
+          <div className="provider-sidebar-title">Workspace Navigation</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div className="provider-avatar-circle" style={{ width: 34, height: 34, fontSize: 13 }}>
+              {currentUser?.fullName?.slice(0, 2).toUpperCase() || 'SP'}
             </div>
-            <div>
-              <b style={{ color: 'var(--color-danger-900, #991b1b)', fontSize: '0.95rem' }}>
-                 {pendingRequests.length} Urgent Booking Request{pendingRequests.length > 1 ? 's' : ''} Awaiting Your Response!
-              </b>
-              <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: 'var(--color-danger-800, #7f1d1d)' }}>
-                Responding within 30 minutes improves your contractor ranking across Sri Lanka.
-              </p>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--color-neutral-900, #0f172a)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {currentUser?.fullName}
+              </div>
+              <div style={{ fontSize: '0.72rem', color: 'var(--color-success-700, #047857)', fontWeight: 600 }}>
+                ● Active Partner
+              </div>
             </div>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              getOrCreateAudioContext();
-              playAlertChime();
-            }}
-          >
-            Test Alert Chime
-          </Button>
         </div>
-      )}
 
-      {/* Provider Verification Status Banner */}
-      <ProviderVerificationBanner currentUser={currentUser} />
+        <ul className="provider-nav-list">
+          {navItems.map(item => {
+            const Icon = item.icon;
+            const isActive = activeTab === item.id;
 
-      {/* Stats Header & KPI Cards */}
-      <ProviderStatsHeader
-        currentUser={currentUser}
-        bookings={bookings}
-        averageRating={averageRating}
-        reviewCount={providerReviews.length || currentUser?.reviewCount || 0}
-        walletBalance={walletBalance}
-        isOnline={isOnline}
-        soundEnabled={soundEnabled}
-        onToggleSound={() => {
-          getOrCreateAudioContext();
-          const next = !soundEnabled;
-          setSoundEnabled(next);
-          if (next) playAlertChime();
-        }}
-      />
+            return (
+              <li key={item.id}>
+                <button
+                  type="button"
+                  className={`provider-nav-item ${isActive ? 'active' : ''}`}
+                  onClick={() => handleNavigateTab(item.id)}
+                >
+                  <Icon size={17} />
+                  <span>{item.label}</span>
+                  {item.badge && <span className="provider-nav-badge">{item.badge}</span>}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
 
-      {/* Navigation Controls */}
-      <div style={{
-        margin: '24px 0 20px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        flexWrap: 'wrap',
-        gap: 12
-      }}>
-        <div style={{ minWidth: 280, flex: 1, maxWidth: 650 }}>
-          <SegmentedControl
-            options={tabOptions}
-            value={activeTab}
-            onChange={setActiveTab}
+        {/* Quick Help & Hotline in Sidebar */}
+        <div style={{
+          marginTop: 'auto',
+          padding: '12px 14px',
+          background: 'var(--color-brand-50, #edf7f2)',
+          borderRadius: 'var(--radius-md, 8px)',
+          border: '1px solid var(--color-brand-200, #b7decb)',
+          fontSize: '0.75rem',
+          color: 'var(--color-brand-800, #154636)'
+        }}>
+          <b>ARY Partner Hotline:</b>
+          <div style={{ marginTop: 2 }}>011 234 5678 (24/7 Dispatch)</div>
+        </div>
+      </aside>
+
+      {/* 2. Main Content Area */}
+      <main className="provider-content-area">
+        {activeTab === 'overview' && (
+          <ProviderOverview
+            currentUser={currentUser}
+            bookings={bookings}
+            walletBalance={walletBalance}
+            averageRating={averageRating}
+            reviewCount={providerReviews.length || currentUser?.reviewCount || 0}
+            onNavigateTab={handleNavigateTab}
+            onUpdateStatus={onUpdateStatus}
+            isAvailable={isAvailable}
+            onToggleAvailability={toggleAvailability}
           />
-        </div>
+        )}
 
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onRefresh}
-          loading={isLoading}
+        {activeTab === 'jobs' && (
+          <ProviderJobs
+            bookings={bookings}
+            isLoading={isLoading}
+            onUpdateStatus={onUpdateStatus}
+            onDecideReschedule={onDecideReschedule}
+            onClaimJob={handleClaimJob}
+            onSendQuote={handleSendQuote}
+            claimingJobId={claimingJobId}
+          />
+        )}
+
+        {activeTab === 'quotes' && (
+          <ProviderQuotes
+            bookings={bookings}
+            onNavigateTab={handleNavigateTab}
+          />
+        )}
+
+        {activeTab === 'schedule' && (
+          <ProviderSchedule
+            bookings={bookings}
+            onNavigateTab={handleNavigateTab}
+            onDecideReschedule={onDecideReschedule}
+          />
+        )}
+
+        {activeTab === 'wallet' && (
+          <ProviderWallet
+            bookings={bookings}
+            ledgerEntries={ledgerEntries}
+            walletBalance={walletBalance}
+            currentUser={currentUser}
+          />
+        )}
+
+        {activeTab === 'reviews' && (
+          <ProviderReviews
+            reviews={providerReviews}
+            averageRating={averageRating}
+            isLoading={isLoadingReviews}
+          />
+        )}
+
+        {activeTab === 'services' && (
+          <ProviderServicesManager />
+        )}
+
+        {activeTab === 'orders' && isGrocery && (
+          <GroceryOrders />
+        )}
+
+        {activeTab === 'inventory' && isGrocery && (
+          <GroceryInventory />
+        )}
+
+        {activeTab === 'profile' && (
+          <ProviderProfile
+            currentUser={currentUser}
+            soundEnabled={soundEnabled}
+            onToggleSound={toggleSound}
+            vibrationEnabled={vibrationEnabled}
+            onToggleVibration={toggleVibration}
+            onSwitchRole={switchRole}
+            onLogout={logout}
+          />
+        )}
+      </main>
+
+      {/* 3. Mobile Bottom Navigation (< 1024px) */}
+      <nav className="provider-bottom-nav" aria-label="Mobile Provider Navigation">
+        <button
+          type="button"
+          className={`provider-bottom-tab ${activeTab === 'overview' ? 'active' : ''}`}
+          onClick={() => handleNavigateTab('overview')}
         >
-          <RefreshCw size={14} /> Refresh Data
-        </Button>
-      </div>
+          <LayoutDashboard size={20} />
+          <span>Overview</span>
+        </button>
 
-      {/* Active Tab Content */}
-      {activeTab === 'jobs' && (
-        <ProviderJobs
-          bookings={bookings}
-          isLoading={isLoading}
-          onUpdateStatus={onUpdateStatus}
-          onDecideReschedule={onDecideReschedule}
-          onClaimJob={handleClaimJob}
-          onSendQuote={handleSendQuote}
-          claimingJobId={claimingJobId}
-        />
-      )}
+        <button
+          type="button"
+          className={`provider-bottom-tab ${activeTab === 'jobs' ? 'active' : ''}`}
+          onClick={() => handleNavigateTab('jobs')}
+        >
+          <Briefcase size={20} />
+          <span>Jobs</span>
+          {pendingRequests.length > 0 && (
+            <span className="provider-bottom-tab-badge">{pendingRequests.length}</span>
+          )}
+        </button>
 
-      {activeTab === 'reviews' && (
-        <ProviderReviews
-          reviews={providerReviews}
-          averageRating={averageRating}
-          isLoading={isLoadingReviews}
-        />
-      )}
+        <button
+          type="button"
+          className={`provider-bottom-tab ${activeTab === 'wallet' ? 'active' : ''}`}
+          onClick={() => handleNavigateTab('wallet')}
+        >
+          <Wallet size={20} />
+          <span>Wallet</span>
+        </button>
 
-      {activeTab === 'wallet' && (
-        <ProviderWallet
-          bookings={bookings}
-          ledgerEntries={ledgerEntries}
-          walletBalance={walletBalance}
-          currentUser={currentUser}
-        />
-      )}
+        {isGrocery ? (
+          <button
+            type="button"
+            className={`provider-bottom-tab ${activeTab === 'orders' ? 'active' : ''}`}
+            onClick={() => handleNavigateTab('orders')}
+          >
+            <ShoppingBag size={20} />
+            <span>Orders</span>
+          </button>
+        ) : (
+          <button
+            type="button"
+            className={`provider-bottom-tab ${activeTab === 'services' ? 'active' : ''}`}
+            onClick={() => handleNavigateTab('services')}
+          >
+            <Layers size={20} />
+            <span>Services</span>
+          </button>
+        )}
 
-      {activeTab === 'orders' && currentUser?.category === 'grocery-products' && (
-        <GroceryOrders />
-      )}
+        <button
+          type="button"
+          className={`provider-bottom-tab ${['quotes', 'schedule', 'reviews', 'inventory', 'profile'].includes(activeTab) ? 'active' : ''}`}
+          onClick={() => setIsMobileMenuOpen(true)}
+        >
+          <Menu size={20} />
+          <span>More</span>
+        </button>
+      </nav>
 
-      {activeTab === 'inventory' && currentUser?.category === 'grocery-products' && (
-        <GroceryInventory />
-      )}
-    </main>
+      {/* 4. Mobile "More" Drawer Modal */}
+      <Modal
+        isOpen={isMobileMenuOpen}
+        onClose={() => setIsMobileMenuOpen(false)}
+        title="Workspace Menu"
+        isBottomSheet={true}
+      >
+        <div style={{ display: 'grid', gap: 10, padding: '4px 0 16px' }}>
+          <button
+            type="button"
+            className="provider-nav-item"
+            onClick={() => handleNavigateTab('quotes')}
+            style={{ padding: '14px 16px', background: activeTab === 'quotes' ? 'var(--color-brand-50, #edf7f2)' : '#fff' }}
+          >
+            <FileText size={18} color="var(--color-brand-600, #174d3d)" />
+            <span>Quotes & Estimates</span>
+            <ArrowRight size={14} style={{ marginLeft: 'auto' }} />
+          </button>
+
+          <button
+            type="button"
+            className="provider-nav-item"
+            onClick={() => handleNavigateTab('schedule')}
+            style={{ padding: '14px 16px', background: activeTab === 'schedule' ? 'var(--color-brand-50, #edf7f2)' : '#fff' }}
+          >
+            <Calendar size={18} color="var(--color-brand-600, #174d3d)" />
+            <span>Service Schedule</span>
+            <ArrowRight size={14} style={{ marginLeft: 'auto' }} />
+          </button>
+
+          <button
+            type="button"
+            className="provider-nav-item"
+            onClick={() => handleNavigateTab('reviews')}
+            style={{ padding: '14px 16px', background: activeTab === 'reviews' ? 'var(--color-brand-50, #edf7f2)' : '#fff' }}
+          >
+            <Star size={18} color="#d97706" />
+            <span>Client Reviews ({providerReviews.length})</span>
+            <ArrowRight size={14} style={{ marginLeft: 'auto' }} />
+          </button>
+
+          {isGrocery && (
+            <button
+              type="button"
+              className="provider-nav-item"
+              onClick={() => handleNavigateTab('inventory')}
+              style={{ padding: '14px 16px', background: activeTab === 'inventory' ? 'var(--color-brand-50, #edf7f2)' : '#fff' }}
+            >
+              <Package size={18} color="var(--color-brand-600, #174d3d)" />
+              <span>Product Inventory</span>
+              <ArrowRight size={14} style={{ marginLeft: 'auto' }} />
+            </button>
+          )}
+
+          {!isGrocery && (
+            <button
+              type="button"
+              className="provider-nav-item"
+              onClick={() => handleNavigateTab('services')}
+              style={{ padding: '14px 16px', background: activeTab === 'services' ? 'var(--color-brand-50, #edf7f2)' : '#fff' }}
+            >
+              <Layers size={18} color="var(--color-brand-600, #174d3d)" />
+              <span>Services Catalog</span>
+              <ArrowRight size={14} style={{ marginLeft: 'auto' }} />
+            </button>
+          )}
+
+          <button
+            type="button"
+            className="provider-nav-item"
+            onClick={() => handleNavigateTab('profile')}
+            style={{ padding: '14px 16px', background: activeTab === 'profile' ? 'var(--color-brand-50, #edf7f2)' : '#fff' }}
+          >
+            <User size={18} color="var(--color-brand-600, #174d3d)" />
+            <span>Partner Profile & Preferences</span>
+            <ArrowRight size={14} style={{ marginLeft: 'auto' }} />
+          </button>
+        </div>
+      </Modal>
+    </div>
   );
 }

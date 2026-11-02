@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   CheckCircle2,
   ShieldCheck,
@@ -7,9 +7,13 @@ import {
   ArrowUpRight,
   Clock,
   Landmark,
-  FileCheck
+  FileCheck,
+  Filter,
+  Info,
+  Calendar,
+  DollarSign
 } from 'lucide-react';
-import { Card, Badge, Button, StatusPill, EmptyState, DataTable } from '../../design-system';
+import { Card, Badge, Button, StatusPill, EmptyState, SegmentedControl } from '../../design-system';
 
 export default function ProviderWallet({
   bookings = [],
@@ -19,28 +23,41 @@ export default function ProviderWallet({
 }) {
   const [requestPayoutOpen, setRequestPayoutOpen] = useState(false);
   const [payoutRequested, setPayoutRequested] = useState(false);
+  const [ledgerFilter, setLedgerFilter] = useState('all'); // 'all' | 'credit' | 'debit'
 
-  const completedBookings = bookings.filter(b => b.status === 'completed');
+  const completedBookings = useMemo(() => bookings.filter(b => b.status === 'completed'), [bookings]);
 
-  const totalEarnedPayout = completedBookings.reduce((sum, b) => {
-    return sum + (b.providerPayout || Math.round((parseInt(String(b.baseCharge).replace(/\D/g, '')) || 1500) * 0.9));
-  }, 0);
-
-  const pendingEscrowPayout = bookings
-    .filter(b => b.paymentStatus === 'escrow_held' && b.status !== 'completed')
-    .reduce((sum, b) => {
+  const totalEarnedPayout = useMemo(() => {
+    return completedBookings.reduce((sum, b) => {
       return sum + (b.providerPayout || Math.round((parseInt(String(b.baseCharge).replace(/\D/g, '')) || 1500) * 0.9));
     }, 0);
+  }, [completedBookings]);
 
-  const totalPlatformFees = completedBookings.reduce((sum, b) => {
-    return sum + (b.platformFee || Math.round((parseInt(String(b.baseCharge).replace(/\D/g, '')) || 1500) * 0.1));
-  }, 0);
+  const pendingEscrowPayout = useMemo(() => {
+    return bookings
+      .filter(b => b.paymentStatus === 'escrow_held' && b.status !== 'completed')
+      .reduce((sum, b) => {
+        return sum + (b.providerPayout || Math.round((parseInt(String(b.baseCharge).replace(/\D/g, '')) || 1500) * 0.9));
+      }, 0);
+  }, [bookings]);
+
+  const totalPlatformFees = useMemo(() => {
+    return completedBookings.reduce((sum, b) => {
+      return sum + (b.platformFee || Math.round((parseInt(String(b.baseCharge).replace(/\D/g, '')) || 1500) * 0.1));
+    }, 0);
+  }, [completedBookings]);
+
+  const filteredLedger = useMemo(() => {
+    if (ledgerFilter === 'credit') return ledgerEntries.filter(e => e.type === 'credit');
+    if (ledgerFilter === 'debit') return ledgerEntries.filter(e => e.type === 'debit');
+    return ledgerEntries;
+  }, [ledgerEntries, ledgerFilter]);
 
   function handleRequestPayout() {
     setPayoutRequested(true);
     setTimeout(() => {
       setRequestPayoutOpen(false);
-    }, 2000);
+    }, 2200);
   }
 
   return (
@@ -63,7 +80,7 @@ export default function ProviderWallet({
             LKR {totalEarnedPayout.toLocaleString()}
           </div>
           <small style={{ fontSize: '0.75rem', color: 'var(--color-brand-700, #1b5e4b)' }}>
-            From {completedBookings.length} completed job{completedBookings.length === 1 ? '' : 's'}
+            From {completedBookings.length} completed job{completedBookings.length === 1 ? '' : 's'} (90% payout)
           </small>
         </Card>
 
@@ -100,7 +117,25 @@ export default function ProviderWallet({
         </Card>
       </div>
 
-      {/* 2. Payout Action Banner */}
+      {/* 2. Transparent Commission Callout */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+        padding: '12px 16px',
+        background: 'var(--color-surface, #ffffff)',
+        border: '1px solid var(--color-border-subtle, #e5ebe2)',
+        borderRadius: 'var(--radius-md, 8px)',
+        fontSize: '0.85rem',
+        color: 'var(--color-neutral-700, #334155)'
+      }}>
+        <Info size={18} color="var(--color-brand-600, #174d3d)" style={{ flexShrink: 0 }} />
+        <div>
+          <b>Transparent 90 / 10 Revenue Model:</b> For every booking, you receive 90% of the gross charge directly. The flat 10% platform fee funds ARY payment gateway escrow, 24/7 client dispatch support, and national marketing for Sri Lankan contractors.
+        </div>
+      </div>
+
+      {/* 3. Payout Action Banner */}
       <Card style={{
         padding: '16px 20px',
         display: 'flex',
@@ -130,7 +165,7 @@ export default function ProviderWallet({
         </Button>
       </Card>
 
-      {/* Payout Modal / Sheet */}
+      {/* Payout Confirmation Sheet */}
       {requestPayoutOpen && (
         <Card style={{
           padding: '20px',
@@ -151,8 +186,8 @@ export default function ProviderWallet({
             marginBottom: 16
           }}>
             <div><b>Beneficiary Name:</b> {currentUser?.fullName}</div>
-            <div><b>Account Type:</b> Commercial Savings Account</div>
-            <div><b>Transfer Mode:</b> LankaPay CEFT (Real-time 24/7)</div>
+            <div><b>Registered Bank:</b> Commercial Bank of Ceylon PLC</div>
+            <div><b>Transfer Network:</b> LankaPay CEFT (Real-time 24/7)</div>
           </div>
           {payoutRequested ? (
             <Badge variant="success" dot={false}>
@@ -171,10 +206,10 @@ export default function ProviderWallet({
         </Card>
       )}
 
-      {/* 3. Job Payout & Escrow History */}
+      {/* 4. Job Payout & Escrow Breakdown Table */}
       <Card style={{ padding: '20px' }}>
         <h3 style={{ margin: '0 0 16px', fontSize: '1.05rem', color: 'var(--color-neutral-900, #0f172a)' }}>
-          Job Payout & Escrow Breakdown ({bookings.length})
+          Job Payout & Commission Ledger ({bookings.length})
         </h3>
 
         {bookings.length > 0 ? (
@@ -189,7 +224,7 @@ export default function ProviderWallet({
                   <th style={{ padding: '10px 12px' }}>Gross Fee</th>
                   <th style={{ padding: '10px 12px' }}>Commission (10%)</th>
                   <th style={{ padding: '10px 12px' }}>Net Payout (90%)</th>
-                  <th style={{ padding: '10px 12px' }}>Status</th>
+                  <th style={{ padding: '10px 12px' }}>Payout Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -242,13 +277,28 @@ export default function ProviderWallet({
         )}
       </Card>
 
-      {/* 4. Immutable Double-Entry Ledger Audit Trail */}
+      {/* 5. Immutable Double-Entry Ledger Audit Trail */}
       {ledgerEntries.length > 0 && (
         <Card style={{ padding: '20px', background: 'var(--color-neutral-50, #f8fafc)' }}>
-          <h4 style={{ margin: '0 0 12px', fontSize: '0.95rem', color: 'var(--color-neutral-900, #0f172a)', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <FileCheck size={18} color="var(--color-brand-600, #174d3d)" />
-            Double-Entry Ledger Audit Trail ({ledgerEntries.length} entries)
-          </h4>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 10 }}>
+            <h4 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--color-neutral-900, #0f172a)', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <FileCheck size={18} color="var(--color-brand-600, #174d3d)" />
+              Double-Entry Ledger Audit Trail ({filteredLedger.length})
+            </h4>
+
+            <div style={{ maxWidth: 280 }}>
+              <SegmentedControl
+                options={[
+                  { value: 'all', label: `All (${ledgerEntries.length})` },
+                  { value: 'credit', label: 'Credits' },
+                  { value: 'debit', label: 'Debits' }
+                ]}
+                value={ledgerFilter}
+                onChange={setLedgerFilter}
+              />
+            </div>
+          </div>
+
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
               <thead>
@@ -262,7 +312,7 @@ export default function ProviderWallet({
                 </tr>
               </thead>
               <tbody>
-                {ledgerEntries.map(e => (
+                {filteredLedger.map(e => (
                   <tr key={e.id} style={{ borderBottom: '1px solid var(--color-border-subtle, #f1f5f9)' }}>
                     <td style={{ padding: '8px 10px', fontFamily: 'monospace' }}>
                       {e.transactionId ? e.transactionId.slice(-8) : e.id.slice(-6)}
