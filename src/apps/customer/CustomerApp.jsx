@@ -3,6 +3,7 @@ import { BrowserRouter, Link, Navigate, Route, Routes, useNavigate } from 'react
 import { Search, ClipboardList, LogIn, LogOut, UserRound, ArrowRight, ShoppingBasket, Zap, Wrench, Sparkles, Package } from 'lucide-react';
 import { AuthProvider, useAuth } from '../../context/AuthContext';
 import { API_BASE } from '../../config';
+import { subscribeToAppEvents } from '../../utils/events';
 import HeroSection from '../../components/customer/HeroSection';
 import CategoryGrid from '../../components/customer/CategoryGrid';
 import ProviderCatalog from '../../components/customer/ProviderCatalog';
@@ -95,11 +96,8 @@ function CustomerWorkspace() {
 
   useEffect(() => { fetchBookings(); }, [fetchBookings]);
   useEffect(() => {
-    const events = new EventSource(`${API_BASE}/events`);
     const refresh = () => { fetchBookings(); };
-    events.addEventListener('booking:created', refresh);
-    events.addEventListener('booking:status_updated', refresh);
-    return () => events.close();
+    return subscribeToAppEvents(currentUser?.token, { 'booking:created': refresh, 'booking:status_updated': refresh, 'grocery:order_updated': refresh });
   }, [fetchBookings]);
 
   const visibleServices = useMemo(() => SERVICES.filter(service =>
