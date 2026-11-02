@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Bike, Utensils, MapPin, ArrowRight, PackageCheck, CarFront } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE } from '../../config';
+import { subscribeToAppEvents } from '../../utils/events';
 
 export default function MobilityServices({ onNotice }) {
   const { currentUser, openAuthModal } = useAuth();
@@ -34,13 +35,12 @@ export default function MobilityServices({ onNotice }) {
 
   useEffect(() => {
     if (!currentUser?.token) return undefined;
-    const events = new EventSource(API_BASE + '/events');
     const refresh = () => refreshJobs();
-    ['driver:job_created', 'driver:job_updated', 'driver:presence_updated'].forEach(name => events.addEventListener(name, refresh));
-    return () => {
-      ['driver:job_created', 'driver:job_updated', 'driver:presence_updated'].forEach(name => events.removeEventListener(name, refresh));
-      events.close();
-    };
+    return subscribeToAppEvents(currentUser?.token, {
+      'driver:job_created': refresh,
+      'driver:job_updated': refresh,
+      'driver:presence_updated': refresh
+    });
   }, [currentUser?.token, refreshJobs]);
 
   async function cancelRequest(jobId) {
