@@ -124,3 +124,6 @@ Ride and food-delivery requests can include optional browser GPS coordinates. Ap
 - A driver cannot accept another active job until the current job is completed or released. Ride and delivery status transitions require arrival and server-verified handoff PINs.
 - Grocery customers can place single-shop orders with server-side stock reservation, order history and cash-on-delivery status. Grocery providers can accept, prepare, mark ready for pickup or cancel orders; cancellation restores reserved stock.
 - Online card/wallet payments, escrow and automated payouts remain excluded. Grocery delivery fee is currently zero until a real delivery pricing policy is configured.
+
+
+- Optional ride and parcel fare estimates are available only when the corresponding LKR base, per-kilometre and minimum rates are configured in the server environment. Estimates use straight-line GPS distance and must not be presented as road-route quotes.
