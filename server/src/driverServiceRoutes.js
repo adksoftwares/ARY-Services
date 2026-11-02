@@ -88,7 +88,7 @@ export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadc
     const pickupPin=makePin(),deliveryPin=makePin();
     const job={id:id('food'),serviceType:'food_delivery',customerId:req.user.id,customerName:req.user.fullName,orderReference:order.id,restaurantName:String(restaurantName||order.providerName||'Food Shop').slice(0,160),pickupAddress:String(pickupAddress||restaurant?.location||'').slice(0,500),destinationAddress:String(dropoffAddress).slice(0,500),destinationLat:destination?.lat??null,destinationLng:destination?.lng??null,notes:String(notes).slice(0,500),driverId:null,status:'requested',pickupPinHash:pinDigest(pickupPin),deliveryPinHash:pinDigest(deliveryPin),pickupPinForCustomer:pickupPin,deliveryPinForCustomer:deliveryPin,pinAttempts:0,deliveryPinAttempts:0,createdAt:new Date().toISOString()};
     await mutateJobs(d=>{d.jobs.unshift(job);});
-    broadcastEvent?.('driver:job_created',{job:safeMobilityJob(job)});res.status(201).json({job:safeMobilityJob(job,req.user.id)});
+    broadcastEvent?.('driver:job_created',{job:safeMobilityJob(job),customerId:job.customerId,driverId:job.driverId});res.status(201).json({job:safeMobilityJob(job,req.user.id)});
   });
   app.get('/api/mobility/fare-estimate',async(req,res)=>{
     const pickup=cleanCoordinates(req.query.pickupLat,req.query.pickupLng);
@@ -111,7 +111,7 @@ export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadc
     const startPin=makePin();
     const job={id:id('ride'),serviceType:'ride',customerId:req.user.id,customerName:req.user.fullName,pickupAddress:String(pickupAddress).slice(0,500),destinationAddress:String(destinationAddress).slice(0,500),pickupLat:pickup?.lat??null,pickupLng:pickup?.lng??null,destinationLat:destination?.lat??null,destinationLng:destination?.lng??null,passengerCount:count,notes:String(notes).slice(0,500),driverId:null,status:'requested',startPinHash:pinDigest(startPin),startPinForCustomer:startPin,pinAttempts:0,createdAt:new Date().toISOString()};
     await mutateJobs(d=>{d.jobs.unshift(job);});
-    broadcastEvent?.('driver:job_created',{job:safeMobilityJob(job)});res.status(201).json({job:safeMobilityJob(job,req.user.id)});
+    broadcastEvent?.('driver:job_created',{job:safeMobilityJob(job),customerId:job.customerId,driverId:job.driverId});res.status(201).json({job:safeMobilityJob(job,req.user.id)});
   });
   app.post('/api/parcels',requireAuth,async(req,res)=>{
     if(req.user.accountType!=='customer')return res.status(403).json({error:'Customer account required.'});
@@ -123,7 +123,7 @@ export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadc
     const pickupPin=makePin(),deliveryPin=makePin();
     const job={id:id('parcel'),serviceType:'parcel_delivery',customerId:req.user.id,customerName:req.user.fullName,pickupAddress:pickupAddress.slice(0,500),destinationAddress:destinationAddress.slice(0,500),pickupContact,recipientContact,parcelType:String(req.body?.parcelType||'standard').slice(0,60),weightKg,notes:String(req.body?.notes||'').slice(0,500),pickupLat:pickup?.lat??null,pickupLng:pickup?.lng??null,destinationLat:destination?.lat??null,destinationLng:destination?.lng??null,driverId:null,status:'requested',pickupPinHash:pinDigest(pickupPin),deliveryPinHash:pinDigest(deliveryPin),pickupPinForCustomer:pickupPin,deliveryPinForCustomer:deliveryPin,pinAttempts:0,deliveryPinAttempts:0,createdAt:new Date().toISOString()};
     await mutateJobs(state=>{state.jobs.unshift(job);});
-    broadcastEvent?.('driver:job_created',{job:safeMobilityJob(job)});
+    broadcastEvent?.('driver:job_created',{job:safeMobilityJob(job),customerId:job.customerId,driverId:job.driverId});
     return res.status(201).json({job:safeMobilityJob(job,req.user.id)});
   });
 
@@ -159,7 +159,7 @@ export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadc
       job.status='cancelled';job.cancelledAt=new Date().toISOString();return {status:200,job};
     });
     if(result.error)return res.status(result.status).json({error:result.error});
-    broadcastEvent?.('driver:job_updated',{job:safeMobilityJob(result.job)});
+    broadcastEvent?.('driver:job_updated',{job:safeMobilityJob(result.job),customerId:result.job.customerId,driverId:result.job.driverId});
     return res.json({job:safeMobilityJob(result.job,req.user.id)});
   });
   app.get('/api/my-mobility-jobs',requireAuth,async(req,res)=>{
@@ -195,7 +195,7 @@ export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadc
         job.driverId=req.user.id;job.driverName=req.user.fullName;job.status='accepted';job.acceptedAt=new Date().toISOString();return {status:200,job};
       });
       if(result.error)return res.status(result.status).json({error:result.error});
-      broadcastEvent?.('driver:job_updated',{job:safeMobilityJob(result.job)});return res.json({job:safeMobilityJob(result.job,req.user.id)});
+      broadcastEvent?.('driver:job_updated',{job:safeMobilityJob(result.job),customerId:result.job.customerId,driverId:result.job.driverId});return res.json({job:safeMobilityJob(result.job,req.user.id)});
     }catch(error){return res.status(500).json({error:'Could not claim driver job.'});}
   });
   app.patch('/api/driver-jobs/:id/status',requireAuth,async(req,res)=>{
@@ -209,17 +209,17 @@ export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadc
       job.status=status;job.updatedAt=new Date().toISOString();return {status:200,job};
     });
     if(result.error)return res.status(result.status).json({error:result.error});
-    broadcastEvent?.('driver:job_updated',{job:safeMobilityJob(result.job)});res.json({job:safeMobilityJob(result.job,req.user.id)});
+    broadcastEvent?.('driver:job_updated',{job:safeMobilityJob(result.job),customerId:result.job.customerId,driverId:result.job.driverId});res.json({job:safeMobilityJob(result.job,req.user.id)});
   });
   app.post('/api/driver-jobs/:id/verify-pickup',requireAuth,async(req,res)=>{
     if(req.user.accountType!=='driver')return res.status(403).json({error:'Driver account required.'});
     const result=await mutateJobs(state=>{const job=state.jobs.find(item=>item.id===req.params.id);if(!job)return {status:404,error:'Job not found.'};if(job.driverId!==req.user.id)return {status:403,error:'Only the assigned driver can verify pickup.'};const expected=job.serviceType==='ride'?'arrived':'arrived_pickup';if(job.status!==expected)return {status:409,error:'Driver must mark arrival before pickup verification.'};if((job.pinAttempts||0)>=5)return {status:429,error:'Pickup PIN attempts exceeded. Contact ARY support.'};const hash=job.serviceType==='ride'?job.startPinHash:job.pickupPinHash;if(!pinMatches(req.body?.pin,hash)){job.pinAttempts=(job.pinAttempts||0)+1;return {status:400,error:'Incorrect pickup PIN.'};}job.status=job.serviceType==='ride'?'in_progress':'picked_up';job.pickupVerifiedAt=new Date().toISOString();job.pinAttempts=0;return {status:200,job};});
-    if(result.error)return res.status(result.status).json({error:result.error});broadcastEvent?.('driver:job_updated',{job:safeMobilityJob(result.job)});return res.json({job:safeMobilityJob(result.job,req.user.id)});
+    if(result.error)return res.status(result.status).json({error:result.error});broadcastEvent?.('driver:job_updated',{job:safeMobilityJob(result.job),customerId:result.job.customerId,driverId:result.job.driverId});return res.json({job:safeMobilityJob(result.job,req.user.id)});
   });
   app.post('/api/driver-jobs/:id/verify-delivery',requireAuth,async(req,res)=>{
     if(req.user.accountType!=='driver')return res.status(403).json({error:'Driver account required.'});
     const result=await mutateJobs(state=>{const job=state.jobs.find(item=>item.id===req.params.id);if(!job)return {status:404,error:'Job not found.'};if(job.driverId!==req.user.id)return {status:403,error:'Only the assigned driver can verify delivery.'};const allowed=job.serviceType==='ride'?job.status==='in_progress':['picked_up','in_transit'].includes(job.status);if(!allowed)return {status:409,error:'Pickup must be verified before completing this job.'};if((job.deliveryPinAttempts||0)>=5)return {status:429,error:'Delivery PIN attempts exceeded. Contact ARY support.'};if(!pinMatches(req.body?.pin,job.deliveryPinHash)){job.deliveryPinAttempts=(job.deliveryPinAttempts||0)+1;return {status:400,error:'Incorrect delivery PIN.'};}job.status=job.serviceType==='ride'?'completed':'delivered';job.completedAt=new Date().toISOString();job.deliveryVerifiedAt=job.completedAt;job.deliveryPinAttempts=0;return {status:200,job};});
-    if(result.error)return res.status(result.status).json({error:result.error});broadcastEvent?.('driver:job_updated',{job:safeMobilityJob(result.job)});return res.json({job:safeMobilityJob(result.job,req.user.id)});
+    if(result.error)return res.status(result.status).json({error:result.error});broadcastEvent?.('driver:job_updated',{job:safeMobilityJob(result.job),customerId:result.job.customerId,driverId:result.job.driverId});return res.json({job:safeMobilityJob(result.job,req.user.id)});
   });
 
   // Admin-only operational view: expose dispatch health without account/KYC/payment data.
@@ -240,6 +240,6 @@ export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadc
       return {status:200,job};
     });
     if(result.error)return res.status(result.status).json({error:result.error});
-    broadcastEvent?.('driver:job_updated',{job:safeMobilityJob(result.job)});return res.json({job:safeMobilityJob(result.job,req.user.id)});
+    broadcastEvent?.('driver:job_updated',{job:safeMobilityJob(result.job),customerId:result.job.customerId,driverId:result.job.driverId});return res.json({job:safeMobilityJob(result.job,req.user.id)});
   });
 }
