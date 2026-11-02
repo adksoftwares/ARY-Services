@@ -3,11 +3,14 @@ import crypto from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { mutatePersistentState, readPersistentState } from './storage.js';
+import { broadcastEvent } from './eventHub.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dataFile = path.join(__dirname, '..', 'data', 'grocery-products.json');
 const COLLECTION = 'grocery_products';
 const EMPTY_PRODUCTS = [];
+const ordersFile = path.join(__dirname, '..', 'data', 'grocery-orders.json');
+const EMPTY_ORDERS = [];
 
 function cleanProduct(body = {}) {
   const source = body && typeof body === 'object' && !Array.isArray(body) ? body : {};
@@ -50,6 +53,81 @@ function cleanProduct(body = {}) {
   }
 
   return product;
+  app.post('/api/grocery/orders', requireAuth, async (req, res) => {
+    if (req.user?.accountType !== 'customer' || req.user?.status !== 'active') return res.status(403).json({ error: 'An active customer account is required.' });
+    const lines = Array.isArray(req.body?.items) ? req.body.items : [];
+    const deliveryAddress = String(req.body?.deliveryAddress || '').trim().slice(0, 500);
+    const phone = String(req.body?.phone || req.user.phone || '').trim().slice(0, 30);
+    if (!lines.length || lines.length > 40 || !deliveryAddress || !phone) return res.status(400).json({ error: 'Add products, a delivery address and a contact number.' });
+    const quantities = new Map();
+    for (const line of lines) {
+      const productId = String(line?.productId || '').trim(), quantity = Number(line?.quantity);
+      if (!productId || !Number.isSafeInteger(quantity) || quantity < 1 || quantity > 100) return res.status(400).json({ error: 'Each cart item needs a valid product and whole-number quantity.' });
+      quantities.set(productId, (quantities.get(productId) || 0) + quantity);
+    }
+    if ([...quantities.values()].some(quantity => quantity > 100)) return res.status(400).json({ error: 'Maximum quantity per product is 100.' });
+    let reserved = [];
+    try {
+      const order = await mutateProducts(products => {
+        const selected = [...quantities].map(([productId, quantity]) => {
+          const product = products.find(item => item.id === productId && item.isAvailable === true);
+          if (!product) throw new Error('A product is no longer available. Refresh your cart.');
+          if (product.stock < quantity) throw new Error('Not enough stock for ' + product.name + '. Available: ' + product.stock + '.');
+          return { product, quantity };
+        });
+        const providerIds = [...new Set(selected.map(item => item.product.providerId))];
+        if (providerIds.length !== 1) throw new Error('Please place separate orders for products from different shops.');
+        const items = selected.map(({ product, quantity }) => ({ productId: product.id, name: product.name, brand: product.brand, category: product.category, unit: product.unit, packSize: product.packSize, quantity, unitPrice: product.price, lineTotal: Number((product.price * quantity).toFixed(2)) }));
+        const total = Number(items.reduce((sum, item) => sum + item.lineTotal, 0).toFixed(2));
+        selected.forEach(({ product, quantity }) => { product.stock -= quantity; product.updatedAt = new Date().toISOString(); reserved.push({ productId: product.id, quantity }); });
+        return { id: 'gord-' + crypto.randomUUID(), customerId: req.user.id, customerName: req.user.fullName, customerPhone: phone, providerId: providerIds[0], providerName: selected[0].product.providerName, items, subtotal: total, deliveryFee: 0, total, currency: 'LKR', deliveryAddress, notes: String(req.body?.notes || '').trim().slice(0, 500), paymentMethod: 'cash_on_delivery', paymentStatus: 'unpaid', status: 'pending', statusHistory: [{ status: 'pending', at: new Date().toISOString(), by: req.user.id }], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+      });
+      await mutatePersistentState('grocery_orders', ordersFile, EMPTY_ORDERS, stored => { if (!Array.isArray(stored)) throw new Error('Grocery order storage is invalid.'); stored.unshift(order); return true; });
+      broadcastEvent('grocery:order_created', { orderId: order.id, providerId: order.providerId });
+      return res.status(201).json({ order, message: 'Order placed. Pay cash on delivery.' });
+    } catch (error) {
+      if (reserved.length) {
+        try { await mutateProducts(products => { for (const line of reserved) { const product = products.find(item => item.id === line.productId); if (product) { product.stock += line.quantity; product.updatedAt = new Date().toISOString(); } } return true; }); }
+        catch (restoreError) { console.error('Grocery stock compensation failed:', restoreError); }
+      }
+      return res.status(409).json({ error: error.message || 'Could not place grocery order.' });
+    }
+  });
+  app.get('/api/grocery/orders/mine', requireAuth, async (req, res) => {
+    if (req.user?.accountType !== 'customer') return res.status(403).json({ error: 'Customer account required.' });
+    const orders = await readPersistentState('grocery_orders', ordersFile, EMPTY_ORDERS);
+    return res.json({ orders: orders.filter(order => order.customerId === req.user.id) });
+  });
+  app.get('/api/grocery/orders/provider', requireAuth, async (req, res) => {
+    if (!isGroceryProvider(req.user)) return res.status(403).json({ error: 'Approved Grocery Products provider required.' });
+    const orders = await readPersistentState('grocery_orders', ordersFile, EMPTY_ORDERS);
+    return res.json({ orders: orders.filter(order => order.providerId === req.user.id) });
+  });
+  app.get('/api/grocery/orders/admin', requireAuth, async (req, res) => {
+    if (req.user?.accountType !== 'admin') return res.status(403).json({ error: 'Admin access required.' });
+    const orders = await readPersistentState('grocery_orders', ordersFile, EMPTY_ORDERS);
+    return res.json({ orders });
+  });
+  app.patch('/api/grocery/orders/:id/status', requireAuth, async (req, res) => {
+    const next = String(req.body?.status || '');
+    if (!['accepted', 'preparing', 'ready_for_pickup', 'cancelled'].includes(next)) return res.status(400).json({ error: 'Invalid grocery order status.' });
+    const isAdmin = req.user?.accountType === 'admin', isProvider = isGroceryProvider(req.user);
+    if (!isAdmin && !isProvider) return res.status(403).json({ error: 'Shop provider or Admin access required.' });
+    const result = await mutatePersistentState('grocery_orders', ordersFile, EMPTY_ORDERS, stored => {
+      const order = stored.find(item => item.id === req.params.id && (isAdmin || item.providerId === req.user.id));
+      if (!order) return { missing: true };
+      const transitions = { pending: ['accepted', 'cancelled'], accepted: ['preparing', 'cancelled'], preparing: ['ready_for_pickup'], ready_for_pickup: [] };
+      if (!transitions[order.status]?.includes(next)) return { invalid: true };
+      order.status = next; order.updatedAt = new Date().toISOString(); order.statusHistory.push({ status: next, at: order.updatedAt, by: req.user.id });
+      return { order };
+    });
+    if (result.missing) return res.status(404).json({ error: 'Order not found.' });
+    if (result.invalid) return res.status(409).json({ error: 'That order status transition is not allowed.' });
+    if (next === 'cancelled') await mutateProducts(products => { for (const line of result.order.items) { const product = products.find(item => item.id === line.productId); if (product) { product.stock += line.quantity; product.updatedAt = new Date().toISOString(); } } return true; });
+    broadcastEvent('grocery:order_updated', { orderId: result.order.id, providerId: result.order.providerId, status: result.order.status });
+    return res.json({ order: result.order });
+  });
+
 }
 
 function isGroceryProvider(user) {
