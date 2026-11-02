@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Link, useNavigate } from 'react-router-dom';
-import { Bike, LogIn, LogOut, ShieldCheck, UserRound, ArrowLeftRight, Sun } from 'lucide-react';
+import { Bike, LogIn, LogOut, ShieldCheck, UserRound, ArrowLeftRight, Sun, Wifi, WifiOff } from 'lucide-react';
 import { AuthProvider, useAuth } from '../../context/AuthContext';
 import { API_BASE } from '../../config';
 import { subscribeToAppEvents } from '../../utils/events';
@@ -16,11 +16,48 @@ function DriverPortal() {
   const { currentUser, openAuthModal, logout, switchRole } = useAuth();
   const navigate = useNavigate();
   const [notice, setNotice] = useState('');
+  const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
   const isDriver = currentUser?.accountType === 'driver';
+
+  // Online / offline network monitor
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // Capacitor hardware back-button listener
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.Capacitor?.Plugins?.App) {
+      const handleBackButton = () => {
+        // If modals or keypads are open, dismiss them first
+        const openBackdrop = document.querySelector('.modal-backdrop');
+        if (openBackdrop) {
+          const closeBtn = openBackdrop.querySelector('button[aria-label="Close"]') ||
+                           openBackdrop.querySelector('button');
+          if (closeBtn) {
+            closeBtn.click();
+            return;
+          }
+        }
+        if (window.history.length > 1) {
+          window.history.back();
+        } else {
+          window.Capacitor.Plugins.App.exitApp();
+        }
+      };
+      window.Capacitor.Plugins.App.addListener('backButton', handleBackButton);
+    }
+  }, []);
 
   useEffect(() => {
     if (!isDriver) return undefined;
-    const notify = () => setNotice('Your driver dispatch activity has changed. Refresh the job list for the latest details.');
+    const notify = () => setNotice('Your driver dispatch activity has changed. Refreshing jobs...');
     return subscribeToAppEvents(currentUser?.token, {
       'driver:job_created': notify,
       'driver:job_updated': notify,
@@ -29,22 +66,25 @@ function DriverPortal() {
   }, [isDriver, currentUser?.token]);
 
   return (
-    <div className="app-shell">
+    <div className="driver-app-shell">
       <OfflineBanner />
       <header className="topbar">
         <Link to="/" className="brand" aria-label="ARY Services Driver home">
           <span className="brand-mark">A</span><span>ARY <b>Driver</b></span>
         </Link>
         <nav className="header-nav-links">
-          <span className="nav-link-btn"><Bike size={14}/> Driver workspace</span>
+          <span className="nav-link-btn active"><Bike size={14}/> Driver Workspace</span>
         </nav>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <LanguageSwitcher />
           <ThemeToggle />
           {isDriver ? (
             <div className="user-profile">
               <NotificationCenter/>
-              <span className="user-badge"><UserRound size={14}/><span>{currentUser.fullName}</span></span>
+              <span className="user-badge" title="Verified Driver">
+                <UserRound size={14}/>
+                <span>{currentUser.fullName}</span>
+              </span>
               {(currentUser.roles || []).includes('customer') && (
                 <button
                   type="button"
@@ -107,7 +147,7 @@ function DriverPortal() {
             <h1 style={{ color: 'var(--color-brand-900, #173b2f)', margin: '8px 0 12px', fontSize: '1.9rem' }}>
               Every journey, connected.
             </h1>
-            <p style={{ color: 'var(--color-neutral-600, #647368)', maxWidth: 540, margin: '0 auto 24px', lineHeight: 1.7, fontSize: '0.95rem' }}>
+            <p style={{ color: 'var(--color-neutral-600, #64748b)', maxWidth: 540, margin: '0 auto 24px', lineHeight: 1.7, fontSize: '0.95rem' }}>
               Sign in with your Driver account to receive nearby ride and delivery requests, enter secure handoff PINs, and track your daily earnings across Sri Lanka.
             </p>
             <Button
