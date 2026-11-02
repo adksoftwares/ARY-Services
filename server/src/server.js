@@ -866,7 +866,7 @@ app.get('/api/providers', async (req, res) => {
 app.patch('/api/providers/profile', requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
-    if (req.user.accountType !== 'provider' || req.user.status !== 'active') {
+    if (req.user.accountType !== 'provider' || (req.user.status !== 'active' && req.user.providerStatus !== 'active')) {
       return res.status(403).json({ error: 'An active provider account is required.' });
     }
     const { baseCharge, location, experienceYears } = req.body || {};
@@ -881,7 +881,7 @@ app.patch('/api/providers/profile', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'Enter a valid service base charge.' });
     }
     const updated = await updateUser(userId, provider => {
-      if (!provider || provider.accountType !== 'provider') return provider;
+      if (!provider || (provider.accountType !== 'provider' && !provider.roles?.includes('provider'))) return provider;
       if (baseCharge !== undefined) provider.baseCharge = 'LKR ' + charge.toLocaleString('en-LK');
       if (cleanLocation !== undefined) provider.location = cleanLocation;
       if (years !== undefined) provider.experienceYears = years;
@@ -1058,7 +1058,7 @@ app.post('/api/bookings', requireAuth, async (req, res) => {
     }
 
     const users = await getUsers();
-    const provider = users.find(u => u.id === providerId && u.accountType === 'provider' && u.status === 'active' && (u.category === categorySlug || (Array.isArray(u.approvedServices) && u.approvedServices.some(service => service.categorySlug === categorySlug))));
+    const provider = users.find(u => u.id === providerId && (u.accountType === 'provider' || (Array.isArray(u.roles) && u.roles.includes('provider'))) && (u.accountType === 'provider' ? u.status === 'active' : u.providerStatus === 'active') && (u.category === categorySlug || (Array.isArray(u.approvedServices) && u.approvedServices.some(service => service.categorySlug === categorySlug))));
     if (!provider) return res.status(404).json({ error: 'Selected approved service provider was not found.' });
     const selectedService = (provider.approvedServices || []).find(service => service.categorySlug === categorySlug);
     const selectedCharge = selectedService?.baseCharge ?? provider.baseCharge ?? '1500';
