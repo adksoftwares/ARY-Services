@@ -1,6 +1,6 @@
 const ROLE_TYPES = new Set(['customer', 'provider', 'driver']);
 const PROVIDER_CATEGORIES = new Set(['electrical-repair', 'plumbing', 'food-shops', 'grocery-products', 'other-services']);
-const DRIVER_TYPES = new Set(['food_delivery', 'ride']);
+const DRIVER_TYPES = new Set(['food_delivery', 'ride', 'parcel_delivery']);
 
 function rolesFor(user) {
   return [...new Set([...(user.accountType === 'admin' ? [] : ['customer']), ...(Array.isArray(user.roles) ? user.roles : []), user.accountType].filter(Boolean))];
