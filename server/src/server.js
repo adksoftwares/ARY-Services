@@ -888,7 +888,7 @@ app.patch('/api/providers/profile', requireAuth, async (req, res) => {
       return provider;
     });
 
-    if (!updated || updated.accountType !== 'provider') {
+    if (!updated || (updated.accountType !== 'provider' && !updated.roles?.includes('provider'))) {
       return res.status(404).json({ error: 'Provider account not found.' });
     }
 
