@@ -31,6 +31,41 @@ const pinMatches = (pin, digest) => {
   const actual = Buffer.from(pinDigest(pin), 'hex'), expected = Buffer.from(digest, 'hex');
   return actual.length === expected.length && crypto.timingSafeEqual(actual, expected);
 };
+
+export async function createGroceryOrderDeliveryJob(order, provider) {
+  const pickupAddress = String(provider?.address || provider?.location || provider?.shopAddress || '').trim();
+  if (!pickupAddress) return { available: false, reason: 'provider_address_missing' };
+  const pickupPin = makePin(), deliveryPin = makePin();
+  const job = {
+    id: id('food'), serviceType: 'food_delivery', customerId: order.customerId,
+    customerName: order.customerName, customerPhone: order.customerPhone,
+    orderReference: order.id, restaurantName: provider.fullName || order.providerName || 'Grocery Shop',
+    pickupAddress: pickupAddress.slice(0, 500), destinationAddress: order.deliveryAddress,
+    destinationLat: cleanCoordinates(order.destinationLat, order.destinationLng)?.lat ?? null,
+    destinationLng: cleanCoordinates(order.destinationLat, order.destinationLng)?.lng ?? null,
+    notes: 'Grocery order delivery. ' + String(order.notes || '').slice(0, 350),
+    driverId: null, status: 'requested',
+    pickupPinHash: pinDigest(pickupPin), deliveryPinHash: pinDigest(deliveryPin),
+    pickupPinForCustomer: pickupPin, deliveryPinForCustomer: deliveryPin,
+    pinAttempts: 0, deliveryPinAttempts: 0, createdAt: new Date().toISOString()
+  };
+  await mutateJobs(state => { state.jobs.unshift(job); });
+  return { available: true, job, pickupPin, deliveryPin };
+}
+
+export async function cancelGroceryOrderDeliveryJob(jobId) {
+  if (!jobId) return true;
+  return mutateJobs(state => {
+    const job = state.jobs.find(item => item.id === jobId);
+    if (!job) return true;
+    if (job.driverId || job.status !== 'requested') return false;
+    job.status = 'cancelled';
+    job.cancelledAt = new Date().toISOString();
+    job.cancellationReason = 'grocery_order_cancelled';
+    return true;
+  });
+}
+
 function configuredFare(distanceKm, serviceType = 'ride') {
   const prefix = serviceType === 'ride' ? 'RIDE' : 'DELIVERY';
   const keys = [prefix + '_BASE_FARE_LKR', prefix + '_PER_KM_FARE_LKR', prefix + '_MIN_FARE_LKR'];
