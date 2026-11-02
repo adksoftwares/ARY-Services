@@ -27,7 +27,7 @@ export function calculateDistanceKm(lat1, lon1, lat2, lon2) {
 }
 
 export function estimateEtaMinutes(distanceKm) {
-  if (distanceKm === null || distanceKm === undefined) return 20;
+  if (distanceKm === null || distanceKm === undefined || !Number.isFinite(Number(distanceKm))) return null;
   if (distanceKm <= 0.8) return 10;
   // Sri Lankan urban average speed: ~22 km/h + 5 min dispatch/prep buffer
   const travelMinutes = Math.round((distanceKm / 22) * 60);
@@ -55,4 +55,49 @@ export function resolveCoordinatesFromLocation(locationString) {
     }
   }
   return { lat: 6.9271, lng: 79.8612 }; // Default Colombo Center
+}
+
+/**
+ * Optional road route provider. Configure ROUTING_BASE_URL with a self-hosted
+ * OSRM-compatible service; no public demo routing endpoint is assumed.
+ */
+export async function getRoadRoute(origin, destination) {
+  const base = String(process.env.ROUTING_BASE_URL || '').trim().replace(/\/$/, '');
+  if (!base) return { available: false, reason: 'routing_not_configured' };
+  let parsed;
+  try { parsed = new URL(base); } catch { return { available: false, reason: 'invalid_routing_configuration' }; }
+  if (parsed.protocol !== 'https:' && !(parsed.protocol === 'http:' && ['localhost', '127.0.0.1'].includes(parsed.hostname))) {
+    return { available: false, reason: 'routing_requires_https' };
+  }
+  const points = [origin, destination].map(point => ({
+    lat: Number(point?.lat), lng: Number(point?.lng)
+  }));
+  if (points.some(point => !Number.isFinite(point.lat) || !Number.isFinite(point.lng) ||
+    point.lat < 5.8 || point.lat > 10.1 || point.lng < 79 || point.lng > 82.2)) {
+    return { available: false, reason: 'invalid_coordinates' };
+  }
+  const url = new URL(`${base}/route/v1/driving/${points[0].lng},${points[0].lat};${points[1].lng},${points[1].lat}`);
+  url.searchParams.set('overview', 'false');
+  url.searchParams.set('steps', 'false');
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 7000);
+  try {
+    const response = await fetch(url, { signal: controller.signal, headers: { Accept: 'application/json' } });
+    if (!response.ok) return { available: false, reason: 'routing_provider_unavailable' };
+    const data = await response.json();
+    const route = data?.code === 'Ok' && Array.isArray(data.routes) ? data.routes[0] : null;
+    if (!route || !Number.isFinite(route.distance) || !Number.isFinite(route.duration)) {
+      return { available: false, reason: 'route_not_found' };
+    }
+    return {
+      available: true,
+      distanceKm: Math.round((route.distance / 1000) * 10) / 10,
+      durationMinutes: Math.max(1, Math.round(route.duration / 60)),
+      provider: 'OSRM-compatible routing service'
+    };
+  } catch {
+    return { available: false, reason: 'routing_provider_unavailable' };
+  } finally {
+    clearTimeout(timeout);
+  }
 }
