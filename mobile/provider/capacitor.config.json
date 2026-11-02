@@ -3,7 +3,7 @@
   "appName": "ARY Provider",
   "webDir": "dist",
   "server": {
-    "androidScheme": "https",
+    "androidScheme": "http",
     "cleartext": true
   }
 }
