@@ -1743,14 +1743,14 @@ app.post('/api/reviews', requireAuth, async (req, res) => {
     }
 
     const newReview = {
-      id: `rev-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      id: 'rev-' + crypto.randomUUID(),
       bookingId,
       providerId: booking.providerId,
       providerName: booking.providerName,
       customerId: customer.id,
       customerName: customer.fullName || 'Verified Customer',
       rating: Math.round(parsedRating),
-      comment: String(comment || '').trim(),
+      comment: cleanComment,
       createdAt: new Date().toISOString()
     };
 
