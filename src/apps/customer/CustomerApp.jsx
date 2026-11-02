@@ -96,6 +96,21 @@ function CustomerWorkspace() {
     }
   }, [currentUser]);
 
+  async function decideQuote(bookingId, decision) {
+    if (!currentUser?.token) return;
+    try {
+      const response = await fetch(`${API_BASE}/bookings/${encodeURIComponent(bookingId)}/quote`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${currentUser.token}` },
+        body: JSON.stringify({ decision })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Could not update quote.');
+      setNotice(data.message || 'Quote updated.');
+      await fetchBookings();
+    } catch (error) { setNotice(error.message || 'Could not update quote.'); }
+  }
+
   async function requestReschedule(bookingId, date, time) {
     if (!currentUser?.token) return false;
     try {
