@@ -10,7 +10,8 @@ export default function MyBookingsList({
   onOpenDisputeModal,
   onExploreServices,
   onOpenReviewModal,
-  onRescheduleBooking
+  onRescheduleBooking,
+  onQuoteDecision
 }) {
   const [rescheduleFor, setRescheduleFor] = useState(null);
   const [rescheduleDate, setRescheduleDate] = useState('');
@@ -74,6 +75,19 @@ export default function MyBookingsList({
                 </div>
               </div>
 
+              {b.quote?.status === 'pending' && (
+                <div style={{margin:'10px 0',padding:12,border:'1px solid #bfdbfe',background:'#eff6ff',borderRadius:9}}>
+                  <b style={{fontSize:13,color:'#1e40af'}}>Service quote from {b.providerName}</b>
+                  <div style={{fontSize:20,fontWeight:800,color:'#173b2f',margin:'5px 0'}}>LKR {Number(b.quote.amount).toLocaleString('en-LK')}</div>
+                  <p style={{fontSize:12,color:'#475569',margin:'4px 0'}}>{b.quote.description}</p>
+                  <small style={{color:'#64748b'}}>Valid until {new Date(b.quote.validUntil).toLocaleDateString()} · Cash settlement; no online payment is taken.</small>
+                  <div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:9}}>
+                    <button type="button" className="booking-action-btn accept" onClick={()=>onQuoteDecision?.(b.id,'accept')}>Accept quote</button>
+                    <button type="button" className="booking-action-btn reject" onClick={()=>onQuoteDecision?.(b.id,'reject')}>Decline quote</button>
+                  </div>
+                </div>
+              )}
+              {b.quote?.status === 'accepted' && <p style={{margin:'8px 0',fontSize:12,color:'#166534'}}>Agreed service quote: <b>LKR {Number(b.quote.amount).toLocaleString('en-LK')}</b></p>}
               {b.rescheduleRequest?.status === 'pending' && (
                 <p style={{margin:'8px 0',padding:'8px 10px',background:'#fff7ed',borderRadius:7,color:'#9a3412',fontSize:12}}>
                   New time requested: {b.rescheduleRequest.date} · {b.rescheduleRequest.time} — awaiting provider confirmation
