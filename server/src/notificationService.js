@@ -20,6 +20,8 @@ function notificationRecipients(eventType, payload = {}) {
     [payload.customerId, payload.providerId, order.customerId, order.providerId].forEach(id => id && ids.add(id));
   } else if (eventType === 'review:submitted') {
     if (payload.providerId) ids.add(payload.providerId);
+  } else if (eventType.startsWith('provider:service_request_')) {
+    if (payload.providerId) ids.add(payload.providerId);
   } else if (eventType === 'user:status_changed') {
     if (payload.userId) ids.add(payload.userId);
   }
@@ -30,6 +32,8 @@ function describeNotification(eventType, payload = {}) {
   const booking = payload.booking || {};
   const job = payload.job || {};
   const order = payload.order || {};
+  if (eventType === 'provider:service_request_created') return { title: 'New provider service request', body: 'A provider has requested approval to add another service.', resourceType: 'provider_service_request', resourceId: payload.requestId || null };
+  if (eventType === 'provider:service_request_reviewed') return { title: 'Additional service reviewed', body: `Your additional service request was ${payload.status || 'updated'}.`, resourceType: 'provider_service_request', resourceId: payload.requestId || null };
   if (eventType === 'user:registered') return { title: 'New account registration', body: 'A new ARY Services account has been registered.', resourceType: 'account', resourceId: payload.user?.id || null };
   if (eventType === 'booking:created') return { title: 'New service booking', body: 'A service booking request has been created.', resourceType: 'booking', resourceId: booking.id || null };
   if (eventType === 'booking:quote_sent') return { title: 'New service quote', body: 'Your service provider has sent a price quote. Review it in My Bookings.', resourceType: 'booking', resourceId: payload.bookingId || null };
@@ -51,7 +55,7 @@ export async function persistEventNotifications(eventType, payload = {}) {
   const description = describeNotification(eventType, payload);
   if (!description) return;
   const recipients = notificationRecipients(eventType, payload);
-  const adminBroadcast = eventType === 'user:registered';
+  const adminBroadcast = eventType === 'user:registered' || eventType === 'provider:service_request_created';
   if (!recipients.length && !adminBroadcast) return;
   const now = new Date().toISOString();
   await mutatePersistentState('notifications', notificationsFile, EMPTY, stored => {
