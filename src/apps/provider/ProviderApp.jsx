@@ -7,6 +7,7 @@ import { subscribeToAppEvents } from '../../utils/events';
 import ProviderDashboard from '../../components/provider/ProviderDashboard';
 import AuthModal from '../../components/common/AuthModal';
 import Footer from '../../components/common/Footer';
+import NotificationCenter from '../../components/common/NotificationCenter';
 
 function ProviderWorkspace() {
   const { currentUser, openAuthModal, logout, switchRole } = useAuth();
@@ -74,6 +75,7 @@ function ProviderWorkspace() {
         <span className="nav-link-btn"><BriefcaseBusiness size={14}/> Provider workspace</span>
       </nav>
       {isProvider ? <div className="user-profile">
+        <NotificationCenter/>
         <span className="user-badge"><UserRound size={14}/><span>{currentUser.fullName}</span></span>
         {(currentUser.roles || []).includes('customer') && <button className="sign-in" onClick={async () => { try { await switchRole('customer'); window.location.href = '/'; } catch (error) { setNotice(error.message); } }}>Customer app</button>}
         <button className="sign-out-btn" onClick={() => { logout(); navigate('/'); }}><LogOut size={14}/> Sign out</button>
