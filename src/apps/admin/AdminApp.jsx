@@ -1,16 +1,13 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { BrowserRouter, Link, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, LogIn, LogOut, ShieldCheck, Users, Bike, UserRound, BriefcaseBusiness } from 'lucide-react';
+import { LogIn, ShieldCheck } from 'lucide-react';
 import { AuthProvider, useAuth } from '../../context/AuthContext';
 import { API_BASE } from '../../config';
 import AdminWorkspace from '../../components/admin/AdminWorkspace';
-import DriverApplicationsAdmin from '../../components/admin/DriverApplicationsAdmin';
-import RoleApplicationsAdmin from '../../components/admin/RoleApplicationsAdmin';
-import ProviderServiceRequestsAdmin from '../../components/admin/ProviderServiceRequestsAdmin';
 import AuthModal from '../../components/common/AuthModal';
 import Footer from '../../components/common/Footer';
-import NotificationCenter from '../../components/common/NotificationCenter';
 import { subscribeToAppEvents } from '../../utils/events';
+import { ThemeToggle, Button } from '../../design-system';
 
 const initialServices = [
   { id: 1, name: 'Food Shops', slug: 'food-shops', description: 'Explore local shops and place an order', color: 'peach' },
@@ -21,13 +18,11 @@ const initialServices = [
 ];
 
 function AdminPortal() {
-  const { currentUser, openAuthModal, logout } = useAuth();
-  const navigate = useNavigate();
+  const { currentUser, openAuthModal } = useAuth();
   const [adminUsers, setAdminUsers] = useState([]);
   const [services, setServices] = useState(initialServices);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
   const [notice, setNotice] = useState('');
-  const [activeSection, setActiveSection] = useState('workspace');
   const isAdmin = currentUser?.accountType === 'admin';
 
   const fetchAdminUsers = useCallback(async () => {
@@ -55,53 +50,100 @@ function AdminPortal() {
   useEffect(() => {
     if (!isAdmin) return undefined;
     const refresh = () => fetchAdminUsers();
-    return subscribeToAppEvents(currentUser?.token, { 'driver:application_created': refresh, 'driver:application_reviewed': refresh, 'user:registered': refresh, 'user:status_changed': refresh });
-  }, [isAdmin, fetchAdminUsers]);
+    return subscribeToAppEvents(currentUser?.token, {
+      'driver:application_created': refresh,
+      'driver:application_reviewed': refresh,
+      'user:registered': refresh,
+      'user:status_changed': refresh
+    });
+  }, [isAdmin, fetchAdminUsers, currentUser?.token]);
 
-  return <div className="app-shell">
-    <header className="topbar">
-      <Link to="/" className="brand" aria-label="ARY Services Admin home">
-        <span className="brand-mark">A</span><span>ARY <b>Admin</b></span>
-      </Link>
-      {isAdmin ? <>
-        <div className="user-profile"><NotificationCenter/></div>
-        <nav className="header-nav-links">
-          <button className="nav-link-btn" onClick={() => setActiveSection('workspace')}><LayoutDashboard size={14}/> Admin workspace</button>
-          <button className="nav-link-btn" onClick={() => setActiveSection('drivers')}><Bike size={14}/> Driver approvals</button>
-          <button className="nav-link-btn" onClick={() => setActiveSection('roles')}><Users size={14}/> Role applications</button>
-          <button className="nav-link-btn" onClick={() => setActiveSection('services')}><BriefcaseBusiness size={14}/> Service approvals</button>
-        </nav>
-        <div className="user-profile">
-          <span className="user-badge"><UserRound size={14}/><span>{currentUser.fullName}</span></span>
-          <button className="sign-out-btn" onClick={() => { logout(); navigate('/'); }}><LogOut size={14}/> Sign out</button>
+  return (
+    <div className="app-shell" style={{ background: 'var(--color-bg, #fbfaf7)' }}>
+      {isAdmin ? (
+        <AdminWorkspace
+          adminUsers={adminUsers}
+          setAdminUsers={setAdminUsers}
+          services={services}
+          setServices={setServices}
+          isLoadingUsers={isLoadingUsers}
+          fetchAdminUsers={fetchAdminUsers}
+          onNotice={setNotice}
+        />
+      ) : (
+        <>
+          <header className="topbar">
+            <Link to="/" className="brand" aria-label="ARY Services Admin home">
+              <span className="brand-mark">A</span><span>ARY <b>Admin</b></span>
+            </Link>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <ThemeToggle />
+              <button className="sign-in" onClick={() => openAuthModal('login')}>
+                <LogIn size={14}/> Admin sign in
+              </button>
+            </div>
+          </header>
+
+          <main style={{ maxWidth: 840, margin: '56px auto', padding: '0 20px', minHeight: '52vh' }}>
+            <section style={{
+              background: 'var(--color-surface, #fff)',
+              border: '1px solid var(--color-border-subtle, #e5ebe2)',
+              borderRadius: 'var(--radius-xl, 20px)',
+              padding: '40px 32px',
+              textAlign: 'center',
+              boxShadow: 'var(--shadow-md, 0 12px 36px rgba(20,45,32,.06))'
+            }}>
+              <div style={{
+                width: 58,
+                height: 58,
+                borderRadius: 'var(--radius-lg, 16px)',
+                background: 'var(--color-brand-50, #edf7ef)',
+                color: 'var(--color-brand-600, #174d3d)',
+                display: 'grid',
+                placeItems: 'center',
+                margin: '0 auto 18px'
+              }}>
+                <ShieldCheck size={30}/>
+              </div>
+              <p className="eyebrow" style={{ color: 'var(--color-brand-700, #174d3d)', fontWeight: 700, letterSpacing: '0.05em' }}>
+                ARY PLATFORM CONTROL
+              </p>
+              <h1 style={{ color: 'var(--color-brand-900, #173b2f)', margin: '8px 0 12px', fontSize: '1.9rem' }}>
+                Super Admin workspace.
+              </h1>
+              <p style={{ color: 'var(--color-neutral-600, #647368)', maxWidth: 540, margin: '0 auto 24px', lineHeight: 1.7, fontSize: '0.95rem' }}>
+                Sign in with your authorized Super Admin account to inspect registered accounts, verify KYC documents, arbitrate customer disputes, and disburse LankaPay CEFT batch payouts.
+              </p>
+              <Button
+                variant="primary"
+                size="lg"
+                onClick={() => openAuthModal('login')}
+              >
+                <LogIn size={16}/> Sign in as Administrator
+              </Button>
+            </section>
+          </main>
+          <Footer />
+        </>
+      )}
+
+      <AuthModal onNotice={setNotice}/>
+      {notice && (
+        <div className="toast" role="status">
+          {notice}
+          <button onClick={() => setNotice('')} aria-label="Dismiss">×</button>
         </div>
-      </> : <button className="sign-in" onClick={() => openAuthModal('login')}><LogIn size={14}/> Admin sign in</button>}
-    </header>
-
-    {isAdmin ? activeSection === 'drivers' ? <DriverApplicationsAdmin/> : activeSection === 'roles' ? <RoleApplicationsAdmin/> : activeSection === 'services' ? <ProviderServiceRequestsAdmin/> : <AdminWorkspace
-      adminUsers={adminUsers}
-      setAdminUsers={setAdminUsers}
-      services={services}
-      setServices={setServices}
-      isLoadingUsers={isLoadingUsers}
-      fetchAdminUsers={fetchAdminUsers}
-      onNotice={setNotice}
-    /> : <main style={{maxWidth:900,margin:'56px auto',padding:'0 20px',minHeight:'48vh'}}>
-      <section style={{background:'#fff',border:'1px solid #e5ebe2',borderRadius:18,padding:'32px',textAlign:'center',boxShadow:'0 12px 36px rgba(20,45,32,.06)'}}>
-        <div style={{width:54,height:54,borderRadius:16,background:'#edf7ef',color:'#174d3d',display:'grid',placeItems:'center',margin:'0 auto 16px'}}><ShieldCheck size={26}/></div>
-        <p className="eyebrow">ARY PLATFORM CONTROL</p>
-        <h1 style={{color:'#173b2f',margin:'8px 0'}}>Super Admin workspace.</h1>
-        <p style={{color:'#647368',maxWidth:560,margin:'0 auto 22px',lineHeight:1.7}}>Sign in with your authorized Admin account to manage registered accounts, service categories, provider and driver approvals, disputes and payouts.</p>
-        <button className="register-nav-btn" onClick={() => openAuthModal('login')}><LogIn size={15}/> Admin sign in</button>
-      </section>
-    </main>}
-
-    <AuthModal onNotice={setNotice}/>
-    {notice && <div className="toast" role="status">{notice}<button onClick={() => setNotice('')} aria-label="Dismiss">×</button></div>}
-    <Footer/>
-  </div>;
+      )}
+    </div>
+  );
 }
 
 export default function AdminApp() {
-  return <AuthProvider><BrowserRouter><AdminPortal/></BrowserRouter></AuthProvider>;
+  return (
+    <AuthProvider>
+      <BrowserRouter>
+        <AdminPortal />
+      </BrowserRouter>
+    </AuthProvider>
+  );
 }
