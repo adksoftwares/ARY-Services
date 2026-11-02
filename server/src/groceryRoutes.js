@@ -3,7 +3,7 @@ import crypto from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { mutatePersistentState, readPersistentState } from './storage.js';
-import { broadcastEvent } from './eventHub.js';
+
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dataFile = path.join(__dirname, '..', 'data', 'grocery-products.json');
@@ -85,7 +85,7 @@ function hasDuplicateSku(products, providerId, sku, exceptId = null) {
   );
 }
 
-export function registerGroceryRoutes(app, { requireAuth }) {
+export function registerGroceryRoutes(app, { requireAuth, broadcastEvent }) {
   app.get('/api/grocery/products', async (req, res) => {
     try {
       const products = await getProducts();
