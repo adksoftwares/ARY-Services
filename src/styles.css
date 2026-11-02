@@ -1150,7 +1150,7 @@ table{font-variant-numeric:tabular-nums}
 }
 @media(max-width:620px){
  .app-shell{padding-inline:16px}.topbar{margin-inline:-16px;padding:12px 16px;gap:10px}
- .topbar .header-nav-links{order:5;width:100%;overflow-x:auto;justify-content:flex-start;flex-wrap:nowrap}
+ .topbar .header-nav-links{display:none}
  .topbar .nav-link-btn{flex:0 0 auto}
  .user-profile{flex-wrap:wrap;justify-content:flex-end}
  .dashboard{padding:32px 0 60px}.dashboard-heading h1{font-size:36px}
@@ -1164,3 +1164,240 @@ table{font-variant-numeric:tabular-nums}
  .provider-services-manager{padding:16px!important;margin:16px auto!important}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}}
+
+/* ==========================================================================
+   ENHANCED MODERN UI/UX STYLING (2026 Refinements)
+   ========================================================================== */
+
+/* 1. Quick Discovery Chips in Hero */
+.hero-quick-chips {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+.quick-chips-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #7a8b80;
+  margin-right: 2px;
+}
+.quick-chip-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #ffffff;
+  border: 1px solid #dfe5de;
+  border-radius: 20px;
+  padding: 6px 12px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #2d4538;
+  cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+}
+.quick-chip-btn:hover {
+  background: #edf5ef;
+  border-color: #174d3d;
+  color: #174d3d;
+  transform: translateY(-1.5px);
+  box-shadow: 0 3px 8px rgba(23,77,61,0.08);
+}
+.quick-chip-btn.active {
+  background: #174d3d;
+  color: #ffffff;
+  border-color: #174d3d;
+  box-shadow: 0 2px 8px rgba(23,77,61,0.22);
+}
+.quick-chip-btn .chip-icon {
+  font-size: 13px;
+}
+
+/* 2. Floating Mobile Bottom Navigation Bar */
+.mobile-bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 990;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(220, 228, 220, 0.85);
+  box-shadow: 0 -4px 20px rgba(18, 45, 34, 0.08);
+  padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
+  justify-content: space-around;
+  align-items: center;
+}
+.mob-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: transparent;
+  border: 0;
+  text-decoration: none;
+  color: #6a7b70;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.16s ease;
+  min-width: 58px;
+}
+.mob-nav-item:hover, .mob-nav-item.active {
+  color: #174d3d;
+}
+.mob-nav-item.active {
+  font-weight: 700;
+  background: #edf5ef;
+}
+.mob-nav-item.highlight {
+  background: #174d3d;
+  color: white;
+  border-radius: 12px;
+  padding: 6px 14px;
+}
+.mob-nav-badge {
+  position: absolute;
+  top: -4px;
+  right: -7px;
+  background: #ef4444;
+  color: white;
+  font-size: 9px;
+  font-weight: 800;
+  border-radius: 10px;
+  padding: 1px 5px;
+  min-width: 14px;
+  text-align: center;
+  box-shadow: 0 1px 4px rgba(239, 68, 68, 0.5);
+}
+
+@media (max-width: 768px) {
+  .mobile-bottom-nav {
+    display: flex;
+  }
+  .app-shell {
+    padding-bottom: 84px !important;
+  }
+}
+
+/* 3. Provider Card UI Enhancements */
+.provider-card-item {
+  position: relative;
+  overflow: hidden;
+}
+.provider-card-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #174d3d, #34d399);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.provider-card-item:hover::before {
+  opacity: 1;
+}
+
+/* 4. Booking Status Stepper / Pills */
+.booking-status-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+.booking-status-tag.requested {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+.booking-status-tag.accepted {
+  background: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
+}
+.booking-status-tag.in_progress {
+  background: #f5f3ff;
+  color: #6d28d9;
+  border: 1px solid #ddd6fe;
+}
+.booking-status-tag.completed {
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+.booking-status-tag.cancelled {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+/* 5. Smooth Toast Slide-In Animation */
+.toast {
+  animation: toastSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  box-shadow: 0 10px 30px -5px rgba(15, 62, 48, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(8px);
+}
+@keyframes toastSlideUp {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 15px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+/* 6. Modal Entrance Animation */
+.modal-backdrop {
+  animation: backdropFade 0.2s ease-out forwards;
+}
+.modal-card {
+  animation: modalScaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes backdropFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes modalScaleUp {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* 7. Category Card Glow on Hover */
+.service-card {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, border-color 0.2s ease !important;
+}
+.service-card:hover {
+  transform: translateY(-3px) !important;
+  box-shadow: 0 10px 24px -4px rgba(23, 77, 61, 0.08) !important;
+  border-color: #8fc2a9 !important;
+}
+.service-card.active-category-card {
+  border-color: #174d3d !important;
+  background: #f4faf6 !important;
+  box-shadow: 0 6px 20px -2px rgba(23, 77, 61, 0.12) !important;
+}

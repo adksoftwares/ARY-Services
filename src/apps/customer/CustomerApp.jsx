@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { BrowserRouter, Link, Navigate, Route, Routes, useNavigate } from 'react-router-dom';
-import { Search, ClipboardList, LogIn, LogOut, UserRound, ArrowRight, ShoppingBasket, Zap, Wrench, Sparkles, Package } from 'lucide-react';
+import { Search, ClipboardList, LogIn, LogOut, UserRound, ArrowRight, ShoppingBasket, Zap, Wrench, Sparkles, Package, Bike } from 'lucide-react';
 import { AuthProvider, useAuth } from '../../context/AuthContext';
 import { API_BASE } from '../../config';
 import { subscribeToAppEvents } from '../../utils/events';
@@ -44,6 +44,78 @@ function CustomerHeader() {
       <button className="register-nav-btn" onClick={() => openAuthModal('register')}>Join ARY <ArrowRight size={14}/></button>
     </div>}
   </header>;
+}
+
+function CustomerMobileBottomNav({ bookingsCount = 0 }) {
+  const { currentUser, openAuthModal } = useAuth();
+  const navigate = useNavigate();
+
+  function scrollToSection(id) {
+    navigate('/');
+    setTimeout(() => {
+      const el = document.getElementById(id);
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+  }
+
+  return (
+    <nav className="mobile-bottom-nav" aria-label="Mobile Bottom Navigation">
+      <Link to="/" className="mob-nav-item">
+        <Search size={19} />
+        <span>Explore</span>
+      </Link>
+
+      <Link
+        to="/bookings"
+        className="mob-nav-item"
+        onClick={(e) => {
+          if (!currentUser) {
+            e.preventDefault();
+            openAuthModal('login');
+          }
+        }}
+      >
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <ClipboardList size={19} />
+          {bookingsCount > 0 && <span className="mob-nav-badge">{bookingsCount}</span>}
+        </div>
+        <span>Bookings</span>
+      </Link>
+
+      <button
+        type="button"
+        className="mob-nav-item"
+        onClick={() => scrollToSection('mobility-services')}
+      >
+        <Bike size={19} />
+        <span>Rides & Food</span>
+      </button>
+
+      {currentUser ? (
+        <button
+          type="button"
+          className="mob-nav-item"
+          onClick={() => {
+            const profileEl = document.querySelector('.user-profile');
+            if (profileEl) profileEl.scrollIntoView({ behavior: 'smooth' });
+            else navigate('/');
+          }}
+        >
+          <UserRound size={19} />
+          <span>{currentUser.fullName ? currentUser.fullName.split(' ')[0] : 'Profile'}</span>
+        </button>
+      ) : (
+        <button
+          type="button"
+          className="mob-nav-item highlight"
+          onClick={() => openAuthModal('login')}
+        >
+          <LogIn size={19} />
+          <span>Sign In</span>
+        </button>
+      )}
+    </nav>
+  );
 }
 
 function CustomerWorkspace() {
@@ -204,7 +276,7 @@ function CustomerWorkspace() {
     } catch (error) { setNotice(error.message); }
   }
 
-  return <div className="app-shell">
+  return <div className="app-shell customer-app-shell">
     <CustomerHeader/>
     <Routes>
       <Route path="/" element={<main>
@@ -234,6 +306,7 @@ function CustomerWorkspace() {
       onBookingSuccess={(_booking, provider) => { setBookingOpen(false); setNotice(`Booking request sent to ${provider.fullName}.`); navigate('/bookings'); fetchBookings(); }}/>
     {notice && <div className="toast" role="status">{notice}<button onClick={() => setNotice('')} aria-label="Dismiss">×</button></div>}
     <Footer/>
+    <CustomerMobileBottomNav bookingsCount={bookings.filter(b => !['completed', 'cancelled'].includes(b.status)).length}/>
   </div>;
 }
 

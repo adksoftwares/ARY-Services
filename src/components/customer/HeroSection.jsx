@@ -54,55 +54,88 @@ export default function HeroSection({
         </h1>
         <p>Discover local shops and trusted service providers for the things that matter every day.</p>
 
-        {isCustomerLoggedIn ? (
-          <div className="search-panel">
-            <label className="search-field">
-              <MapPin size={19} />
-              <input
-                value={address}
-                onChange={e => setAddress(e.target.value)}
-                placeholder="Enter your area or address"
-              />
-              <button
-                type="button"
-                className="search-locate-btn"
-                onClick={handleDetectLocation}
-                disabled={isLocating}
-                title="Use current location"
-              >
-                <Navigation size={14} className={isLocating ? 'spin' : ''} />
-              </button>
-            </label>
-            <label className="search-field service-search">
-              <Search size={19} />
-              <input
-                value={query}
-                onChange={e => setQuery(e.target.value)}
-                placeholder="What service do you need?"
-              />
-            </label>
+        <div className="search-panel">
+          <label className="search-field">
+            <MapPin size={19} />
+            <input
+              value={address}
+              onChange={e => setAddress(e.target.value)}
+              placeholder="Enter your area or address"
+            />
             <button
-              className="search-button"
+              type="button"
+              className="search-locate-btn"
+              onClick={handleDetectLocation}
+              disabled={isLocating}
+              title="Use current location"
+            >
+              <Navigation size={14} className={isLocating ? 'spin' : ''} />
+            </button>
+          </label>
+          <label className="search-field service-search">
+            <Search size={19} />
+            <input
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder="What service do you need?"
+            />
+          </label>
+          <button
+            className="search-button"
+            onClick={() => {
+              if (onSearch) onSearch();
+              else if (onNotice) onNotice('Showing services matching your search.');
+            }}
+          >
+            Find services
+          </button>
+        </div>
+
+        {/* Quick Discovery Chips */}
+        <div className="hero-quick-chips">
+          <span className="quick-chips-label">Popular:</span>
+          {[
+            { label: 'Electrical Repair', icon: '⚡', query: 'electrical' },
+            { label: 'Plumbing', icon: '🔧', query: 'plumbing' },
+            { label: 'Grocery Products', icon: '🛒', query: 'grocery' },
+            { label: 'Food Delivery', icon: '🍲', query: 'food' },
+            { label: 'Parcel Courier', icon: '📦', query: 'parcel' },
+            { label: 'Ride Trip', icon: '🚗', query: 'ride' }
+          ].map(chip => (
+            <button
+              key={chip.label}
+              type="button"
+              className={`quick-chip-btn ${query.toLowerCase().includes(chip.query) ? 'active' : ''}`}
               onClick={() => {
+                setQuery(chip.label);
+                if (chip.query === 'parcel' || chip.query === 'ride' || chip.query === 'food') {
+                  const mobEl = document.getElementById('mobility-services') || document.getElementById('mobility-section');
+                  if (mobEl) mobEl.scrollIntoView({ behavior: 'smooth' });
+                } else {
+                  const srvEl = document.querySelector('.services-section');
+                  if (srvEl) srvEl.scrollIntoView({ behavior: 'smooth' });
+                }
                 if (onSearch) onSearch();
-                else if (onNotice) onNotice('Showing services matching your search.');
               }}
             >
-              Find services
+              <span className="chip-icon">{chip.icon}</span>
+              <span>{chip.label}</span>
             </button>
-          </div>
-        ) : (
+          ))}
+        </div>
+
+        {!isCustomerLoggedIn && (
           <div className="sign-in-prompt-card">
             <div className="sign-in-prompt-info">
               <span className="prompt-icon-badge"><Lock size={18} /></span>
               <div>
-                <b>Sign in to search services</b>
-                <small>Please log in to your customer account to search local providers and book services.</small>
+                <b>Instant 1-Click Booking Available</b>
+                <small>Explore services freely. Sign in with Phone & Password when you are ready to book or order.</small>
               </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
               <button className="prompt-sign-in-btn" onClick={() => openAuthModal('login')}>
-                Sign in now <ArrowRight size={15} />
+                Sign in <ArrowRight size={15} />
               </button>
               <button
                 type="button"
@@ -123,7 +156,7 @@ export default function HeroSection({
                   whiteSpace: 'nowrap'
                 }}
               >
-                Register / Join ARY
+                Join ARY
               </button>
             </div>
           </div>
