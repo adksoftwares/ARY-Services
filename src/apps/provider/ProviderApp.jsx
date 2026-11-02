@@ -8,6 +8,7 @@ import ProviderDashboard from '../../components/provider/ProviderDashboard';
 import AuthModal from '../../components/common/AuthModal';
 import Footer from '../../components/common/Footer';
 import NotificationCenter from '../../components/common/NotificationCenter';
+import ProviderServicesManager from '../../components/provider/ProviderServicesManager';
 
 function ProviderWorkspace() {
   const { currentUser, openAuthModal, logout, switchRole } = useAuth();
@@ -97,13 +98,13 @@ function ProviderWorkspace() {
       </div> : <button className="sign-in" onClick={() => openAuthModal('login')}><LogIn size={14}/> Provider sign in</button>}
     </header>
 
-    {isProvider ? <ProviderDashboard
+    {isProvider ? <><ProviderServicesManager/><ProviderDashboard
       bookings={bookings}
       isLoading={loading}
       onRefresh={fetchBookings}
       onUpdateStatus={updateBookingStatus}
       onDecideReschedule={decideReschedule}
-    /> : <main style={{maxWidth:900,margin:'56px auto',padding:'0 20px',minHeight:'48vh'}}>
+    /></> : <main style={{maxWidth:900,margin:'56px auto',padding:'0 20px',minHeight:'48vh'}}>
       <section style={{background:'#fff',border:'1px solid #e5ebe2',borderRadius:18,padding:'32px',textAlign:'center',boxShadow:'0 12px 36px rgba(20,45,32,.06)'}}>
         <div style={{width:54,height:54,borderRadius:16,background:'#edf7ef',color:'#174d3d',display:'grid',placeItems:'center',margin:'0 auto 16px'}}><ShieldCheck size={26}/></div>
         <p className="eyebrow">ARY SERVICE PARTNER PORTAL</p>
