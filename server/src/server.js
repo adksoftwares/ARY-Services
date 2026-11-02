@@ -937,6 +937,7 @@ app.get('/api/bookings', requireAuth, async (req, res) => {
 app.post('/api/bookings', requireAuth, async (req, res) => {
   try {
     const customer = req.user;
+    if (customer.accountType !== 'customer') return res.status(403).json({ error: 'Customer account required to create a service booking.' });
     const {
       providerId,
       categorySlug,
@@ -955,7 +956,7 @@ app.post('/api/bookings', requireAuth, async (req, res) => {
     const cleanProviderIdent = normalizePhone(providerId);
     const provider = users.find(u =>
       (u.id === providerId || (cleanProviderIdent && u.phone && normalizePhone(u.phone) === cleanProviderIdent)) &&
-      u.accountType === 'provider'
+      u.accountType === 'provider' && u.status === 'active'
     );
 
     if (!provider) {
@@ -1031,7 +1032,7 @@ app.patch('/api/bookings/:id/status', requireAuth, async (req, res) => {
     const { status } = req.body; // 'accepted' | 'rejected' | 'in_progress' | 'completed' | 'cancelled'
     const { id: userId, accountType, phone } = req.user;
 
-    const validStatuses = ['requested', 'accepted', 'rejected', 'in_progress', 'completed', 'cancelled'];
+    const validStatuses = ['accepted', 'rejected', 'in_progress', 'completed'];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ error: 'Invalid booking status.' });
     }
@@ -1045,11 +1046,18 @@ app.patch('/api/bookings/:id/status', requireAuth, async (req, res) => {
 
     // Role-based authorization for booking changes
     const userPhoneDigits = phone ? normalizePhone(phone) : null;
-    const isProviderMatch = booking.providerId === userId || (userPhoneDigits && booking.providerPhone && normalizePhone(booking.providerPhone) === userPhoneDigits);
-    const isCustomerMatch = booking.customerId === userId || (userPhoneDigits && booking.customerPhone && normalizePhone(booking.customerPhone) === userPhoneDigits);
-
-    if (accountType !== 'admin' && !isProviderMatch && !isCustomerMatch) {
-      return res.status(403).json({ error: 'You are not authorized to update this booking.' });
+    const isProviderMatch = booking.providerId === userId;
+    if (accountType !== 'admin' && (accountType !== 'provider' || !isProviderMatch)) {
+      return res.status(403).json({ error: 'Only the assigned provider or Admin can update service booking progress.' });
+    }
+    const allowedTransitions = {
+      requested: ['accepted', 'rejected'],
+      broadcast_pool: ['accepted', 'rejected'],
+      accepted: ['in_progress', 'rejected'],
+      in_progress: ['completed']
+    };
+    if (accountType !== 'admin' && !allowedTransitions[booking.status]?.includes(status)) {
+      return res.status(409).json({ error: `Cannot move a ${booking.status} booking to ${status}.` });
     }
 
     let releasedTx = null;
@@ -1119,8 +1127,8 @@ app.patch('/api/bookings/:id/cancel', requireAuth, async (req, res) => {
 
     // Role-based authorization
     const userPhoneDigits = phone ? normalizePhone(phone) : null;
-    const isProviderMatch = booking.providerId === userId || (userPhoneDigits && booking.providerPhone && normalizePhone(booking.providerPhone) === userPhoneDigits);
-    const isCustomerMatch = booking.customerId === userId || (userPhoneDigits && booking.customerPhone && normalizePhone(booking.customerPhone) === userPhoneDigits);
+    const isProviderMatch = booking.providerId === userId;
+    const isCustomerMatch = booking.customerId === userId;
 
     if (accountType !== 'admin' && !isCustomerMatch && !isProviderMatch) {
       return res.status(403).json({ error: 'You are not authorized to cancel this booking.' });
@@ -1210,7 +1218,7 @@ app.post('/api/bookings/:id/dispute', requireAuth, async (req, res) => {
     }
 
     const userPhoneDigits = phone ? normalizePhone(phone) : null;
-    const isCustomerMatch = booking.customerId === userId || (userPhoneDigits && booking.customerPhone && normalizePhone(booking.customerPhone) === userPhoneDigits);
+    const isCustomerMatch = booking.customerId === userId;
 
     if (accountType !== 'admin' && !isCustomerMatch) {
       return res.status(403).json({ error: 'You are only authorized to dispute bookings under your own account.' });
