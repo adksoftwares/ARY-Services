@@ -86,11 +86,23 @@ export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadc
     const d=await readJobs();
     return res.json({presence:d.presence[req.user.id]||{online:false}});
   });
+  app.patch('/api/my-mobility-jobs/:id/cancel',requireAuth,async(req,res)=>{
+    const result=await mutateJobs(d=>{
+      const job=d.jobs.find(item=>item.id===req.params.id);
+      if(!job)return {status:404,error:'Ride or delivery request not found.'};
+      if(job.customerId!==req.user.id)return {status:403,error:'You can only cancel your own request.'};
+      if(job.status!=='requested')return {status:409,error:'A request can only be cancelled before a driver accepts it.'};
+      job.status='cancelled';job.cancelledAt=new Date().toISOString();return {status:200,job};
+    });
+    if(result.error)return res.status(result.status).json({error:result.error});
+    broadcastEvent?.('driver:job_updated',{job:result.job});
+    return res.json({job:result.job});
+  });
   app.get('/api/my-mobility-jobs',requireAuth,async(req,res)=>{
     const d=await readJobs();
     const jobs=d.jobs.filter(job=>job.customerId===req.user.id).map(job=>{
       const assigned=job.driverId?d.presence[job.driverId]:null;
-      return {...job,driverLocation:assigned?.online?{lat:assigned.lat,lng:assigned.lng,updatedAt:assigned.updatedAt}:null};
+      return {...job,driverLocation:isDriverPresenceFresh(assigned)?{lat:assigned.lat,lng:assigned.lng,updatedAt:assigned.updatedAt}:null};
     });
     return res.json({jobs});
   });
