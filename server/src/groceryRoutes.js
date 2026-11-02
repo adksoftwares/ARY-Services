@@ -331,6 +331,7 @@ export function registerGroceryRoutes(app, { requireAuth, broadcastEvent, getUse
     if (result.invalid) return res.status(409).json({ error: 'That order status transition is not allowed.' });
     if (next === 'cancelled') await mutateProducts(products => { for (const line of result.order.items) { const product = products.find(item => item.id === line.productId); if (product) { product.stock += line.quantity; product.updatedAt = new Date().toISOString(); } } return true; });
     broadcastEvent('grocery:order_updated', { orderId: result.order.id, providerId: result.order.providerId, customerId: result.order.customerId, status: result.order.status });
+    if (next === 'ready_for_pickup' && result.order.deliveryJobId) broadcastEvent('driver:job_created', { customerId: result.order.customerId, driverId: null, job: { id: result.order.deliveryJobId, serviceType: 'food_delivery', orderReference: result.order.id, customerId: result.order.customerId } });
     return res.json({ order: result.order });
   });
 
