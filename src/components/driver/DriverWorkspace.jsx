@@ -1,11 +1,12 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Bike, PackageCheck, RefreshCw, CheckCircle2, MapPin, ArrowUpRight } from 'lucide-react';
+import { Bike, PackageCheck, RefreshCw, CheckCircle2, MapPin, ArrowUpRight, Package } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE } from '../../config';
 
 const DRIVER_OPTIONS = [
   { value: 'ride', label: 'Passenger rides', description: 'Accept and complete passenger trips', icon: Bike },
-  { value: 'food_delivery', label: 'Food delivery', description: 'Collect orders and deliver them to customers', icon: PackageCheck }
+  { value: 'food_delivery', label: 'Food delivery', description: 'Collect orders and deliver them to customers', icon: PackageCheck },
+  { value: 'parcel_delivery', label: 'Parcel delivery', description: 'Collect and deliver parcels with pickup and recipient PIN confirmation', icon: Package }
 ];
 
 export default function DriverWorkspace({ onNotice }) {
@@ -174,6 +175,17 @@ export default function DriverWorkspace({ onNotice }) {
     }
   }
 
+  async function verifyPin(id, endpoint, promptText) {
+    const pin = window.prompt(promptText);
+    if (!pin) return;
+    try {
+      const response = await fetch(`${API_BASE}/driver-jobs/${encodeURIComponent(id)}/${endpoint}`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${currentUser.token}` }, body: JSON.stringify({ pin: pin.trim() }) });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'PIN verification failed.');
+      await refresh(); onNotice?.('PIN verified. Job status updated.');
+    } catch (err) { setError(err.message || 'PIN verification failed.'); }
+  }
+
   async function update(id, status) {
     try {
       const response = await fetch(`${API_BASE}/driver-jobs/${encodeURIComponent(id)}/status`, {
@@ -251,7 +263,7 @@ export default function DriverWorkspace({ onNotice }) {
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
             <b style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#263b31' }}>
               {job.serviceType === 'food_delivery' ? <PackageCheck size={17}/> : <Bike size={17}/>}
-              {job.serviceType === 'food_delivery' ? 'Food Delivery' : 'Passenger Ride'} · {job.id}
+              {job.serviceType === 'food_delivery' ? 'Food Delivery' : job.serviceType === 'parcel_delivery' ? 'Parcel Delivery' : 'Passenger Ride'} · {job.id}
             </b>
             <span className="status-pill muted">{String(job.status || 'requested').replaceAll('_', ' ')}</span>
           </div>
@@ -262,11 +274,14 @@ export default function DriverWorkspace({ onNotice }) {
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {job.status === 'requested' && <button onClick={() => claim(job.id)} className="register-nav-btn">Accept job <ArrowUpRight size={14}/></button>}
             {job.status === 'accepted' && <>
-              <button onClick={() => update(job.id, 'picked_up')} className="register-nav-btn">Picked up / passenger onboard</button>
+              <button onClick={() => update(job.id, job.serviceType === 'ride' ? 'arrived' : 'arrived_pickup')} className="register-nav-btn">Arrived at pickup</button>
               <button onClick={() => releaseJob(job.id)} type="button" style={{border:'1px solid #e6caca',borderRadius:8,padding:'9px 12px',background:'#fff',color:'#a33',fontWeight:700}}>Release job</button>
             </>}
-            {job.status === 'picked_up' && <button onClick={() => update(job.id, 'completed')} className="register-nav-btn">Complete trip / delivery</button>}
-            {job.status === 'completed' && <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#27724b', fontSize: 12 }}><CheckCircle2 size={15}/> Completed</span>}
+            {['arrived','arrived_pickup'].includes(job.status) && <button onClick={() => verifyPin(job.id, 'verify-pickup', 'Enter the customer pickup / trip-start PIN')} className="register-nav-btn">Verify pickup PIN</button>}
+            {job.status === 'picked_up' && <button onClick={() => update(job.id, 'in_transit')} className="register-nav-btn">Start delivery</button>}
+            {job.status === 'in_progress' && <button onClick={() => verifyPin(job.id, 'verify-delivery', 'Enter the customer trip completion PIN')} className="register-nav-btn">Complete trip · verify PIN</button>}
+            {job.status === 'in_transit' && <button onClick={() => verifyPin(job.id, 'verify-delivery', 'Enter recipient delivery PIN')} className="register-nav-btn">Verify delivery PIN</button>}
+            {['completed','delivered'].includes(job.status) && <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#27724b', fontSize: 12 }}><CheckCircle2 size={15}/> Completed</span>}
           </div>
         </article>
       ))}

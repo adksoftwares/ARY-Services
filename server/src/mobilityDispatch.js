@@ -46,7 +46,7 @@ export function buildAdminDispatchSnapshot(jobs, applications, presence, now = D
     if (!approval || !isDriverPresenceFresh(location, now)) return [];
     return [{ driverId, driverName: approval.driverName, networks: approval.networks, lat: location.lat, lng: location.lng, updatedAt: location.updatedAt }];
   });
-  const activeJobs = (jobs || []).filter(job => !['completed', 'cancelled'].includes(job.status)).map(job => ({
+  const activeJobs = (jobs || []).filter(job => !['completed', 'delivered', 'cancelled', 'failed_attempt', 'returned'].includes(job.status)).map(job => ({
     id: job.id, serviceType: job.serviceType, status: job.status, customerName: job.customerName,
     pickupAddress: job.pickupAddress, destinationAddress: job.destinationAddress,
     driverId: job.driverId || null, driverName: job.driverName || null, createdAt: job.createdAt,

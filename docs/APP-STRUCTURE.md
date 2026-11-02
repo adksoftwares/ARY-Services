@@ -155,3 +155,10 @@ The server validates the active role against the live account record on every au
 - New jobs are shown only to drivers with an approved matching network and a fresh GPS update (maximum age 90 seconds). Job cards are ordered by proximity to the ride pickup or food-delivery destination where customer coordinates are supplied.
 - Customer mobility requests can include optional GPS coordinates, show their own request lifecycle, and expose the assigned driver's most recent fresh location. Customers can cancel only while the request remains unclaimed.
 - Distance is Haversine straight-line distance and ETA is a coarse estimate. This is not turn-by-turn navigation, road-distance routing, guaranteed dispatch, or a production SLA.
+
+
+## Mobility handoff and grocery order workflows
+
+Ride requests receive a customer-only trip-start PIN. Food delivery and parcel jobs use pickup and delivery PINs. The assigned driver verifies these through protected API actions after marking arrival; the API stores only PIN digests and limits failed attempts. Parcel requests are visible only to drivers approved for the parcel delivery network, and contact numbers are exposed only after assignment.
+
+Grocery checkout validates current product availability, reserves stock, creates a single-provider cash-on-delivery order and exposes order history to the customer and fulfilment actions to the owning provider. Provider order states are pending, accepted, preparing, ready for pickup or cancelled. Cancelled orders restore reserved stock.
