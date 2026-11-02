@@ -132,3 +132,8 @@ Ride and food-delivery requests can include optional browser GPS coordinates. Ap
 ## Road routing
 
 ARY can request road distance and duration from a self-hosted OSRM-compatible service through `GET /api/mobility/route`. Configure `ROUTING_BASE_URL` to an HTTPS endpoint. The application does not silently substitute straight-line distance when road routing is unavailable. Driver proximity sorting remains a straight-line approximation and must be labelled as such in the UI.
+
+
+## Native Android app bundles
+
+Three Capacitor Android shells are maintained for Customer, Driver and Provider. They share the browser application code and require the production API endpoint to be injected at build time. Set `ARY_API_BASE` to the HTTPS backend base ending in `/api`, then run `npm run build:mobile` (or `build:mobile:customer`, `build:mobile:driver`, `build:mobile:provider`). The mobile build intentionally fails when this endpoint is missing instead of packaging an app that calls `localhost` on the user's phone. Cleartext HTTP is disabled in the native Capacitor configs. Android signing, Play Store release configuration, Firebase project files and device validation remain deployment-owner tasks.
