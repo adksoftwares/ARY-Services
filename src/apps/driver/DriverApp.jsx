@@ -7,6 +7,7 @@ import { subscribeToAppEvents } from '../../utils/events';
 import DriverWorkspace from '../../components/driver/DriverWorkspace';
 import AuthModal from '../../components/common/AuthModal';
 import Footer from '../../components/common/Footer';
+import NotificationCenter from '../../components/common/NotificationCenter';
 
 function DriverPortal() {
   const { currentUser, openAuthModal, logout, switchRole } = useAuth();
@@ -29,6 +30,7 @@ function DriverPortal() {
         <span className="nav-link-btn"><Bike size={14}/> Driver workspace</span>
       </nav>
       {isDriver ? <div className="user-profile">
+        <NotificationCenter/>
         <span className="user-badge"><UserRound size={14}/><span>{currentUser.fullName}</span></span>
         {(currentUser.roles || []).includes('customer') && <button className="sign-in" onClick={async () => { try { await switchRole('customer'); window.location.href = '/'; } catch (error) { setNotice(error.message); } }}>Customer app</button>}
         <button className="sign-out-btn" onClick={() => { logout(); navigate('/'); }}><LogOut size={14}/> Sign out</button>
