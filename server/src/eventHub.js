@@ -27,7 +27,7 @@ function canReceive(client, eventType, payload = {}) {
 }
 
 export function subscribeToEvents(req, res, identity) {
-  if (!identity?.id || !identity?.role) {
+  if (!identity?.id || !identity?.role || !Number.isFinite(identity.exp) || identity.exp <= Date.now()) {
     res.status(401).end();
     return;
   }
