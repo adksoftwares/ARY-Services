@@ -900,7 +900,7 @@ app.get('/api/bookings', requireAuth, async (req, res) => {
       // Only immutable account IDs grant access to assigned or broadcast jobs.
       userBookings = allBookings.filter(b =>
         b.providerId === userId ||
-        (b.status === 'broadcast_pool' && (!b.declinedBy || !b.declinedBy.includes(userId)))
+        (b.status === 'broadcast_pool' && b.categorySlug === req.user.category && (!b.declinedBy || !b.declinedBy.includes(userId)))
       );
     } else {
       userBookings = allBookings.filter(b => b.customerId === userId);
@@ -948,11 +948,7 @@ app.post('/api/bookings', requireAuth, async (req, res) => {
     }
 
     const users = await getUsers();
-    const cleanProviderIdent = normalizePhone(providerId);
-    const provider = users.find(u =>
-      (u.id === providerId || (cleanProviderIdent && u.phone && normalizePhone(u.phone) === cleanProviderIdent)) &&
-      u.accountType === 'provider' && u.status === 'active'
-    );
+    const provider = users.find(u => u.id === providerId && u.accountType === 'provider' && u.status === 'active');
 
     if (!provider) {
       return res.status(404).json({ error: 'Selected service provider was not found.' });
