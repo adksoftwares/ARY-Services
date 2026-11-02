@@ -102,15 +102,15 @@
 }
 
 .driver-giant-power-btn.go-online {
-  background: #059669;
+  background: #047857;
   color: #ffffff;
-  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35);
+  box-shadow: 0 4px 14px rgba(4, 120, 87, 0.35);
 }
 
 .driver-giant-power-btn.go-offline {
-  background: #ef4444;
+  background: #dc2626;
   color: #ffffff;
-  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.3);
+  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.3);
 }
 
 /* ==========================================================================
@@ -179,9 +179,9 @@
 }
 
 .driver-field-action-btn.accent {
-  background: var(--color-accent-600, #d18b54);
+  background: var(--color-accent-700, #a05a33);
   color: #ffffff;
-  box-shadow: 0 4px 14px rgba(209, 139, 84, 0.35);
+  box-shadow: 0 4px 14px rgba(160, 90, 51, 0.35);
 }
 
 .driver-field-action-btn.danger {

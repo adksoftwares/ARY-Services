@@ -52,7 +52,7 @@ export function Modal({
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
-        aria-label={title}
+        aria-label={title || 'Dialog'}
         tabIndex={-1}
         className={`ds-modal-dialog ${className}`}
         style={{ maxWidth: isBottomSheet ? undefined : maxWidth }}

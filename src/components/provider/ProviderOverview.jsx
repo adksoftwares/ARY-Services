@@ -54,7 +54,7 @@ export default function ProviderOverview({
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              <h2 className="provider-heading-name">{currentUser?.fullName}</h2>
+              <h1 className="provider-heading-name">{currentUser?.fullName}</h1>
               <Badge variant="success" dot={false}>
                 <ShieldCheck size={13} /> Verified Partner
               </Badge>
@@ -224,9 +224,9 @@ export default function ProviderOverview({
       <Card style={{ padding: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <div>
-            <h3 style={{ margin: 0, fontSize: '1.05rem', color: 'var(--color-brand-900, #173b2f)' }}>
+            <h2 style={{ margin: 0, fontSize: '1.05rem', color: 'var(--color-brand-900, #173b2f)' }}>
               Upcoming Schedule & Active Tasks
-            </h3>
+            </h2>
             <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: 'var(--color-neutral-500, #64748b)' }}>
               Next jobs requiring your attention
             </p>

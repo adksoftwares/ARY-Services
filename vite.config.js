@@ -12,6 +12,12 @@ export default defineConfig({
         provider: resolve(process.cwd(), 'provider.html'),
         driver: resolve(process.cwd(), 'driver.html'),
         admin: resolve(process.cwd(), 'admin.html')
+      },
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-icons': ['lucide-react']
+        }
       }
     }
   }

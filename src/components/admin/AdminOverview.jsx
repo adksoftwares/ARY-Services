@@ -194,9 +194,9 @@ export default function AdminOverview({
         <Card style={{ padding: '20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <div>
-              <h3 style={{ margin: 0, fontSize: '1.02rem', color: 'var(--color-text, #0f172a)' }}>
+              <h2 style={{ margin: 0, fontSize: '1.02rem', color: 'var(--color-text, #0f172a)' }}>
                 7-Day Booking Velocity
-              </h3>
+              </h2>
               <p style={{ margin: '2px 0 0', fontSize: '0.75rem', color: 'var(--color-neutral-500, #64748b)' }}>
                 Platform daily service & delivery orders volume
               </p>
@@ -260,9 +260,9 @@ export default function AdminOverview({
         {/* SVG Donut / Distribution Chart: Accounts */}
         <Card style={{ padding: '20px' }}>
           <div style={{ marginBottom: 14 }}>
-            <h3 style={{ margin: 0, fontSize: '1.02rem', color: 'var(--color-text, #0f172a)' }}>
+            <h2 style={{ margin: 0, fontSize: '1.02rem', color: 'var(--color-text, #0f172a)' }}>
               Ecosystem Role Distribution
-            </h3>
+            </h2>
             <p style={{ margin: '2px 0 0', fontSize: '0.75rem', color: 'var(--color-neutral-500, #64748b)' }}>
               Breakdown of registered marketplace participants
             </p>

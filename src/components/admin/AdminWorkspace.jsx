@@ -448,7 +448,9 @@ export default function AdminWorkspace({
             <div className="admin-breadcrumbs">
               <span>Admin</span>
               <ChevronRight size={13} />
-              <b>{activeNavItem.label}</b>
+              <h1 style={{ margin: 0, fontSize: 'inherit', fontWeight: 'inherit', display: 'inline', color: 'inherit' }}>
+                {activeNavItem.label}
+              </h1>
             </div>
           </div>
 

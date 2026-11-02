@@ -375,7 +375,7 @@ export default function MobilityServices({ onNotice }) {
         </form>
 
         {/* Side Info Column */}
-        <aside className="mobility-info-sidebar">
+        <div className="mobility-info-sidebar">
           <div className="mobility-info-header">
             <div className="info-icon-badge">
               {mode === 'food' ? <Utensils size={24} /> : mode === 'parcel' ? <PackageCheck size={24} /> : <CarFront size={24} />}
@@ -398,7 +398,7 @@ export default function MobilityServices({ onNotice }) {
               <p>Every trip and delivery generates a unique verification PIN. Never share your PIN until the package is handed over or the ride begins.</p>
             </div>
           </div>
-        </aside>
+        </div>
       </div>
 
       {/* Active Requests Feed with Live Status Stepper */}

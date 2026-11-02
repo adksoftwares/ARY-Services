@@ -1,7 +1,8 @@
-const CACHE_NAME = 'ary-customer-v2';
+const CACHE_NAME = 'ary-customer-v3';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
+  '/offline.html',
   '/manifest.json'
 ];
 
@@ -31,19 +32,20 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // NEVER cache API requests (keep auth & mutations strictly live)
+  // NEVER cache authenticated API requests (keep auth & mutations strictly live)
   if (url.pathname.startsWith('/api') || request.method !== 'GET') {
     return;
   }
 
-  // Stale-while-revalidate for static assets, network-first for navigation
+  // Network-first for navigation, falling back to offline.html
   if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request).catch(() => caches.match('/index.html'))
+      fetch(request).catch(() => caches.match('/offline.html'))
     );
     return;
   }
 
+  // Stale-while-revalidate for static assets
   event.respondWith(
     caches.match(request).then((cached) => {
       const fetchPromise = fetch(request)

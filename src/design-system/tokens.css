@@ -143,13 +143,13 @@
   --color-neutral-100: #f4f2eb;
   --color-neutral-200: #e7e5dc;
   --color-neutral-300: #d6d3c7;
-  --color-neutral-400: #b5b1a3;
-  --color-neutral-500: #8e8a7d;
-  --color-neutral-600: #6b675b;
-  --color-neutral-700: #4f4c42;
-  --color-neutral-800: #38362e;
-  --color-neutral-900: #24231e;
-  --color-neutral-950: #141310;
+  --color-neutral-400: #8c8879;
+  --color-neutral-500: #5e5a4f;
+  --color-neutral-600: #49453c;
+  --color-neutral-700: #38352d;
+  --color-neutral-800: #292721;
+  --color-neutral-900: #1b1a15;
+  --color-neutral-950: #0f0e0c;
 
   /* Functional Status Colors */
   --color-success-50: #f0fdf4;
@@ -160,21 +160,21 @@
 
   --color-warning-50: #fffbeb;
   --color-warning-100: #fef3c7;
-  --color-warning-500: #f59e0b;
-  --color-warning-600: #d97706;
-  --color-warning-700: #b45309;
+  --color-warning-500: #d97706;
+  --color-warning-600: #b45309;
+  --color-warning-700: #92400e;
 
   --color-danger-50: #fef2f2;
   --color-danger-100: #fee2e2;
-  --color-danger-500: #ef4444;
-  --color-danger-600: #dc2626;
-  --color-danger-700: #b91c1c;
+  --color-danger-500: #dc2626;
+  --color-danger-600: #b91c1c;
+  --color-danger-700: #991b1b;
 
   --color-info-50: #eff6ff;
   --color-info-100: #dbeafe;
-  --color-info-500: #3b82f6;
-  --color-info-600: #2563eb;
-  --color-info-700: #1d4ed8;
+  --color-info-500: #2563eb;
+  --color-info-600: #1d4ed8;
+  --color-info-700: #1e40af;
 
   /* Light Theme Semantic Defaults */
   --surface: #ffffff;
@@ -189,8 +189,8 @@
 
   --text: #182922;
   --text-primary: #182922;
-  --text-secondary: #4a5c53;
-  --text-muted: #74857b;
+  --text-secondary: #384940;
+  --text-muted: #516259;
   --text-inverse: #ffffff;
 
   --border: #dfdcd2;

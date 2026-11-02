@@ -57,11 +57,17 @@ npm run build:mobile:provider
 npm run build:mobile:driver
 ```
 
-### Automated Quality Gates & Smoke Testing
+### Automated Quality Gates & Testing
 
 ```bash
-# Run quality gate verification script
+# Run Vitest unit tests for design system primitives
+npm run test
+
+# Run quality gate verification script (tokens, i18n, storage constraints, budgets)
 npm run test:smoke
+
+# Run full cross-app E2E smoke flows and axe-core accessibility audit
+python scripts/e2e_smoke_and_a11y.py
 ```
 
 ---

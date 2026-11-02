@@ -46,7 +46,7 @@
 }
 
 .user-badge{display:flex;align-items:center;gap:6px;background:#edf3ee;color:#174d3d;font-size:12px;font-weight:600;padding:8px 13px;border-radius:20px;border:1px solid #d9e6dc}
-.sign-out-btn{display:flex;align-items:center;gap:5px;background:transparent;color:#7b857c;border:1px solid #e1e3dd;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:600;transition:all .18s}
+.sign-out-btn{display:flex;align-items:center;gap:5px;background:transparent;color:#46554b;border:1px solid #c8cdca;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:600;transition:all .18s}
 .sign-out-btn:hover{background:#fbf0f0;color:#b53838;border-color:#f0c5c5}
 
 /* Auth & General Modals */
@@ -98,7 +98,7 @@
 
 .modal-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px}
 .modal-header h3{font-size:20px;font-family:Manrope,sans-serif;color:#174d3d;margin:0 0 5px;font-weight:700}
-.modal-header p{font-size:12px;color:#788078;margin:0}
+.modal-header p{font-size:12px;color:#46554b;margin:0}
 .modal-close{background:transparent;border:0;color:#8b918a;cursor:pointer;padding:4px;border-radius:6px;display:grid;place-items:center}
 .modal-close:hover{background:#f3f3ee;color:#20332d}
 .modal-form{display:flex;flex-direction:column;gap:14px;padding-bottom:12px}
@@ -125,11 +125,11 @@
 
 /* Complete Auth Tabs, Account Types & Demo Pills */
 .auth-tabs{display:flex;background:#f0f1eb;padding:4px;border-radius:10px;margin-bottom:18px;gap:4px}
-.auth-tab{flex:1;border:0;background:transparent;padding:8px 12px;border-radius:7px;font-size:13px;font-weight:600;color:#65736b;cursor:pointer;transition:all .18s}
+.auth-tab{flex:1;border:0;background:transparent;padding:8px 12px;border-radius:7px;font-size:13px;font-weight:600;color:#46554b;cursor:pointer;transition:all .18s}
 .auth-tab.active{background:white;color:#174d3d;box-shadow:0 1px 4px rgba(26,50,43,.08)}
 .auth-error-msg{background:#fdf2f2;color:#b93838;border:1px solid #f9d3d3;padding:10px 14px;border-radius:8px;font-size:12px;margin-bottom:14px}
 .account-type-selector{display:flex;gap:8px}
-.type-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;border:1px solid #dce2da;background:white;border-radius:8px;font-size:12px;font-weight:600;color:#65736b;cursor:pointer;transition:all .18s}
+.type-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;border:1px solid #dce2da;background:white;border-radius:8px;font-size:12px;font-weight:600;color:#46554b;cursor:pointer;transition:all .18s}
 .type-btn.selected{border-color:#174d3d;background:#edf4ef;color:#174d3d;font-weight:700}
 .demo-accounts-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:6px}
 .demo-account-pill{border:1px solid #e1e5de;background:#fbfbf9;padding:8px 4px;border-radius:8px;font-size:11px;font-weight:600;color:#314a3e;cursor:pointer;transition:all .18s;text-align:center}
@@ -670,7 +670,7 @@
   gap: 20px;
   border-top: 1px solid #eae9e2;
   padding: 24px 0 28px;
-  color: #78857b;
+  color: #46554b;
   font-size: 11px;
   flex-wrap: wrap;
 }
@@ -683,14 +683,14 @@
 }
 
 .footer-tagline {
-  color: #8b968d;
+  color: #46554b;
   font-size: 11px;
   border-left: 1px solid #e2e6df;
   padding-left: 14px;
 }
 
 .footer-right {
-  color: #8a968c;
+  color: #46554b;
   font-size: 11px;
 }
 
@@ -896,7 +896,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
   position:relative;z-index:20;
 }
 .brand{gap:11px;color:var(--ary-ink);font-size:17px;letter-spacing:-.55px}
-.brand b{color:#78847b;font-weight:500}
+.brand b{color:var(--ary-green);font-weight:600}
 .brand-mark{
   width:38px;height:38px;border-radius:12px;background:var(--ary-green);
   box-shadow:0 5px 12px rgba(23,77,61,.15);font-size:21px;letter-spacing:-1px
@@ -922,7 +922,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .sign-out-btn:hover{transform:translateY(-1px)}
 .hero{padding:clamp(52px,6vw,88px) 0;gap:clamp(28px,5vw,72px);min-height:480px}
 .hero-copy{max-width:690px}
-.eyebrow{color:#758278;font-size:10px;letter-spacing:1.65px;font-weight:700}
+.eyebrow{color:#364b3d;font-size:10px;letter-spacing:1.65px;font-weight:700}
 h1,h2,h3{color:var(--ary-ink)}
 h1,h2{font-family:'Manrope','DM Sans',sans-serif}
 h1{letter-spacing:-2.7px;line-height:1.08;font-weight:750}
@@ -937,7 +937,7 @@ h1 em{color:#63806c}
 .art-card{border-color:#e8ebe5;border-radius:14px;box-shadow:0 15px 35px rgba(30,55,39,.09)}
 .services-section,.how-section{border-color:var(--ary-line)}
 .section-heading h2,.how-section h2{letter-spacing:-1.1px}
-.section-note{color:#78837b}
+.section-note{color:#46554b}
 .service-grid{gap:14px}
 .service-card{
   border-color:var(--ary-line);border-radius:14px;padding:19px 20px;
@@ -946,14 +946,14 @@ h1 em{color:#63806c}
 .service-card:hover{transform:translateY(-3px);border-color:#c7d5c8;box-shadow:var(--ary-shadow-hover)}
 .service-icon{border-radius:13px}
 .service-card-copy b{font-size:13px;letter-spacing:-.1px}
-.service-card-copy small{color:#78837b}
+.service-card-copy small{color:#46554b}
 .card-arrow{transition:transform .18s ease}
 .service-card:hover .card-arrow{transform:translateX(3px);color:var(--ary-green)}
 .steps{gap:30px}
 .steps span{color:var(--ary-accent)}
 .steps b{color:var(--ary-ink)}
-.steps small{color:#748078}
-.site-footer,footer{border-color:var(--ary-line);color:#89938b}
+.steps small{color:#46554b}
+.site-footer,footer{border-color:var(--ary-line);color:#46554b}
 .site-footer{padding:25px 0}
 .dashboard{padding:clamp(40px,5vw,70px) 0 86px}
 .dashboard-heading{max-width:760px}
@@ -966,7 +966,7 @@ h1 em{color:#63806c}
 .dash-card{transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
 .dash-card:hover{transform:translateY(-2px);box-shadow:var(--ary-shadow);border-color:#d5dfd5}
 .dash-card h3{font-size:15px;letter-spacing:-.25px}
-.dash-card p,.admin-side p{color:#748078;line-height:1.75}
+.dash-card p,.admin-side p{color:#46554b;line-height:1.75}
 .admin-layout{gap:20px}
 .admin-panel{box-shadow:var(--ary-shadow)}
 .admin-side{background:#eef3ed;border-color:#e1e9df}

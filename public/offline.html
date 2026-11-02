@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#174d3d">
+  <title>Offline — ARY Services</title>
+  <style>
+    :root {
+      --brand: #174d3d;
+      --accent: #d18b54;
+      --bg: #fbfaf7;
+      --surface: #ffffff;
+      --text: #1e293b;
+      --text-muted: #64748b;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0d1e18;
+        --surface: #142e24;
+        --text: #f1f5f9;
+        --text-muted: #94a3b8;
+      }
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: grid;
+      place-items: center;
+      min-height: 100vh;
+      text-align: center;
+      box-sizing: border-box;
+      padding: 24px;
+    }
+    .offline-card {
+      background: var(--surface);
+      border: 1px solid rgba(23, 77, 61, 0.12);
+      border-radius: 20px;
+      padding: 36px 28px;
+      max-width: 440px;
+      width: 100%;
+      box-shadow: 0 12px 36px rgba(0,0,0,0.06);
+    }
+    .icon-badge {
+      width: 58px;
+      height: 58px;
+      border-radius: 16px;
+      background: rgba(23, 77, 61, 0.08);
+      color: var(--brand);
+      display: grid;
+      place-items: center;
+      margin: 0 auto 18px;
+      font-size: 26px;
+    }
+    h1 {
+      font-size: 1.45rem;
+      margin: 0 0 10px;
+      color: var(--text);
+    }
+    p {
+      font-size: 0.92rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin: 0 0 24px;
+    }
+    .retry-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: var(--brand);
+      color: #ffffff;
+      border: none;
+      border-radius: 10px;
+      padding: 12px 24px;
+      font-size: 0.92rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      transition: opacity 0.15s ease;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .retry-btn:hover {
+      opacity: 0.9;
+    }
+    .hint {
+      margin-top: 18px;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="offline-card">
+    <div class="icon-badge">📡</div>
+    <h1>No Internet Connection</h1>
+    <p>You appear to be offline or experiencing weak mobile 4G in Sri Lanka. ARY Services requires an active network connection to process live quotes, security PINs, and job routing.</p>
+    <button class="retry-btn" onclick="window.location.reload()">
+      Retry Connection
+    </button>
+    <div class="hint">Your active session data will be restored automatically once connection resumes.</div>
+  </div>
+</body>
+</html>

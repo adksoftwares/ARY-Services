@@ -328,3 +328,57 @@ Standard responsive application shell with desktop topbar/sidebar and mobile bot
 3. **Never modify `server/` code or API routes** during front-end styling tasks.
 4. **Never use raw emojis** (`🚗`, `📍`, `🔒`, `⭐`) as primary UI controls or status icons.
 5. **Never write static inline style objects** (`style={{ padding: '20px', background: '#fff' }}`) when design system classes or primitives exist.
+
+---
+
+## 4. Internationalization (i18n)
+
+The application supports trilingual localization (English, Sinhala, Tamil) via `src/utils/i18n.jsx`:
+- **Dictionaries**: Structured JSON dictionaries located in [`src/utils/i18n/locales/`](file:///d:/ARY%20Services/src/utils/i18n/locales):
+  - `en.json` (English)
+  - `si.json` (සිංහල)
+  - `ta.json` (தமிழ்)
+- **Hook**: `useT()` provides dictionary lookup and parameterized translation:
+  ```jsx
+  const { t, language, setLanguage, formatLKR, formatDate, formatPhone } = useT();
+  ```
+- **Language Switcher**: `<LanguageSwitcher />` component available in headers across all four apps. User selection persists to `localStorage['ary_lang']`.
+- **Intl APIs**: Currency formatting (`Intl.NumberFormat('en-LK')`), date formatting (`Intl.DateTimeFormat(locale)`), and Sri Lankan phone number normalization (`+94 XX XXX XXXX`).
+
+---
+
+## 5. PWA & Offline Strategy
+
+- **Service Worker**: Each application registers `sw.js` serving cache-first static assets with network-first updates.
+- **Offline Fallback**: Failed HTML navigations fallback to [`public/offline.html`](file:///d:/ARY%20Services/public/offline.html) styled with ARY design system tokens, retry button, and offline status indicator.
+- **API Cache Isolation**: All `/api/*` network requests explicitly bypass CacheStorage to ensure sensitive and real-time state is never stale or cached offline.
+
+---
+
+## 6. Testing & Quality Assurance
+
+- **Unit Testing**: Vitest + `@testing-library/react` tests in `src/design-system/__tests__/`:
+  - `Button.test.jsx`: Variants, states, disabled behavior, loading spinners.
+  - `Badge.test.jsx`: Status pill mappings, variants, dots.
+  - `Modal.test.jsx`: Open/close lifecycle, escape key listener, accessibility attributes.
+  - `Input.test.jsx`: Form field bindings, password reveal toggle, select dropdowns.
+  - Command: `npm run test`
+- **End-to-End Smoke Flows**: Selenium test harness (`scripts/e2e_smoke_and_a11y.py`):
+  - Flow 1: Customer category browse and booking modal launch.
+  - Flow 2: Provider dashboard login, navigation, and job status management.
+  - Flow 3: Driver app online toggle, telemetry presence, and PIN verification.
+  - Flow 4: Admin dashboard login, overview KPIs, users management, and application review.
+- **Accessibility Gate**: Automated `axe-core` accessibility audit across all four applications with **0 critical/serious violations**. All colors pass WCAG 2.2 AA (>= 4.5:1 contrast).
+
+---
+
+## 7. Capacitor Mobile Configuration
+
+- **WebView Scheme**: `"androidScheme": "https"` standard for all Capacitor WebView apps (`mobile/customer`, `mobile/provider`, `mobile/driver`).
+- **Cleartext Security**: `network_security_config.xml` strictly disallows cleartext HTTP except for local development loopbacks (`localhost`, `10.0.2.2`). Production release builds mandate HTTPS.
+- **Plugins**:
+  - `StatusBar`: Dark style with `#174d3d` brand background.
+  - `SplashScreen`: Brand background `#174d3d` with auto-hide after 1500ms.
+  - `Keyboard`: Configured to resize the body on viewport adjustments.
+- **Hardware Back Button**: Handled gracefully via `Capacitor.Plugins.App.addListener('backButton')` to dismiss open modals/bottom sheets before closing the activity.
+

@@ -132,9 +132,9 @@ export default function DriverEarningsSummary({
       {completedJobs.length > 0 && (
         <Card style={{ padding: '18px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 14 }}>
-            <h4 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--color-neutral-900, #0f172a)' }}>
+            <h2 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--color-neutral-900, #0f172a)' }}>
               Completed Trip History ({completedJobs.length})
-            </h4>
+            </h2>
 
             <div style={{ maxWidth: 360 }}>
               <SegmentedControl

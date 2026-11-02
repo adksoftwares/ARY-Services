@@ -369,9 +369,9 @@ export default function DriverWorkspace({ onNotice }) {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
               <div className={`driver-switch-beacon ${presence.online ? 'online' : 'offline'}`} />
-              <b style={{ fontSize: '1.25rem', color: presence.online ? '#ffffff' : 'var(--color-neutral-900, #0f172a)' }}>
+              <h1 style={{ fontSize: '1.25rem', margin: 0, color: presence.online ? '#ffffff' : 'var(--color-neutral-900, #0f172a)' }}>
                 {presence.online ? 'ONLINE · Receiving Dispatches' : 'OFFLINE · Paused'}
-              </b>
+              </h1>
             </div>
             <p style={{ margin: 0, fontSize: '0.85rem', color: presence.online ? '#c7dfd4' : 'var(--color-neutral-600, #475569)', lineHeight: 1.5 }}>
               {presence.online
@@ -681,9 +681,9 @@ export default function DriverWorkspace({ onNotice }) {
       <Card style={{ padding: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
           <div>
-            <h3 style={{ margin: 0, fontSize: '1.05rem', color: 'var(--color-neutral-900, #0f172a)' }}>
+            <h2 style={{ margin: 0, fontSize: '1.05rem', color: 'var(--color-neutral-900, #0f172a)' }}>
               Driver Transport Streams
-            </h3>
+            </h2>
             <p style={{ margin: '3px 0 0', fontSize: '0.8rem', color: 'var(--color-neutral-600, #475569)' }}>
               Select which transportation streams you operate. Compliance review validates your driving license.
             </p>

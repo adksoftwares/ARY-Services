@@ -182,7 +182,13 @@ export default function AuthModal({ onNotice }) {
 
   return (
     <div className="modal-backdrop" onClick={closeAuthModal}>
-      <div className="modal-card" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true">
+      <div
+        className="modal-card"
+        onClick={e => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label={authMode === 'login' ? 'Sign in to ARY Services' : 'Create an ARY account'}
+      >
         <div className="modal-header">
           <div>
             <h3>{authMode === 'login' ? 'Sign In to ARY Services' : 'Create an Account'}</h3>

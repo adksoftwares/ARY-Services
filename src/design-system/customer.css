@@ -128,7 +128,7 @@
 .chips-label {
   font-size: var(--text-xs);
   font-weight: var(--font-bold);
-  color: var(--text-muted);
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-right: var(--space-1);
@@ -280,7 +280,7 @@
 
 .carousel-hint {
   font-size: var(--text-2xs);
-  color: var(--text-muted);
+  color: var(--text-secondary);
 }
 
 .popular-carousel-track {

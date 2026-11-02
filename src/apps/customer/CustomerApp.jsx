@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import { BrowserRouter, Link, Navigate, Route, Routes, useNavigate, useLocation } from 'react-router-dom';
 import {
   Search,
@@ -27,20 +27,29 @@ import { subscribeToAppEvents } from '../../utils/events';
 import HeroSection from '../../components/customer/HeroSection';
 import CategoryGrid from '../../components/customer/CategoryGrid';
 import ProviderCatalog from '../../components/customer/ProviderCatalog';
-import GroceryMarketplace from '../../components/customer/GroceryMarketplace';
-import MobilityServices from '../../components/customer/MobilityServices';
 import BookingModal from '../../components/customer/BookingModal';
-import MyBookingsList from '../../components/customer/MyBookingsList';
 import ReviewModal from '../../components/customer/ReviewModal';
 import DisputeModal from '../../components/customer/DisputeModal';
 import AccountView from '../../components/customer/AccountView';
-import DesignSystemShowcase from '../../components/design-system-showcase/DesignSystemShowcase';
 import AuthModal from '../../components/common/AuthModal';
 import Footer from '../../components/common/Footer';
 import NotificationCenter from '../../components/common/NotificationCenter';
 import OfflineBanner from '../../components/common/OfflineBanner';
-import { Button, ThemeToggle, ToastProvider, Modal, LanguageSwitcher, useToast } from '../../design-system';
+import { Button, ThemeToggle, ToastProvider, Modal, LanguageSwitcher, useToast, Skeleton } from '../../design-system';
 import { LanguageProvider, useT } from '../../utils/i18n';
+
+// Route-level and heavy section code-splitting
+const GroceryMarketplace = lazy(() => import('../../components/customer/GroceryMarketplace'));
+const MobilityServices = lazy(() => import('../../components/customer/MobilityServices'));
+const MyBookingsList = lazy(() => import('../../components/customer/MyBookingsList'));
+const DesignSystemShowcase = lazy(() => import('../../components/design-system-showcase/DesignSystemShowcase'));
+
+const SectionFallback = () => (
+  <div style={{ padding: 'var(--space-6) var(--space-4)', display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+    <Skeleton height="28px" width="30%" />
+    <Skeleton height="140px" width="100%" borderRadius="var(--radius-lg)" />
+  </div>
+);
 
 const SERVICES = [
   { id: 1, name: 'Food Shops', slug: 'food-shops', description: 'Explore local shops and place an order', icon: ShoppingBasket, color: 'peach' },
@@ -421,30 +430,40 @@ function CustomerWorkspace() {
               />
 
               <div id="mobility-section">
-                <MobilityServices onNotice={setNotice} />
+                <Suspense fallback={<SectionFallback />}>
+                  <MobilityServices onNotice={setNotice} />
+                </Suspense>
               </div>
 
               <div id="grocery-section">
-                <GroceryMarketplace />
+                <Suspense fallback={<SectionFallback />}>
+                  <GroceryMarketplace />
+                </Suspense>
               </div>
             </>
           } />
 
           <Route path="/bookings" element={
-            <MyBookingsList
-              bookings={bookings}
-              isLoading={loadingBookings}
-              onRefresh={fetchBookings}
-              onCancelBooking={handleCancelBooking}
-              onOpenDisputeModal={setDisputeBookingItem}
-              onOpenReviewModal={setReviewBooking}
-              onRescheduleBooking={handleRescheduleBooking}
-              onQuoteDecision={handleQuoteDecision}
-              onExploreServices={() => navigate('/')}
-            />
+            <Suspense fallback={<SectionFallback />}>
+              <MyBookingsList
+                bookings={bookings}
+                isLoading={loadingBookings}
+                onRefresh={fetchBookings}
+                onCancelBooking={handleCancelBooking}
+                onOpenDisputeModal={setDisputeBookingItem}
+                onOpenReviewModal={setReviewBooking}
+                onRescheduleBooking={handleRescheduleBooking}
+                onQuoteDecision={handleQuoteDecision}
+                onExploreServices={() => navigate('/')}
+              />
+            </Suspense>
           } />
 
-          <Route path="/design-system" element={<DesignSystemShowcase />} />
+          <Route path="/design-system" element={
+            <Suspense fallback={<SectionFallback />}>
+              <DesignSystemShowcase />
+            </Suspense>
+          } />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
