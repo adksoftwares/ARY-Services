@@ -21,6 +21,14 @@ async function readJobs() {
   const state = await readPersistentState('driver-services', dataFile, emptyDriverState);
   return { applications: state.applications || [], jobs: state.jobs || [], presence: state.presence || {} };
 }
+
+const groceryOrdersFile = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'data', 'grocery-orders.json');
+async function isGroceryOrderReadyForDriver(orderReference) {
+  if (!String(orderReference || '').startsWith('gord-')) return true;
+  const orders = await readPersistentState('grocery_orders', groceryOrdersFile, []);
+  return orders.some(order => order.id === orderReference && order.status === 'ready_for_pickup');
+}
+
 const id=prefix=>prefix+'_'+crypto.randomUUID().replaceAll('-','').slice(0,12);
 const types=['food_delivery','ride','parcel_delivery'];
 const cleanCoordinates = cleanSriLankaCoordinates;
@@ -239,8 +247,9 @@ export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadc
     const d=await readJobs();const approved=d.applications.filter(a=>a.userId===req.user.id&&a.status==='approved').map(a=>a.driverType);
     const presence=d.presence[req.user.id]||{online:false};
     const freshPresence=isDriverPresenceFresh(presence);
+    const eligibleJobs = await Promise.all(d.jobs.map(async job => ({ job, ready: await isGroceryOrderReadyForDriver(job.orderReference) })));
     const jobs=rankJobsForDriver(
-      d.jobs.filter(j=>approved.includes(j.serviceType)&&(j.driverId===req.user.id||(j.status==='requested'&&freshPresence))),
+      eligibleJobs.filter(item=>item.ready).map(item=>item.job).filter(j=>approved.includes(j.serviceType)&&(j.driverId===req.user.id||(j.status==='requested'&&freshPresence))),
       presence
     );
     res.json({jobs:jobs.map(job=>safeMobilityJob(job,req.user.id)),approvedDriverTypes:approved,presence:{...presence,online:freshPresence}});
@@ -248,6 +257,9 @@ export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadc
   app.post('/api/driver-jobs/:id/claim',requireAuth,async(req,res)=>{
     if(req.user.accountType!=='driver')return res.status(403).json({error:'Driver account required.'});
     try{
+      const existingState=await readJobs();
+      const candidate=existingState.jobs.find(job=>job.id===req.params.id);
+      if(candidate && !(await isGroceryOrderReadyForDriver(candidate.orderReference)))return res.status(409).json({error:'This grocery order is not ready for pickup yet.'});
       const result=await mutateJobs(d=>{
         const job=d.jobs.find(j=>j.id===req.params.id);if(!job)return {status:404,error:'Job not found.'};
         const approved=d.applications.some(a=>a.userId===req.user.id&&a.driverType===job.serviceType&&a.status==='approved');
