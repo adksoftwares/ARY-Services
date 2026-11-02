@@ -17,6 +17,8 @@ export default function DriverWorkspace({ onNotice }) {
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [presence, setPresence] = useState({ online: false });
+  const [presenceBusy, setPresenceBusy] = useState(false);
 
   const refresh = useCallback(async () => {
     if (!currentUser?.token) return;
@@ -29,6 +31,7 @@ export default function DriverWorkspace({ onNotice }) {
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || 'Could not load driver jobs.');
       setJobs(data.jobs || []);
+      if (data.presence) setPresence(data.presence);
     } catch (err) {
       setError(err.message || 'Could not load driver jobs.');
     } finally {
@@ -37,6 +40,68 @@ export default function DriverWorkspace({ onNotice }) {
   }, [currentUser?.token]);
 
   useEffect(() => { refresh(); }, [refresh]);
+
+  async function savePresence(online, coords) {
+    const response = await fetch(`${API_BASE}/driver-presence`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${currentUser.token}` },
+      body: JSON.stringify({ online, ...(coords || {}) })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || 'Could not update driver availability.');
+    setPresence(data.presence || { online });
+    return data.presence;
+  }
+
+  async function toggleOnline() {
+    if (!currentUser?.token || presenceBusy) return;
+    setPresenceBusy(true);
+    setError('');
+    try {
+      if (presence.online) {
+        await savePresence(false);
+        onNotice?.('You are now offline. Location sharing has stopped.');
+      } else {
+        if (!navigator.geolocation) throw new Error('This browser does not support GPS location.');
+        const position = await new Promise((resolve, reject) => navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true, timeout: 15000, maximumAge: 10000
+        }));
+        await savePresence(true, {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+          accuracyM: position.coords.accuracy
+        });
+        onNotice?.('You are online. Nearby eligible jobs will appear here.');
+      }
+      await refresh();
+    } catch (err) {
+      setError(err.code === 1 ? 'Location permission is required to go online.' : err.message || 'Could not update availability.');
+    } finally {
+      setPresenceBusy(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!presence.online || !currentUser?.token || !navigator.geolocation) return undefined;
+    let lastSentAt = 0;
+    const watchId = navigator.geolocation.watchPosition(async position => {
+      const now = Date.now();
+      if (now - lastSentAt < 12000) return;
+      lastSentAt = now;
+      try {
+        await savePresence(true, {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+          accuracyM: position.coords.accuracy
+        });
+      } catch (err) {
+        setError(err.message || 'Live location update failed.');
+      }
+    }, err => {
+      setError(err.code === 1 ? 'Location permission was revoked. Switch offline and re-enable location to continue.' : 'GPS signal is temporarily unavailable.');
+    }, { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 });
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, [presence.online, currentUser?.token]);
 
   useEffect(() => {
     if (!currentUser?.token) return undefined;
@@ -143,6 +208,16 @@ export default function DriverWorkspace({ onNotice }) {
         </div>
       </section>
 
+      <section style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 14, flexWrap: 'wrap', padding: 16, border: '1px solid #e5ebe3', borderRadius: 14, background: presence.online ? '#eff8f0' : '#fff', marginBottom: 20 }}>
+        <div>
+          <b style={{ color: '#263b31' }}>Driver availability</b>
+          <p style={{ margin: '5px 0 0', color: '#718076', fontSize: 12 }}>{presence.online ? 'Live location is being shared while this page remains open.' : 'Go online to receive nearby eligible jobs. Your browser will ask for GPS permission.'}</p>
+          {presence.online && presence.updatedAt && <small style={{ color: '#718076' }}>Last location update: {new Date(presence.updatedAt).toLocaleTimeString()}</small>}
+        </div>
+        <button type="button" onClick={toggleOnline} disabled={presenceBusy} style={{ border: 0, borderRadius: 9, padding: '11px 17px', background: presence.online ? '#8a3434' : '#174d3d', color: '#fff', fontWeight: 700 }}>
+          {presenceBusy ? 'Updating…' : presence.online ? 'Go offline' : 'Go online'}
+        </button>
+      </section>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 14 }}>
         <div><h2 style={{ fontSize: 22, margin: 0 }}>Available and assigned jobs</h2><p style={{ fontSize: 12, color: '#788078', margin: '5px 0 0' }}>New jobs refresh automatically when the dispatch system sends an update.</p></div>
         <button onClick={refresh} disabled={loading} aria-label="Refresh jobs" style={{ padding: 10, border: '1px solid #dce5dc', borderRadius: 9, background: '#fff', color: '#174d3d' }}><RefreshCw size={16}/></button>
@@ -165,6 +240,7 @@ export default function DriverWorkspace({ onNotice }) {
           </div>
           <p style={{ fontSize: 13, color: '#68756b', lineHeight: 1.7, margin: '12px 0' }}>
             <b>Pickup:</b> {job.pickupAddress}<br/><b>Drop-off:</b> {job.destinationAddress}
+            {job.distanceKm !== null && job.distanceKm !== undefined && <><br/><b>Distance to {job.serviceType === 'food_delivery' ? 'customer' : 'pickup'}:</b> {job.distanceKm} km {job.etaMinutes ? `· about ${job.etaMinutes} min` : ''}</>}
           </p>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {job.status === 'requested' && <button onClick={() => claim(job.id)} className="register-nav-btn">Accept job <ArrowUpRight size={14}/></button>}
