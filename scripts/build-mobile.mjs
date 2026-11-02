@@ -11,6 +11,13 @@ export async function buildMobileApp(appName) {
     throw new Error(`Unknown app "${appName}". Available apps: ${APPS.join(', ')}`);
   }
 
+  const apiBase = String(process.env.ARY_API_BASE || process.env.VITE_API_BASE || '').trim().replace(/\\/$/, '');
+  if (!apiBase) throw new Error('Set ARY_API_BASE to the deployed HTTPS API base (for example https://api.example.com/api) before building native apps.');
+  let parsedApiBase;
+  try { parsedApiBase = new URL(apiBase); } catch { throw new Error('ARY_API_BASE must be a valid absolute HTTPS URL.'); }
+  if (parsedApiBase.protocol !== 'https:' || !parsedApiBase.pathname.replace(/\\/$/, '').endsWith('/api')) throw new Error('ARY_API_BASE must use HTTPS and end with /api.');
+  process.env.VITE_API_BASE = apiBase;
+
   const root = process.cwd();
   const mobileDir = path.resolve(root, 'mobile', appName);
   const outDir = path.resolve(mobileDir, 'dist');
