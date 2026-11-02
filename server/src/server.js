@@ -243,8 +243,16 @@ registerGroceryRoutes(app, { requireAuth });
 await initStorage();
 
 // Real-time Server-Sent Events (SSE) Dispatch Hub
+app.post('/api/events-ticket', requireAuth, (req, res) => {
+  const ticket = generateToken({ id: req.user.id, accountType: req.user.accountType, purpose: 'sse', exp: Date.now() + 5 * 60 * 1000 });
+  res.setHeader('Cache-Control', 'no-store');
+  return res.json({ ticket, expiresInSeconds: 300 });
+});
+
 app.get('/api/events', (req, res) => {
-  subscribeToEvents(req, res);
+  const identity = verifyToken(String(req.query.ticket || ''));
+  if (!identity || identity.purpose !== 'sse') return res.status(401).end();
+  subscribeToEvents(req, res, { id: identity.id, role: identity.accountType });
 });
 
 // Comprehensive Health & Kubernetes Readiness Probes
