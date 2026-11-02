@@ -180,8 +180,8 @@ export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadc
     if(!pickupAddress||!destinationAddress||!Number.isInteger(count)||count<1||count>6)return res.status(400).json({error:'Valid pickup, destination and passenger count (1-6) are required.'});
     const pickup=cleanCoordinates(req.body?.pickupLat,req.body?.pickupLng);
     const destination=cleanCoordinates(req.body?.destinationLat,req.body?.destinationLng);
-    const startPin=makePin();
-    const job={id:id('ride'),serviceType:'ride',customerId:req.user.id,customerName:req.user.fullName,pickupAddress:String(pickupAddress).slice(0,500),destinationAddress:String(destinationAddress).slice(0,500),pickupLat:pickup?.lat??null,pickupLng:pickup?.lng??null,destinationLat:destination?.lat??null,destinationLng:destination?.lng??null,passengerCount:count,notes:String(notes).slice(0,500),driverId:null,status:'requested',startPinHash:pinDigest(startPin),startPinForCustomer:startPin,pinAttempts:0,createdAt:new Date().toISOString()};
+    const startPin=makePin(),deliveryPin=makePin();
+    const job={id:id('ride'),serviceType:'ride',customerId:req.user.id,customerName:req.user.fullName,pickupAddress:String(pickupAddress).slice(0,500),destinationAddress:String(destinationAddress).slice(0,500),pickupLat:pickup?.lat??null,pickupLng:pickup?.lng??null,destinationLat:destination?.lat??null,destinationLng:destination?.lng??null,passengerCount:count,notes:String(notes).slice(0,500),driverId:null,status:'requested',startPinHash:pinDigest(startPin),startPinForCustomer:startPin,deliveryPinHash:pinDigest(deliveryPin),deliveryPinForCustomer:deliveryPin,pinAttempts:0,deliveryPinAttempts:0,createdAt:new Date().toISOString()};
     await mutateJobs(d=>{d.jobs.unshift(job);});
     broadcastEvent?.('driver:job_created',{job:safeMobilityJob(job),customerId:job.customerId,driverId:job.driverId});res.status(201).json({job:safeMobilityJob(job,req.user.id)});
   });
