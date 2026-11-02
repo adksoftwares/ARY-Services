@@ -10,7 +10,8 @@ import Footer from '../../components/common/Footer';
 import NotificationCenter from '../../components/common/NotificationCenter';
 import OfflineBanner from '../../components/common/OfflineBanner';
 import ProviderServicesManager from '../../components/provider/ProviderServicesManager';
-import { ThemeToggle, Button } from '../../design-system';
+import { ThemeToggle, Button, LanguageSwitcher } from '../../design-system';
+import { LanguageProvider } from '../../utils/i18n';
 
 function ProviderWorkspace() {
   const { currentUser, openAuthModal, logout, switchRole } = useAuth();
@@ -105,6 +106,7 @@ function ProviderWorkspace() {
           <span className="nav-link-btn"><BriefcaseBusiness size={14}/> Provider workspace</span>
         </nav>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <LanguageSwitcher />
           <ThemeToggle />
           {isProvider ? (
             <div className="user-profile">
@@ -209,10 +211,12 @@ function ProviderWorkspace() {
 
 export default function ProviderApp() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <ProviderWorkspace/>
-      </BrowserRouter>
-    </AuthProvider>
+    <LanguageProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          <ProviderWorkspace/>
+        </BrowserRouter>
+      </AuthProvider>
+    </LanguageProvider>
   );
 }

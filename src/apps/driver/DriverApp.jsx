@@ -9,7 +9,8 @@ import AuthModal from '../../components/common/AuthModal';
 import Footer from '../../components/common/Footer';
 import NotificationCenter from '../../components/common/NotificationCenter';
 import OfflineBanner from '../../components/common/OfflineBanner';
-import { ThemeToggle, Button } from '../../design-system';
+import { ThemeToggle, Button, LanguageSwitcher } from '../../design-system';
+import { LanguageProvider } from '../../utils/i18n';
 
 function DriverPortal() {
   const { currentUser, openAuthModal, logout, switchRole } = useAuth();
@@ -38,6 +39,7 @@ function DriverPortal() {
           <span className="nav-link-btn"><Bike size={14}/> Driver workspace</span>
         </nav>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <LanguageSwitcher />
           <ThemeToggle />
           {isDriver ? (
             <div className="user-profile">
@@ -133,10 +135,12 @@ function DriverPortal() {
 
 export default function DriverApp() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <DriverPortal/>
-      </BrowserRouter>
-    </AuthProvider>
+    <LanguageProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          <DriverPortal/>
+        </BrowserRouter>
+      </AuthProvider>
+    </LanguageProvider>
   );
 }

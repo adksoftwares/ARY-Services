@@ -36,7 +36,8 @@ import AuthModal from '../../components/common/AuthModal';
 import Footer from '../../components/common/Footer';
 import NotificationCenter from '../../components/common/NotificationCenter';
 import OfflineBanner from '../../components/common/OfflineBanner';
-import { Button, ThemeToggle, ToastProvider, Modal } from '../../design-system';
+import { Button, ThemeToggle, ToastProvider, Modal, LanguageSwitcher } from '../../design-system';
+import { LanguageProvider, useT } from '../../utils/i18n';
 
 const SERVICES = [
   { id: 1, name: 'Food Shops', slug: 'food-shops', description: 'Explore local shops and place an order', icon: ShoppingBasket, color: 'peach' },
@@ -69,6 +70,7 @@ function CustomerHeader({ onOpenProfile }) {
       </nav>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <LanguageSwitcher />
         <ThemeToggle />
 
         {currentUser ? (
@@ -488,12 +490,14 @@ function CustomerWorkspace() {
 
 export default function CustomerApp() {
   return (
-    <ToastProvider>
-      <AuthProvider>
-        <BrowserRouter>
-          <CustomerWorkspace />
-        </BrowserRouter>
-      </AuthProvider>
-    </ToastProvider>
+    <LanguageProvider>
+      <ToastProvider>
+        <AuthProvider>
+          <BrowserRouter>
+            <CustomerWorkspace />
+          </BrowserRouter>
+        </AuthProvider>
+      </ToastProvider>
+    </LanguageProvider>
   );
 }

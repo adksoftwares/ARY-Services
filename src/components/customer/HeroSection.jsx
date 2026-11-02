@@ -20,6 +20,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { fetchCurrentLocationAddress, getLastDetectedCoordinates } from '../../utils/location';
 import { Button } from '../../design-system';
+import { useT } from '../../utils/i18n';
 
 export default function HeroSection({
   address,
@@ -31,6 +32,7 @@ export default function HeroSection({
   onLocationDetected
 }) {
   const { isCustomerLoggedIn, openAuthModal } = useAuth();
+  const { t } = useT();
   const [isLocating, setIsLocating] = useState(false);
 
   async function handleDetectLocation() {
@@ -68,10 +70,9 @@ export default function HeroSection({
         </div>
 
         <h1>
-          Good help is<br />
-          <em>closer than you think.</em>
+          {t('heroTitle', 'Good help is closer than you think.')}
         </h1>
-        <p>Discover local shops, verified tradespeople, rides, and reliable delivery across Sri Lanka.</p>
+        <p>{t('heroSubtitle', 'Discover local shops, verified tradespeople, rides, and reliable delivery across Sri Lanka.')}</p>
 
         <div className="search-panel">
           <label className="search-field">
@@ -99,7 +100,7 @@ export default function HeroSection({
             <input
               value={query}
               onChange={e => setQuery(e.target.value)}
-              placeholder="What service do you need?"
+              placeholder={t('searchPlaceholder', 'What service do you need?')}
               aria-label="Service or shop keyword"
             />
           </label>
@@ -113,7 +114,7 @@ export default function HeroSection({
               else if (onNotice) onNotice('Showing services matching your search.');
             }}
           >
-            Find services
+            {t('findServices', 'Find services')}
           </Button>
         </div>
 

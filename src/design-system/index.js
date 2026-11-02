@@ -19,3 +19,4 @@ export { Skeleton, EmptyState, ErrorState } from './components/States';
 export { Stepper, RatingStars, ConfirmDialog } from './components/Feedback';
 export { DataTable, Pagination, Tooltip } from './components/DataDisplay';
 export { ThemeToggle } from './components/ThemeToggle';
+export { default as LanguageSwitcher } from './LanguageSwitcher';

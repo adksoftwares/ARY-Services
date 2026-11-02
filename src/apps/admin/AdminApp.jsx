@@ -8,7 +8,8 @@ import AuthModal from '../../components/common/AuthModal';
 import Footer from '../../components/common/Footer';
 import OfflineBanner from '../../components/common/OfflineBanner';
 import { subscribeToAppEvents } from '../../utils/events';
-import { ThemeToggle, Button } from '../../design-system';
+import { ThemeToggle, Button, LanguageSwitcher } from '../../design-system';
+import { LanguageProvider } from '../../utils/i18n';
 
 const initialServices = [
   { id: 1, name: 'Food Shops', slug: 'food-shops', description: 'Explore local shops and place an order', color: 'peach' },
@@ -79,6 +80,7 @@ function AdminPortal() {
               <span className="brand-mark">A</span><span>ARY <b>Admin</b></span>
             </Link>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <LanguageSwitcher />
               <ThemeToggle />
               <button className="sign-in" onClick={() => openAuthModal('login')}>
                 <LogIn size={14}/> Admin sign in
@@ -142,10 +144,12 @@ function AdminPortal() {
 
 export default function AdminApp() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <AdminPortal />
-      </BrowserRouter>
-    </AuthProvider>
+    <LanguageProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          <AdminPortal />
+        </BrowserRouter>
+      </AuthProvider>
+    </LanguageProvider>
   );
 }
