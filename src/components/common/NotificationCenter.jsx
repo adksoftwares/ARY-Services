@@ -7,7 +7,7 @@ import { subscribeToAppEvents } from '../../utils/events';
 const EVENTS = [
   'booking:created','booking:status_updated','booking:quote_sent','booking:quote_decided','booking:reschedule_requested','booking:reschedule_decided','driver:job_created','driver:job_updated',
   'driver:application_reviewed','grocery:order_created','grocery:order_updated',
-  'review:submitted','user:status_changed'
+  'review:submitted','user:status_changed','provider:service_request_created','provider:service_request_reviewed'
 ];
 
 export default function NotificationCenter() {
