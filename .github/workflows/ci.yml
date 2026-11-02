@@ -39,7 +39,13 @@ jobs:
       - run: npm ci
         working-directory: server
       - name: Run backend integration tests
-        run: node test/verify.js
+        run: npm test
+        working-directory: server
+      - name: Run focused security, grocery and mobility tests
+        run: |
+          npm run test:security
+          npm run test:grocery-storage
+          npm run test:mobility
         working-directory: server
 
   postgres-storage:
