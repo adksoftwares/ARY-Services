@@ -8,6 +8,8 @@ import DriverApplicationsAdmin from '../../components/admin/DriverApplicationsAd
 import RoleApplicationsAdmin from '../../components/admin/RoleApplicationsAdmin';
 import AuthModal from '../../components/common/AuthModal';
 import Footer from '../../components/common/Footer';
+import NotificationCenter from '../../components/common/NotificationCenter';
+import { subscribeToAppEvents } from '../../utils/events';
 
 const initialServices = [
   { id: 1, name: 'Food Shops', slug: 'food-shops', description: 'Explore local shops and place an order', color: 'peach' },
@@ -51,11 +53,8 @@ function AdminPortal() {
 
   useEffect(() => {
     if (!isAdmin) return undefined;
-    const events = new EventSource(`${API_BASE}/events`);
     const refresh = () => fetchAdminUsers();
-    events.addEventListener('driver:application_created', refresh);
-    events.addEventListener('driver:application_reviewed', refresh);
-    return () => events.close();
+    return subscribeToAppEvents(currentUser?.token, { 'driver:application_created': refresh, 'driver:application_reviewed': refresh, 'user:registered': refresh, 'user:status_changed': refresh });
   }, [isAdmin, fetchAdminUsers]);
 
   return <div className="app-shell">
@@ -64,6 +63,7 @@ function AdminPortal() {
         <span className="brand-mark">A</span><span>ARY <b>Admin</b></span>
       </Link>
       {isAdmin ? <>
+        <div className="user-profile"><NotificationCenter/></div>
         <nav className="header-nav-links">
           <button className="nav-link-btn" onClick={() => setActiveSection('workspace')}><LayoutDashboard size={14}/> Admin workspace</button>
           <button className="nav-link-btn" onClick={() => setActiveSection('drivers')}><Bike size={14}/> Driver approvals</button>
