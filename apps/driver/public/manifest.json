@@ -1,0 +1,10 @@
+{
+  "name": "ARY Services — Driver Network",
+  "short_name": "ARY Driver",
+  "description": "Driver and mobility dispatch portal for ARY Services in Sri Lanka.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fbfaf7",
+  "theme_color": "#174d3d",
+  "orientation": "portrait"
+}

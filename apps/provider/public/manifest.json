@@ -1,0 +1,10 @@
+{
+  "name": "ARY Services — Partner Portal",
+  "short_name": "ARY Partner",
+  "description": "Provider and contractor portal for ARY Services in Sri Lanka.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fbfaf7",
+  "theme_color": "#174d3d",
+  "orientation": "portrait"
+}
