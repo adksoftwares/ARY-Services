@@ -793,7 +793,8 @@ app.get('/api/providers', async (req, res) => {
       providers = providers.filter(p =>
         (p.fullName && p.fullName.toLowerCase().includes(q)) ||
         (p.location && p.location.toLowerCase().includes(q)) ||
-        (p.categoryName && p.categoryName.toLowerCase().includes(q))
+        (p.categoryName && p.categoryName.toLowerCase().includes(q)) ||
+        (Array.isArray(p.approvedServices) && p.approvedServices.some(service => (service.serviceName || '').toLowerCase().includes(q) || (service.description || '').toLowerCase().includes(q)))
       );
     }
 
@@ -1041,28 +1042,29 @@ app.post('/api/bookings', requireAuth, async (req, res) => {
     const customer = req.user;
     if (customer.accountType !== 'customer') return res.status(403).json({ error: 'Customer account required to create a service booking.' });
     const {
-      providerId,
-      categorySlug,
-      categoryName,
-      serviceAddress,
-      bookingDate,
-      bookingTime,
-      problemDescription
-    } = req.body;
-
-    if (!providerId || !serviceAddress || !problemDescription) {
-      return res.status(400).json({ error: 'Provider, service address, and service description are required.' });
+      providerId, categorySlug, serviceAddress, bookingDate, bookingTime, problemDescription
+    } = req.body || {};
+    const cleanAddress = String(serviceAddress || '').trim().slice(0, 500);
+    const cleanProblem = String(problemDescription || '').trim().slice(0, 2000);
+    const allowedTimes = ['Morning (9 AM - 12 PM)', 'Afternoon (1 PM - 5 PM)', 'Evening (5 PM - 8 PM)', 'Emergency (ASAP)'];
+    const chosenDate = String(bookingDate || new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Colombo' }).format(new Date()));
+    const parsedDate = new Date(chosenDate + 'T00:00:00Z');
+    const localToday = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Colombo' }).format(new Date());
+    if (!providerId || !cleanAddress || cleanProblem.length < 5 ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(chosenDate) || Number.isNaN(parsedDate.getTime()) ||
+      parsedDate.toISOString().slice(0, 10) !== chosenDate || chosenDate < localToday ||
+      !allowedTimes.includes(bookingTime || 'Morning (9 AM - 12 PM)')) {
+      return res.status(400).json({ error: 'Enter a valid service address, a clear description, a future booking date and an available time slot.' });
     }
 
     const users = await getUsers();
     const provider = users.find(u => u.id === providerId && u.accountType === 'provider' && u.status === 'active' && (u.category === categorySlug || (Array.isArray(u.approvedServices) && u.approvedServices.some(service => service.categorySlug === categorySlug))));
-
-    if (!provider) {
-      return res.status(404).json({ error: 'Selected service provider was not found.' });
-    }
+    if (!provider) return res.status(404).json({ error: 'Selected approved service provider was not found.' });
+    const selectedService = (provider.approvedServices || []).find(service => service.categorySlug === categorySlug);
+    const selectedCharge = selectedService?.baseCharge ?? provider.baseCharge ?? '1500';
 
     // Escrow & Financial Commission Calculations (10% platform commission, 90% provider payout)
-    const rawDigits = String(provider.baseCharge || '1500').replace(/[^0-9]/g, '');
+    const rawDigits = String(selectedCharge).replace(/[^0-9]/g, '');
     const baseAmount = parseInt(rawDigits, 10) || 1500;
     const platformFee = Math.round(baseAmount * 0.10);
     const providerPayout = baseAmount - platformFee;
@@ -1075,7 +1077,7 @@ app.post('/api/bookings', requireAuth, async (req, res) => {
     const paymentStatus = 'pending_cash';
 
     const newBooking = {
-      id: 'book-' + Date.now(),
+      id: 'book-' + crypto.randomUUID(),
       customerId: customer.id,
       customerName: customer.fullName || 'Customer',
       customerPhone: customer.phone,
@@ -1083,12 +1085,13 @@ app.post('/api/bookings', requireAuth, async (req, res) => {
       providerName: provider.fullName,
       providerPhone: provider.phone,
       categorySlug: categorySlug || provider.category || 'general',
-      categoryName: categoryName || provider.categoryName || 'General Services',
-      serviceAddress: serviceAddress.trim(),
-      bookingDate: bookingDate || new Date().toISOString().split('T')[0],
+      categoryName: selectedService?.categoryName || (provider.category === categorySlug ? provider.categoryName : PROVIDER_SERVICE_CATEGORIES.get(categorySlug)) || 'General Services',
+      serviceName: selectedService?.serviceName || provider.categoryName || 'General Service',
+      serviceAddress: cleanAddress,
+      bookingDate: chosenDate,
       bookingTime: bookingTime || 'Morning (9 AM - 12 PM)',
-      problemDescription: problemDescription.trim(),
-      baseCharge: provider.baseCharge || 'LKR 1,500',
+      problemDescription: cleanProblem,
+      baseCharge: 'LKR ' + baseAmount.toLocaleString('en-LK'),
       baseAmount,
       platformFee,
       providerPayout,
