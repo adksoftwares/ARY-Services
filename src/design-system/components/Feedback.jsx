@@ -1,0 +1,114 @@
+import React from 'react';
+import { Star, Check } from 'lucide-react';
+import { Modal } from './Modal';
+import { Button } from './Button';
+
+export function Stepper({
+  steps = [], // array of string labels or { label, description }
+  currentStep = 0, // 0-indexed
+  className = ''
+}) {
+  return (
+    <div className={`ds-stepper ${className}`} aria-label="Progress">
+      {steps.map((step, index) => {
+        const isCompleted = index < currentStep;
+        const isActive = index === currentStep;
+        const label = typeof step === 'string' ? step : step.label;
+
+        return (
+          <div
+            key={index}
+            className={`ds-step ${isCompleted ? 'completed' : ''} ${isActive ? 'active' : ''}`}
+          >
+            <div className="ds-step-dot" aria-hidden="true">
+              {isCompleted ? <Check size={14} /> : index + 1}
+            </div>
+            <span className="ds-step-label">{label}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+export function RatingStars({
+  rating = 0,
+  max = 5,
+  interactive = false,
+  onChange,
+  size = 18,
+  className = ''
+}) {
+  return (
+    <div className={`ds-rating-stars ${className}`} role="img" aria-label={`Rating: ${rating} out of ${max} stars`}>
+      {Array.from({ length: max }).map((_, i) => {
+        const starIndex = i + 1;
+        const isFilled = starIndex <= Math.round(rating);
+
+        if (interactive) {
+          return (
+            <button
+              key={i}
+              type="button"
+              className="ds-star-interactive"
+              onClick={() => onChange && onChange(starIndex)}
+              aria-label={`Rate ${starIndex} stars`}
+            >
+              <Star
+                size={size}
+                fill={isFilled ? 'currentColor' : 'none'}
+              />
+            </button>
+          );
+        }
+
+        return (
+          <Star
+            key={i}
+            size={size}
+            fill={isFilled ? 'currentColor' : 'none'}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+export function ConfirmDialog({
+  isOpen,
+  onClose,
+  onConfirm,
+  title = 'Are you sure?',
+  message = 'This action cannot be undone.',
+  confirmLabel = 'Confirm',
+  cancelLabel = 'Cancel',
+  isDanger = false,
+  loading = false
+}) {
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={title}
+      maxWidth="440px"
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose} disabled={loading}>
+            {cancelLabel}
+          </Button>
+          <Button
+            variant={isDanger ? 'danger' : 'primary'}
+            onClick={onConfirm}
+            loading={loading}
+          >
+            {confirmLabel}
+          </Button>
+        </>
+      }
+    >
+      <p style={{ margin: 0, fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', lineHeight: 'var(--leading-relaxed)' }}>
+        {message}
+      </p>
+    </Modal>
+  );
+}
