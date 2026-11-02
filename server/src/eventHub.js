@@ -12,6 +12,7 @@ function canReceive(client, eventType, payload = {}) {
       userId === (payload.providerId || booking.providerId);
   }
   if (eventType.startsWith('driver:')) {
+    if (client.role === 'driver' && eventType === 'driver:job_created') return true;
     return client.role === 'driver' && (userId === payload.driverId || userId === payload.userId || userId === job.driverId) ||
       userId === payload.customerId || userId === job.customerId;
   }
