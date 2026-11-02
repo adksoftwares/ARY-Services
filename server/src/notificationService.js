@@ -32,6 +32,8 @@ function describeNotification(eventType, payload = {}) {
   const order = payload.order || {};
   if (eventType === 'user:registered') return { title: 'New account registration', body: 'A new ARY Services account has been registered.', resourceType: 'account', resourceId: payload.user?.id || null };
   if (eventType === 'booking:created') return { title: 'New service booking', body: 'A service booking request has been created.', resourceType: 'booking', resourceId: booking.id || null };
+  if (eventType === 'booking:quote_sent') return { title: 'New service quote', body: 'Your service provider has sent a price quote. Review it in My Bookings.', resourceType: 'booking', resourceId: payload.bookingId || null };
+  if (eventType === 'booking:quote_decided') return { title: 'Service quote decision', body: `The customer has ${payload.status || 'updated'} the service quote.`, resourceType: 'booking', resourceId: payload.bookingId || null };
   if (eventType === 'booking:reschedule_requested') return { title: 'Booking time change requested', body: 'A customer has requested a new service date and time.', resourceType: 'booking', resourceId: payload.bookingId || null };
   if (eventType === 'booking:reschedule_decided') return { title: 'Reschedule decision received', body: `The new booking time request was ${payload.status || 'updated'}.`, resourceType: 'booking', resourceId: payload.bookingId || null };
   if (eventType === 'booking:status_updated') return { title: 'Booking updated', body: `Your booking status is now ${String(payload.status || booking.status || 'updated').replaceAll('_', ' ')}.`, resourceType: 'booking', resourceId: payload.bookingId || booking.id || null };
