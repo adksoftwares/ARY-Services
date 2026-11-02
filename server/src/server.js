@@ -1101,6 +1101,72 @@ app.patch('/api/bookings/:id/status', requireAuth, async (req, res) => {
   }
 });
 
+// Provider sends a service quote; the customer explicitly accepts or declines it.
+app.post('/api/bookings/:id/quote', requireAuth, async (req, res) => {
+  try {
+    const amount = Number(req.body?.amount);
+    const description = String(req.body?.description || '').trim().slice(0, 1000);
+    if (!Number.isSafeInteger(amount) || amount < 1 || amount > 10000000 || description.length < 5) {
+      return res.status(400).json({ error: 'Enter a whole-number quote between LKR 1 and LKR 10,000,000 and a short description.' });
+    }
+    const bookings = await getBookings();
+    const booking = bookings.find(item => item.id === req.params.id);
+    if (!booking) return res.status(404).json({ error: 'Booking not found.' });
+    if (req.user.accountType !== 'provider' || booking.providerId !== req.user.id) {
+      return res.status(403).json({ error: 'Only the assigned provider can send a service quote.' });
+    }
+    if (!['requested', 'accepted'].includes(booking.status)) return res.status(409).json({ error: 'Quotes can only be sent for pending or accepted bookings.' });
+    if (booking.quote?.status === 'accepted') return res.status(409).json({ error: 'The customer has already accepted this quote.' });
+    const updated = await updateBooking(booking.id, current => {
+      current.quote = {
+        amount, currency: 'LKR', description, status: 'pending',
+        quotedBy: req.user.id, quotedAt: new Date().toISOString(),
+        validUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+      };
+      current.updatedAt = new Date().toISOString();
+      return current;
+    });
+    publishEvent('booking:quote_sent', { bookingId: booking.id, customerId: booking.customerId, providerId: booking.providerId, status: 'pending' });
+    return res.json({ booking: updated, message: 'Service quote sent to the customer.' });
+  } catch (error) {
+    console.error('Create service quote error:', error);
+    return res.status(500).json({ error: 'Could not send service quote.' });
+  }
+});
+
+app.patch('/api/bookings/:id/quote', requireAuth, async (req, res) => {
+  try {
+    const decision = String(req.body?.decision || '');
+    if (!['accept', 'reject'].includes(decision)) return res.status(400).json({ error: 'Choose accept or reject.' });
+    const bookings = await getBookings();
+    const booking = bookings.find(item => item.id === req.params.id);
+    if (!booking) return res.status(404).json({ error: 'Booking not found.' });
+    if (req.user.accountType !== 'customer' || booking.customerId !== req.user.id) {
+      return res.status(403).json({ error: 'Only the booking customer can decide this quote.' });
+    }
+    if (booking.quote?.status !== 'pending') return res.status(409).json({ error: 'There is no pending quote to decide.' });
+    if (Date.parse(booking.quote.validUntil || '') <= Date.now()) return res.status(409).json({ error: 'This quote has expired. Ask the provider for a new quote.' });
+    const updated = await updateBooking(booking.id, current => {
+      current.quote.status = decision === 'accept' ? 'accepted' : 'rejected';
+      current.quote.decidedAt = new Date().toISOString();
+      current.quote.decidedBy = req.user.id;
+      if (decision === 'accept') {
+        current.baseAmount = current.quote.amount;
+        current.baseCharge = 'LKR ' + current.quote.amount.toLocaleString('en-LK');
+        current.platformFee = Math.round(current.baseAmount * 0.10);
+        current.providerPayout = current.baseAmount - current.platformFee;
+      }
+      current.updatedAt = new Date().toISOString();
+      return current;
+    });
+    publishEvent('booking:quote_decided', { bookingId: booking.id, customerId: booking.customerId, providerId: booking.providerId, status: updated.quote.status });
+    return res.json({ booking: updated, message: decision === 'accept' ? 'Quote accepted. The agreed service amount is now recorded for cash settlement.' : 'Quote declined. You can ask the provider to revise it.' });
+  } catch (error) {
+    console.error('Quote decision error:', error);
+    return res.status(500).json({ error: 'Could not update service quote.' });
+  }
+});
+
 // Customer proposes a new booking date/time; provider or Admin confirms it.
 app.post('/api/bookings/:id/reschedule', requireAuth, async (req, res) => {
   try {
