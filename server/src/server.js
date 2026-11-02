@@ -284,7 +284,7 @@ app.post('/api/events-ticket', requireAuth, (req, res) => {
 app.get('/api/events', (req, res) => {
   const identity = verifyToken(String(req.query.ticket || ''));
   if (!identity || identity.purpose !== 'sse') return res.status(401).end();
-  subscribeToEvents(req, res, { id: identity.id, role: identity.accountType });
+  subscribeToEvents(req, res, { id: identity.id, role: identity.accountType, exp: identity.exp });
 });
 
 // Comprehensive Health & Kubernetes Readiness Probes
