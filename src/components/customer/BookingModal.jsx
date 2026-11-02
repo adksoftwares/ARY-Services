@@ -57,8 +57,8 @@ export default function BookingModal({
     try {
       const payload = {
         providerId: provider.id,
-        categorySlug: provider.category || selectedCategory?.slug || 'general',
-        categoryName: provider.categoryName || selectedCategory?.name || 'General Service',
+        categorySlug: selectedCategory?.slug || provider.category || 'general',
+        categoryName: selectedCategory?.name || provider.categoryName || 'General Service',
         serviceAddress: bookingAddress.trim() || currentUser.location || 'Local Area',
         bookingDate,
         bookingTime: bookingTimeSlot,
