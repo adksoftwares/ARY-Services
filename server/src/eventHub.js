@@ -1,55 +1,74 @@
-// Real-time Event Hub using native Server-Sent Events (SSE)
-// Supports multi-client real-time synchronization with zero external dependencies.
-
+// Authenticated, role-scoped Server-Sent Events. Payloads are deliberately not sent:
+// clients receive an invalidation signal and reload data through authenticated APIs.
 const clients = new Set();
 
-export function subscribeToEvents(req, res) {
+function canReceive(client, eventType, payload = {}) {
+  if (client.role === 'admin') return true;
+  const booking = payload.booking || {};
+  const job = payload.job || {};
+  const userId = client.userId;
+  if (eventType.startsWith('booking:')) {
+    return userId === (payload.customerId || booking.customerId) ||
+      userId === (payload.providerId || booking.providerId);
+  }
+  if (eventType.startsWith('driver:')) {
+    if (client.role === 'driver' && eventType === 'driver:job_created') return true;
+    return (client.role === 'driver' && (userId === payload.driverId || userId === payload.userId || userId === job.driverId)) ||
+      userId === payload.customerId || userId === job.customerId;
+  }
+  if (eventType.startsWith('grocery:')) {
+    const order = payload.order || {};
+    return userId === payload.customerId || userId === payload.providerId ||
+      userId === order.customerId || userId === order.providerId;
+  }
+  if (eventType === 'review:submitted') return userId === payload.providerId;
+  if (eventType.startsWith('provider:service_request_')) return userId === payload.providerId;
+  if (eventType === 'user:status_changed') return userId === payload.userId;
+  return false;
+}
+
+export function subscribeToEvents(req, res, identity) {
+  if (!identity?.id || !identity?.role || !Number.isFinite(identity.exp) || identity.exp <= Date.now()) {
+    res.status(401).end();
+    return;
+  }
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',
     'Cache-Control': 'no-cache, no-transform',
     'Connection': 'keep-alive',
-    'Access-Control-Allow-Origin': '*'
+    'X-Accel-Buffering': 'no'
   });
-
   const client = {
     id: `client-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-    userId: req.query.userId || null,
-    role: req.query.role || null,
+    userId: identity.id,
+    role: identity.role,
     res
   };
-
   clients.add(client);
-
-  // Send initial handshake
-  res.write(`event: connected\ndata: ${JSON.stringify({ status: 'connected', clientId: client.id, timestamp: Date.now() })}\n\n`);
-
-  // 25-second keepalive heartbeat to prevent cloud load-balancer timeouts
+  res.write(`event: connected\ndata: {"status":"connected"}\n\n`);
   const heartbeat = setInterval(() => {
-    try {
-      res.write(': keepalive\n\n');
-    } catch {
-      clearInterval(heartbeat);
-      clients.delete(client);
-    }
+    try { res.write(': keepalive\n\n'); }
+    catch { cleanup(); }
   }, 25000);
-
-  req.on('close', () => {
+  const expiry = setTimeout(() => {
+    cleanup();
+    res.end();
+  }, Math.max(1, identity.exp - Date.now()));
+  function cleanup() {
     clearInterval(heartbeat);
+    clearTimeout(expiry);
     clients.delete(client);
-  });
+  }
+  req.on('close', cleanup);
 }
 
-export function broadcastEvent(eventType, payload) {
-  const message = `event: ${eventType}\ndata: ${JSON.stringify(payload)}\n\n`;
+export function broadcastEvent(eventType, payload = {}) {
+  const message = `event: ${eventType}\ndata: {"event":"${eventType}"}\n\n`;
   for (const client of clients) {
-    try {
-      client.res.write(message);
-    } catch {
-      clients.delete(client);
-    }
+    if (!canReceive(client, eventType, payload)) continue;
+    try { client.res.write(message); }
+    catch { clients.delete(client); }
   }
 }
 
-export function getConnectedClientCount() {
-  return clients.size;
-}
+export function getConnectedClientCount() { return clients.size; }

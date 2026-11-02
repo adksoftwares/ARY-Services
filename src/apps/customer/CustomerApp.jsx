@@ -3,6 +3,7 @@ import { BrowserRouter, Link, Navigate, Route, Routes, useNavigate } from 'react
 import { Search, ClipboardList, LogIn, LogOut, UserRound, ArrowRight, ShoppingBasket, Zap, Wrench, Sparkles, Package } from 'lucide-react';
 import { AuthProvider, useAuth } from '../../context/AuthContext';
 import { API_BASE } from '../../config';
+import { subscribeToAppEvents } from '../../utils/events';
 import HeroSection from '../../components/customer/HeroSection';
 import CategoryGrid from '../../components/customer/CategoryGrid';
 import ProviderCatalog from '../../components/customer/ProviderCatalog';
@@ -15,6 +16,7 @@ import DisputeModal from '../../components/customer/DisputeModal';
 import AccountRoleRequest from '../../components/customer/AccountRoleRequest';
 import AuthModal from '../../components/common/AuthModal';
 import Footer from '../../components/common/Footer';
+import NotificationCenter from '../../components/common/NotificationCenter';
 
 const SERVICES = [
   { id: 1, name: 'Food Shops', slug: 'food-shops', description: 'Explore local shops and place an order', icon: ShoppingBasket, color: 'peach' },
@@ -34,6 +36,7 @@ function CustomerHeader() {
       {currentUser?.accountType === 'customer' && <Link to="/bookings" className="nav-link-btn"><ClipboardList size={14}/> My Bookings</Link>}
     </nav>
     {currentUser ? <div className="user-profile">
+      <NotificationCenter/>
       <span className="user-badge"><UserRound size={14}/><span>{currentUser.fullName}</span></span>
       <button className="sign-out-btn" onClick={() => { logout(); navigate('/'); }}><LogOut size={14}/> Sign out</button>
     </div> : <div style={{display:'flex',gap:8}}>
@@ -93,13 +96,44 @@ function CustomerWorkspace() {
     }
   }, [currentUser]);
 
+  async function decideQuote(bookingId, decision) {
+    if (!currentUser?.token) return;
+    try {
+      const response = await fetch(`${API_BASE}/bookings/${encodeURIComponent(bookingId)}/quote`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${currentUser.token}` },
+        body: JSON.stringify({ decision })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Could not update quote.');
+      setNotice(data.message || 'Quote updated.');
+      await fetchBookings();
+    } catch (error) { setNotice(error.message || 'Could not update quote.'); }
+  }
+
+  async function requestReschedule(bookingId, date, time) {
+    if (!currentUser?.token) return false;
+    try {
+      const response = await fetch(`${API_BASE}/bookings/${encodeURIComponent(bookingId)}/reschedule`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${currentUser.token}` },
+        body: JSON.stringify({ date, time })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Could not request a new booking time.');
+      setNotice(data.message || 'Reschedule request sent.');
+      await fetchBookings();
+      return true;
+    } catch (error) {
+      setNotice(error.message || 'Could not request a new booking time.');
+      return false;
+    }
+  }
+
   useEffect(() => { fetchBookings(); }, [fetchBookings]);
   useEffect(() => {
-    const events = new EventSource(`${API_BASE}/events`);
     const refresh = () => { fetchBookings(); };
-    events.addEventListener('booking:created', refresh);
-    events.addEventListener('booking:status_updated', refresh);
-    return () => events.close();
+    return subscribeToAppEvents(currentUser?.token, { 'booking:created': refresh, 'booking:status_updated': refresh, 'booking:quote_sent': refresh, 'booking:quote_decided': refresh, 'booking:reschedule_requested': refresh, 'booking:reschedule_decided': refresh, 'grocery:order_updated': refresh, 'driver:job_created': refresh, 'driver:job_updated': refresh });
   }, [fetchBookings]);
 
   const visibleServices = useMemo(() => SERVICES.filter(service =>

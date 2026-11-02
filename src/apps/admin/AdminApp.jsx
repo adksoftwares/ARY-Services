@@ -1,13 +1,16 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { BrowserRouter, Link, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, LogIn, LogOut, ShieldCheck, Users, Bike, UserRound } from 'lucide-react';
+import { LayoutDashboard, LogIn, LogOut, ShieldCheck, Users, Bike, UserRound, BriefcaseBusiness } from 'lucide-react';
 import { AuthProvider, useAuth } from '../../context/AuthContext';
 import { API_BASE } from '../../config';
 import AdminWorkspace from '../../components/admin/AdminWorkspace';
 import DriverApplicationsAdmin from '../../components/admin/DriverApplicationsAdmin';
 import RoleApplicationsAdmin from '../../components/admin/RoleApplicationsAdmin';
+import ProviderServiceRequestsAdmin from '../../components/admin/ProviderServiceRequestsAdmin';
 import AuthModal from '../../components/common/AuthModal';
 import Footer from '../../components/common/Footer';
+import NotificationCenter from '../../components/common/NotificationCenter';
+import { subscribeToAppEvents } from '../../utils/events';
 
 const initialServices = [
   { id: 1, name: 'Food Shops', slug: 'food-shops', description: 'Explore local shops and place an order', color: 'peach' },
@@ -51,11 +54,8 @@ function AdminPortal() {
 
   useEffect(() => {
     if (!isAdmin) return undefined;
-    const events = new EventSource(`${API_BASE}/events`);
     const refresh = () => fetchAdminUsers();
-    events.addEventListener('driver:application_created', refresh);
-    events.addEventListener('driver:application_reviewed', refresh);
-    return () => events.close();
+    return subscribeToAppEvents(currentUser?.token, { 'driver:application_created': refresh, 'driver:application_reviewed': refresh, 'user:registered': refresh, 'user:status_changed': refresh });
   }, [isAdmin, fetchAdminUsers]);
 
   return <div className="app-shell">
@@ -64,10 +64,12 @@ function AdminPortal() {
         <span className="brand-mark">A</span><span>ARY <b>Admin</b></span>
       </Link>
       {isAdmin ? <>
+        <div className="user-profile"><NotificationCenter/></div>
         <nav className="header-nav-links">
           <button className="nav-link-btn" onClick={() => setActiveSection('workspace')}><LayoutDashboard size={14}/> Admin workspace</button>
           <button className="nav-link-btn" onClick={() => setActiveSection('drivers')}><Bike size={14}/> Driver approvals</button>
           <button className="nav-link-btn" onClick={() => setActiveSection('roles')}><Users size={14}/> Role applications</button>
+          <button className="nav-link-btn" onClick={() => setActiveSection('services')}><BriefcaseBusiness size={14}/> Service approvals</button>
         </nav>
         <div className="user-profile">
           <span className="user-badge"><UserRound size={14}/><span>{currentUser.fullName}</span></span>
@@ -76,7 +78,7 @@ function AdminPortal() {
       </> : <button className="sign-in" onClick={() => openAuthModal('login')}><LogIn size={14}/> Admin sign in</button>}
     </header>
 
-    {isAdmin ? activeSection === 'drivers' ? <DriverApplicationsAdmin/> : activeSection === 'roles' ? <RoleApplicationsAdmin/> : <AdminWorkspace
+    {isAdmin ? activeSection === 'drivers' ? <DriverApplicationsAdmin/> : activeSection === 'roles' ? <RoleApplicationsAdmin/> : activeSection === 'services' ? <ProviderServiceRequestsAdmin/> : <AdminWorkspace
       adminUsers={adminUsers}
       setAdminUsers={setAdminUsers}
       services={services}

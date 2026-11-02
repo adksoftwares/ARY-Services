@@ -37,9 +37,18 @@ import { sendOtp, verifyOtp, normalizePhone } from './otpService.js';
 import { subscribeToEvents, broadcastEvent } from './eventHub.js';
 import { calculateDistanceKm, estimateEtaMinutes, resolveCoordinatesFromLocation } from './geoService.js';
 import { issueSecurityChallenge, verifySecurityChallenge } from './securityShield.js';
-import { registerDriverServiceRoutes } from './driverServiceRoutes.js';
+import { registerDriverServiceRoutes, createGroceryOrderDeliveryJob, cancelGroceryOrderDeliveryJob } from './driverServiceRoutes.js';
 import { registerGroceryRoutes } from './groceryRoutes.js';
 import { registerRoleAccessRoutes } from './roleAccessRoutes.js';
+import { listNotifications, markNotificationRead, markAllNotificationsRead, persistEventNotifications } from './notificationService.js';
+
+const PROVIDER_SERVICE_CATEGORIES = new Map([
+  ['food-shops', 'Food Shops'],
+  ['electrical-repair', 'Electrical Repair'],
+  ['plumbing', 'Plumbing'],
+  ['grocery-products', 'Grocery Products'],
+  ['other-services', 'Other Services']
+]);
 
 const app = express();
 const port = Number(process.env.PORT || 4000);
@@ -58,7 +67,7 @@ app.use((req, res, next) => {
         time: new Date().toISOString(),
         reqId: req.id,
         method: req.method,
-        path: req.originalUrl || req.url,
+        path: req.path,
         statusCode: res.statusCode,
         durationMs
       }));
@@ -217,6 +226,9 @@ async function requireAuth(req, res, next) {
       roles: [...new Set([...(liveUser.accountType === 'admin' ? [] : ['customer']), ...(Array.isArray(liveUser.roles) ? liveUser.roles : []), liveUser.accountType].filter(Boolean))],
       category: liveUser.category || null,
       categoryName: liveUser.categoryName || null,
+      providerStatus: liveUser.providerStatus || null,
+      approvedServices: Array.isArray(liveUser.approvedServices) ? liveUser.approvedServices : [],
+      serviceRequests: Array.isArray(liveUser.serviceRequests) ? liveUser.serviceRequests : [],
       fullName: liveUser.fullName || decoded.fullName
     };
     next();
@@ -235,16 +247,55 @@ async function requireAdmin(req, res, next) {
   });
 }
 
-registerDriverServiceRoutes(app, { requireAuth, requireAdmin, broadcastEvent, getBookings, getUsers });
-registerRoleAccessRoutes(app, { requireAuth, requireAdmin, getUsers, updateUser, generateToken, broadcastEvent });
-registerGroceryRoutes(app, { requireAuth });
+async function publishEvent(eventType, payload = {}) {
+  broadcastEvent(eventType, payload);
+  persistEventNotifications(eventType, payload).catch(error => {
+    console.error('Notification persistence failed:', error);
+  });
+}
+
+app.get('/api/notifications', requireAuth, async (req, res) => {
+  try {
+    const notifications = await listNotifications(req.user, req.query.limit);
+    return res.json({ notifications, unreadCount: notifications.filter(item => !item.readAt).length });
+  } catch {
+    return res.status(500).json({ error: 'Could not load notifications.' });
+  }
+});
+
+app.patch('/api/notifications/read-all', requireAuth, async (req, res) => {
+  try { return res.json(await markAllNotificationsRead(req.user)); }
+  catch { return res.status(500).json({ error: 'Could not update notifications.' }); }
+});
+
+app.patch('/api/notifications/:id/read', requireAuth, async (req, res) => {
+  try {
+    const notification = await markNotificationRead(req.user, req.params.id);
+    if (!notification) return res.status(404).json({ error: 'Notification not found.' });
+    return res.json({ notification });
+  } catch {
+    return res.status(500).json({ error: 'Could not update notification.' });
+  }
+});
+
+registerDriverServiceRoutes(app, { requireAuth, requireAdmin, broadcastEvent: publishEvent, getBookings, getUsers });
+registerRoleAccessRoutes(app, { requireAuth, requireAdmin, getUsers, updateUser, generateToken, broadcastEvent: publishEvent });
+registerGroceryRoutes(app, { requireAuth, broadcastEvent: publishEvent, getUsers, createGroceryOrderDeliveryJob, cancelGroceryOrderDeliveryJob });
 
 // Initialize atomic file storage on boot
 await initStorage();
 
 // Real-time Server-Sent Events (SSE) Dispatch Hub
+app.post('/api/events-ticket', requireAuth, (req, res) => {
+  const ticket = generateToken({ id: req.user.id, accountType: req.user.accountType, purpose: 'sse', exp: Date.now() + 5 * 60 * 1000 });
+  res.setHeader('Cache-Control', 'no-store');
+  return res.json({ ticket, expiresInSeconds: 300 });
+});
+
 app.get('/api/events', (req, res) => {
-  subscribeToEvents(req, res);
+  const identity = verifyToken(String(req.query.ticket || ''));
+  if (!identity || identity.purpose !== 'sse') return res.status(401).end();
+  subscribeToEvents(req, res, { id: identity.id, role: identity.accountType, exp: identity.exp });
 });
 
 // Comprehensive Health & Kubernetes Readiness Probes
@@ -585,7 +636,7 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
 
     await addUser(newUser);
 
-    broadcastEvent('user:registered', {
+    publishEvent('user:registered', {
       user: {
         id: newUser.id,
         fullName: newUser.fullName,
@@ -718,7 +769,8 @@ app.get('/api/service-categories', async (_req, res) => {
       { id: 1, name: 'Food Shops', slug: 'food-shops', description: 'Fresh groceries, baked goods and snacks', icon: 'UtensilsCrossed', color: 'peach' },
       { id: 2, name: 'Electrical Repair', slug: 'electrical-repair', description: 'Fast diagnostics for lights, wiring and appliances', icon: 'Zap', color: 'yellow' },
       { id: 3, name: 'Plumbing', slug: 'plumbing', description: 'Repairs, fittings and leak maintenance', icon: 'Wrench', color: 'blue' },
-      { id: 4, name: 'Other Services', slug: 'other-services', description: 'Carpentry, painting, AC and house help', icon: 'Sparkles', color: 'lilac' }
+      { id: 4, name: 'Other Services', slug: 'other-services', description: 'Carpentry, painting, AC and house help', icon: 'Sparkles', color: 'lilac' },
+      { id: 5, name: 'Grocery Products', slug: 'grocery-products', description: 'Everyday grocery items and household essentials', icon: 'ShoppingBasket', color: 'green' }
     ],
     source: 'active'
   });
@@ -733,7 +785,7 @@ app.get('/api/providers', async (req, res) => {
     let providers = users.filter(u => (u.accountType === 'provider' || (Array.isArray(u.roles) && u.roles.includes('provider'))) && (u.accountType === 'provider' ? u.status === 'active' : u.providerStatus === 'active'));
 
     if (category && category !== 'all') {
-      providers = providers.filter(p => p.category === category || (p.categoryName && p.categoryName.toLowerCase().includes(category.toLowerCase())));
+      providers = providers.filter(p => p.category === category || (p.categoryName && p.categoryName.toLowerCase().includes(category.toLowerCase())) || (Array.isArray(p.approvedServices) && p.approvedServices.some(service => service.categorySlug === category)));
     }
 
     if (query) {
@@ -741,7 +793,8 @@ app.get('/api/providers', async (req, res) => {
       providers = providers.filter(p =>
         (p.fullName && p.fullName.toLowerCase().includes(q)) ||
         (p.location && p.location.toLowerCase().includes(q)) ||
-        (p.categoryName && p.categoryName.toLowerCase().includes(q))
+        (p.categoryName && p.categoryName.toLowerCase().includes(q)) ||
+        (Array.isArray(p.approvedServices) && p.approvedServices.some(service => (service.serviceName || '').toLowerCase().includes(q) || (service.description || '').toLowerCase().includes(q)))
       );
     }
 
@@ -773,7 +826,6 @@ app.get('/api/providers', async (req, res) => {
         id: p.id,
         fullName: p.fullName,
         phone: p.phone,
-        email: p.email,
         location: p.location || 'Local Area',
         lat: pLat,
         lng: pLng,
@@ -781,6 +833,7 @@ app.get('/api/providers', async (req, res) => {
         etaMinutes,
         category: p.category || 'general',
         categoryName: p.categoryName || 'General Services',
+        approvedServices: (Array.isArray(p.approvedServices) ? p.approvedServices : []).map(service => ({ categorySlug: service.categorySlug, categoryName: service.categoryName, serviceName: service.serviceName, description: service.description, baseCharge: service.baseCharge })),
         baseCharge: p.baseCharge || 'LKR 1,500',
         rating: p.rating !== undefined ? Number(p.rating) : 5.0,
         reviewCount: p.reviewCount !== undefined ? Number(p.reviewCount) : 0,
@@ -813,19 +866,29 @@ app.get('/api/providers', async (req, res) => {
 app.patch('/api/providers/profile', requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
-    const { category, categoryName, baseCharge, location, experienceYears } = req.body;
-
-    const updated = await updateUser(userId, (provider) => {
-      if (!provider || provider.accountType !== 'provider') return provider;
-      if (category) provider.category = category;
-      if (categoryName) provider.categoryName = categoryName;
-      if (baseCharge) provider.baseCharge = baseCharge;
-      if (location) provider.location = location;
-      if (experienceYears) provider.experienceYears = Number(experienceYears);
+    if (req.user.accountType !== 'provider' || (req.user.status !== 'active' && req.user.providerStatus !== 'active')) {
+      return res.status(403).json({ error: 'An active provider account is required.' });
+    }
+    const { baseCharge, location, experienceYears } = req.body || {};
+    const cleanLocation = location === undefined ? undefined : String(location).trim().slice(0, 500);
+    const years = experienceYears === undefined ? undefined : Number(experienceYears);
+    const chargeText = baseCharge === undefined ? undefined : String(baseCharge).replace(/[^0-9.]/g, '');
+    const charge = chargeText === undefined ? undefined : Number(chargeText);
+    if (years !== undefined && (!Number.isInteger(years) || years < 0 || years > 60)) {
+      return res.status(400).json({ error: 'Experience years must be a whole number between 0 and 60.' });
+    }
+    if (charge !== undefined && (!Number.isFinite(charge) || charge < 0 || charge > 10000000)) {
+      return res.status(400).json({ error: 'Enter a valid service base charge.' });
+    }
+    const updated = await updateUser(userId, provider => {
+      if (!provider || (provider.accountType !== 'provider' && !provider.roles?.includes('provider'))) return provider;
+      if (baseCharge !== undefined) provider.baseCharge = 'LKR ' + charge.toLocaleString('en-LK');
+      if (cleanLocation !== undefined) provider.location = cleanLocation;
+      if (years !== undefined) provider.experienceYears = years;
       return provider;
     });
 
-    if (!updated || updated.accountType !== 'provider') {
+    if (!updated || (updated.accountType !== 'provider' && !updated.roles?.includes('provider'))) {
       return res.status(404).json({ error: 'Provider account not found.' });
     }
 
@@ -847,28 +910,108 @@ app.patch('/api/providers/profile', requireAuth, async (req, res) => {
   }
 });
 
+// Provider requests approval before listing an additional service category.
+app.post('/api/providers/services', requireAuth, async (req, res) => {
+  try {
+    if (req.user.accountType !== 'provider' || req.user.status !== 'active') return res.status(403).json({ error: 'An active provider account is required.' });
+    const categorySlug = String(req.body?.categorySlug || '');
+    const serviceName = String(req.body?.serviceName || '').trim().slice(0, 120);
+    const description = String(req.body?.description || '').trim().slice(0, 1000);
+    const amount = Number(req.body?.baseCharge);
+    if (!PROVIDER_SERVICE_CATEGORIES.has(categorySlug) || !serviceName || serviceName.length < 2 || description.length < 10 ||
+      !Number.isSafeInteger(amount) || amount < 1 || amount > 10000000) {
+      return res.status(400).json({ error: 'Choose a valid category and provide a service name, at least 10 characters of description and a whole-number LKR price.' });
+    }
+    if (categorySlug === req.user.category) return res.status(409).json({ error: 'This is already your primary provider category.' });
+    const requestId = crypto.randomUUID();
+    const updated = await updateUser(req.user.id, user => {
+      user.serviceRequests = Array.isArray(user.serviceRequests) ? user.serviceRequests : [];
+      const duplicate = user.serviceRequests.some(item => item.categorySlug === categorySlug && item.serviceName.toLowerCase() === serviceName.toLowerCase() && ['pending', 'approved'].includes(item.status));
+      if (duplicate) return user;
+      user.serviceRequests.unshift({
+        id: requestId, categorySlug, categoryName: PROVIDER_SERVICE_CATEGORIES.get(categorySlug),
+        serviceName, description, baseCharge: amount, status: 'pending',
+        requestedAt: new Date().toISOString()
+      });
+      return user;
+    });
+    const request = (updated?.serviceRequests || []).find(item => item.id === requestId);
+    if (!request) return res.status(409).json({ error: 'A matching service request is already pending or approved.' });
+    publishEvent('provider:service_request_created', { providerId: req.user.id, requestId: request.id });
+    return res.status(201).json({ request, message: 'Additional service request sent to Admin for approval.' });
+  } catch (error) {
+    console.error('Provider service request error:', error);
+    return res.status(500).json({ error: 'Could not submit additional service request.' });
+  }
+});
+
+app.get('/api/providers/services/mine', requireAuth, async (req, res) => {
+  if (req.user.accountType !== 'provider') return res.status(403).json({ error: 'Provider account required.' });
+  const users = await getUsers();
+  const provider = users.find(user => user.id === req.user.id);
+  if (!provider) return res.status(404).json({ error: 'Provider account not found.' });
+  return res.json({
+    primaryCategory: { categorySlug: provider.category, categoryName: provider.categoryName },
+    approvedServices: Array.isArray(provider.approvedServices) ? provider.approvedServices : [],
+    requests: Array.isArray(provider.serviceRequests) ? provider.serviceRequests : []
+  });
+});
+
+app.get('/api/admin/provider-service-requests', requireAdmin, async (_req, res) => {
+  const users = await getUsers();
+  const requests = users.flatMap(user => (Array.isArray(user.serviceRequests) ? user.serviceRequests : [])
+    .filter(request => request.status === 'pending')
+    .map(request => ({ ...request, providerId: user.id, providerName: user.fullName, providerLocation: user.location })));
+  return res.json({ requests });
+});
+
+app.patch('/api/admin/provider-service-requests/:userId/:requestId', requireAdmin, async (req, res) => {
+  const decision = String(req.body?.status || '');
+  if (!['approved', 'rejected'].includes(decision)) return res.status(400).json({ error: 'Choose approved or rejected.' });
+  const users = await getUsers();
+  const target = users.find(user => user.id === req.params.userId);
+  const request = target?.serviceRequests?.find(item => item.id === req.params.requestId);
+  if (!target || !request || request.status !== 'pending') return res.status(404).json({ error: 'Pending service request not found.' });
+  const updated = await updateUser(target.id, user => {
+    const current = (user.serviceRequests || []).find(item => item.id === req.params.requestId);
+    if (!current || current.status !== 'pending') return user;
+    current.status = decision;
+    current.reviewedAt = new Date().toISOString();
+    current.reviewedBy = req.user.id;
+    if (decision === 'approved') {
+      user.approvedServices = Array.isArray(user.approvedServices) ? user.approvedServices : [];
+      const exists = user.approvedServices.some(item => item.categorySlug === current.categorySlug && item.serviceName.toLowerCase() === current.serviceName.toLowerCase());
+      if (!exists) user.approvedServices.push({
+        id: current.id, categorySlug: current.categorySlug, categoryName: current.categoryName,
+        serviceName: current.serviceName, description: current.description, baseCharge: current.baseCharge,
+        approvedAt: current.reviewedAt
+      });
+    }
+    return user;
+  });
+  const reviewed = updated?.serviceRequests?.find(item => item.id === req.params.requestId);
+  publishEvent('provider:service_request_reviewed', { providerId: target.id, status: decision, requestId: req.params.requestId });
+  return res.json({ request: reviewed, approvedServices: updated?.approvedServices || [] });
+});
+
 // Bookings: List bookings for current user (Customer, Provider, or Admin)
 app.get('/api/bookings', requireAuth, async (req, res) => {
   try {
-    const { id: userId, accountType, phone } = req.user;
-    const userPhoneDigits = phone ? normalizePhone(phone) : null;
+    const { id: userId, accountType } = req.user;
     const allBookings = await getBookings();
 
     let userBookings = [];
     if (accountType === 'admin') {
       userBookings = allBookings;
     } else if (accountType === 'provider') {
-      // Include directly assigned bookings (by providerId or matching phone) + unassigned cascading broadcast jobs matching category
+      // Only immutable account IDs grant access to assigned or broadcast jobs.
+      const approvedCategories = new Set([req.user.category, ...(Array.isArray(req.user.approvedServices) ? req.user.approvedServices.map(service => service.categorySlug) : [])]);
       userBookings = allBookings.filter(b =>
         b.providerId === userId ||
-        (userPhoneDigits && b.providerPhone && normalizePhone(b.providerPhone) === userPhoneDigits) ||
-        (b.status === 'broadcast_pool' && (!b.declinedBy || (!b.declinedBy.includes(userId) && (!userPhoneDigits || !b.declinedBy.includes(userPhoneDigits)))))
+        (b.status === 'broadcast_pool' && approvedCategories.has(b.categorySlug) && (!b.declinedBy || !b.declinedBy.includes(userId)))
       );
     } else {
-      userBookings = allBookings.filter(b =>
-        b.customerId === userId ||
-        (userPhoneDigits && b.customerPhone && normalizePhone(b.customerPhone) === userPhoneDigits)
-      );
+      userBookings = allBookings.filter(b => b.customerId === userId);
     }
 
     // Sort newest first
@@ -897,33 +1040,31 @@ app.get('/api/bookings', requireAuth, async (req, res) => {
 app.post('/api/bookings', requireAuth, async (req, res) => {
   try {
     const customer = req.user;
+    if (customer.accountType !== 'customer') return res.status(403).json({ error: 'Customer account required to create a service booking.' });
     const {
-      providerId,
-      categorySlug,
-      categoryName,
-      serviceAddress,
-      bookingDate,
-      bookingTime,
-      problemDescription
-    } = req.body;
-
-    if (!providerId || !serviceAddress || !problemDescription) {
-      return res.status(400).json({ error: 'Provider, service address, and service description are required.' });
+      providerId, categorySlug, serviceAddress, bookingDate, bookingTime, problemDescription
+    } = req.body || {};
+    const cleanAddress = String(serviceAddress || '').trim().slice(0, 500);
+    const cleanProblem = String(problemDescription || '').trim().slice(0, 2000);
+    const allowedTimes = ['Morning (9 AM - 12 PM)', 'Afternoon (1 PM - 5 PM)', 'Evening (5 PM - 8 PM)', 'Emergency (ASAP)'];
+    const chosenDate = String(bookingDate || new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Colombo' }).format(new Date()));
+    const parsedDate = new Date(chosenDate + 'T00:00:00Z');
+    const localToday = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Colombo' }).format(new Date());
+    if (!providerId || !cleanAddress || cleanProblem.length < 5 ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(chosenDate) || Number.isNaN(parsedDate.getTime()) ||
+      parsedDate.toISOString().slice(0, 10) !== chosenDate || chosenDate < localToday ||
+      !allowedTimes.includes(bookingTime || 'Morning (9 AM - 12 PM)')) {
+      return res.status(400).json({ error: 'Enter a valid service address, a clear description, a future booking date and an available time slot.' });
     }
 
     const users = await getUsers();
-    const cleanProviderIdent = normalizePhone(providerId);
-    const provider = users.find(u =>
-      (u.id === providerId || (cleanProviderIdent && u.phone && normalizePhone(u.phone) === cleanProviderIdent)) &&
-      u.accountType === 'provider'
-    );
-
-    if (!provider) {
-      return res.status(404).json({ error: 'Selected service provider was not found.' });
-    }
+    const provider = users.find(u => u.id === providerId && (u.accountType === 'provider' || (Array.isArray(u.roles) && u.roles.includes('provider'))) && (u.accountType === 'provider' ? u.status === 'active' : u.providerStatus === 'active') && (u.category === categorySlug || (Array.isArray(u.approvedServices) && u.approvedServices.some(service => service.categorySlug === categorySlug))));
+    if (!provider) return res.status(404).json({ error: 'Selected approved service provider was not found.' });
+    const selectedService = (provider.approvedServices || []).find(service => service.categorySlug === categorySlug);
+    const selectedCharge = selectedService?.baseCharge ?? provider.baseCharge ?? '1500';
 
     // Escrow & Financial Commission Calculations (10% platform commission, 90% provider payout)
-    const rawDigits = String(provider.baseCharge || '1500').replace(/[^0-9]/g, '');
+    const rawDigits = String(selectedCharge).replace(/[^0-9]/g, '');
     const baseAmount = parseInt(rawDigits, 10) || 1500;
     const platformFee = Math.round(baseAmount * 0.10);
     const providerPayout = baseAmount - platformFee;
@@ -936,7 +1077,7 @@ app.post('/api/bookings', requireAuth, async (req, res) => {
     const paymentStatus = 'pending_cash';
 
     const newBooking = {
-      id: 'book-' + Date.now(),
+      id: 'book-' + crypto.randomUUID(),
       customerId: customer.id,
       customerName: customer.fullName || 'Customer',
       customerPhone: customer.phone,
@@ -944,12 +1085,13 @@ app.post('/api/bookings', requireAuth, async (req, res) => {
       providerName: provider.fullName,
       providerPhone: provider.phone,
       categorySlug: categorySlug || provider.category || 'general',
-      categoryName: categoryName || provider.categoryName || 'General Services',
-      serviceAddress: serviceAddress.trim(),
-      bookingDate: bookingDate || new Date().toISOString().split('T')[0],
+      categoryName: selectedService?.categoryName || (provider.category === categorySlug ? provider.categoryName : PROVIDER_SERVICE_CATEGORIES.get(categorySlug)) || 'General Services',
+      serviceName: selectedService?.serviceName || provider.categoryName || 'General Service',
+      serviceAddress: cleanAddress,
+      bookingDate: chosenDate,
       bookingTime: bookingTime || 'Morning (9 AM - 12 PM)',
-      problemDescription: problemDescription.trim(),
-      baseCharge: provider.baseCharge || 'LKR 1,500',
+      problemDescription: cleanProblem,
+      baseCharge: 'LKR ' + baseAmount.toLocaleString('en-LK'),
       baseAmount,
       platformFee,
       providerPayout,
@@ -966,7 +1108,7 @@ app.post('/api/bookings', requireAuth, async (req, res) => {
     // Escrow ledger entries are written only after a verified payment-provider callback.
 
     // Instant Real-Time SSE Dispatch to Provider & Admins
-    broadcastEvent('booking:created', {
+    publishEvent('booking:created', {
       booking: newBooking,
       providerId: newBooking.providerId,
       providerPhone: newBooking.providerPhone,
@@ -989,9 +1131,9 @@ app.patch('/api/bookings/:id/status', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body; // 'accepted' | 'rejected' | 'in_progress' | 'completed' | 'cancelled'
-    const { id: userId, accountType, phone } = req.user;
+    const { id: userId, accountType } = req.user;
 
-    const validStatuses = ['requested', 'accepted', 'rejected', 'in_progress', 'completed', 'cancelled'];
+    const validStatuses = ['accepted', 'rejected', 'in_progress', 'completed'];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ error: 'Invalid booking status.' });
     }
@@ -1004,26 +1146,37 @@ app.patch('/api/bookings/:id/status', requireAuth, async (req, res) => {
     }
 
     // Role-based authorization for booking changes
-    const userPhoneDigits = phone ? normalizePhone(phone) : null;
-    const isProviderMatch = booking.providerId === userId || (userPhoneDigits && booking.providerPhone && normalizePhone(booking.providerPhone) === userPhoneDigits);
-    const isCustomerMatch = booking.customerId === userId || (userPhoneDigits && booking.customerPhone && normalizePhone(booking.customerPhone) === userPhoneDigits);
-
-    if (accountType !== 'admin' && !isProviderMatch && !isCustomerMatch) {
-      return res.status(403).json({ error: 'You are not authorized to update this booking.' });
+    const isProviderMatch = booking.providerId === userId;
+    if (accountType !== 'admin' && (accountType !== 'provider' || !isProviderMatch)) {
+      return res.status(403).json({ error: 'Only the assigned provider or Admin can update service booking progress.' });
+    }
+    const allowedTransitions = {
+      requested: ['accepted', 'rejected'],
+      broadcast_pool: ['accepted', 'rejected'],
+      accepted: ['in_progress', 'rejected'],
+      in_progress: ['completed']
+    };
+    if (accountType !== 'admin' && !allowedTransitions[booking.status]?.includes(status)) {
+      return res.status(409).json({ error: `Cannot move a ${booking.status} booking to ${status}.` });
     }
 
+    const previousProviderId = booking.providerId;
     let releasedTx = null;
     const updated = await updateBooking(id, b => {
       // Cascading Dispatch: If contractor declines, cascade to broadcast pool so another contractor can claim it
       if (status === 'rejected') {
         b.status = 'broadcast_pool';
-        b.declinedBy = [...(b.declinedBy || []), b.providerId];
+        if (b.providerId && !b.declinedBy?.includes(b.providerId)) b.declinedBy = [...(b.declinedBy || []), b.providerId];
+        b.providerId = null;
+        b.providerName = null;
+        b.providerPhone = null;
         b.broadcastAt = new Date().toISOString();
       } else {
         b.status = status;
       }
 
       b.updatedAt = new Date().toISOString();
+      if (status === 'completed') b.completedAt = b.updatedAt;
 
       // If service is marked completed and payment was held in escrow, automatically release payout
       if (status === 'completed' && b.paymentStatus === 'escrow_held') {
@@ -1044,10 +1197,12 @@ app.patch('/api/bookings/:id/status', requireAuth, async (req, res) => {
     }
 
     // Real-Time SSE Dispatch
-    broadcastEvent('booking:status_updated', {
+    publishEvent('booking:status_updated', {
       bookingId: id,
       status: updated.status,
-      booking: updated
+      booking: updated,
+      customerId: updated.customerId,
+      providerId: previousProviderId
     });
 
     res.json({
@@ -1063,11 +1218,143 @@ app.patch('/api/bookings/:id/status', requireAuth, async (req, res) => {
   }
 });
 
+// Provider sends a service quote; the customer explicitly accepts or declines it.
+app.post('/api/bookings/:id/quote', requireAuth, async (req, res) => {
+  try {
+    const amount = Number(req.body?.amount);
+    const description = String(req.body?.description || '').trim().slice(0, 1000);
+    if (!Number.isSafeInteger(amount) || amount < 1 || amount > 10000000 || description.length < 5) {
+      return res.status(400).json({ error: 'Enter a whole-number quote between LKR 1 and LKR 10,000,000 and a short description.' });
+    }
+    const bookings = await getBookings();
+    const booking = bookings.find(item => item.id === req.params.id);
+    if (!booking) return res.status(404).json({ error: 'Booking not found.' });
+    if (req.user.accountType !== 'provider' || booking.providerId !== req.user.id) {
+      return res.status(403).json({ error: 'Only the assigned provider can send a service quote.' });
+    }
+    if (!['requested', 'accepted'].includes(booking.status)) return res.status(409).json({ error: 'Quotes can only be sent for pending or accepted bookings.' });
+    if (booking.quote?.status === 'accepted') return res.status(409).json({ error: 'The customer has already accepted this quote.' });
+    const updated = await updateBooking(booking.id, current => {
+      current.quote = {
+        amount, currency: 'LKR', description, status: 'pending',
+        quotedBy: req.user.id, quotedAt: new Date().toISOString(),
+        validUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+      };
+      current.updatedAt = new Date().toISOString();
+      return current;
+    });
+    publishEvent('booking:quote_sent', { bookingId: booking.id, customerId: booking.customerId, providerId: booking.providerId, status: 'pending' });
+    return res.json({ booking: updated, message: 'Service quote sent to the customer.' });
+  } catch (error) {
+    console.error('Create service quote error:', error);
+    return res.status(500).json({ error: 'Could not send service quote.' });
+  }
+});
+
+app.patch('/api/bookings/:id/quote', requireAuth, async (req, res) => {
+  try {
+    const decision = String(req.body?.decision || '');
+    if (!['accept', 'reject'].includes(decision)) return res.status(400).json({ error: 'Choose accept or reject.' });
+    const bookings = await getBookings();
+    const booking = bookings.find(item => item.id === req.params.id);
+    if (!booking) return res.status(404).json({ error: 'Booking not found.' });
+    if (req.user.accountType !== 'customer' || booking.customerId !== req.user.id) {
+      return res.status(403).json({ error: 'Only the booking customer can decide this quote.' });
+    }
+    if (!['requested', 'accepted'].includes(booking.status)) return res.status(409).json({ error: 'This booking is no longer eligible for quote acceptance.' });
+    if (booking.quote?.status !== 'pending') return res.status(409).json({ error: 'There is no pending quote to decide.' });
+    if (Date.parse(booking.quote.validUntil || '') <= Date.now()) return res.status(409).json({ error: 'This quote has expired. Ask the provider for a new quote.' });
+    const updated = await updateBooking(booking.id, current => {
+      current.quote.status = decision === 'accept' ? 'accepted' : 'rejected';
+      current.quote.decidedAt = new Date().toISOString();
+      current.quote.decidedBy = req.user.id;
+      if (decision === 'accept') {
+        current.baseAmount = current.quote.amount;
+        current.baseCharge = 'LKR ' + current.quote.amount.toLocaleString('en-LK');
+        current.platformFee = Math.round(current.baseAmount * 0.10);
+        current.providerPayout = current.baseAmount - current.platformFee;
+      }
+      current.updatedAt = new Date().toISOString();
+      return current;
+    });
+    publishEvent('booking:quote_decided', { bookingId: booking.id, customerId: booking.customerId, providerId: booking.providerId, status: updated.quote.status });
+    return res.json({ booking: updated, message: decision === 'accept' ? 'Quote accepted. The agreed service amount is now recorded for cash settlement.' : 'Quote declined. You can ask the provider to revise it.' });
+  } catch (error) {
+    console.error('Quote decision error:', error);
+    return res.status(500).json({ error: 'Could not update service quote.' });
+  }
+});
+
+// Customer proposes a new booking date/time; provider or Admin confirms it.
+app.post('/api/bookings/:id/reschedule', requireAuth, async (req, res) => {
+  try {
+    if (req.user.accountType !== 'customer') return res.status(403).json({ error: 'Customer account required.' });
+    const { date, time, reason } = req.body || {};
+    const allowedTimes = ['Morning (9 AM - 12 PM)', 'Afternoon (1 PM - 5 PM)', 'Evening (5 PM - 8 PM)', 'Emergency (ASAP)'];
+    const parsed = new Date(String(date || '') + 'T00:00:00Z');
+    const localToday = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Colombo' }).format(new Date());
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(date || '')) || Number.isNaN(parsed.getTime()) ||
+      parsed.toISOString().slice(0, 10) !== date || date < localToday || !allowedTimes.includes(time)) {
+      return res.status(400).json({ error: 'Choose a valid future date and an available time slot.' });
+    }
+    const bookings = await getBookings();
+    const booking = bookings.find(item => item.id === req.params.id);
+    if (!booking) return res.status(404).json({ error: 'Booking not found.' });
+    if (booking.customerId !== req.user.id) return res.status(403).json({ error: 'You can only reschedule your own booking.' });
+    if (!['requested', 'accepted'].includes(booking.status)) return res.status(409).json({ error: 'Only pending or accepted bookings can be rescheduled.' });
+    if (booking.rescheduleRequest?.status === 'pending') return res.status(409).json({ error: 'A reschedule request is already awaiting provider response.' });
+    const updated = await updateBooking(booking.id, current => {
+      current.rescheduleRequest = {
+        date, time, reason: String(reason || '').trim().slice(0, 300),
+        status: 'pending', requestedAt: new Date().toISOString()
+      };
+      current.updatedAt = new Date().toISOString();
+      return current;
+    });
+    publishEvent('booking:reschedule_requested', { bookingId: booking.id, customerId: booking.customerId, providerId: booking.providerId, status: 'pending' });
+    return res.json({ booking: updated, message: 'Reschedule request sent to the service provider.' });
+  } catch (error) {
+    console.error('Reschedule request error:', error);
+    return res.status(500).json({ error: 'Could not submit reschedule request.' });
+  }
+});
+
+app.patch('/api/bookings/:id/reschedule', requireAuth, async (req, res) => {
+  try {
+    const decision = String(req.body?.decision || '');
+    if (!['accept', 'reject'].includes(decision)) return res.status(400).json({ error: 'Choose accept or reject.' });
+    const bookings = await getBookings();
+    const booking = bookings.find(item => item.id === req.params.id);
+    if (!booking) return res.status(404).json({ error: 'Booking not found.' });
+    const isAdmin = req.user.accountType === 'admin';
+    if (!isAdmin && (req.user.accountType !== 'provider' || booking.providerId !== req.user.id)) {
+      return res.status(403).json({ error: 'Only the assigned provider or Admin can decide this request.' });
+    }
+    if (!['requested', 'accepted'].includes(booking.status)) return res.status(409).json({ error: 'This booking is no longer eligible for rescheduling.' });
+    if (booking.rescheduleRequest?.status !== 'pending') return res.status(409).json({ error: 'No pending reschedule request exists.' });
+    const updated = await updateBooking(booking.id, current => {
+      const request = current.rescheduleRequest;
+      if (decision === 'accept') {
+        current.bookingDate = request.date;
+        current.bookingTime = request.time;
+      }
+      current.rescheduleRequest = { ...request, status: decision === 'accept' ? 'accepted' : 'rejected', decidedAt: new Date().toISOString(), decidedBy: req.user.id };
+      current.updatedAt = new Date().toISOString();
+      return current;
+    });
+    publishEvent('booking:reschedule_decided', { bookingId: booking.id, customerId: booking.customerId, providerId: booking.providerId, status: updated.rescheduleRequest.status });
+    return res.json({ booking: updated, message: decision === 'accept' ? 'New booking time confirmed.' : 'Reschedule request declined.' });
+  } catch (error) {
+    console.error('Reschedule decision error:', error);
+    return res.status(500).json({ error: 'Could not update reschedule request.' });
+  }
+});
+
 // Customer / Provider / Admin cancels a booking with technician call-out compensation rules
 app.patch('/api/bookings/:id/cancel', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
-    const { id: userId, accountType, phone } = req.user;
+    const { id: userId, accountType } = req.user;
     const { reason } = req.body;
 
     const bookings = await getBookings();
@@ -1078,15 +1365,14 @@ app.patch('/api/bookings/:id/cancel', requireAuth, async (req, res) => {
     }
 
     // Role-based authorization
-    const userPhoneDigits = phone ? normalizePhone(phone) : null;
-    const isProviderMatch = booking.providerId === userId || (userPhoneDigits && booking.providerPhone && normalizePhone(booking.providerPhone) === userPhoneDigits);
-    const isCustomerMatch = booking.customerId === userId || (userPhoneDigits && booking.customerPhone && normalizePhone(booking.customerPhone) === userPhoneDigits);
+    const isProviderMatch = booking.providerId === userId;
+    const isCustomerMatch = booking.customerId === userId;
 
     if (accountType !== 'admin' && !isCustomerMatch && !isProviderMatch) {
       return res.status(403).json({ error: 'You are not authorized to cancel this booking.' });
     }
 
-    if (booking.status === 'completed' || booking.status === 'cancelled' || booking.status === 'refunded') {
+    if (['completed', 'cancelled', 'refunded', 'disputed', 'settled_split'].includes(booking.status)) {
       return res.status(400).json({ error: `Cannot cancel a booking that is already ${booking.status}.` });
     }
 
@@ -1134,7 +1420,7 @@ app.patch('/api/bookings/:id/cancel', requireAuth, async (req, res) => {
       return b;
     });
 
-    broadcastEvent('booking:status_updated', {
+    publishEvent('booking:status_updated', {
       bookingId: id,
       status: 'cancelled',
       booking: updated
@@ -1155,10 +1441,11 @@ app.patch('/api/bookings/:id/cancel', requireAuth, async (req, res) => {
 app.post('/api/bookings/:id/dispute', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
-    const { id: userId, accountType, phone } = req.user;
-    const { reason, evidence } = req.body;
+    const { id: userId, accountType } = req.user;
+    const reasonText = String(req.body?.reason || '').trim().slice(0, 1000);
+    const evidenceText = String(req.body?.evidence || '').trim().slice(0, 4000);
 
-    if (!reason || !reason.trim()) {
+    if (!reasonText) {
       return res.status(400).json({ error: 'A valid reason for the dispute is required.' });
     }
 
@@ -1169,28 +1456,32 @@ app.post('/api/bookings/:id/dispute', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'Booking not found.' });
     }
 
-    const userPhoneDigits = phone ? normalizePhone(phone) : null;
-    const isCustomerMatch = booking.customerId === userId || (userPhoneDigits && booking.customerPhone && normalizePhone(booking.customerPhone) === userPhoneDigits);
+    const isCustomerMatch = booking.customerId === userId;
 
     if (accountType !== 'admin' && !isCustomerMatch) {
       return res.status(403).json({ error: 'You are only authorized to dispute bookings under your own account.' });
     }
 
-    if (booking.status === 'cancelled' || booking.status === 'refunded' || booking.status === 'settled_split') {
-      return res.status(400).json({ error: `Cannot dispute a booking that is already ${booking.status}.` });
+    if (booking.status !== 'completed') {
+      return res.status(409).json({ error: 'A workmanship dispute can only be opened after the service is completed.' });
     }
+    const completedAt = Date.parse(booking.completedAt || booking.updatedAt || booking.createdAt);
+    if (!Number.isFinite(completedAt) || Date.now() - completedAt > 14 * 24 * 60 * 60 * 1000) {
+      return res.status(409).json({ error: 'The 14-day workmanship dispute window has expired.' });
+    }
+    if (booking.status === 'disputed') return res.status(409).json({ error: 'A dispute is already open for this booking.' });
 
     const updated = await updateBooking(id, b => {
       b.status = 'disputed';
       b.paymentStatus = 'disputed_frozen';
-      b.disputeReason = reason.trim();
-      b.disputeEvidence = evidence ? String(evidence) : '';
+      b.disputeReason = reasonText;
+      b.disputeEvidence = evidenceText;
       b.disputedAt = new Date().toISOString();
       b.updatedAt = new Date().toISOString();
       return b;
     });
 
-    broadcastEvent('booking:status_updated', {
+    publishEvent('booking:status_updated', {
       bookingId: id,
       status: 'disputed',
       booking: updated
@@ -1274,7 +1565,7 @@ app.post('/api/admin/bookings/:id/arbitrate', requireAdmin, async (req, res) => 
       return b;
     });
 
-    broadcastEvent('booking:status_updated', {
+    publishEvent('booking:status_updated', {
       bookingId: id,
       status: newStatus,
       booking: updated
@@ -1360,7 +1651,7 @@ app.post('/api/bookings/:id/claim', requireAuth, async (req, res) => {
     const { id } = req.params;
     const provider = req.user;
 
-    if (provider.accountType !== 'provider') {
+    if (provider.accountType !== 'provider' || provider.status !== 'active') {
       return res.status(403).json({ error: 'Only verified service providers can claim broadcast jobs.' });
     }
 
@@ -1371,11 +1662,21 @@ app.post('/api/bookings/:id/claim', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'Booking request not found.' });
     }
 
-    if (booking.status !== 'broadcast_pool') {
+    if (booking.status !== 'broadcast_pool' || booking.providerId) {
       return res.status(400).json({ error: 'This job is not currently open for broadcast claiming.' });
     }
 
+    const approvedCategories = new Set([provider.category, ...(Array.isArray(provider.approvedServices) ? provider.approvedServices.map(service => service.categorySlug) : [])]);
+    if (booking.categorySlug && !approvedCategories.has(booking.categorySlug)) {
+      return res.status(403).json({ error: 'This broadcast job is outside your approved provider category.' });
+    }
+    if (Array.isArray(booking.declinedBy) && booking.declinedBy.includes(provider.id)) {
+      return res.status(409).json({ error: 'You previously declined this broadcast job.' });
+    }
+    let claimed = false;
     const updated = await updateBooking(id, b => {
+      if (b.status !== 'broadcast_pool' || b.providerId || (Array.isArray(b.declinedBy) && b.declinedBy.includes(provider.id))) return b;
+      claimed = true;
       b.providerId = provider.id;
       b.providerName = provider.fullName;
       b.providerPhone = provider.phone;
@@ -1385,8 +1686,10 @@ app.post('/api/bookings/:id/claim', requireAuth, async (req, res) => {
       return b;
     });
 
+    if (!claimed) return res.status(409).json({ error: 'This broadcast job has already been claimed or is no longer available.' });
+
     // Real-Time SSE Dispatch to customer and other contractors
-    broadcastEvent('booking:status_updated', {
+    publishEvent('booking:status_updated', {
       bookingId: id,
       status: 'accepted',
       booking: updated
@@ -1406,11 +1709,13 @@ app.post('/api/bookings/:id/claim', requireAuth, async (req, res) => {
 // Reviews: Customer submits a review for a completed booking
 app.post('/api/reviews', requireAuth, async (req, res) => {
   try {
-    const { bookingId, rating, comment } = req.body;
+    const { bookingId, rating, comment } = req.body || {};
     const customer = req.user;
-
     const parsedRating = Number(rating);
-    if (!bookingId || !parsedRating || parsedRating < 1 || parsedRating > 5) {
+    const cleanComment = String(comment || '').trim().slice(0, 1000);
+
+    if (customer.accountType !== 'customer') return res.status(403).json({ error: 'Customer account required to submit a review.' });
+    if (!bookingId || !Number.isInteger(parsedRating) || parsedRating < 1 || parsedRating > 5) {
       return res.status(400).json({ error: 'Valid booking ID and rating between 1 and 5 stars are required.' });
     }
 
@@ -1422,7 +1727,7 @@ app.post('/api/reviews', requireAuth, async (req, res) => {
     }
 
     // Verify customer ownership
-    if (booking.customerId !== customer.id && (!customer.phone || booking.customerPhone !== customer.phone)) {
+    if (booking.customerId !== customer.id) {
       return res.status(403).json({ error: 'You can only review services booked under your account.' });
     }
 
@@ -1438,21 +1743,21 @@ app.post('/api/reviews', requireAuth, async (req, res) => {
     }
 
     const newReview = {
-      id: `rev-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      id: 'rev-' + crypto.randomUUID(),
       bookingId,
       providerId: booking.providerId,
       providerName: booking.providerName,
       customerId: customer.id,
       customerName: customer.fullName || 'Verified Customer',
       rating: Math.round(parsedRating),
-      comment: String(comment || '').trim(),
+      comment: cleanComment,
       createdAt: new Date().toISOString()
     };
 
     await addReview(newReview);
 
     // Broadcast review event in real time
-    broadcastEvent('review:submitted', {
+    publishEvent('review:submitted', {
       review: newReview,
       providerId: newReview.providerId
     });
@@ -1497,6 +1802,11 @@ app.get('/api/reviews/provider/:providerId', async (req, res) => {
 app.get('/api/reviews/booking/:bookingId', requireAuth, async (req, res) => {
   try {
     const { bookingId } = req.params;
+    const booking = (await getBookings()).find(item => item.id === bookingId);
+    if (!booking) return res.status(404).json({ error: 'Booking not found.' });
+    if (req.user.accountType !== 'admin' && booking.customerId !== req.user.id && booking.providerId !== req.user.id) {
+      return res.status(403).json({ error: 'You are not allowed to view this booking review.' });
+    }
     const review = await getReviewByBooking(bookingId);
     if (!review) {
       return res.status(404).json({ error: 'No review found for this booking.' });
@@ -1532,6 +1842,11 @@ app.get('/api/ledger/wallet', requireAuth, async (req, res) => {
 app.get('/api/ledger/booking/:bookingId', requireAuth, async (req, res) => {
   try {
     const { bookingId } = req.params;
+    const booking = (await getBookings()).find(item => item.id === bookingId);
+    if (!booking) return res.status(404).json({ error: 'Booking not found.' });
+    if (req.user.accountType !== 'admin' && booking.customerId !== req.user.id && booking.providerId !== req.user.id) {
+      return res.status(403).json({ error: 'You are not allowed to view this booking ledger.' });
+    }
     const entries = await getLedgerByBooking(bookingId);
     res.json({
       status: 'ok',
@@ -1605,7 +1920,7 @@ app.patch('/api/admin/users/:id/status', requireAdmin, async (req, res) => {
     }
 
     // Broadcast user status change so client sessions update/revoke immediately
-    broadcastEvent('user:status_changed', {
+    publishEvent('user:status_changed', {
       userId: id,
       status
     });

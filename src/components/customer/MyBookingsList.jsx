@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { RefreshCw, Ban, ClipboardList, Search, Star, ShieldCheck, CheckCircle2, AlertTriangle } from 'lucide-react';
 
 export default function MyBookingsList({
@@ -9,8 +9,15 @@ export default function MyBookingsList({
   onDisputeBooking,
   onOpenDisputeModal,
   onExploreServices,
-  onOpenReviewModal
+  onOpenReviewModal,
+  onRescheduleBooking,
+  onQuoteDecision
 }) {
+  const [rescheduleFor, setRescheduleFor] = useState(null);
+  const [rescheduleDate, setRescheduleDate] = useState('');
+  const [rescheduleTime, setRescheduleTime] = useState('Morning (9 AM - 12 PM)');
+  const [rescheduleBusy, setRescheduleBusy] = useState(false);
+  const today = new Date().toLocaleDateString('en-CA');
   return (
     <section style={{ margin: '30px 0 60px' }}>
       <div className="section-heading">
@@ -68,6 +75,29 @@ export default function MyBookingsList({
                 </div>
               </div>
 
+              {b.quote?.status === 'pending' && (
+                <div style={{margin:'10px 0',padding:12,border:'1px solid #bfdbfe',background:'#eff6ff',borderRadius:9}}>
+                  <b style={{fontSize:13,color:'#1e40af'}}>Service quote from {b.providerName}</b>
+                  <div style={{fontSize:20,fontWeight:800,color:'#173b2f',margin:'5px 0'}}>LKR {Number(b.quote.amount).toLocaleString('en-LK')}</div>
+                  <p style={{fontSize:12,color:'#475569',margin:'4px 0'}}>{b.quote.description}</p>
+                  <small style={{color:'#64748b'}}>Valid until {new Date(b.quote.validUntil).toLocaleDateString()} · Cash settlement; no online payment is taken.</small>
+                  <div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:9}}>
+                    <button type="button" className="booking-action-btn accept" onClick={()=>onQuoteDecision?.(b.id,'accept')}>Accept quote</button>
+                    <button type="button" className="booking-action-btn reject" onClick={()=>onQuoteDecision?.(b.id,'reject')}>Decline quote</button>
+                  </div>
+                </div>
+              )}
+              {b.quote?.status === 'accepted' && <p style={{margin:'8px 0',fontSize:12,color:'#166534'}}>Agreed service quote: <b>LKR {Number(b.quote.amount).toLocaleString('en-LK')}</b></p>}
+              {b.rescheduleRequest?.status === 'pending' && (
+                <p style={{margin:'8px 0',padding:'8px 10px',background:'#fff7ed',borderRadius:7,color:'#9a3412',fontSize:12}}>
+                  New time requested: {b.rescheduleRequest.date} · {b.rescheduleRequest.time} — awaiting provider confirmation
+                </p>
+              )}
+              {b.rescheduleRequest?.status === 'accepted' && (
+                <p style={{margin:'8px 0',padding:'8px 10px',background:'#f0fdf4',borderRadius:7,color:'#166534',fontSize:12}}>
+                  New booking time confirmed: {b.bookingDate} · {b.bookingTime}
+                </p>
+              )}
               <div className="booking-problem-box">
                 <b>Problem Description:</b> {b.problemDescription}
               </div>
@@ -221,6 +251,11 @@ export default function MyBookingsList({
 
               {(b.status === 'requested' || b.status === 'accepted' || b.status === 'in_progress') && (
                 <div className="booking-actions-row">
+                  {(b.status === 'requested' || b.status === 'accepted') && b.rescheduleRequest?.status !== 'pending' && (
+                    <button type="button" className="booking-action-btn" onClick={() => { setRescheduleFor(rescheduleFor === b.id ? null : b.id); setRescheduleDate(b.bookingDate || today); }}>
+                      Request new time
+                    </button>
+                  )}
                   <button
                     type="button"
                     className="booking-action-btn cancel"
@@ -230,6 +265,21 @@ export default function MyBookingsList({
                   </button>
                 </div>
               )}
+                {rescheduleFor === b.id && (
+                  <form onSubmit={async event => {
+                    event.preventDefault();
+                    if (!rescheduleDate || !onRescheduleBooking) return;
+                    setRescheduleBusy(true);
+                    const ok = await onRescheduleBooking(b.id, rescheduleDate, rescheduleTime);
+                    setRescheduleBusy(false);
+                    if (ok) setRescheduleFor(null);
+                  }} style={{display:'flex',gap:8,flexWrap:'wrap',alignItems:'center',marginTop:10,padding:10,background:'#f8faf8',borderRadius:8}}>
+                    <label style={{fontSize:11,color:'#53645a'}}>New date <input type="date" required min={today} value={rescheduleDate} onChange={event=>setRescheduleDate(event.target.value)} style={{display:'block',padding:7,border:'1px solid #d4ddd5',borderRadius:6}}/></label>
+                    <label style={{fontSize:11,color:'#53645a'}}>Time slot <select value={rescheduleTime} onChange={event=>setRescheduleTime(event.target.value)} style={{display:'block',padding:7,border:'1px solid #d4ddd5',borderRadius:6}}><option>Morning (9 AM - 12 PM)</option><option>Afternoon (1 PM - 5 PM)</option><option>Evening (5 PM - 8 PM)</option><option>Emergency (ASAP)</option></select></label>
+                    <button type="submit" disabled={rescheduleBusy} className="booking-action-btn accept">{rescheduleBusy?'Sending…':'Send request'}</button>
+                    <button type="button" onClick={()=>setRescheduleFor(null)} className="booking-action-btn cancel">Close</button>
+                  </form>
+                )}
             </div>
           ))}
         </div>

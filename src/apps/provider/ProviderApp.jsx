@@ -3,9 +3,12 @@ import { BrowserRouter, Link, useNavigate } from 'react-router-dom';
 import { BriefcaseBusiness, LogIn, LogOut, RefreshCw, ShieldCheck, UserRound } from 'lucide-react';
 import { AuthProvider, useAuth } from '../../context/AuthContext';
 import { API_BASE } from '../../config';
+import { subscribeToAppEvents } from '../../utils/events';
 import ProviderDashboard from '../../components/provider/ProviderDashboard';
 import AuthModal from '../../components/common/AuthModal';
 import Footer from '../../components/common/Footer';
+import NotificationCenter from '../../components/common/NotificationCenter';
+import ProviderServicesManager from '../../components/provider/ProviderServicesManager';
 
 function ProviderWorkspace() {
   const { currentUser, openAuthModal, logout, switchRole } = useAuth();
@@ -38,11 +41,8 @@ function ProviderWorkspace() {
 
   useEffect(() => {
     if (!currentUser || currentUser.accountType !== 'provider') return undefined;
-    const events = new EventSource(`${API_BASE}/events`);
     const refresh = () => fetchBookings();
-    events.addEventListener('booking:created', refresh);
-    events.addEventListener('booking:status_updated', refresh);
-    return () => events.close();
+    return subscribeToAppEvents(currentUser?.token, { 'booking:created': refresh, 'booking:status_updated': refresh, 'booking:quote_sent': refresh, 'booking:quote_decided': refresh, 'booking:reschedule_requested': refresh, 'booking:reschedule_decided': refresh, 'grocery:order_created': refresh, 'grocery:order_updated': refresh, 'driver:job_updated': refresh });
   }, [currentUser, fetchBookings]);
 
   async function updateBookingStatus(bookingId, status) {
@@ -65,6 +65,21 @@ function ProviderWorkspace() {
     }
   }
 
+  async function decideReschedule(bookingId, decision) {
+    if (!currentUser?.token) return;
+    try {
+      const response = await fetch(`${API_BASE}/bookings/${encodeURIComponent(bookingId)}/reschedule`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${currentUser.token}` },
+        body: JSON.stringify({ decision })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Could not update reschedule request.');
+      setNotice(data.message || 'Reschedule request updated.');
+      await fetchBookings();
+    } catch (error) { setNotice(error.message || 'Could not update reschedule request.'); }
+  }
+
   const isProvider = currentUser?.accountType === 'provider';
 
   return <div className="app-shell">
@@ -76,18 +91,20 @@ function ProviderWorkspace() {
         <span className="nav-link-btn"><BriefcaseBusiness size={14}/> Provider workspace</span>
       </nav>
       {isProvider ? <div className="user-profile">
+        <NotificationCenter/>
         <span className="user-badge"><UserRound size={14}/><span>{currentUser.fullName}</span></span>
         {(currentUser.roles || []).includes('customer') && <button className="sign-in" onClick={async () => { try { await switchRole('customer'); window.location.href = '/'; } catch (error) { setNotice(error.message); } }}>Customer app</button>}
         <button className="sign-out-btn" onClick={() => { logout(); navigate('/'); }}><LogOut size={14}/> Sign out</button>
       </div> : <button className="sign-in" onClick={() => openAuthModal('login')}><LogIn size={14}/> Provider sign in</button>}
     </header>
 
-    {isProvider ? <ProviderDashboard
+    {isProvider ? <><ProviderServicesManager/><ProviderDashboard
       bookings={bookings}
       isLoading={loading}
       onRefresh={fetchBookings}
       onUpdateStatus={updateBookingStatus}
-    /> : <main style={{maxWidth:900,margin:'56px auto',padding:'0 20px',minHeight:'48vh'}}>
+      onDecideReschedule={decideReschedule}
+    /></> : <main style={{maxWidth:900,margin:'56px auto',padding:'0 20px',minHeight:'48vh'}}>
       <section style={{background:'#fff',border:'1px solid #e5ebe2',borderRadius:18,padding:'32px',textAlign:'center',boxShadow:'0 12px 36px rgba(20,45,32,.06)'}}>
         <div style={{width:54,height:54,borderRadius:16,background:'#edf7ef',color:'#174d3d',display:'grid',placeItems:'center',margin:'0 auto 16px'}}><ShieldCheck size={26}/></div>
         <p className="eyebrow">ARY SERVICE PARTNER PORTAL</p>

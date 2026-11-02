@@ -127,3 +127,31 @@ Ride and food-delivery requests can include optional browser GPS coordinates. Ap
 
 
 - Optional ride and parcel fare estimates are available only when the corresponding LKR base, per-kilometre and minimum rates are configured in the server environment. Estimates use straight-line GPS distance and must not be presented as road-route quotes.
+
+
+## Road routing
+
+ARY can request road distance and duration from a self-hosted OSRM-compatible service through `GET /api/mobility/route`. Configure `ROUTING_BASE_URL` to an HTTPS endpoint. The application does not silently substitute straight-line distance when road routing is unavailable. Driver proximity sorting remains a straight-line approximation and must be labelled as such in the UI.
+
+
+## Native Android app bundles
+
+Three Capacitor Android shells are maintained for Customer, Driver and Provider. They share the browser application code and require the production API endpoint to be injected at build time. Set `ARY_API_BASE` to the HTTPS backend base ending in `/api`, then run `npm run build:mobile` (or `build:mobile:customer`, `build:mobile:driver`, `build:mobile:provider`). The mobile build intentionally fails when this endpoint is missing instead of packaging an app that calls `localhost` on the user's phone. Cleartext HTTP is disabled in the native Capacitor configs. Android signing, Play Store release configuration, Firebase project files and device validation remain deployment-owner tasks.
+
+
+## Remaining marketplace workflows added
+
+- **Authenticated live updates:** clients obtain short-lived signed SSE tickets through an authenticated API. Connections expire with the ticket and reconnect through authenticated APIs. Event payloads are invalidation-only; customer, provider and driver event delivery is role/account scoped. Request logs exclude query strings so tickets are not written to logs.
+- **Persistent notifications:** booking, quote, reschedule, driver and grocery events create account-scoped notification inbox entries. Customers, providers, drivers and Admin can mark individual or all notifications read. Browser OS alerts are opt-in and work while the browser app is active; background Web Push / FCM delivery still requires deployment credentials and native push integration.
+- **Service quotations:** the assigned provider can send a dated LKR quote with a scope description. The customer can accept or decline it. Acceptance updates the agreed booking amount and commission breakdown; settlement remains cash-based and no payment gateway is called.
+- **Booking rescheduling:** customers can request a new date/time for pending or accepted bookings. The assigned provider or Admin confirms or declines the request.
+- **Grocery fulfilment:** checkout creates a food-delivery dispatch job for the approved driver network. The job becomes visible only after the shop marks the order ready for pickup. Pickup and recipient PIN verification update the grocery order's delivery status. Customer-only PINs are hidden from provider and Admin order views. Cancelling before driver acceptance cancels the dispatch and restores stock; once a driver has accepted, cancellation is blocked for support handling.
+- **Booking access hardening:** booking lists and review/cancel/progress actions use immutable account IDs rather than mutable phone-number matches. Provider booking status transitions are constrained by role and current lifecycle state.
+
+## Operational items that still require owner configuration
+
+- Configure ROUTING_BASE_URL with a self-hosted HTTPS OSRM-compatible service for real road distance/duration. Without it, the road-route endpoint returns unavailable; proximity ranking is still a straight-line approximation.
+- Configure RIDE_*_LKR and DELIVERY_*_LKR fare variables to enable indicative fare estimates. Grocery delivery fee remains zero until a real delivery pricing policy is approved.
+- Native Android bundles require ARY_API_BASE to point to the deployed HTTPS /api endpoint. Android signing, Firebase project credentials, store release setup and real-device validation are deployment-owner tasks.
+- True background push notifications require a configured FCM/Web Push provider and its credentials; the current notification inbox and browser alerts do not claim background push delivery.
+- Payment gateway, online escrow and automated payouts remain excluded.

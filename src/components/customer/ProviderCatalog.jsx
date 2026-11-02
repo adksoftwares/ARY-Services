@@ -77,14 +77,15 @@ export default function ProviderCatalog({
           </div>
         ) : providers.length > 0 ? (
           <div className="providers-grid">
-            {providers.map(provider => (
-              <div key={provider.id} className="provider-card-item">
+            {providers.map(provider => {
+              const selectedService = provider.approvedServices?.find(service => service.categorySlug === selectedCategory?.slug);
+              return <div key={provider.id} className="provider-card-item">
                 <div>
                   <div className="provider-card-top">
                     <div className="provider-name-block">
                       <b>{provider.fullName}</b>
                       <span className="provider-category-tag">
-                        {provider.categoryName || selectedCategory?.name || 'General Services'}
+                        {selectedService?.serviceName || provider.categoryName || selectedCategory?.name || 'General Services'}
                       </span>
                     </div>
                     <span className="verified-provider-badge">
@@ -117,7 +118,7 @@ export default function ProviderCatalog({
                       </span>
                     </div>
                     <div className="provider-meta-item provider-rate">
-                      <span>Starting from: <b>{provider.baseCharge || 'LKR 1,500'}</b></span>
+                      <span>Starting from: <b>{selectedService?.baseCharge ? 'LKR '+Number(selectedService.baseCharge).toLocaleString('en-LK') : provider.baseCharge || 'LKR 1,500'}</b></span>
                     </div>
                   </div>
 
@@ -146,8 +147,8 @@ export default function ProviderCatalog({
                 >
                   <Calendar size={15} /> Book Service / Request Quote
                 </button>
-              </div>
-            ))}
+              </div>;
+            })}
           </div>
         ) : (
           <div className="no-providers-box">

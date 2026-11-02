@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Bike, PackageCheck, RefreshCw, CheckCircle2, MapPin, ArrowUpRight, Package } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE } from '../../config';
+import { subscribeToAppEvents } from '../../utils/events';
 
 const DRIVER_OPTIONS = [
   { value: 'ride', label: 'Passenger rides', description: 'Accept and complete passenger trips', icon: Bike },
@@ -106,13 +107,7 @@ export default function DriverWorkspace({ onNotice }) {
 
   useEffect(() => {
     if (!currentUser?.token) return undefined;
-    const events = new EventSource(`${API_BASE}/events`);
-    const updateEvents = ['driver:job_created', 'driver:job_updated', 'driver:application_reviewed'];
-    updateEvents.forEach(eventName => events.addEventListener(eventName, refresh));
-    return () => {
-      updateEvents.forEach(eventName => events.removeEventListener(eventName, refresh));
-      events.close();
-    };
+    return subscribeToAppEvents(currentUser?.token, { 'driver:job_created': refresh, 'driver:job_updated': refresh, 'driver:application_reviewed': refresh });
   }, [currentUser?.token, refresh]);
 
   function toggleService(value) {

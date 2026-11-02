@@ -3,7 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readPersistentState, mutatePersistentState } from './storage.js';
 import { cleanSriLankaCoordinates, isDriverPresenceFresh, rankJobsForDriver, buildAdminDispatchSnapshot } from './mobilityDispatch.js';
-import { calculateDistanceKm, estimateEtaMinutes } from './geoService.js';
+import { calculateDistanceKm, estimateEtaMinutes, getRoadRoute } from './geoService.js';
 
 const dataFile = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'data', 'driver-services.json');
 const emptyDriverState = { applications: [], jobs: [], presence: {} };
@@ -21,6 +21,14 @@ async function readJobs() {
   const state = await readPersistentState('driver-services', dataFile, emptyDriverState);
   return { applications: state.applications || [], jobs: state.jobs || [], presence: state.presence || {} };
 }
+
+const groceryOrdersFile = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'data', 'grocery-orders.json');
+async function isGroceryOrderReadyForDriver(orderReference) {
+  if (!String(orderReference || '').startsWith('gord-')) return true;
+  const orders = await readPersistentState('grocery_orders', groceryOrdersFile, []);
+  return orders.some(order => order.id === orderReference && order.status === 'ready_for_pickup');
+}
+
 const id=prefix=>prefix+'_'+crypto.randomUUID().replaceAll('-','').slice(0,12);
 const types=['food_delivery','ride','parcel_delivery'];
 const cleanCoordinates = cleanSriLankaCoordinates;
@@ -31,6 +39,61 @@ const pinMatches = (pin, digest) => {
   const actual = Buffer.from(pinDigest(pin), 'hex'), expected = Buffer.from(digest, 'hex');
   return actual.length === expected.length && crypto.timingSafeEqual(actual, expected);
 };
+
+
+async function updateGroceryDeliveryStatus(job, deliveryStatus, broadcastEvent) {
+  if (job.serviceType !== 'food_delivery' || !String(job.orderReference || '').startsWith('gord-')) return;
+  const ordersFile = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'data', 'grocery-orders.json');
+  const order = await mutatePersistentState('grocery_orders', ordersFile, [], stored => {
+    const current = stored.find(item => item.id === job.orderReference);
+    if (!current) return null;
+    current.deliveryStatus = deliveryStatus;
+    if (deliveryStatus === 'delivered') current.status = 'delivered';
+    current.updatedAt = new Date().toISOString();
+    current.statusHistory = Array.isArray(current.statusHistory) ? current.statusHistory : [];
+    current.statusHistory.push({ status: deliveryStatus === 'delivered' ? 'delivered' : current.status, deliveryStatus, at: current.updatedAt, by: job.driverId });
+    return current;
+  });
+  if (order) broadcastEvent?.('grocery:order_updated', {
+    orderId: order.id, providerId: order.providerId, customerId: order.customerId,
+    status: order.status, deliveryStatus
+  });
+}
+
+export async function createGroceryOrderDeliveryJob(order, provider) {
+  const pickupAddress = String(provider?.address || provider?.location || provider?.shopAddress || '').trim();
+  if (!pickupAddress) return { available: false, reason: 'provider_address_missing' };
+  const pickupPin = makePin(), deliveryPin = makePin();
+  const job = {
+    id: id('food'), serviceType: 'food_delivery', customerId: order.customerId,
+    customerName: order.customerName, customerPhone: order.customerPhone,
+    orderReference: order.id, restaurantName: provider.fullName || order.providerName || 'Grocery Shop',
+    pickupAddress: pickupAddress.slice(0, 500), destinationAddress: order.deliveryAddress,
+    destinationLat: cleanCoordinates(order.destinationLat, order.destinationLng)?.lat ?? null,
+    destinationLng: cleanCoordinates(order.destinationLat, order.destinationLng)?.lng ?? null,
+    notes: 'Grocery order delivery. ' + String(order.notes || '').slice(0, 350),
+    driverId: null, status: 'requested',
+    pickupPinHash: pinDigest(pickupPin), deliveryPinHash: pinDigest(deliveryPin),
+    pickupPinForCustomer: pickupPin, deliveryPinForCustomer: deliveryPin,
+    pinAttempts: 0, deliveryPinAttempts: 0, createdAt: new Date().toISOString()
+  };
+  await mutateJobs(state => { state.jobs.unshift(job); });
+  return { available: true, job, pickupPin, deliveryPin };
+}
+
+export async function cancelGroceryOrderDeliveryJob(jobId) {
+  if (!jobId) return true;
+  return mutateJobs(state => {
+    const job = state.jobs.find(item => item.id === jobId);
+    if (!job) return true;
+    if (job.driverId || job.status !== 'requested') return false;
+    job.status = 'cancelled';
+    job.cancelledAt = new Date().toISOString();
+    job.cancellationReason = 'grocery_order_cancelled';
+    return true;
+  });
+}
+
 function configuredFare(distanceKm, serviceType = 'ride') {
   const prefix = serviceType === 'ride' ? 'RIDE' : 'DELIVERY';
   const keys = [prefix + '_BASE_FARE_LKR', prefix + '_PER_KM_FARE_LKR', prefix + '_MIN_FARE_LKR'];
@@ -48,7 +111,7 @@ function safeMobilityJob(job, viewerId = null) {
     if (pickupPinForCustomer) safe.pickupPin = pickupPinForCustomer;
     if (deliveryPinForCustomer) safe.deliveryPin = deliveryPinForCustomer;
   }
-  if (!viewerId || (viewerId !== job.customerId && viewerId !== job.driverId)) { delete safe.customerId; delete safe.customerName; delete safe.pickupContact; delete safe.recipientContact; delete safe.notes; }
+  if (!viewerId || (viewerId !== job.customerId && viewerId !== job.driverId)) { delete safe.customerId; delete safe.customerName; delete safe.customerPhone; delete safe.pickupContact; delete safe.recipientContact; delete safe.notes; }
   return safe;
 }
 export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadcastEvent,getBookings,getUsers}){
@@ -56,7 +119,7 @@ export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadc
     if(req.user.accountType!=='driver')return res.status(403).json({error:'Only registered Driver accounts can apply to driver networks.'});
     const requested=Array.isArray(req.body?.driverTypes)?req.body.driverTypes:[req.body?.driverType];
     const driverTypes=[...new Set(requested.map(String).filter(type=>types.includes(type)))];
-    if(!driverTypes.length)return res.status(400).json({error:'Choose Ride, Food Delivery, or both.'});
+    if(!driverTypes.length)return res.status(400).json({error:'Choose Ride, Food Delivery, Parcel Delivery, or any combination.'});
     const applications=await mutateJobs(data=>{
       const submitted=[];
       for(const driverType of driverTypes){
@@ -88,8 +151,17 @@ export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadc
     const pickupPin=makePin(),deliveryPin=makePin();
     const job={id:id('food'),serviceType:'food_delivery',customerId:req.user.id,customerName:req.user.fullName,orderReference:order.id,restaurantName:String(restaurantName||order.providerName||'Food Shop').slice(0,160),pickupAddress:String(pickupAddress||restaurant?.location||'').slice(0,500),destinationAddress:String(dropoffAddress).slice(0,500),destinationLat:destination?.lat??null,destinationLng:destination?.lng??null,notes:String(notes).slice(0,500),driverId:null,status:'requested',pickupPinHash:pinDigest(pickupPin),deliveryPinHash:pinDigest(deliveryPin),pickupPinForCustomer:pickupPin,deliveryPinForCustomer:deliveryPin,pinAttempts:0,deliveryPinAttempts:0,createdAt:new Date().toISOString()};
     await mutateJobs(d=>{d.jobs.unshift(job);});
-    broadcastEvent?.('driver:job_created',{job:safeMobilityJob(job)});res.status(201).json({job:safeMobilityJob(job,req.user.id)});
+    broadcastEvent?.('driver:job_created',{job:safeMobilityJob(job),customerId:job.customerId,driverId:job.driverId});res.status(201).json({job:safeMobilityJob(job,req.user.id)});
   });
+  app.get('/api/mobility/route',requireAuth,async(req,res)=>{
+    const origin=cleanCoordinates(req.query.originLat,req.query.originLng);
+    const destination=cleanCoordinates(req.query.destinationLat,req.query.destinationLng);
+    if(!origin||!destination)return res.status(400).json({error:'Valid Sri Lankan origin and destination coordinates are required.'});
+    const route=await getRoadRoute(origin,destination);
+    if(!route.available)return res.status(503).json({error:'Road routing is not currently available.',reason:route.reason});
+    return res.json({route});
+  });
+
   app.get('/api/mobility/fare-estimate',async(req,res)=>{
     const pickup=cleanCoordinates(req.query.pickupLat,req.query.pickupLng);
     const destination=cleanCoordinates(req.query.destinationLat,req.query.destinationLng);
@@ -108,10 +180,10 @@ export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadc
     if(!pickupAddress||!destinationAddress||!Number.isInteger(count)||count<1||count>6)return res.status(400).json({error:'Valid pickup, destination and passenger count (1-6) are required.'});
     const pickup=cleanCoordinates(req.body?.pickupLat,req.body?.pickupLng);
     const destination=cleanCoordinates(req.body?.destinationLat,req.body?.destinationLng);
-    const startPin=makePin();
-    const job={id:id('ride'),serviceType:'ride',customerId:req.user.id,customerName:req.user.fullName,pickupAddress:String(pickupAddress).slice(0,500),destinationAddress:String(destinationAddress).slice(0,500),pickupLat:pickup?.lat??null,pickupLng:pickup?.lng??null,destinationLat:destination?.lat??null,destinationLng:destination?.lng??null,passengerCount:count,notes:String(notes).slice(0,500),driverId:null,status:'requested',startPinHash:pinDigest(startPin),startPinForCustomer:startPin,pinAttempts:0,createdAt:new Date().toISOString()};
+    const startPin=makePin(),deliveryPin=makePin();
+    const job={id:id('ride'),serviceType:'ride',customerId:req.user.id,customerName:req.user.fullName,pickupAddress:String(pickupAddress).slice(0,500),destinationAddress:String(destinationAddress).slice(0,500),pickupLat:pickup?.lat??null,pickupLng:pickup?.lng??null,destinationLat:destination?.lat??null,destinationLng:destination?.lng??null,passengerCount:count,notes:String(notes).slice(0,500),driverId:null,status:'requested',startPinHash:pinDigest(startPin),startPinForCustomer:startPin,deliveryPinHash:pinDigest(deliveryPin),deliveryPinForCustomer:deliveryPin,pinAttempts:0,deliveryPinAttempts:0,createdAt:new Date().toISOString()};
     await mutateJobs(d=>{d.jobs.unshift(job);});
-    broadcastEvent?.('driver:job_created',{job:safeMobilityJob(job)});res.status(201).json({job:safeMobilityJob(job,req.user.id)});
+    broadcastEvent?.('driver:job_created',{job:safeMobilityJob(job),customerId:job.customerId,driverId:job.driverId});res.status(201).json({job:safeMobilityJob(job,req.user.id)});
   });
   app.post('/api/parcels',requireAuth,async(req,res)=>{
     if(req.user.accountType!=='customer')return res.status(403).json({error:'Customer account required.'});
@@ -123,7 +195,7 @@ export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadc
     const pickupPin=makePin(),deliveryPin=makePin();
     const job={id:id('parcel'),serviceType:'parcel_delivery',customerId:req.user.id,customerName:req.user.fullName,pickupAddress:pickupAddress.slice(0,500),destinationAddress:destinationAddress.slice(0,500),pickupContact,recipientContact,parcelType:String(req.body?.parcelType||'standard').slice(0,60),weightKg,notes:String(req.body?.notes||'').slice(0,500),pickupLat:pickup?.lat??null,pickupLng:pickup?.lng??null,destinationLat:destination?.lat??null,destinationLng:destination?.lng??null,driverId:null,status:'requested',pickupPinHash:pinDigest(pickupPin),deliveryPinHash:pinDigest(deliveryPin),pickupPinForCustomer:pickupPin,deliveryPinForCustomer:deliveryPin,pinAttempts:0,deliveryPinAttempts:0,createdAt:new Date().toISOString()};
     await mutateJobs(state=>{state.jobs.unshift(job);});
-    broadcastEvent?.('driver:job_created',{job:safeMobilityJob(job)});
+    broadcastEvent?.('driver:job_created',{job:safeMobilityJob(job),customerId:job.customerId,driverId:job.driverId});
     return res.status(201).json({job:safeMobilityJob(job,req.user.id)});
   });
 
@@ -159,7 +231,7 @@ export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadc
       job.status='cancelled';job.cancelledAt=new Date().toISOString();return {status:200,job};
     });
     if(result.error)return res.status(result.status).json({error:result.error});
-    broadcastEvent?.('driver:job_updated',{job:safeMobilityJob(result.job)});
+    broadcastEvent?.('driver:job_updated',{job:safeMobilityJob(result.job),customerId:result.job.customerId,driverId:result.job.driverId});
     return res.json({job:safeMobilityJob(result.job,req.user.id)});
   });
   app.get('/api/my-mobility-jobs',requireAuth,async(req,res)=>{
@@ -175,8 +247,9 @@ export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadc
     const d=await readJobs();const approved=d.applications.filter(a=>a.userId===req.user.id&&a.status==='approved').map(a=>a.driverType);
     const presence=d.presence[req.user.id]||{online:false};
     const freshPresence=isDriverPresenceFresh(presence);
+    const eligibleJobs = await Promise.all(d.jobs.map(async job => ({ job, ready: await isGroceryOrderReadyForDriver(job.orderReference) })));
     const jobs=rankJobsForDriver(
-      d.jobs.filter(j=>approved.includes(j.serviceType)&&(j.driverId===req.user.id||(j.status==='requested'&&freshPresence))),
+      eligibleJobs.filter(item=>item.ready).map(item=>item.job).filter(j=>approved.includes(j.serviceType)&&(j.driverId===req.user.id||(j.status==='requested'&&freshPresence))),
       presence
     );
     res.json({jobs:jobs.map(job=>safeMobilityJob(job,req.user.id)),approvedDriverTypes:approved,presence:{...presence,online:freshPresence}});
@@ -184,6 +257,9 @@ export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadc
   app.post('/api/driver-jobs/:id/claim',requireAuth,async(req,res)=>{
     if(req.user.accountType!=='driver')return res.status(403).json({error:'Driver account required.'});
     try{
+      const existingState=await readJobs();
+      const candidate=existingState.jobs.find(job=>job.id===req.params.id);
+      if(candidate && !(await isGroceryOrderReadyForDriver(candidate.orderReference)))return res.status(409).json({error:'This grocery order is not ready for pickup yet.'});
       const result=await mutateJobs(d=>{
         const job=d.jobs.find(j=>j.id===req.params.id);if(!job)return {status:404,error:'Job not found.'};
         const approved=d.applications.some(a=>a.userId===req.user.id&&a.driverType===job.serviceType&&a.status==='approved');
@@ -195,7 +271,7 @@ export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadc
         job.driverId=req.user.id;job.driverName=req.user.fullName;job.status='accepted';job.acceptedAt=new Date().toISOString();return {status:200,job};
       });
       if(result.error)return res.status(result.status).json({error:result.error});
-      broadcastEvent?.('driver:job_updated',{job:safeMobilityJob(result.job)});return res.json({job:safeMobilityJob(result.job,req.user.id)});
+      broadcastEvent?.('driver:job_updated',{job:safeMobilityJob(result.job),customerId:result.job.customerId,driverId:result.job.driverId});return res.json({job:safeMobilityJob(result.job,req.user.id)});
     }catch(error){return res.status(500).json({error:'Could not claim driver job.'});}
   });
   app.patch('/api/driver-jobs/:id/status',requireAuth,async(req,res)=>{
@@ -209,17 +285,21 @@ export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadc
       job.status=status;job.updatedAt=new Date().toISOString();return {status:200,job};
     });
     if(result.error)return res.status(result.status).json({error:result.error});
-    broadcastEvent?.('driver:job_updated',{job:safeMobilityJob(result.job)});res.json({job:safeMobilityJob(result.job,req.user.id)});
+    broadcastEvent?.('driver:job_updated',{job:safeMobilityJob(result.job),customerId:result.job.customerId,driverId:result.job.driverId});res.json({job:safeMobilityJob(result.job,req.user.id)});
   });
   app.post('/api/driver-jobs/:id/verify-pickup',requireAuth,async(req,res)=>{
     if(req.user.accountType!=='driver')return res.status(403).json({error:'Driver account required.'});
     const result=await mutateJobs(state=>{const job=state.jobs.find(item=>item.id===req.params.id);if(!job)return {status:404,error:'Job not found.'};if(job.driverId!==req.user.id)return {status:403,error:'Only the assigned driver can verify pickup.'};const expected=job.serviceType==='ride'?'arrived':'arrived_pickup';if(job.status!==expected)return {status:409,error:'Driver must mark arrival before pickup verification.'};if((job.pinAttempts||0)>=5)return {status:429,error:'Pickup PIN attempts exceeded. Contact ARY support.'};const hash=job.serviceType==='ride'?job.startPinHash:job.pickupPinHash;if(!pinMatches(req.body?.pin,hash)){job.pinAttempts=(job.pinAttempts||0)+1;return {status:400,error:'Incorrect pickup PIN.'};}job.status=job.serviceType==='ride'?'in_progress':'picked_up';job.pickupVerifiedAt=new Date().toISOString();job.pinAttempts=0;return {status:200,job};});
-    if(result.error)return res.status(result.status).json({error:result.error});broadcastEvent?.('driver:job_updated',{job:safeMobilityJob(result.job)});return res.json({job:safeMobilityJob(result.job,req.user.id)});
+    if(result.error)return res.status(result.status).json({error:result.error});
+    await updateGroceryDeliveryStatus(result.job,'picked_up',broadcastEvent);
+    broadcastEvent?.('driver:job_updated',{job:safeMobilityJob(result.job),customerId:result.job.customerId,driverId:result.job.driverId});return res.json({job:safeMobilityJob(result.job,req.user.id)});
   });
   app.post('/api/driver-jobs/:id/verify-delivery',requireAuth,async(req,res)=>{
     if(req.user.accountType!=='driver')return res.status(403).json({error:'Driver account required.'});
     const result=await mutateJobs(state=>{const job=state.jobs.find(item=>item.id===req.params.id);if(!job)return {status:404,error:'Job not found.'};if(job.driverId!==req.user.id)return {status:403,error:'Only the assigned driver can verify delivery.'};const allowed=job.serviceType==='ride'?job.status==='in_progress':['picked_up','in_transit'].includes(job.status);if(!allowed)return {status:409,error:'Pickup must be verified before completing this job.'};if((job.deliveryPinAttempts||0)>=5)return {status:429,error:'Delivery PIN attempts exceeded. Contact ARY support.'};if(!pinMatches(req.body?.pin,job.deliveryPinHash)){job.deliveryPinAttempts=(job.deliveryPinAttempts||0)+1;return {status:400,error:'Incorrect delivery PIN.'};}job.status=job.serviceType==='ride'?'completed':'delivered';job.completedAt=new Date().toISOString();job.deliveryVerifiedAt=job.completedAt;job.deliveryPinAttempts=0;return {status:200,job};});
-    if(result.error)return res.status(result.status).json({error:result.error});broadcastEvent?.('driver:job_updated',{job:safeMobilityJob(result.job)});return res.json({job:safeMobilityJob(result.job,req.user.id)});
+    if(result.error)return res.status(result.status).json({error:result.error});
+    await updateGroceryDeliveryStatus(result.job,'delivered',broadcastEvent);
+    broadcastEvent?.('driver:job_updated',{job:safeMobilityJob(result.job),customerId:result.job.customerId,driverId:result.job.driverId});return res.json({job:safeMobilityJob(result.job,req.user.id)});
   });
 
   // Admin-only operational view: expose dispatch health without account/KYC/payment data.
@@ -240,6 +320,6 @@ export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadc
       return {status:200,job};
     });
     if(result.error)return res.status(result.status).json({error:result.error});
-    broadcastEvent?.('driver:job_updated',{job:safeMobilityJob(result.job)});return res.json({job:safeMobilityJob(result.job,req.user.id)});
+    broadcastEvent?.('driver:job_updated',{job:safeMobilityJob(result.job),customerId:result.job.customerId,driverId:result.job.driverId});return res.json({job:safeMobilityJob(result.job,req.user.id)});
   });
 }

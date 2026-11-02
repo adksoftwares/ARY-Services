@@ -85,7 +85,8 @@ export default function ProviderDashboard({
   bookings,
   isLoading,
   onRefresh,
-  onUpdateStatus
+  onUpdateStatus,
+  onDecideReschedule
 }) {
   const { currentUser } = useAuth();
   const [activeTab, setActiveTab] = useState('jobs'); // 'jobs' | 'reviews' | 'wallet'
@@ -96,6 +97,31 @@ export default function ProviderDashboard({
   const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
   const [claimingJobId, setClaimingJobId] = useState(null);
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [quoteDrafts, setQuoteDrafts] = useState({});
+  const [quoteNotes, setQuoteNotes] = useState({});
+  const [quoteBusy, setQuoteBusy] = useState('');
+
+  async function sendServiceQuote(booking) {
+    const amount = Number(quoteDrafts[booking.id] ?? booking.quote?.amount ?? booking.baseAmount);
+    const description = String(quoteNotes[booking.id] ?? booking.quote?.description ?? 'Service work as discussed').trim();
+    if (!Number.isSafeInteger(amount) || amount < 1 || amount > 10000000 || description.length < 5) {
+      window.alert('Enter a whole-number quote between LKR 1 and LKR 10,000,000 and a short description.');
+      return;
+    }
+    setQuoteBusy(booking.id);
+    try {
+      const response = await fetch(`${API_BASE}/bookings/${encodeURIComponent(booking.id)}/quote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${currentUser.token}` },
+        body: JSON.stringify({ amount, description })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Could not send quote.');
+      onRefresh?.();
+    } catch (error) {
+      window.alert(error.message || 'Could not send quote.');
+    } finally { setQuoteBusy(''); }
+  }
 
   const broadcastJobs = bookings.filter(b => b.status === 'broadcast_pool');
   const directBookings = bookings.filter(b => b.status !== 'broadcast_pool');
@@ -659,6 +685,36 @@ export default function ProviderDashboard({
                       </div>
                     )}
 
+                    {b.rescheduleRequest?.status === 'pending' && (
+                      <div style={{margin:'10px 0',padding:12,border:'1px solid #f2d4a5',background:'#fffaf0',borderRadius:9}}>
+                        <b style={{fontSize:12,color:'#854d0e'}}>Customer requested a new time</b>
+                        <p style={{fontSize:12,color:'#6b5b43',margin:'5px 0 9px'}}>{b.rescheduleRequest.date} · {b.rescheduleRequest.time}{b.rescheduleRequest.reason ? ` · ${b.rescheduleRequest.reason}` : ''}</p>
+                        <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                          <button type="button" className="booking-action-btn accept" onClick={()=>onDecideReschedule?.(b.id,'accept')}>Confirm new time</button>
+                          <button type="button" className="booking-action-btn reject" onClick={()=>onDecideReschedule?.(b.id,'reject')}>Decline change</button>
+                        </div>
+                      </div>
+                    )}
+                    {b.quote?.status === 'pending' && (
+                      <div style={{margin:'10px 0',padding:12,border:'1px solid #bfdbfe',background:'#eff6ff',borderRadius:9}}>
+                        <b style={{fontSize:12,color:'#1e40af'}}>Quote awaiting customer decision{Date.parse(b.quote.validUntil || '') <= Date.now() ? ' · expired' : ''}</b>
+                        <p style={{fontSize:12,color:'#334155',margin:'5px 0'}}>LKR {Number(b.quote.amount).toLocaleString('en-LK')} · {b.quote.description}</p>
+                        <small style={{color:'#64748b'}}>Valid until {new Date(b.quote.validUntil).toLocaleDateString()}</small>
+                      </div>
+                    )}
+                    {b.quote?.status === 'accepted' && (
+                      <p style={{margin:'8px 0',fontSize:12,color:'#166534'}}>Customer accepted the quote: <b>LKR {Number(b.quote.amount).toLocaleString('en-LK')}</b></p>
+                    )}
+                    {['requested','accepted'].includes(b.status) && (b.quote?.status !== 'pending' || Date.parse(b.quote.validUntil || '') <= Date.now()) && b.quote?.status !== 'accepted' && (
+                      <form onSubmit={event=>{event.preventDefault();sendServiceQuote(b);}} style={{margin:'10px 0',padding:12,border:'1px solid #dce5dc',background:'#f8fbf8',borderRadius:9}}>
+                        <b style={{fontSize:12,color:'#24543b'}}>Send / revise service quote</b>
+                        <div style={{display:'grid',gridTemplateColumns:'minmax(110px,160px) 1fr',gap:8,marginTop:8}}>
+                          <label style={{fontSize:11,color:'#647368'}}>Amount (LKR)<input type="number" min="1" max="10000000" step="1" required value={quoteDrafts[b.id] ?? b.quote?.amount ?? b.baseAmount ?? ''} onChange={event=>setQuoteDrafts(old=>({...old,[b.id]:event.target.value}))} style={{display:'block',width:'100%',boxSizing:'border-box',padding:8,border:'1px solid #d4ddd5',borderRadius:6}}/></label>
+                          <label style={{fontSize:11,color:'#647368'}}>Work included<input type="text" minLength="5" required value={quoteNotes[b.id] ?? b.quote?.description ?? ''} onChange={event=>setQuoteNotes(old=>({...old,[b.id]:event.target.value}))} placeholder="Describe labour, parts and scope" style={{display:'block',width:'100%',boxSizing:'border-box',padding:8,border:'1px solid #d4ddd5',borderRadius:6}}/></label>
+                        </div>
+                        <button type="submit" disabled={quoteBusy===b.id} className="booking-action-btn accept" style={{marginTop:8}}>{quoteBusy===b.id?'Sending…':'Send quote to customer'}</button>
+                      </form>
+                    )}
                     <div className="booking-actions-row">
                       {b.status === 'requested' && (
                         <>
