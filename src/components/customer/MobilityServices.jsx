@@ -43,6 +43,21 @@ export default function MobilityServices({ onNotice }) {
     };
   }, [currentUser?.token, refreshJobs]);
 
+  async function cancelRequest(jobId) {
+    try {
+      const response = await fetch(API_BASE + '/my-mobility-jobs/' + encodeURIComponent(jobId) + '/cancel', {
+        method: 'PATCH',
+        headers: { Authorization: 'Bearer ' + currentUser.token }
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Could not cancel this request.');
+      await refreshJobs();
+      setMessage('Request cancelled.');
+    } catch (err) {
+      setJobsError(err.message || 'Could not cancel this request.');
+    }
+  }
+
   function useCurrentLocation() {
     if (!navigator.geolocation) { setMessage('This browser does not support GPS location.'); return; }
     setGpsBusy(true);
@@ -118,6 +133,7 @@ export default function MobilityServices({ onNotice }) {
           <div style={{display:'flex',justifyContent:'space-between',gap:10,flexWrap:'wrap'}}><b style={{fontSize:13,color:'#244333'}}>{job.serviceType==='food_delivery'?'Food delivery':'Passenger ride'} · {job.id}</b><span className="status-pill muted">{String(job.status||'requested').replaceAll('_',' ')}</span></div>
           <p style={{fontSize:12,lineHeight:1.7,color:'#657468',margin:'8px 0'}}><b>Pickup:</b> {job.pickupAddress}<br/><b>Drop-off:</b> {job.destinationAddress}</p>
           {job.driverName && <p style={{fontSize:12,color:'#315a42',margin:0}}>Driver: {job.driverName}{job.driverLocation ? ` · latest GPS ${Number(job.driverLocation.lat).toFixed(4)}, ${Number(job.driverLocation.lng).toFixed(4)}` : ' · live location not currently available'}</p>}
+          {job.status==='requested' && <button type="button" onClick={()=>cancelRequest(job.id)} style={{marginTop:10,border:'1px solid #e5caca',borderRadius:8,padding:'8px 11px',background:'#fff',color:'#a33',fontSize:11,fontWeight:700}}>Cancel request</button>}
         </article>)}
       </section>}
     </div>
