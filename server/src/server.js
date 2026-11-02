@@ -59,7 +59,7 @@ app.use((req, res, next) => {
         time: new Date().toISOString(),
         reqId: req.id,
         method: req.method,
-        path: req.originalUrl || req.url,
+        path: req.path,
         statusCode: res.statusCode,
         durationMs
       }));
