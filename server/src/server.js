@@ -813,7 +813,6 @@ app.get('/api/providers', async (req, res) => {
         id: p.id,
         fullName: p.fullName,
         phone: p.phone,
-        email: p.email,
         location: p.location || 'Local Area',
         lat: pLat,
         lng: pLng,
@@ -853,15 +852,25 @@ app.get('/api/providers', async (req, res) => {
 app.patch('/api/providers/profile', requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
-    const { category, categoryName, baseCharge, location, experienceYears } = req.body;
-
-    const updated = await updateUser(userId, (provider) => {
+    if (req.user.accountType !== 'provider' || req.user.status !== 'active') {
+      return res.status(403).json({ error: 'An active provider account is required.' });
+    }
+    const { baseCharge, location, experienceYears } = req.body || {};
+    const cleanLocation = location === undefined ? undefined : String(location).trim().slice(0, 500);
+    const years = experienceYears === undefined ? undefined : Number(experienceYears);
+    const chargeText = baseCharge === undefined ? undefined : String(baseCharge).replace(/[^0-9.]/g, '');
+    const charge = chargeText === undefined ? undefined : Number(chargeText);
+    if (years !== undefined && (!Number.isInteger(years) || years < 0 || years > 60)) {
+      return res.status(400).json({ error: 'Experience years must be a whole number between 0 and 60.' });
+    }
+    if (charge !== undefined && (!Number.isFinite(charge) || charge < 0 || charge > 10000000)) {
+      return res.status(400).json({ error: 'Enter a valid service base charge.' });
+    }
+    const updated = await updateUser(userId, provider => {
       if (!provider || provider.accountType !== 'provider') return provider;
-      if (category) provider.category = category;
-      if (categoryName) provider.categoryName = categoryName;
-      if (baseCharge) provider.baseCharge = baseCharge;
-      if (location) provider.location = location;
-      if (experienceYears) provider.experienceYears = Number(experienceYears);
+      if (baseCharge !== undefined) provider.baseCharge = 'LKR ' + charge.toLocaleString('en-LK');
+      if (cleanLocation !== undefined) provider.location = cleanLocation;
+      if (years !== undefined) provider.experienceYears = years;
       return provider;
     });
 
@@ -1533,7 +1542,7 @@ app.post('/api/bookings/:id/claim', requireAuth, async (req, res) => {
     const { id } = req.params;
     const provider = req.user;
 
-    if (provider.accountType !== 'provider') {
+    if (provider.accountType !== 'provider' || provider.status !== 'active') {
       return res.status(403).json({ error: 'Only verified service providers can claim broadcast jobs.' });
     }
 
@@ -1544,11 +1553,20 @@ app.post('/api/bookings/:id/claim', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'Booking request not found.' });
     }
 
-    if (booking.status !== 'broadcast_pool') {
+    if (booking.status !== 'broadcast_pool' || booking.providerId) {
       return res.status(400).json({ error: 'This job is not currently open for broadcast claiming.' });
     }
 
+    if (booking.categorySlug && provider.category !== booking.categorySlug) {
+      return res.status(403).json({ error: 'This broadcast job is outside your approved provider category.' });
+    }
+    if (Array.isArray(booking.declinedBy) && booking.declinedBy.includes(provider.id)) {
+      return res.status(409).json({ error: 'You previously declined this broadcast job.' });
+    }
+    let claimed = false;
     const updated = await updateBooking(id, b => {
+      if (b.status !== 'broadcast_pool' || b.providerId || (Array.isArray(b.declinedBy) && b.declinedBy.includes(provider.id))) return b;
+      claimed = true;
       b.providerId = provider.id;
       b.providerName = provider.fullName;
       b.providerPhone = provider.phone;
@@ -1557,6 +1575,8 @@ app.post('/api/bookings/:id/claim', requireAuth, async (req, res) => {
       b.updatedAt = new Date().toISOString();
       return b;
     });
+
+    if (!claimed) return res.status(409).json({ error: 'This broadcast job has already been claimed or is no longer available.' });
 
     // Real-Time SSE Dispatch to customer and other contractors
     publishEvent('booking:status_updated', {
