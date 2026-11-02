@@ -17,21 +17,58 @@ try:
 except Exception:
     pass
 
+# Auto-configure Java 21 from Android Studio JBR if available
+JBR_PATHS = [
+    r"C:\Program Files\Android\Android Studio\jbr",
+    r"C:\Program Files\Android\jbr",
+]
+for jbr in JBR_PATHS:
+    if os.path.exists(jbr) and os.path.exists(os.path.join(jbr, "bin", "java.exe")):
+        os.environ["JAVA_HOME"] = jbr
+        os.environ["PATH"] = os.path.join(jbr, "bin") + os.pathsep + os.environ.get("PATH", "")
+        break
+
 # ==============================================================================
 # KNOWN ADK PROJECTS PRESETS
 # ==============================================================================
 PRESETS = {
     "1": {
-        "name": "Nila Cafe (Capacitor Android)",
-        "package": "com.adksoftwares.nilacafe",
-        "dir": r"D:\Nila cafe\client\android",
+        "name": "ARY Customer App (ARY Services)",
+        "package": "com.aryservices.customer",
+        "dir": r"D:\ARY Services\mobile\customer\android",
+        "sync_cmd": "npm run build:mobile:customer",
         "build_cmd": "gradlew.bat assembleDebug",
         "apk_path": r"app\build\outputs\apk\debug\app-debug.apk"
     },
     "2": {
+        "name": "ARY Driver App (ARY Driver)",
+        "package": "com.aryservices.driver",
+        "dir": r"D:\ARY Services\mobile\driver\android",
+        "sync_cmd": "npm run build:mobile:driver",
+        "build_cmd": "gradlew.bat assembleDebug",
+        "apk_path": r"app\build\outputs\apk\debug\app-debug.apk"
+    },
+    "3": {
+        "name": "ARY Provider App (ARY Provider)",
+        "package": "com.aryservices.provider",
+        "dir": r"D:\ARY Services\mobile\provider\android",
+        "sync_cmd": "npm run build:mobile:provider",
+        "build_cmd": "gradlew.bat assembleDebug",
+        "apk_path": r"app\build\outputs\apk\debug\app-debug.apk"
+    },
+    "4": {
+        "name": "Nila Cafe (Capacitor Android)",
+        "package": "com.adksoftwares.nilacafe",
+        "dir": r"D:\Nila cafe\client\android",
+        "sync_cmd": None,
+        "build_cmd": "gradlew.bat assembleDebug",
+        "apk_path": r"app\build\outputs\apk\debug\app-debug.apk"
+    },
+    "5": {
         "name": "Samarakoon Agri Shop (Smart POS Lanka)",
         "package": "com.adk.smartposlanka",
         "dir": r"D:\Samarakoon Agri shop\android-app",
+        "sync_cmd": None,
         "build_cmd": "gradlew.bat assembleDebug",
         "apk_path": r"app\build\outputs\apk\debug\app-debug.apk"
     }
@@ -59,26 +96,49 @@ def check_adb_device():
     unauthorized = [l for l in lines[1:] if "\tunauthorized" in l]
     
     if unauthorized:
-        print("⚠️ போனில் 'Allow USB Debugging' பாப்-அப் வந்துள்ளது! போன் திரையில் 'Allow' கொடுக்கவும்.")
+        print("⚠️ போனில் 'Allow USB Debugging' பாப்-அப் வந்துள்ளது! போன் திரையில் 'Always Allow' கொடுத்து OK செய்யவும்.")
         return False, "unauthorized"
     if not devices:
         print("❌ போன் இன்னும் இணைக்கப்படவில்லை! USB கேபிளை மாட்டி 'USB Debugging' ஆன் செய்யவும்.")
         return False, "no_device"
     
     device_id = devices[0].split("\t")[0]
-    print(f"📱 இணைக்கப்பட்ட போன்: {device_id}")
+    print(f"📱 இணைக்கப்பட்ட போன் அடையாளம்: {device_id}")
     return True, device_id
+
+def setup_reverse_port_forwarding():
+    """போனில் இருந்து கணினியின் API போர்ட்களை அணுக reverse port forwarding அமைக்கும்"""
+    run_command("adb reverse tcp:4000 tcp:4000")
+    run_command("adb reverse tcp:5173 tcp:5173")
+    print("🌐 Reverse Port Forwarding அமைக்கப்பட்டது (Port 4000 & 5173)")
+
+def wake_up_phone():
+    """போன் திரையை ஆன் செய்து அன்லாக் செய்யும்"""
+    run_command("adb shell input keyevent 224")  # Wakeup
+    time.sleep(0.5)
+    run_command("adb shell input keyevent 82")   # Unlock / Dismiss Keyguard
+    time.sleep(0.5)
 
 def clear_logs():
     run_command("adb logcat -c")
 
-def test_app(package_name):
-    """Monkey Tool மூலம் போனில் ஆப்பை 500 முறை வேகமாக இயக்கி கிராஷ் பார்க்கிறது"""
-    print(f"🐒 போனில் ஆப் ({package_name}) தானாக டெஸ்ட் செய்யப்படுகிறது...")
+def launch_app_on_phone(package_name):
+    """போனில் ஆப்பைத் திறந்து 2 வினாடிகள் காத்திருக்கும்"""
+    print(f"🚀 போனில் ஆப் திறக்கப்படுகிறது ({package_name})...")
+    wake_up_phone()
+    run_command(f"adb shell monkey -p {package_name} -c android.intent.category.LAUNCHER 1")
+    time.sleep(2.5)
+
+def test_app(package_name, event_count=300):
+    """Monkey Tool மூலம் போனில் ஆப்பை வேகமாக இயக்கி கிராஷ் பார்க்கிறது"""
+    print(f"🐒 போனில் ஆப் ({package_name}) மீது {event_count} ரேண்டம் டச் டெஸ்ட் நடக்கிறது...")
     clear_logs()
     
-    # Run monkey test (500 random touch/scroll events)
-    test_result = run_command(f"adb shell monkey -p {package_name} --throttle 100 -v 500")
+    # Launch app first
+    launch_app_on_phone(package_name)
+    
+    # Run monkey test
+    test_result = run_command(f"adb shell monkey -p {package_name} --throttle 100 -v {event_count}")
     
     # Check crash logcat buffer
     log_dump = run_command("adb logcat -d -b crash").stdout
@@ -92,7 +152,7 @@ def test_app(package_name):
             f.write(crash_content)
         return False, crash_content
     
-    print("✅ எந்த கிராஷும் இல்லை! ஆப் போனில் சீராக இயங்குகிறது.")
+    print("✅ எந்த கிராஷும் இல்லை! ஆப் போனில் பிழையின்றி சீராக இயங்குகிறது.")
     return True, None
 
 def find_source_file_from_crash(crash_text, search_dir):
@@ -111,17 +171,28 @@ def find_source_file_from_crash(crash_text, search_dir):
                 line_no = m.group(2) if len(m.groups()) >= 2 else "1"
                 found_files.append((filename, line_no))
     
-    # Search for this file path inside the project dir
+    # Search for this file path inside the project dir or src
+    search_roots = [search_dir, r"D:\ARY Services\src", r"D:\ARY Services\server\src"]
     for fname, line_no in found_files:
-        for root, _, files in os.walk(search_dir):
-            if fname in files:
-                full_path = os.path.join(root, fname)
-                return full_path, line_no
+        for s_root in search_roots:
+            if not os.path.exists(s_root):
+                continue
+            for root, _, files in os.walk(s_root):
+                if fname in files:
+                    full_path = os.path.join(root, fname)
+                    return full_path, line_no
                 
     return None, None
 
 def call_gemini_api(prompt):
     """Gemini 2.5 Flash API மூலம் தானாக கோடை திருத்த வைக்கிறது"""
+    global GEMINI_API_KEY
+    if not GEMINI_API_KEY:
+        GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+    if not GEMINI_API_KEY:
+        print("❌ GEMINI_API_KEY அமைக்கப்படவில்லை! $env:GEMINI_API_KEY செட் செய்யவும்.")
+        return None
+
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent?key={GEMINI_API_KEY}"
     
     headers = {"Content-Type": "application/json"}
@@ -207,8 +278,14 @@ Do not include any conversational explanation before or after the code block.
         print(response[:500])
         return False
 
-def rebuild_and_install(proj_dir, build_cmd, apk_path):
+def rebuild_and_install(proj_dir, build_cmd, apk_path, sync_cmd=None):
     """மாற்றிய கோடை மீண்டும் பில்ட் செய்து போனில் ஏற்றும்"""
+    if sync_cmd:
+        print(f"🔄 Web Bundle Sync செய்யப்படுகிறது ({sync_cmd})...")
+        sync_res = run_command(sync_cmd, cwd=r"D:\ARY Services")
+        if sync_res.returncode != 0:
+            print("⚠️ Sync Warning:", sync_res.stderr or sync_res.stdout)
+
     print(f"🔨 புதிய பில்ட் தயாராகிறது ({build_cmd})...")
     build = run_command(build_cmd, cwd=proj_dir)
     if build.returncode != 0:
@@ -238,60 +315,32 @@ def rebuild_and_install(proj_dir, build_cmd, apk_path):
         print(f"⚠️ இன்ஸ்டால் ஃபெயில்: {install.stderr or install.stdout}")
         return False
 
-def main():
-    parser = argparse.ArgumentParser(description="ADK Mobile AI Auto-Fixer Loop")
-    parser.add_argument("--package", help="App package name (e.g. com.adksoftwares.nilacafe)")
-    parser.add_argument("--dir", help="Project root directory where gradlew exists")
-    parser.add_argument("--build-cmd", default="gradlew.bat assembleDebug", help="Build command")
-    parser.add_argument("--apk", default=r"app\build\outputs\apk\debug\app-debug.apk", help="APK path")
-    args = parser.parse_args()
+def run_test_loop_for_app(app_config):
+    """ஒரு குறிப்பிட்ட ஆப்பிற்கு Auto-Fixer Loop-ஐ இயக்கும்"""
+    pkg = app_config["package"]
+    proj_dir = app_config["dir"]
+    build_cmd = app_config["build_cmd"]
+    apk_path = app_config["apk_path"]
+    sync_cmd = app_config.get("sync_cmd")
+    name = app_config["name"]
 
-    print_banner("ADK MASTER MOBILE AUTO-FIXER (GEMINI 2.5 FLASH)")
-
-    # Select project configuration
-    if args.package and args.dir:
-        pkg = args.package
-        proj_dir = args.dir
-        build_cmd = args.build_cmd
-        apk_path = args.apk
-    else:
-        print("கம்ப்யூட்டரில் கண்டறியப்பட்ட உங்கள் ஆப் திட்டங்கள்:")
-        for k, v in PRESETS.items():
-            print(f" [{k}] {v['name']} ({v['package']})")
-        print(" [3] வேறு ஒரு தனிப்பயன் ஆப் (Custom Package Name)")
-        
-        choice = input("\nஎந்த ஆப்பை டெஸ்ட் செய்ய வேண்டும்? (1/2/3, Default: 1): ").strip() or "1"
-        if choice in PRESETS:
-            cfg = PRESETS[choice]
-            pkg = cfg["package"]
-            proj_dir = cfg["dir"]
-            build_cmd = cfg["build_cmd"]
-            apk_path = cfg["apk_path"]
-        else:
-            pkg = input("App Package Name (e.g. com.example.app): ").strip()
-            proj_dir = input("Project Folder Path: ").strip()
-            build_cmd = "gradlew.bat assembleDebug"
-            apk_path = r"app\build\outputs\apk\debug\app-debug.apk"
-
-    print(f"\n📌 ஆப் பேக்கேஜ்: {pkg}")
-    print(f"📌 ப்ராஜெக்ட் ஃபோல்டர்: {proj_dir}")
-    print(f"📌 AI மாடல்: {GEMINI_MODEL}")
+    print_banner(f"TESTING: {name} ({pkg})")
     
-    # Check adb device
-    connected, device_info = check_adb_device()
-    if not connected:
-        print("\n👉 போனை USB மூலம் கணினியுடன் இணைத்துவிட்டு, மீண்டும் `python auto_fixer.py` இயக்கவும்.")
-        sys.exit(1)
-        
+    # 1. Install latest build first
+    full_apk_path = os.path.join(proj_dir, apk_path) if not os.path.isabs(apk_path) else apk_path
+    if os.path.exists(full_apk_path):
+        print(f"📲 போனில் ஆரம்ப இன்ஸ்டாலேஷன்: {name}...")
+        run_command(f'adb install -r "{full_apk_path}"')
+
     for round_num in range(1, MAX_ROUNDS + 1):
-        print_banner(f"சுழற்சி {round_num} / {MAX_ROUNDS}")
+        print_banner(f"{name} — சுழற்சி {round_num} / {MAX_ROUNDS}")
         
         # 1. Test app on phone
         is_stable, crash_log = test_app(pkg)
         
         if is_stable:
-            print_banner("🎉 வாழ்த்துகள்! ஆப் எந்த ஒரு கிராஷும் இன்றி முழுமையாக சீராக இயங்குகிறது!")
-            break
+            print_banner(f"🎉 வாழ்த்துகள்! {name} எந்த ஒரு கிராஷும் இன்றி முழுமையாக சீராக இயங்குகிறது!")
+            return True
             
         # 2. Fix code with AI
         fixed = fix_code_with_ai(crash_log, proj_dir)
@@ -299,11 +348,81 @@ def main():
             print("❌ AI கோடை மாற்ற இயலவில்லை. அடுத்த சுற்றுக்கு செல்கிறது...")
             
         # 3. Rebuild and install on phone
-        rebuilt = rebuild_and_install(proj_dir, build_cmd, apk_path)
+        rebuilt = rebuild_and_install(proj_dir, build_cmd, apk_path, sync_cmd=sync_cmd)
         if not rebuilt:
             print("⚠️ ரீபில்ட் தோல்வியுற்றது.")
             
         time.sleep(2)
+        
+    return False
+
+def main():
+    parser = argparse.ArgumentParser(description="ADK Mobile AI Auto-Fixer Loop")
+    parser.add_argument("--package", help="App package name (e.g. com.aryservices.customer)")
+    parser.add_argument("--dir", help="Project root directory where gradlew exists")
+    parser.add_argument("--build-cmd", default="gradlew.bat assembleDebug", help="Build command")
+    parser.add_argument("--apk", default=r"app\build\outputs\apk\debug\app-debug.apk", help="APK path")
+    parser.add_argument("--all", action="store_true", help="Run automated testing for all ARY apps in sequence")
+    args = parser.parse_args()
+
+    print_banner("ADK MASTER MOBILE AUTO-FIXER (GEMINI 2.5 FLASH)")
+
+    # Check adb device
+    connected, device_info = check_adb_device()
+    if not connected:
+        print("\n👉 போனை USB மூலம் கணினியுடன் இணைத்துவிட்டு, மீண்டும் `python auto_fixer.py` இயக்கவும்.")
+        sys.exit(1)
+
+    # Port forwarding
+    setup_reverse_port_forwarding()
+
+    if args.all:
+        print("\n🚀 ARY Services-இன் அனைத்து 3 ஆப்ஸ்களும் வரிசையாக டெஸ்ட் செய்யப்படுகின்றன...\n")
+        for key in ["1", "2", "3"]:
+            run_test_loop_for_app(PRESETS[key])
+            time.sleep(3)
+        print_banner("🏁 அனைத்து ARY Services ஆப்ஸ்களின் டெஸ்டிங் முடிவடைந்தது!")
+        return
+
+    # Select project configuration
+    if args.package and args.dir:
+        cfg = {
+            "name": args.package,
+            "package": args.package,
+            "dir": args.dir,
+            "build_cmd": args.build_cmd,
+            "apk_path": args.apk,
+            "sync_cmd": None
+        }
+        run_test_loop_for_app(cfg)
+    else:
+        print("கம்ப்யூட்டரில் கண்டறியப்பட்ட உங்கள் ஆப் திட்டங்கள்:")
+        for k, v in PRESETS.items():
+            print(f" [{k}] {v['name']} ({v['package']})")
+        print(" [0] ARY Services அனைத்து 3 ஆப்ஸ்களையும் வரிசையாக டெஸ்ட் செய் (All 3 Apps)")
+        print(" [6] வேறு ஒரு தனிப்பயன் ஆப் (Custom Package Name)")
+        
+        choice = input("\nஎந்த ஆப்பை டெஸ்ட் செய்ய வேண்டும்? (1/2/3/0/Custom, Default: 0): ").strip() or "0"
+        
+        if choice == "0":
+            for key in ["1", "2", "3"]:
+                run_test_loop_for_app(PRESETS[key])
+                time.sleep(3)
+            print_banner("🏁 அனைத்து ARY Services ஆப்ஸ்களின் டெஸ்டிங் முடிவடைந்தது!")
+        elif choice in PRESETS:
+            run_test_loop_for_app(PRESETS[choice])
+        else:
+            pkg = input("App Package Name (e.g. com.example.app): ").strip()
+            proj_dir = input("Project Folder Path: ").strip()
+            cfg = {
+                "name": pkg,
+                "package": pkg,
+                "dir": proj_dir,
+                "build_cmd": "gradlew.bat assembleDebug",
+                "apk_path": r"app\build\outputs\apk\debug\app-debug.apk",
+                "sync_cmd": None
+            }
+            run_test_loop_for_app(cfg)
 
 if __name__ == "__main__":
     main()
