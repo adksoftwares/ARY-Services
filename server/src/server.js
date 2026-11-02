@@ -1526,7 +1526,7 @@ app.post('/api/reviews', requireAuth, async (req, res) => {
     }
 
     // Verify customer ownership
-    if (booking.customerId !== customer.id && (!customer.phone || booking.customerPhone !== customer.phone)) {
+    if (booking.customerId !== customer.id) {
       return res.status(403).json({ error: 'You can only review services booked under your account.' });
     }
 
