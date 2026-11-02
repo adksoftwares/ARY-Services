@@ -279,7 +279,13 @@ export function registerGroceryRoutes(app, { requireAuth, broadcastEvent, getUse
         }
       } catch (dispatchError) {
         console.error('Grocery delivery dispatch failed:', dispatchError);
-        order.deliveryStatus = 'dispatch_unavailable';
+        order = await mutatePersistentState('grocery_orders', ordersFile, EMPTY_ORDERS, stored => {
+          const saved = stored.find(item => item.id === order.id);
+          if (!saved) return order;
+          saved.deliveryStatus = 'dispatch_unavailable';
+          saved.updatedAt = new Date().toISOString();
+          return saved;
+        });
       }
       broadcastEvent('grocery:order_created', { orderId: order.id, providerId: order.providerId, customerId: order.customerId });
       return res.status(201).json({ order, message: order.deliveryStatus === 'driver_requested' ? 'Order placed and delivery driver requested. Pay cash on delivery.' : 'Order placed. The shop must confirm its pickup address before a driver can be requested. Pay cash on delivery.' });
