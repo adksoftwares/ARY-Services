@@ -218,6 +218,6 @@ export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadc
       return {status:200,job};
     });
     if(result.error)return res.status(result.status).json({error:result.error});
-    broadcastEvent?.('driver:job_updated',{job:result.job});return res.json({job:result.job});
+    broadcastEvent?.('driver:job_updated',{job:safeMobilityJob(result.job)});return res.json({job:safeMobilityJob(result.job,req.user.id)});
   });
 }
