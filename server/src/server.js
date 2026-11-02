@@ -45,7 +45,8 @@ const port = Number(process.env.PORT || 4000);
 
 // Structured Request Correlation & Observability Middleware
 app.use((req, res, next) => {
-  req.id = req.headers['x-request-id'] || `req-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+  const suppliedRequestId = typeof req.headers['x-request-id'] === 'string' ? req.headers['x-request-id'].trim() : '';
+  req.id = /^[a-zA-Z0-9._-]{8,80}$/.test(suppliedRequestId) ? suppliedRequestId : crypto.randomUUID();
   res.setHeader('x-request-id', req.id);
   const startTime = Date.now();
   res.on('finish', () => {
@@ -157,7 +158,9 @@ function verifyToken(token) {
     const decodedHeader = JSON.parse(Buffer.from(header, 'base64url').toString('utf-8'));
     if (decodedHeader.alg !== 'HS256' || decodedHeader.typ !== 'JWT') return null;
     const payload = JSON.parse(Buffer.from(body, 'base64url').toString('utf-8'));
-    if (payload.exp && payload.exp < Date.now()) return null;
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return null;
+    if (!Number.isFinite(payload.exp) || payload.exp <= Date.now()) return null;
+    if (typeof payload.id !== 'string' || !payload.id.trim()) return null;
     return payload;
   } catch {
     return null;
@@ -179,12 +182,10 @@ async function requireAuth(req, res, next) {
 
     // Real-time account active check (instant revocation on admin reject/suspend)
     const users = await getUsers();
-    const decodedPhoneDigits = decoded.phone ? normalizePhone(decoded.phone) : null;
-    const liveUser = users.find(u =>
-      u.id === decoded.id ||
-      (decodedPhoneDigits && u.phone && normalizePhone(u.phone) === decodedPhoneDigits) ||
-      (u.email && decoded.email && u.email.toLowerCase() === decoded.email.toLowerCase())
-    );
+    // The immutable account ID is the only identity key accepted from a signed token.
+    // Falling back to phone/email can silently attach an old session to a different
+    // account after a contact detail is changed or recycled.
+    const liveUser = users.find(u => u.id === decoded.id);
 
     if (!liveUser) {
       return res.status(401).json({ error: 'User account no longer exists.' });
