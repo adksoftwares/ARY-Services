@@ -86,7 +86,7 @@ export default function MobilityServices({ onNotice }) {
       setMessage((mode === 'food' ? 'Food delivery' : mode === 'parcel' ? 'Parcel delivery' : 'Ride') + ' request created: ' + data.job.id);
       setForm(old => ({ ...old, orderReference: '', notes: '' }));
       await refreshJobs();
-      onNotice?.((mode === 'food' ? 'Food delivery' : 'Ride') + ' request sent. A matching driver can accept it.');
+      onNotice?.((mode === 'food' ? 'Food delivery' : mode === 'parcel' ? 'Parcel delivery' : 'Ride') + ' request sent. A matching approved driver can accept it.');
     } catch (err) { setMessage(err.message); }
     finally { setBusy(false); }
   }
