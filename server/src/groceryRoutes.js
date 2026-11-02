@@ -322,7 +322,7 @@ export function registerGroceryRoutes(app, { requireAuth, broadcastEvent, getUse
     const result = await mutatePersistentState('grocery_orders', ordersFile, EMPTY_ORDERS, stored => {
       const order = stored.find(item => item.id === req.params.id && (isAdmin || item.providerId === req.user.id));
       if (!order) return { missing: true };
-      const transitions = { pending: ['accepted', 'cancelled'], accepted: ['preparing', 'cancelled'], preparing: ['ready_for_pickup'], ready_for_pickup: [] };
+      const transitions = { pending: ['accepted', 'cancelled'], accepted: ['preparing', 'cancelled'], preparing: ['ready_for_pickup'], ready_for_pickup: ['delivered'], delivered: [] };
       if (!transitions[order.status]?.includes(next)) return { invalid: true };
       order.status = next; if (next === 'cancelled') order.deliveryStatus = 'cancelled'; order.updatedAt = new Date().toISOString(); order.statusHistory.push({ status: next, at: order.updatedAt, by: req.user.id });
       return { order };
