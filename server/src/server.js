@@ -226,6 +226,9 @@ async function requireAuth(req, res, next) {
       roles: [...new Set([...(liveUser.accountType === 'admin' ? [] : ['customer']), ...(Array.isArray(liveUser.roles) ? liveUser.roles : []), liveUser.accountType].filter(Boolean))],
       category: liveUser.category || null,
       categoryName: liveUser.categoryName || null,
+      providerStatus: liveUser.providerStatus || null,
+      approvedServices: Array.isArray(liveUser.approvedServices) ? liveUser.approvedServices : [],
+      serviceRequests: Array.isArray(liveUser.serviceRequests) ? liveUser.serviceRequests : [],
       fullName: liveUser.fullName || decoded.fullName
     };
     next();
@@ -930,7 +933,7 @@ app.post('/api/providers/services', requireAuth, async (req, res) => {
       });
       return user;
     });
-    const request = (updated?.serviceRequests || []).find(item => item.categorySlug === categorySlug && item.serviceName.toLowerCase() === serviceName.toLowerCase());
+    const request = (updated?.serviceRequests || []).find(item => item.categorySlug === categorySlug && item.serviceName.toLowerCase() === serviceName.toLowerCase() && item.status === 'pending');
     if (!request) return res.status(500).json({ error: 'Could not save service request.' });
     if (request.status !== 'pending') return res.status(409).json({ error: 'This service request already exists.' });
     publishEvent('provider:service_request_created', { providerId: req.user.id, requestId: request.id });
@@ -1652,7 +1655,8 @@ app.post('/api/bookings/:id/claim', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'This job is not currently open for broadcast claiming.' });
     }
 
-    if (booking.categorySlug && provider.category !== booking.categorySlug) {
+    const approvedCategories = new Set([provider.category, ...(Array.isArray(provider.approvedServices) ? provider.approvedServices.map(service => service.categorySlug) : [])]);
+    if (booking.categorySlug && !approvedCategories.has(booking.categorySlug)) {
       return res.status(403).json({ error: 'This broadcast job is outside your approved provider category.' });
     }
     if (Array.isArray(booking.declinedBy) && booking.declinedBy.includes(provider.id)) {
