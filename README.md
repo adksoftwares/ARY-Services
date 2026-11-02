@@ -91,8 +91,14 @@ See [Production setup](docs/PRODUCTION-SETUP.md) for the deployment environment 
 From the `server` directory:
 
 ```bash
+npm run test:security
 npm run test:grocery-storage
 npm test
 ```
 
 The focused Grocery persistence test verifies that concurrent inventory mutations are not lost. The PostgreSQL integration test remains separately available as `node test/postgresStorage.js` and requires a disposable test database through `DATABASE_URL`.
+
+
+## Consolidated hardening update
+
+See [Consolidated hardening](docs/CONSOLIDATED-HARDENING.md) for the current session-identity and provider-onboarding safeguards, verification commands and explicitly deferred production work.
