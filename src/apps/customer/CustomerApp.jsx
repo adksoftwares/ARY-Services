@@ -133,7 +133,7 @@ function CustomerWorkspace() {
   useEffect(() => { fetchBookings(); }, [fetchBookings]);
   useEffect(() => {
     const refresh = () => { fetchBookings(); };
-    return subscribeToAppEvents(currentUser?.token, { 'booking:created': refresh, 'booking:status_updated': refresh, 'grocery:order_updated': refresh, 'driver:job_created': refresh, 'driver:job_updated': refresh });
+    return subscribeToAppEvents(currentUser?.token, { 'booking:created': refresh, 'booking:status_updated': refresh, 'booking:quote_sent': refresh, 'booking:quote_decided': refresh, 'booking:reschedule_requested': refresh, 'booking:reschedule_decided': refresh, 'grocery:order_updated': refresh, 'driver:job_created': refresh, 'driver:job_updated': refresh });
   }, [fetchBookings]);
 
   const visibleServices = useMemo(() => SERVICES.filter(service =>
