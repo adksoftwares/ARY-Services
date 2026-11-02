@@ -1025,7 +1025,7 @@ app.patch('/api/bookings/:id/status', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body; // 'accepted' | 'rejected' | 'in_progress' | 'completed' | 'cancelled'
-    const { id: userId, accountType, phone } = req.user;
+    const { id: userId, accountType } = req.user;
 
     const validStatuses = ['accepted', 'rejected', 'in_progress', 'completed'];
     if (!validStatuses.includes(status)) {
@@ -1040,7 +1040,6 @@ app.patch('/api/bookings/:id/status', requireAuth, async (req, res) => {
     }
 
     // Role-based authorization for booking changes
-    const userPhoneDigits = phone ? normalizePhone(phone) : null;
     const isProviderMatch = booking.providerId === userId;
     if (accountType !== 'admin' && (accountType !== 'provider' || !isProviderMatch)) {
       return res.status(403).json({ error: 'Only the assigned provider or Admin can update service booking progress.' });
