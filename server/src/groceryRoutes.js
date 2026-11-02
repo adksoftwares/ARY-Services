@@ -55,9 +55,9 @@ function cleanProduct(body = {}) {
   return product;
 }
 
-(user) {
+function isGroceryProvider(user) {
   return user?.accountType === 'provider' &&
-    user?.category === 'grocery-products' &&
+    (user?.category === 'grocery-products' || (Array.isArray(user?.approvedServices) && user.approvedServices.some(service => service.categorySlug === 'grocery-products'))) &&
     user?.status === 'active';
 }
 
