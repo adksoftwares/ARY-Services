@@ -4,6 +4,7 @@ import cors from 'cors';
 import pg from 'pg';
 import crypto from 'node:crypto';
 import rateLimit from 'express-rate-limit';
+import { findLiveUserForToken } from './sessionIdentity.js';
 
 import {
   getUsers,
@@ -190,7 +191,7 @@ async function requireAuth(req, res, next) {
     // The immutable account ID is the only identity key accepted from a signed token.
     // Falling back to phone/email can silently attach an old session to a different
     // account after a contact detail is changed or recycled.
-    const liveUser = users.find(u => u.id === decoded.id);
+    const liveUser = findLiveUserForToken(users, decoded);
 
     if (!liveUser) {
       return res.status(401).json({ error: 'User account no longer exists.' });
