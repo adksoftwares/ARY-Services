@@ -16,6 +16,7 @@ import DisputeModal from '../../components/customer/DisputeModal';
 import AccountRoleRequest from '../../components/customer/AccountRoleRequest';
 import AuthModal from '../../components/common/AuthModal';
 import Footer from '../../components/common/Footer';
+import NotificationCenter from '../../components/common/NotificationCenter';
 
 const SERVICES = [
   { id: 1, name: 'Food Shops', slug: 'food-shops', description: 'Explore local shops and place an order', icon: ShoppingBasket, color: 'peach' },
@@ -35,6 +36,7 @@ function CustomerHeader() {
       {currentUser?.accountType === 'customer' && <Link to="/bookings" className="nav-link-btn"><ClipboardList size={14}/> My Bookings</Link>}
     </nav>
     {currentUser ? <div className="user-profile">
+      <NotificationCenter/>
       <span className="user-badge"><UserRound size={14}/><span>{currentUser.fullName}</span></span>
       <button className="sign-out-btn" onClick={() => { logout(); navigate('/'); }}><LogOut size={14}/> Sign out</button>
     </div> : <div style={{display:'flex',gap:8}}>
