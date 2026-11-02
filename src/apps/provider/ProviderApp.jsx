@@ -40,7 +40,7 @@ function ProviderWorkspace() {
   useEffect(() => {
     if (!currentUser || currentUser.accountType !== 'provider') return undefined;
     const refresh = () => fetchBookings();
-    return subscribeToAppEvents(currentUser?.token, { 'booking:created': refresh, 'booking:status_updated': refresh, 'grocery:order_created': refresh, 'grocery:order_updated': refresh });
+    return subscribeToAppEvents(currentUser?.token, { 'booking:created': refresh, 'booking:status_updated': refresh, 'grocery:order_created': refresh, 'grocery:order_updated': refresh, 'driver:job_updated': refresh });
   }, [currentUser, fetchBookings]);
 
   async function updateBookingStatus(bookingId, status) {
