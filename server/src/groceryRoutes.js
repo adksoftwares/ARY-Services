@@ -312,6 +312,38 @@ export function registerGroceryRoutes(app, { requireAuth, broadcastEvent, getUse
     const orders = await readPersistentState('grocery_orders', ordersFile, EMPTY_ORDERS);
     return res.json({ orders: orders.map(({ deliveryPickupPin, deliveryPin, ...order }) => order) });
   });
+  app.patch('/api/grocery/orders/:id/cancel', requireAuth, async (req, res) => {
+    if (req.user?.accountType !== 'customer') return res.status(403).json({ error: 'Customer account required.' });
+    const existing = await readPersistentState('grocery_orders', ordersFile, EMPTY_ORDERS);
+    const target = existing.find(item => item.id === req.params.id && item.customerId === req.user.id);
+    if (!target) return res.status(404).json({ error: 'Order not found.' });
+    if (target.status !== 'pending') return res.status(409).json({ error: 'A grocery order can only be cancelled before the shop accepts it.' });
+    if (target.deliveryJobId && !(await cancelGroceryOrderDeliveryJob(target.deliveryJobId))) {
+      return res.status(409).json({ error: 'A delivery driver has already accepted this order. Contact ARY support.' });
+    }
+    const order = await mutatePersistentState('grocery_orders', ordersFile, EMPTY_ORDERS, stored => {
+      const current = stored.find(item => item.id === req.params.id && item.customerId === req.user.id);
+      if (!current || current.status !== 'pending') return null;
+      current.status = 'cancelled';
+      current.deliveryStatus = 'cancelled';
+      current.updatedAt = new Date().toISOString();
+      current.statusHistory = Array.isArray(current.statusHistory) ? current.statusHistory : [];
+      current.statusHistory.push({ status: 'cancelled', at: current.updatedAt, by: req.user.id });
+      return current;
+    });
+    if (!order) return res.status(409).json({ error: 'The shop has already started processing this order.' });
+    await mutateProducts(products => {
+      for (const line of order.items) {
+        const product = products.find(item => item.id === line.productId);
+        if (product) { product.stock += line.quantity; product.updatedAt = new Date().toISOString(); }
+      }
+      return true;
+    });
+    if (order.deliveryJobId) broadcastEvent('driver:job_updated', { customerId: order.customerId, driverId: null, job: { id: order.deliveryJobId, status: 'cancelled', serviceType: 'food_delivery', customerId: order.customerId } });
+    broadcastEvent('grocery:order_updated', { orderId: order.id, providerId: order.providerId, customerId: order.customerId, status: order.status });
+    return res.json({ order, message: 'Grocery order cancelled and stock restored.' });
+  });
+
   app.patch('/api/grocery/orders/:id/status', requireAuth, async (req, res) => {
     const next = String(req.body?.status || '');
     if (!['accepted', 'preparing', 'ready_for_pickup', 'cancelled'].includes(next)) return res.status(400).json({ error: 'Invalid grocery order status.' });
