@@ -3,6 +3,7 @@ import { BrowserRouter, Link, useNavigate } from 'react-router-dom';
 import { Bike, LogIn, LogOut, ShieldCheck, UserRound } from 'lucide-react';
 import { AuthProvider, useAuth } from '../../context/AuthContext';
 import { API_BASE } from '../../config';
+import { subscribeToAppEvents } from '../../utils/events';
 import DriverWorkspace from '../../components/driver/DriverWorkspace';
 import AuthModal from '../../components/common/AuthModal';
 import Footer from '../../components/common/Footer';
@@ -15,21 +16,8 @@ function DriverPortal() {
 
   useEffect(() => {
     if (!isDriver) return undefined;
-    const events = new EventSource(`${API_BASE}/events`);
-    const refreshNotice = (event) => {
-      try {
-        const data = JSON.parse(event.data || '{}');
-        if (data.driverId === currentUser.id || data.userId === currentUser.id) {
-          setNotice('Your driver activity has been updated. Refresh the job list to see the latest status.');
-        }
-      } catch {
-        setNotice('A driver update is available. Refresh the job list to see the latest status.');
-      }
-    };
-    events.addEventListener('driver:job_created', refreshNotice);
-    events.addEventListener('driver:job_updated', refreshNotice);
-    events.addEventListener('driver:application_reviewed', refreshNotice);
-    return () => events.close();
+    const notify = () => setNotice('Your driver activity has changed. Refresh the job list for the latest details.');
+    return subscribeToAppEvents(currentUser?.token, { 'driver:job_created': notify, 'driver:job_updated': notify, 'driver:application_reviewed': notify });
   }, [isDriver, currentUser?.id]);
 
   return <div className="app-shell">
