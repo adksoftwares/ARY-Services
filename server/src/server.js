@@ -481,6 +481,8 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
       categoryName = 'General Services',
       baseCharge = 'LKR 1,500',
       nicNumber,
+      nsnNumber,
+      operatingMode,
       nicDocument,
       tradeCertificate,
       driverServices = []
@@ -493,7 +495,7 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
     const cleanEmail = email ? email.trim().toLowerCase() : null;
     const cleanPhone = phone ? phone.trim() : (cleanEmail ? cleanEmail.split('@')[0] : '');
     const cleanLocation = (location || '').trim();
-    const effectivePassword = password || (role === 'customer' ? 'customer123' : null);
+    const effectivePassword = password || (role === 'customer' ? crypto.randomBytes(32).toString('hex') : null);
 
     if (!fullName || (role === 'customer' && !cleanPhone) || !effectivePassword) {
       return res.status(400).json({
@@ -503,11 +505,19 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
       });
     }
 
+    // Provider onboarding must capture the business operating model and NSN
+    // before the application can enter the Admin approval queue.
+    const cleanNsn = role === 'provider' ? String(nsnNumber || '').trim() : null;
+    const cleanOperatingMode = role === 'provider' ? String(operatingMode || '').trim() : null;
+    if (role === 'provider' && (!cleanNsn || cleanNsn.length > 40 || !['shop', 'online', 'mobile'].includes(cleanOperatingMode))) {
+      return res.status(400).json({ error: 'Provider registration requires an NSN number and a valid operating mode (shop, online or mobile).' });
+    }
+
     // Sri Lankan NIC verification for service providers
     let cleanNic = null;
     if (['provider', 'driver'].includes(role) && nicNumber) {
       const trimmedNic = String(nicNumber).trim().toUpperCase();
-      const isValidNic = /^([0-9]{9}[V|X]|[0-9]{12})$/.test(trimmedNic);
+      const isValidNic = /^([0-9]{9}[VX]|[0-9]{12})$/.test(trimmedNic);
       if (!isValidNic) {
         return res.status(400).json({ error: 'Invalid Sri Lankan NIC number format. Must be 9 digits followed by V/X or 12 digits.' });
       }
@@ -562,6 +572,8 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
       reviewCount: role === 'provider' ? 0 : null,
       experienceYears: role === 'provider' ? 3 : null,
       nicNumber: cleanNic,
+      nsnNumber: cleanNsn,
+      operatingMode: cleanOperatingMode,
       nicDocument: nicDocument || null,
       tradeCertificate: tradeCertificate || null,
       kycStatus: ['provider', 'driver'].includes(role) ? (cleanNic ? 'pending' : 'unverified') : 'verified',
