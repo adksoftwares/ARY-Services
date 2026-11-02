@@ -115,3 +115,12 @@ Ride and food-delivery requests can include optional browser GPS coordinates. Ap
 - Admin-only dispatch monitoring API: `GET /api/admin/driver-dispatch` returns fresh, approved online drivers, active ride/delivery jobs and operational counts. It deliberately excludes KYC, NIC, phone, email and customer account identifiers.
 - An assigned driver can release an accepted job before pickup with `PATCH /api/driver-jobs/:id/cancel`. The job is marked cancelled, its assignment is cleared, and the customer/admin views receive a job update. A job cannot be released through this action after pickup.
 - Payment gateway integration remains intentionally excluded. Existing cash/ledger/CEFT workflows are not represented as online card/wallet payment processing.
+
+
+## Additional marketplace workflows (payment gateway excluded)
+
+- Customer parcel requests create jobs for the separately approved `parcel_delivery` driver network and collect sender/recipient contact details, parcel class and declared weight. Contact numbers are withheld from unassigned drivers.
+- Ride start, food/parcel pickup and delivery handoffs use six-digit PINs. PIN hashes are stored server-side; customer-facing PINs are returned only to the owning customer and never included in dispatch events. Driver verification is limited to five failed attempts per handoff.
+- A driver cannot accept another active job until the current job is completed or released. Ride and delivery status transitions require arrival and server-verified handoff PINs.
+- Grocery customers can place single-shop orders with server-side stock reservation, order history and cash-on-delivery status. Grocery providers can accept, prepare, mark ready for pickup or cancel orders; cancellation restores reserved stock.
+- Online card/wallet payments, escrow and automated payouts remain excluded. Grocery delivery fee is currently zero until a real delivery pricing policy is configured.
