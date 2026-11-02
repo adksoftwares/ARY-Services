@@ -157,6 +157,23 @@ export default function DriverWorkspace({ onNotice }) {
     }
   }
 
+  async function releaseJob(id) {
+    const reason = window.prompt('Optional reason for releasing this job (before pickup):') || '';
+    try {
+      const response = await fetch(`${API_BASE}/driver-jobs/${encodeURIComponent(id)}/cancel`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${currentUser.token}` },
+        body: JSON.stringify({ reason })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Could not release this job.');
+      await refresh();
+      onNotice?.('Job released before pickup.');
+    } catch (err) {
+      setError(err.message || 'Could not release this job.');
+    }
+  }
+
   async function update(id, status) {
     try {
       const response = await fetch(`${API_BASE}/driver-jobs/${encodeURIComponent(id)}/status`, {
@@ -244,7 +261,10 @@ export default function DriverWorkspace({ onNotice }) {
           </p>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {job.status === 'requested' && <button onClick={() => claim(job.id)} className="register-nav-btn">Accept job <ArrowUpRight size={14}/></button>}
-            {job.status === 'accepted' && <button onClick={() => update(job.id, 'picked_up')} className="register-nav-btn">Picked up / passenger onboard</button>}
+            {job.status === 'accepted' && <>
+              <button onClick={() => update(job.id, 'picked_up')} className="register-nav-btn">Picked up / passenger onboard</button>
+              <button onClick={() => releaseJob(job.id)} type="button" style={{border:'1px solid #e6caca',borderRadius:8,padding:'9px 12px',background:'#fff',color:'#a33',fontWeight:700}}>Release job</button>
+            </>}
             {job.status === 'picked_up' && <button onClick={() => update(job.id, 'completed')} className="register-nav-btn">Complete trip / delivery</button>}
             {job.status === 'completed' && <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#27724b', fontSize: 12 }}><CheckCircle2 size={15}/> Completed</span>}
           </div>
