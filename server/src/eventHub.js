@@ -22,6 +22,7 @@ function canReceive(client, eventType, payload = {}) {
       userId === order.customerId || userId === order.providerId;
   }
   if (eventType === 'review:submitted') return userId === payload.providerId;
+  if (eventType.startsWith('provider:service_request_')) return userId === payload.providerId;
   if (eventType === 'user:status_changed') return userId === payload.userId;
   return false;
 }
