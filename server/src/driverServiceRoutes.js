@@ -23,8 +23,10 @@ const cleanCoordinates = (lat, lng) => validCoordinates(lat, lng)
   ? { lat: Number(lat), lng: Number(lng) }
   : null;
 const distanceToJob = (presence, job) => {
-  if (!presence || !job.pickupLat || !job.pickupLng) return null;
-  return calculateDistanceKm(presence.lat, presence.lng, job.pickupLat, job.pickupLng);
+  const targetLat = job.serviceType === 'food_delivery' ? job.destinationLat : job.pickupLat;
+  const targetLng = job.serviceType === 'food_delivery' ? job.destinationLng : job.pickupLng;
+  if (!presence || !Number.isFinite(Number(targetLat)) || !Number.isFinite(Number(targetLng))) return null;
+  return calculateDistanceKm(presence.lat, presence.lng, targetLat, targetLng);
 };
 export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadcastEvent,getBookings,getUsers}){
   app.post('/api/driver-applications',requireAuth,async(req,res)=>{
