@@ -65,3 +65,10 @@ All four browser entries use the shared API and identity system. Protect the Adm
 - Complete the organization's release approval and manual browser/device checks before opening the service to the public.
 
 This document describes configuration requirements; it does not claim that any hosting environment, Twilio account, domain, database or production secret has already been provisioned.
+
+
+## Mobility dispatch operations (no payment gateway)
+
+The Admin API provides a protected dispatch snapshot at `GET /api/admin/driver-dispatch`. It lists only drivers with an approved network and a GPS update within the dispatch freshness window, plus active ride and delivery jobs. The response is intentionally privacy-minimised and excludes NIC/KYC documents, phone numbers, email addresses and internal customer account IDs.
+
+Drivers may release an accepted job before pickup using `PATCH /api/driver-jobs/:id/cancel`. The assignment is cleared and the job is marked cancelled for audit visibility. This action is rejected after pickup. This is not a substitute for a future customer-support cancellation and reassignment policy.
