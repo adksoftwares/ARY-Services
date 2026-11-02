@@ -2,7 +2,7 @@ import crypto from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readPersistentState, mutatePersistentState } from './storage.js';
-import { calculateDistanceKm, estimateEtaMinutes } from './geoService.js';
+import { cleanSriLankaCoordinates, isDriverPresenceFresh, rankJobsForDriver } from './mobilityDispatch.js';
 
 const dataFile = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'data', 'driver-services.json');
 const emptyDriverState = { applications: [], jobs: [], presence: {} };
@@ -15,19 +15,7 @@ async function readJobs() {
 }
 const id=prefix=>prefix+'_'+crypto.randomUUID().replaceAll('-','').slice(0,12);
 const types=['food_delivery','ride'];
-const validCoordinates = (lat, lng) =>
-  Number.isFinite(Number(lat)) && Number.isFinite(Number(lng)) &&
-  Number(lat) >= 5.8 && Number(lat) <= 10.1 &&
-  Number(lng) >= 79.0 && Number(lng) <= 82.2;
-const cleanCoordinates = (lat, lng) => validCoordinates(lat, lng)
-  ? { lat: Number(lat), lng: Number(lng) }
-  : null;
-const distanceToJob = (presence, job) => {
-  const targetLat = job.serviceType === 'food_delivery' ? job.destinationLat : job.pickupLat;
-  const targetLng = job.serviceType === 'food_delivery' ? job.destinationLng : job.pickupLng;
-  if (!presence || !Number.isFinite(Number(targetLat)) || !Number.isFinite(Number(targetLng))) return null;
-  return calculateDistanceKm(presence.lat, presence.lng, targetLat, targetLng);
-};
+const cleanCoordinates = cleanSriLankaCoordinates;
 export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadcastEvent,getBookings,getUsers}){
   app.post('/api/driver-applications',requireAuth,async(req,res)=>{
     if(req.user.accountType!=='driver')return res.status(403).json({error:'Only registered Driver accounts can apply to driver networks.'});
@@ -110,11 +98,12 @@ export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadc
     if(req.user.accountType!=='driver')return res.status(403).json({error:'Driver account required.'});
     const d=await readJobs();const approved=d.applications.filter(a=>a.userId===req.user.id&&a.status==='approved').map(a=>a.driverType);
     const presence=d.presence[req.user.id]||{online:false};
-    const jobs=d.jobs
-      .filter(j=>approved.includes(j.serviceType)&&(j.driverId===req.user.id||(j.status==='requested'&&presence.online)))
-      .map(j=>{const distanceKm=distanceToJob(presence,j);return {...j,distanceKm,etaMinutes:distanceKm===null?null:estimateEtaMinutes(distanceKm)};})
-      .sort((a,b)=>{if(a.driverId===req.user.id)return -1;if(b.driverId===req.user.id)return 1;if(a.distanceKm===null)return 1;if(b.distanceKm===null)return -1;return a.distanceKm-b.distanceKm;});
-    res.json({jobs,approvedDriverTypes:approved,presence});
+    const freshPresence=isDriverPresenceFresh(presence);
+    const jobs=rankJobsForDriver(
+      d.jobs.filter(j=>approved.includes(j.serviceType)&&(j.driverId===req.user.id||(j.status==='requested'&&freshPresence))),
+      presence
+    );
+    res.json({jobs,approvedDriverTypes:approved,presence:{...presence,online:freshPresence}});
   });
   app.post('/api/driver-jobs/:id/claim',requireAuth,async(req,res)=>{
     if(req.user.accountType!=='driver')return res.status(403).json({error:'Driver account required.'});
@@ -124,7 +113,7 @@ export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadc
         const approved=d.applications.some(a=>a.userId===req.user.id&&a.driverType===job.serviceType&&a.status==='approved');
         if(!approved)return {status:403,error:'You are not approved for this driver network.'};
         const presence=d.presence[req.user.id];
-        if(!presence?.online)return {status:409,error:'Go online and share your current location before accepting a new job.'};
+        if(!isDriverPresenceFresh(presence))return {status:409,error:'Your GPS location is stale. Refresh your location and go online before accepting a new job.'};
         if(job.status!=='requested'||job.driverId)return {status:409,error:'This job has already been accepted by another driver.'};
         job.driverId=req.user.id;job.driverName=req.user.fullName;job.status='accepted';job.acceptedAt=new Date().toISOString();return {status:200,job};
       });
