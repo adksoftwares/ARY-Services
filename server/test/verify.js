@@ -141,7 +141,7 @@ for (let attempt = 1; attempt <= 4; attempt++) {
 // 5th wrong attempt should lock out immediately
 const lockRes = await verifyOtp(brutePhone, '000000');
 assert.equal(lockRes.valid, false);
-assert(lockRes.error.includes('invalidated for security'), 'Must be invalidated on 5th attempt');
+assert(lockRes.error.includes('Too many incorrect attempts'), 'Must report lockout after the 5th incorrect attempt');
 
 // Subsequent attempt even with the CORRECT code must be rejected because code was deleted
 const tryCorrectAfterLockout = await verifyOtp(brutePhone, bruteSend.devCode);
