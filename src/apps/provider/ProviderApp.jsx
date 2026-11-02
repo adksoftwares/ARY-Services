@@ -3,6 +3,7 @@ import { BrowserRouter, Link, useNavigate } from 'react-router-dom';
 import { BriefcaseBusiness, LogIn, LogOut, RefreshCw, ShieldCheck, UserRound } from 'lucide-react';
 import { AuthProvider, useAuth } from '../../context/AuthContext';
 import { API_BASE } from '../../config';
+import { subscribeToAppEvents } from '../../utils/events';
 import ProviderDashboard from '../../components/provider/ProviderDashboard';
 import AuthModal from '../../components/common/AuthModal';
 import Footer from '../../components/common/Footer';
@@ -38,11 +39,8 @@ function ProviderWorkspace() {
 
   useEffect(() => {
     if (!currentUser || currentUser.accountType !== 'provider') return undefined;
-    const events = new EventSource(`${API_BASE}/events`);
     const refresh = () => fetchBookings();
-    events.addEventListener('booking:created', refresh);
-    events.addEventListener('booking:status_updated', refresh);
-    return () => events.close();
+    return subscribeToAppEvents(currentUser?.token, { 'booking:created': refresh, 'booking:status_updated': refresh, 'grocery:order_created': refresh, 'grocery:order_updated': refresh });
   }, [currentUser, fetchBookings]);
 
   async function updateBookingStatus(bookingId, status) {
