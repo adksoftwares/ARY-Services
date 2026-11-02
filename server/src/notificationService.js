@@ -32,6 +32,8 @@ function describeNotification(eventType, payload = {}) {
   const order = payload.order || {};
   if (eventType === 'user:registered') return { title: 'New account registration', body: 'A new ARY Services account has been registered.', resourceType: 'account', resourceId: payload.user?.id || null };
   if (eventType === 'booking:created') return { title: 'New service booking', body: 'A service booking request has been created.', resourceType: 'booking', resourceId: booking.id || null };
+  if (eventType === 'booking:reschedule_requested') return { title: 'Booking time change requested', body: 'A customer has requested a new service date and time.', resourceType: 'booking', resourceId: payload.bookingId || null };
+  if (eventType === 'booking:reschedule_decided') return { title: 'Reschedule decision received', body: `The new booking time request was ${payload.status || 'updated'}.`, resourceType: 'booking', resourceId: payload.bookingId || null };
   if (eventType === 'booking:status_updated') return { title: 'Booking updated', body: `Your booking status is now ${String(payload.status || booking.status || 'updated').replaceAll('_', ' ')}.`, resourceType: 'booking', resourceId: payload.bookingId || booking.id || null };
   if (eventType === 'driver:job_created') return { title: 'Ride or delivery request created', body: 'Your mobility request has been received.', resourceType: 'mobility', resourceId: job.id || null };
   if (eventType === 'driver:job_updated') return { title: 'Ride or delivery updated', body: `Your request status is now ${String(job.status || 'updated').replaceAll('_', ' ')}.`, resourceType: 'mobility', resourceId: job.id || null };
