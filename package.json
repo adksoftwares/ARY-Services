@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "test:smoke": "node scripts/smoke_test_flows.mjs",
     "testsprite": "testsprite",
     "build:mobile": "node scripts/build-mobile.mjs all",
     "build:mobile:customer": "node scripts/build-mobile.mjs customer",

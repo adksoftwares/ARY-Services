@@ -97,7 +97,7 @@ export default function AdminWorkspace({
     fetchDispatchSnapshot();
   }, [fetchBookings, fetchDispatchSnapshot]);
 
-  // Update user status without ary_persisted_users (Constraint 4)
+  // Update user status
   async function handleUpdateUserStatus(userId, newStatus, userName) {
     if (!currentUser?.token) return;
     try {
@@ -121,7 +121,7 @@ export default function AdminWorkspace({
     }
   }
 
-  // Delete user without ary_persisted_users (Constraint 4)
+  // Delete user
   async function handleDeleteUser(userId, userName) {
     if (!currentUser?.token) return;
     try {
