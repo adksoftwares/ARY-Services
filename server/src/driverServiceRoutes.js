@@ -119,7 +119,7 @@ export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadc
     if(req.user.accountType!=='driver')return res.status(403).json({error:'Only registered Driver accounts can apply to driver networks.'});
     const requested=Array.isArray(req.body?.driverTypes)?req.body.driverTypes:[req.body?.driverType];
     const driverTypes=[...new Set(requested.map(String).filter(type=>types.includes(type)))];
-    if(!driverTypes.length)return res.status(400).json({error:'Choose Ride, Food Delivery, or both.'});
+    if(!driverTypes.length)return res.status(400).json({error:'Choose Ride, Food Delivery, Parcel Delivery, or any combination.'});
     const applications=await mutateJobs(data=>{
       const submitted=[];
       for(const driverType of driverTypes){
