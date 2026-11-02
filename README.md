@@ -155,3 +155,15 @@ Three Capacitor Android shells are maintained for Customer, Driver and Provider.
 - Native Android bundles require ARY_API_BASE to point to the deployed HTTPS /api endpoint. Android signing, Firebase project credentials, store release setup and real-device validation are deployment-owner tasks.
 - True background push notifications require a configured FCM/Web Push provider and its credentials; the current notification inbox and browser alerts do not claim background push delivery.
 - Payment gateway, online escrow and automated payouts remain excluded.
+
+
+## Independent application workspaces
+
+ARY Services is one GitHub monorepo with four independently runnable web applications:
+
+- `apps/customer` — Customer application
+- `apps/provider` — Service Provider application, including Grocery
+- `apps/driver` — Driver application
+- `apps/admin-dashboard` — Admin dashboard
+
+The apps share the existing API server and common UI/authentication/utilities. Grocery remains a Provider module, not a separate app. Run with `npm run dev:customer`, `npm run dev:provider`, `npm run dev:driver` or `npm run dev:admin`; build with the corresponding `build:` command. Build outputs are isolated under `dist/apps/`. Legacy root entry points are retained during transition.

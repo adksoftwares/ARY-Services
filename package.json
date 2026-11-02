@@ -11,7 +11,15 @@
     "build:mobile": "node scripts/build-mobile.mjs all",
     "build:mobile:customer": "node scripts/build-mobile.mjs customer",
     "build:mobile:driver": "node scripts/build-mobile.mjs driver",
-    "build:mobile:provider": "node scripts/build-mobile.mjs provider"
+    "build:mobile:provider": "node scripts/build-mobile.mjs provider",
+    "dev:customer": "npm run dev --workspace @ary/customer-app",
+    "build:customer": "npm run build --workspace @ary/customer-app",
+    "dev:provider": "npm run dev --workspace @ary/provider-app",
+    "build:provider": "npm run build --workspace @ary/provider-app",
+    "dev:driver": "npm run dev --workspace @ary/driver-app",
+    "build:driver": "npm run build --workspace @ary/driver-app",
+    "dev:admin": "npm run dev --workspace @ary/admin-dashboard",
+    "build:admin": "npm run build --workspace @ary/admin-dashboard"
   },
   "dependencies": {
     "cors": "^2.8.5",
@@ -32,5 +40,8 @@
     "@vitejs/plugin-react": "^4.3.4",
     "puppeteer-core": "^25.16.0",
     "vite": "^6.0.5"
-  }
+  },
+  "workspaces": [
+    "apps/*"
+  ]
 }
