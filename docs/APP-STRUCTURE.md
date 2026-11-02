@@ -146,3 +146,12 @@ A single Customer identity can request additional Provider or Driver access with
 - `PATCH /api/admin/role-applications/:userId/:role` — Admin-only approval or rejection.
 
 The server validates the active role against the live account record on every authenticated request. A role value stored in browser state alone does not grant access. Existing single-role accounts and the existing Driver network approval process are retained.
+
+
+## Mobility integration update
+
+- Driver availability is explicit and opt-in. The Driver workspace asks the browser for location only after the driver chooses Go online.
+- Driver presence is stored in the shared driver-services persistence collection. The driver client refreshes GPS while online and can switch offline.
+- New jobs are shown only to drivers with an approved matching network and a fresh GPS update (maximum age 90 seconds). Job cards are ordered by proximity to the ride pickup or food-delivery destination where customer coordinates are supplied.
+- Customer mobility requests can include optional GPS coordinates, show their own request lifecycle, and expose the assigned driver's most recent fresh location. Customers can cancel only while the request remains unclaimed.
+- Distance is Haversine straight-line distance and ETA is a coarse estimate. This is not turn-by-turn navigation, road-distance routing, guaranteed dispatch, or a production SLA.

@@ -8,7 +8,8 @@
     "start": "node src/server.js",
     "test": "node test/verify.js",
     "test:grocery-storage": "node test/groceryStorage.js",
-    "test:security": "node test/sessionIdentity.js"
+    "test:security": "node test/sessionIdentity.js",
+    "test:mobility": "node test/mobilityDispatch.js"
   },
   "dependencies": {
     "cors": "^2.8.5",

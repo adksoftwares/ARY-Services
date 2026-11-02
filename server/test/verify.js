@@ -141,7 +141,7 @@ for (let attempt = 1; attempt <= 4; attempt++) {
 // 5th wrong attempt should lock out immediately
 const lockRes = await verifyOtp(brutePhone, '000000');
 assert.equal(lockRes.valid, false);
-assert(lockRes.error.includes('invalidated for security'), 'Must be invalidated on 5th attempt');
+assert(lockRes.error.includes('Too many incorrect attempts'), 'Must report lockout after the 5th incorrect attempt');
 
 // Subsequent attempt even with the CORRECT code must be rejected because code was deleted
 const tryCorrectAfterLockout = await verifyOtp(brutePhone, bruteSend.devCode);
@@ -309,6 +309,9 @@ try {
       category: 'electrical-repair',
       categoryName: 'Electrical Repair',
       baseCharge: 'LKR 2,000',
+      nsnNumber: 'NSN-TEST-1001',
+      operatingMode: 'shop',
+      nicNumber: '199512345678',
       location: 'Bambalapitiya, Colombo'
     })
   });
@@ -581,7 +584,10 @@ try {
       fullName: 'Rogue Contractor',
       phone: roguePhone,
       password: 'password123',
-      accountType: 'provider'
+      accountType: 'provider',
+      nsnNumber: 'NSN-ROGUE-001',
+      operatingMode: 'mobile',
+      nicNumber: '199512345678'
     })
   });
   const rogueData = await rogueRegRes.json();
@@ -668,6 +674,8 @@ try {
       phone: '0775551122',
       password: 'pass123456',
       accountType: 'provider',
+      nsnNumber: 'NSN-INVALID-001',
+      operatingMode: 'shop',
       nicNumber: '12345-invalid'
     })
   });
@@ -682,6 +690,8 @@ try {
       phone: '0775551122',
       password: 'pass123456',
       accountType: 'provider',
+      nsnNumber: 'NSN-VALID-001',
+      operatingMode: 'shop',
       nicNumber: '951234567V'
     })
   });

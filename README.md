@@ -93,6 +93,7 @@ From the `server` directory:
 ```bash
 npm run test:security
 npm run test:grocery-storage
+npm run test:mobility
 npm test
 ```
 
@@ -102,3 +103,8 @@ The focused Grocery persistence test verifies that concurrent inventory mutation
 ## Consolidated hardening update
 
 See [Consolidated hardening](docs/CONSOLIDATED-HARDENING.md) for the current session-identity and provider-onboarding safeguards, verification commands and explicitly deferred production work.
+
+
+## Mobility dispatch and location
+
+Ride and food-delivery requests can include optional browser GPS coordinates. Approved drivers explicitly choose **Go online** and grant browser location permission before receiving new jobs. The Driver app refreshes location while online; stale GPS (older than 90 seconds) is excluded from new-job dispatch and cannot be used to claim a job. Eligible jobs are ordered by straight-line proximity to the ride pickup or food-delivery customer drop-off. This is a proximity estimate, not road routing or a guaranteed arrival time. Customers can view their own ride/delivery request status and the assigned driver's latest available GPS point, and can cancel while no driver has accepted the request.
