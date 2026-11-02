@@ -3,6 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readPersistentState, mutatePersistentState } from './storage.js';
 import { cleanSriLankaCoordinates, isDriverPresenceFresh, rankJobsForDriver, buildAdminDispatchSnapshot } from './mobilityDispatch.js';
+import { calculateDistanceKm, estimateEtaMinutes } from './geoService.js';
 
 const dataFile = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'data', 'driver-services.json');
 const emptyDriverState = { applications: [], jobs: [], presence: {} };
@@ -30,6 +31,16 @@ const pinMatches = (pin, digest) => {
   const actual = Buffer.from(pinDigest(pin), 'hex'), expected = Buffer.from(digest, 'hex');
   return actual.length === expected.length && crypto.timingSafeEqual(actual, expected);
 };
+function configuredFare(distanceKm, serviceType = 'ride') {
+  const prefix = serviceType === 'ride' ? 'RIDE' : 'DELIVERY';
+  const keys = [prefix + '_BASE_FARE_LKR', prefix + '_PER_KM_FARE_LKR', prefix + '_MIN_FARE_LKR'];
+  if (keys.some(key => !String(process.env[key] ?? '').trim())) return null;
+  const [baseFare, perKmRate, minimumFare] = keys.map(key => Number(process.env[key]));
+  if (![baseFare, perKmRate, minimumFare].every(Number.isFinite) || [baseFare, perKmRate, minimumFare].some(value => value < 0)) return null;
+  const distanceCharge = Math.ceil(distanceKm * perKmRate);
+  return { currency: 'LKR', baseFare, distanceKm, perKmRate, distanceCharge, total: Math.max(minimumFare, Math.ceil(baseFare + distanceCharge)), pricingVersion: process.env[prefix + '_PRICING_VERSION'] || '1' };
+}
+
 function safeMobilityJob(job, viewerId = null) {
   const { startPinHash, pickupPinHash, deliveryPinHash, pinAttempts, deliveryPinAttempts, startPinForCustomer, pickupPinForCustomer, deliveryPinForCustomer, ...safe } = job;
   if (viewerId && job.customerId === viewerId) {
@@ -79,6 +90,17 @@ export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadc
     await mutateJobs(d=>{d.jobs.unshift(job);});
     broadcastEvent?.('driver:job_created',{job:safeMobilityJob(job)});res.status(201).json({job:safeMobilityJob(job,req.user.id)});
   });
+  app.get('/api/mobility/fare-estimate',async(req,res)=>{
+    const pickup=cleanCoordinates(req.query.pickupLat,req.query.pickupLng);
+    const destination=cleanCoordinates(req.query.destinationLat,req.query.destinationLng);
+    if(!pickup||!destination)return res.status(400).json({error:'Select valid pickup and destination GPS coordinates to calculate an indicative fare.'});
+    const serviceType=req.query.serviceType==='parcel_delivery'?'parcel_delivery':'ride';
+    const distanceKm=calculateDistanceKm(pickup.lat,pickup.lng,destination.lat,destination.lng);
+    const fare=configuredFare(distanceKm,serviceType);
+    if(!fare)return res.status(503).json({error:'Fare pricing is not configured. ARY cannot show an estimate yet.'});
+    return res.json({estimate:{...fare,etaMinutes:estimateEtaMinutes(distanceKm),disclaimer:'Indicative straight-line estimate only; it is not a road-route quote or guaranteed final fare.'}});
+  });
+
   app.post('/api/ride-trips',requireAuth,async(req,res)=>{
     if(req.user.accountType!=='customer')return res.status(403).json({error:'Customer account required.'});
     const {pickupAddress,destinationAddress,passengerCount=1,notes=''}=req.body||{};
