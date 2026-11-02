@@ -6,7 +6,7 @@ import { API_BASE } from '../../config';
 export default function MobilityServices({ onNotice }) {
   const { currentUser, openAuthModal } = useAuth();
   const [mode, setMode] = useState('food');
-  const [form, setForm] = useState({ orderReference: '', restaurantName: '', pickupAddress: '', dropoffAddress: '', pickup: '', destination: '', passengerCount: '1', notes: '' });
+  const [form, setForm] = useState({ orderReference: '', restaurantName: '', pickupAddress: '', dropoffAddress: '', pickup: '', destination: '', passengerCount: '1', pickupContact: '', recipientContact: '', parcelType: 'standard', weightKg: '1', notes: '' });
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [gps, setGps] = useState(null);
@@ -75,15 +75,15 @@ export default function MobilityServices({ onNotice }) {
     e.preventDefault();
     if (!currentUser?.token) { openAuthModal('login'); return; }
     setBusy(true); setMessage('');
-    const endpoint = mode === 'food' ? '/food-deliveries' : '/ride-trips';
+    const endpoint = mode === 'food' ? '/food-deliveries' : mode === 'parcel' ? '/parcels' : '/ride-trips';
     const payload = mode === 'food'
       ? { orderReference: form.orderReference.trim(), restaurantName: form.restaurantName.trim(), pickupAddress: form.pickupAddress.trim(), dropoffAddress: form.dropoffAddress.trim(), destinationLat: gps?.lat, destinationLng: gps?.lng, notes: form.notes.trim() }
-      : { pickupAddress: form.pickup.trim(), destinationAddress: form.destination.trim(), pickupLat: gps?.lat, pickupLng: gps?.lng, passengerCount: Number(form.passengerCount), notes: form.notes.trim() };
+      : mode === 'parcel' ? { pickupAddress: form.pickup.trim(), destinationAddress: form.destination.trim(), pickupContact: form.pickupContact.trim(), recipientContact: form.recipientContact.trim(), parcelType: form.parcelType, weightKg: Number(form.weightKg), pickupLat: gps?.lat, pickupLng: gps?.lng, notes: form.notes.trim() } : { pickupAddress: form.pickup.trim(), destinationAddress: form.destination.trim(), pickupLat: gps?.lat, pickupLng: gps?.lng, passengerCount: Number(form.passengerCount), notes: form.notes.trim() };
     try {
       const res = await fetch(API_BASE + endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + currentUser.token }, body: JSON.stringify(payload) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Could not submit request.');
-      setMessage((mode === 'food' ? 'Food delivery' : 'Ride') + ' request created: ' + data.job.id);
+      setMessage((mode === 'food' ? 'Food delivery' : mode === 'parcel' ? 'Parcel delivery' : 'Ride') + ' request created: ' + data.job.id);
       setForm(old => ({ ...old, orderReference: '', notes: '' }));
       await refreshJobs();
       onNotice?.((mode === 'food' ? 'Food delivery' : 'Ride') + ' request sent. A matching driver can accept it.');
@@ -97,6 +97,7 @@ export default function MobilityServices({ onNotice }) {
     <div style={{display:'flex',gap:10,flexWrap:'wrap',marginBottom:18}}>
       <button type="button" onClick={()=>setMode('food')} style={{display:'flex',alignItems:'center',gap:9,padding:'12px 18px',borderRadius:10,border:'1px solid '+(mode==='food'?'#174d3d':'#e1e8df'),background:mode==='food'?'#edf5ef':'#fff',color:'#204333',fontWeight:700}}><Utensils size={18}/> Food Delivery</button>
       <button type="button" onClick={()=>setMode('ride')} style={{display:'flex',alignItems:'center',gap:9,padding:'12px 18px',borderRadius:10,border:'1px solid '+(mode==='ride'?'#174d3d':'#e1e8df'),background:mode==='ride'?'#edf5ef':'#fff',color:'#204333',fontWeight:700}}><CarFront size={18}/> Ride Service</button>
+      <button type="button" onClick={()=>setMode('parcel')} style={{display:'flex',alignItems:'center',gap:9,padding:'12px 18px',borderRadius:10,border:'1px solid '+(mode==='parcel'?'#174d3d':'#e1e8df'),background:mode==='parcel'?'#edf5ef':'#fff',color:'#204333',fontWeight:700}}><PackageCheck size={18}/> Parcel Delivery</button>
     </div>
     <div style={{display:'grid',gridTemplateColumns:'minmax(0,1fr) minmax(220px,.55fr)',gap:18,alignItems:'start'}}>
       <form onSubmit={submit} style={{background:'#fff',border:'1px solid #e7ece5',borderRadius:14,padding:20,display:'grid',gap:12}}>
@@ -106,6 +107,14 @@ export default function MobilityServices({ onNotice }) {
           <label style={{fontSize:12,fontWeight:600}}>Restaurant / food shop<input required style={inputStyle} value={form.restaurantName} onChange={e=>change('restaurantName',e.target.value)} placeholder="Restaurant name"/></label>
           <label style={{fontSize:12,fontWeight:600}}>Pickup address<input required style={inputStyle} value={form.pickupAddress} onChange={e=>change('pickupAddress',e.target.value)} placeholder="Restaurant pickup location"/></label>
           <label style={{fontSize:12,fontWeight:600}}>Customer delivery address<input required style={inputStyle} value={form.dropoffAddress} onChange={e=>change('dropoffAddress',e.target.value)} placeholder="Where should the food be delivered?"/></label>
+        </> : mode==='parcel' ? <>
+          <b style={{display:'flex',alignItems:'center',gap:8,color:'#244333'}}><PackageCheck size={18}/> Send a parcel</b>
+          <label style={{fontSize:12,fontWeight:600}}>Pickup address<input required style={inputStyle} value={form.pickup} onChange={e=>change('pickup',e.target.value)} placeholder="Sender pickup address"/></label>
+          <label style={{fontSize:12,fontWeight:600}}>Destination address<input required style={inputStyle} value={form.destination} onChange={e=>change('destination',e.target.value)} placeholder="Recipient address"/></label>
+          <label style={{fontSize:12,fontWeight:600}}>Sender contact number<input required style={inputStyle} value={form.pickupContact} onChange={e=>change('pickupContact',e.target.value)} placeholder="Sender phone number"/></label>
+          <label style={{fontSize:12,fontWeight:600}}>Recipient contact number<input required style={inputStyle} value={form.recipientContact} onChange={e=>change('recipientContact',e.target.value)} placeholder="Recipient phone number"/></label>
+          <label style={{fontSize:12,fontWeight:600}}>Parcel type<select style={inputStyle} value={form.parcelType} onChange={e=>change('parcelType',e.target.value)}><option value="document">Document</option><option value="small">Small parcel</option><option value="standard">Standard parcel</option><option value="fragile">Fragile</option></select></label>
+          <label style={{fontSize:12,fontWeight:600}}>Weight (kg)<input required type="number" min="0.1" max="100" step="0.1" style={inputStyle} value={form.weightKg} onChange={e=>change('weightKg',e.target.value)}/></label>
         </> : <>
           <b style={{display:'flex',alignItems:'center',gap:8,color:'#244333'}}><Bike size={18}/> Request a ride driver</b>
           <label style={{fontSize:12,fontWeight:600}}>Pickup location<input required style={inputStyle} value={form.pickup} onChange={e=>change('pickup',e.target.value)} placeholder="Where should the driver pick you up?"/></label>
@@ -130,9 +139,10 @@ export default function MobilityServices({ onNotice }) {
         <div className="section-heading"><div><span className="eyebrow">YOUR REQUESTS</span><h2>Ride & delivery status</h2></div><button type="button" onClick={refreshJobs} style={{border:'1px solid #dce5dc',borderRadius:8,padding:'8px 12px',background:'#fff',color:'#174d3d'}}>Refresh</button></div>
         {jobsError && <p role="alert" style={{fontSize:12,color:'#a33'}}>{jobsError}</p>}
         {myJobs.length===0 ? <p style={{fontSize:12,color:'#718076'}}>Your ride and delivery requests will appear here.</p> : myJobs.map(job=><article key={job.id} style={{background:'#fff',border:'1px solid #e5ebe3',borderRadius:12,padding:14,marginBottom:10}}>
-          <div style={{display:'flex',justifyContent:'space-between',gap:10,flexWrap:'wrap'}}><b style={{fontSize:13,color:'#244333'}}>{job.serviceType==='food_delivery'?'Food delivery':'Passenger ride'} · {job.id}</b><span className="status-pill muted">{String(job.status||'requested').replaceAll('_',' ')}</span></div>
+          <div style={{display:'flex',justifyContent:'space-between',gap:10,flexWrap:'wrap'}}><b style={{fontSize:13,color:'#244333'}}>{job.serviceType==='food_delivery'?'Food delivery':job.serviceType==='parcel_delivery'?'Parcel delivery':'Passenger ride'} · {job.id}</b><span className="status-pill muted">{String(job.status||'requested').replaceAll('_',' ')}</span></div>
           <p style={{fontSize:12,lineHeight:1.7,color:'#657468',margin:'8px 0'}}><b>Pickup:</b> {job.pickupAddress}<br/><b>Drop-off:</b> {job.destinationAddress}</p>
           {job.driverName && <p style={{fontSize:12,color:'#315a42',margin:0}}>Driver: {job.driverName}{job.driverLocation ? ` · latest GPS ${Number(job.driverLocation.lat).toFixed(4)}, ${Number(job.driverLocation.lng).toFixed(4)}` : ' · live location not currently available'}</p>}
+          {(job.startPin||job.pickupPin||job.deliveryPin)&&<div style={{marginTop:10,padding:10,borderRadius:8,background:'#f0f7f1',fontSize:12,color:'#24543b'}}><b>Keep these verification PINs private</b>{job.startPin&&<div>Trip start PIN: <b>{job.startPin}</b></div>}{job.pickupPin&&<div>Pickup PIN: <b>{job.pickupPin}</b></div>}{job.deliveryPin&&<div>Delivery PIN: <b>{job.deliveryPin}</b></div>}<small>Share each PIN only at the correct handoff.</small></div>}
           {job.status==='requested' && <button type="button" onClick={()=>cancelRequest(job.id)} style={{marginTop:10,border:'1px solid #e5caca',borderRadius:8,padding:'8px 11px',background:'#fff',color:'#a33',fontSize:11,fontWeight:700}}>Cancel request</button>}
         </article>)}
       </section>}
