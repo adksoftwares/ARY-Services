@@ -1176,6 +1176,7 @@ app.patch('/api/bookings/:id/status', requireAuth, async (req, res) => {
       }
 
       b.updatedAt = new Date().toISOString();
+      if (status === 'completed') b.completedAt = b.updatedAt;
 
       // If service is marked completed and payment was held in escrow, automatically release payout
       if (status === 'completed' && b.paymentStatus === 'escrow_held') {
@@ -1441,9 +1442,10 @@ app.post('/api/bookings/:id/dispute', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
     const { id: userId, accountType } = req.user;
-    const { reason, evidence } = req.body;
+    const reasonText = String(req.body?.reason || '').trim().slice(0, 1000);
+    const evidenceText = String(req.body?.evidence || '').trim().slice(0, 4000);
 
-    if (!reason || !reason.trim()) {
+    if (!reasonText) {
       return res.status(400).json({ error: 'A valid reason for the dispute is required.' });
     }
 
@@ -1472,8 +1474,8 @@ app.post('/api/bookings/:id/dispute', requireAuth, async (req, res) => {
     const updated = await updateBooking(id, b => {
       b.status = 'disputed';
       b.paymentStatus = 'disputed_frozen';
-      b.disputeReason = reason.trim();
-      b.disputeEvidence = evidence ? String(evidence) : '';
+      b.disputeReason = reasonText;
+      b.disputeEvidence = evidenceText;
       b.disputedAt = new Date().toISOString();
       b.updatedAt = new Date().toISOString();
       return b;
@@ -1707,12 +1709,13 @@ app.post('/api/bookings/:id/claim', requireAuth, async (req, res) => {
 // Reviews: Customer submits a review for a completed booking
 app.post('/api/reviews', requireAuth, async (req, res) => {
   try {
-    const { bookingId, rating, comment } = req.body;
+    const { bookingId, rating, comment } = req.body || {};
     const customer = req.user;
+    const parsedRating = Number(rating);
+    const cleanComment = String(comment || '').trim().slice(0, 1000);
 
     if (customer.accountType !== 'customer') return res.status(403).json({ error: 'Customer account required to submit a review.' });
-    const parsedRating = Number(rating);
-    if (!bookingId || !parsedRating || parsedRating < 1 || parsedRating > 5) {
+    if (!bookingId || !Number.isInteger(parsedRating) || parsedRating < 1 || parsedRating > 5) {
       return res.status(400).json({ error: 'Valid booking ID and rating between 1 and 5 stars are required.' });
     }
 
