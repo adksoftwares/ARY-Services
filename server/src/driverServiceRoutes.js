@@ -3,7 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readPersistentState, mutatePersistentState } from './storage.js';
 import { cleanSriLankaCoordinates, isDriverPresenceFresh, rankJobsForDriver, buildAdminDispatchSnapshot } from './mobilityDispatch.js';
-import { calculateDistanceKm, estimateEtaMinutes } from './geoService.js';
+import { calculateDistanceKm, estimateEtaMinutes, getRoadRoute } from './geoService.js';
 
 const dataFile = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'data', 'driver-services.json');
 const emptyDriverState = { applications: [], jobs: [], presence: {} };
@@ -90,6 +90,15 @@ export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadc
     await mutateJobs(d=>{d.jobs.unshift(job);});
     broadcastEvent?.('driver:job_created',{job:safeMobilityJob(job),customerId:job.customerId,driverId:job.driverId});res.status(201).json({job:safeMobilityJob(job,req.user.id)});
   });
+  app.get('/api/mobility/route',requireAuth,async(req,res)=>{
+    const origin=cleanCoordinates(req.query.originLat,req.query.originLng);
+    const destination=cleanCoordinates(req.query.destinationLat,req.query.destinationLng);
+    if(!origin||!destination)return res.status(400).json({error:'Valid Sri Lankan origin and destination coordinates are required.'});
+    const route=await getRoadRoute(origin,destination);
+    if(!route.available)return res.status(503).json({error:'Road routing is not currently available.',reason:route.reason});
+    return res.json({route});
+  });
+
   app.get('/api/mobility/fare-estimate',async(req,res)=>{
     const pickup=cleanCoordinates(req.query.pickupLat,req.query.pickupLng);
     const destination=cleanCoordinates(req.query.destinationLat,req.query.destinationLng);
