@@ -309,6 +309,9 @@ try {
       category: 'electrical-repair',
       categoryName: 'Electrical Repair',
       baseCharge: 'LKR 2,000',
+      nsnNumber: 'NSN-TEST-1001',
+      operatingMode: 'shop',
+      nicNumber: '199512345678',
       location: 'Bambalapitiya, Colombo'
     })
   });
