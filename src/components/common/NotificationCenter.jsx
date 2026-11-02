@@ -251,7 +251,7 @@ export default function NotificationCenter() {
                 cursor: 'pointer'
               }}
             >
-              🔔 Enable push notifications in browser
+              Enable push notifications in browser
             </button>
           )}
 

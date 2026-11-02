@@ -14,7 +14,8 @@ import {
   Compass,
   Phone,
   Power,
-  KeyRound
+  KeyRound,
+  Flag
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE } from '../../config';
@@ -497,11 +498,11 @@ export default function DriverWorkspace({ onNotice }) {
                   marginBottom: 14
                 }}>
                   <div>
-                    <span style={{ color: 'var(--color-neutral-500, #64748b)', fontSize: '0.75rem' }}>📍 PICKUP: </span>
+                    <span style={{ color: 'var(--color-neutral-500, #64748b)', fontSize: '0.75rem' }}>PICKUP: </span>
                     <b style={{ color: 'var(--color-neutral-800, #1e293b)' }}>{job.pickupAddress}</b>
                   </div>
                   <div>
-                    <span style={{ color: 'var(--color-neutral-500, #64748b)', fontSize: '0.75rem' }}>🏁 DESTINATION: </span>
+                    <span style={{ color: 'var(--color-neutral-500, #64748b)', fontSize: '0.75rem' }}>DESTINATION: </span>
                     <b style={{ color: 'var(--color-neutral-800, #1e293b)' }}>{job.destinationAddress}</b>
                   </div>
                   {job.distanceKm !== null && job.distanceKm !== undefined && (

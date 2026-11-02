@@ -32,6 +32,7 @@ import MyBookingsList from '../../components/customer/MyBookingsList';
 import ReviewModal from '../../components/customer/ReviewModal';
 import DisputeModal from '../../components/customer/DisputeModal';
 import AccountRoleRequest from '../../components/customer/AccountRoleRequest';
+import DesignSystemShowcase from '../../components/design-system-showcase/DesignSystemShowcase';
 import AuthModal from '../../components/common/AuthModal';
 import Footer from '../../components/common/Footer';
 import NotificationCenter from '../../components/common/NotificationCenter';
@@ -400,6 +401,7 @@ function CustomerWorkspace() {
             />
           } />
 
+          <Route path="/design-system" element={<DesignSystemShowcase />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

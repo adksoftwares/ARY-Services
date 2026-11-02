@@ -44,7 +44,7 @@ export default function HeroSection({
       if (onLocationDetected && coords) {
         onLocationDetected(coords);
       }
-      if (onNotice) onNotice(`📍 Location updated: ${loc}`);
+      if (onNotice) onNotice(`Location updated: ${loc}`);
     } catch (err) {
       if (onNotice) onNotice(err.message || 'Could not retrieve current location.');
     } finally {

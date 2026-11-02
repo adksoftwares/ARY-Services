@@ -248,7 +248,7 @@ export default function ProviderDashboard({
             </div>
             <div>
               <b style={{ color: 'var(--color-danger-900, #991b1b)', fontSize: '0.95rem' }}>
-                🚨 {pendingRequests.length} Urgent Booking Request{pendingRequests.length > 1 ? 's' : ''} Awaiting Your Response!
+                 {pendingRequests.length} Urgent Booking Request{pendingRequests.length > 1 ? 's' : ''} Awaiting Your Response!
               </b>
               <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: 'var(--color-danger-800, #7f1d1d)' }}>
                 Responding within 30 minutes improves your contractor ranking across Sri Lanka.
@@ -263,7 +263,7 @@ export default function ProviderDashboard({
               playAlertChime();
             }}
           >
-            🔔 Test Alert Chime
+            Test Alert Chime
           </Button>
         </div>
       )}

@@ -147,10 +147,10 @@ export function AuthProvider({ children }) {
 
       if (!res.ok) {
         if (data.accountStatus === 'pending' || (data.error && data.error.includes('pending'))) {
-          throw new Error('⏳ Account Pending: Your provider application is pending Super Admin approval. Please wait for verification.');
+          throw new Error('Account Pending: Your provider application is pending Super Admin approval. Please wait for verification.');
         }
         if (data.accountStatus === 'rejected' || (data.error && data.error.includes('block'))) {
-          throw new Error('🚫 Account Blocked: This account has been rejected or placed on the block list by administration.');
+          throw new Error('Account Blocked: This account has been rejected or placed on the block list by administration.');
         }
         throw new Error(data.error || 'Login failed.');
       }

@@ -11,7 +11,8 @@
   font-style: normal;
   font-weight: 400 700;
   font-display: swap;
-  src: local('DM Sans'), local('DMSans-Regular'),
+  src: url('/fonts/dmsans-regular-latin.woff2') format('woff2'),
+       local('DM Sans'), local('DMSans-Regular'),
        local('Segoe UI'), local('Roboto'),
        sans-serif;
 }
@@ -21,7 +22,8 @@
   font-style: normal;
   font-weight: 500 800;
   font-display: swap;
-  src: local('Manrope'), local('Manrope-Bold'),
+  src: url('/fonts/manrope-bold-latin.woff2') format('woff2'),
+       local('Manrope'), local('Manrope-Bold'),
        local('Segoe UI Semibold'), local('Roboto Medium'),
        sans-serif;
 }
@@ -175,6 +177,8 @@
   --color-info-700: #1d4ed8;
 
   /* Light Theme Semantic Defaults */
+  --surface: #ffffff;
+  --surface-raised: #ffffff;
   --surface-canvas: var(--color-neutral-50);
   --surface-primary: #ffffff;
   --surface-secondary: #f4f3ec;
@@ -183,15 +187,18 @@
   --surface-glass: rgba(255, 255, 255, 0.88);
   --surface-glass-border: rgba(231, 229, 220, 0.7);
 
+  --text: #182922;
   --text-primary: #182922;
   --text-secondary: #4a5c53;
   --text-muted: #74857b;
   --text-inverse: #ffffff;
 
+  --border: #dfdcd2;
   --border-subtle: #eeece4;
   --border-default: #dfdcd2;
   --border-strong: #c2beaf;
   --border-focus: var(--color-brand-600);
+  --focus-ring: 0 0 0 3px rgba(35, 108, 79, 0.35);
 
   --brand-primary: var(--color-brand-700);
   --brand-hover: var(--color-brand-800);
@@ -215,6 +222,8 @@
    Dark Theme [data-theme="dark"]
    ========================================================================== */
 [data-theme="dark"] {
+  --surface: #121c17;
+  --surface-raised: #1a2923;
   --surface-canvas: #0c1411;
   --surface-primary: #121c17;
   --surface-secondary: #17241f;
@@ -223,15 +232,18 @@
   --surface-glass: rgba(18, 28, 23, 0.88);
   --surface-glass-border: rgba(43, 64, 55, 0.7);
 
+  --text: #e6ede9;
   --text-primary: #e6ede9;
   --text-secondary: #a9bbb2;
   --text-muted: #788a81;
   --text-inverse: #0c1411;
 
+  --border: #2b3d35;
   --border-subtle: #1e2c26;
   --border-default: #2b3d35;
   --border-strong: #3f554b;
   --border-focus: var(--color-brand-400);
+  --focus-ring: 0 0 0 3px rgba(96, 203, 165, 0.4);
 
   --brand-primary: #2b8465;
   --brand-hover: #379e7a;

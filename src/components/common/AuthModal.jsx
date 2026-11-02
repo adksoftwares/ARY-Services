@@ -12,7 +12,9 @@ import {
   KeyRound,
   CheckCircle2,
   RefreshCw,
-  Bike
+  Bike,
+  ShieldCheck,
+  Lock
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { fetchCurrentLocationAddress } from '../../utils/location';
@@ -134,7 +136,7 @@ export default function AuthModal({ onNotice }) {
       resetForms();
 
       if (['provider', 'driver'].includes(regAccountType)) {
-        if (onNotice) onNotice(regAccountType === 'driver' ? '📋 Driver account created! Submit your selected driver services for Admin approval before accepting jobs.' : '📋 Provider application submitted! Your account is pending Admin approval before activation.');
+        if (onNotice) onNotice(regAccountType === 'driver' ? 'Driver account created! Submit your selected driver services for Admin approval before accepting jobs.' : 'Provider application submitted! Your account is pending Admin approval before activation.');
       } else {
         if (onNotice && data.user) {
           onNotice(`Welcome, ${data.user.fullName}! Registered successfully.`);
@@ -547,7 +549,7 @@ export default function AuthModal({ onNotice }) {
                   margin: '8px 0 12px'
                 }}>
                   <div style={{ fontSize: '12px', fontWeight: 700, color: '#1e293b', marginBottom: 8 }}>
-                    🛡️ Verified Partner KYC Documentation
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><ShieldCheck size={16} /> Verified Partner KYC Documentation</span>
                   </div>
 
                   <label style={{ margin: '0 0 10px' }}>
@@ -604,7 +606,7 @@ export default function AuthModal({ onNotice }) {
                   alignItems: 'center',
                   gap: 6
                 }}>
-                  🔒 Final Step: Set your login password to complete registration
+                  <Lock size={15} /> Final Step: Set your login password to complete registration
                 </div>
 
                 <label>

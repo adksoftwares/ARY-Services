@@ -99,7 +99,7 @@ export default function DriverEarningsSummary({
           </span>
         </div>
         <div style={{ fontSize: '1.25rem', fontWeight: 800, color: presence?.online ? 'var(--color-success-700, #047857)' : 'var(--color-neutral-700, #334155)' }}>
-          {presence?.online ? '🟢 Live on Duty' : '⚪ Offline'}
+          {presence?.online ? 'Live on Duty' : 'Offline'}
         </div>
         <small style={{ fontSize: '0.72rem', color: 'var(--color-neutral-500, #64748b)' }}>
           {presence?.online ? 'GPS sharing active' : 'Turn on to get jobs'}

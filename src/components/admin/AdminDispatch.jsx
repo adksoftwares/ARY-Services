@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bike, Navigation, MapPin, RefreshCw, Radio } from 'lucide-react';
+import { Bike, Navigation, MapPin, Flag, RefreshCw, Radio } from 'lucide-react';
 import { Card, Badge, Button, EmptyState } from '../../design-system';
 
 export default function AdminDispatch({
@@ -134,7 +134,9 @@ export default function AdminDispatch({
                     <b>#{j.id} · {j.serviceType}</b>
                     <span style={{ fontWeight: 600, color: 'var(--color-brand-700, #174d3d)' }}>{j.status}</span>
                   </div>
-                  <div style={{ color: '#64748b' }}>📍 {j.pickupAddress} ➔ 🏁 {j.destinationAddress}</div>
+                  <div style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                    <MapPin size={13} /> {j.pickupAddress} <span>&rarr;</span> <Flag size={13} /> {j.destinationAddress}
+                  </div>
                 </div>
               ))}
             </div>

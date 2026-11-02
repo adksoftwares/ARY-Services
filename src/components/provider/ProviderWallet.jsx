@@ -207,7 +207,7 @@ export default function ProviderWallet({
                       <td style={{ padding: '12px', color: 'var(--color-neutral-500, #64748b)' }}>{b.bookingDate}</td>
                       <td style={{ padding: '12px' }}>
                         <Badge variant={b.paymentMethod === 'cash' ? 'neutral' : 'brand'} dot={false}>
-                          {b.paymentMethod === 'cash' ? '💵 Cash' : '🛡️ Escrow'}
+                          {b.paymentMethod === 'cash' ? 'Cash' : 'Escrow'}
                         </Badge>
                       </td>
                       <td style={{ padding: '12px', fontWeight: 600 }}>LKR {base.toLocaleString()}</td>
