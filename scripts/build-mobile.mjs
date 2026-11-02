@@ -11,13 +11,15 @@ export async function buildMobileApp(appName) {
     throw new Error(`Unknown app "${appName}". Available apps: ${APPS.join(', ')}`);
   }
 
-  const rawApiBase = String(process.env.ARY_API_BASE || process.env.VITE_API_BASE || '').trim();
+  const rawApiBase = String(process.env.ARY_API_BASE || process.env.VITE_API_BASE || 'http://localhost:4000/api').trim();
   const apiBase = rawApiBase.endsWith('/') ? rawApiBase.slice(0, -1) : rawApiBase;
-  if (!apiBase) throw new Error('Set ARY_API_BASE to the deployed HTTPS API base (for example https://api.example.com/api) before building native apps.');
   let parsedApiBase;
-  try { parsedApiBase = new URL(apiBase); } catch { throw new Error('ARY_API_BASE must be a valid absolute HTTPS URL.'); }
+  try { parsedApiBase = new URL(apiBase); } catch { throw new Error('ARY_API_BASE must be a valid absolute URL.'); }
   const apiPath = parsedApiBase.pathname.endsWith('/') ? parsedApiBase.pathname.slice(0, -1) : parsedApiBase.pathname;
-  if (parsedApiBase.protocol !== 'https:' || !apiPath.endsWith('/api')) throw new Error('ARY_API_BASE must use HTTPS and end with /api.');
+  if (!apiPath.endsWith('/api')) throw new Error('ARY_API_BASE must end with /api.');
+  if (process.env.RELEASE_MODE === 'production' && parsedApiBase.protocol !== 'https:') {
+    throw new Error('ARY_API_BASE must use HTTPS in release mode.');
+  }
   process.env.VITE_API_BASE = apiBase;
 
   const root = process.cwd();

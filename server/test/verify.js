@@ -39,6 +39,18 @@ assert(initialUsers.some(u => u.accountType === 'provider' && u.category === 'pl
 console.log('✓ Storage initialized; Admin provisioning is environment-controlled and demo providers are available');
 
 const ledgerTestBookingId = 'ledger-unit-' + Date.now();
+await addBooking({
+  id: ledgerTestBookingId,
+  customerId: 'ledger-customer',
+  providerId: 'user-provider-kumar',
+  categorySlug: 'electrical-repair',
+  serviceAddress: 'No 1, Galle Road, Colombo',
+  bookingDate: '2026-11-05',
+  bookingTime: 'Morning (9 AM - 12 PM)',
+  problemDescription: 'Ledger unit test description',
+  status: 'completed',
+  createdAt: new Date().toISOString()
+});
 await recordEscrowHold({ bookingId: ledgerTestBookingId, customerId: 'ledger-customer', amount: 1000 });
 await recordEscrowRelease({ bookingId: ledgerTestBookingId, providerId: 'user-provider-kumar', amount: 1000, platformFee: 100, providerPayout: 900 });
 const ledgerUnitEntries = (await getLedgerEntries()).filter(entry => entry.bookingId === ledgerTestBookingId);
@@ -303,7 +315,7 @@ try {
     body: JSON.stringify({
       fullName: 'Test Electrician Siva',
       phone: providerPhone,
-      email: 'siva.electric@example.local',
+      email: `siva.${Date.now()}@example.local`,
       password: 'SivaPass@123',
       accountType: 'provider',
       category: 'electrical-repair',
@@ -379,7 +391,7 @@ try {
       categorySlug: 'electrical-repair',
       categoryName: 'Electrical Repair',
       serviceAddress: 'No 12, Galle Road, Colombo 03',
-      bookingDate: '2026-10-26',
+      bookingDate: new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Colombo' }).format(new Date(Date.now() + 86400000)),
       bookingTime: 'Morning (9 AM - 12 PM)',
       problemDescription: 'Main circuit breaker trips under load.'
     })
@@ -569,14 +581,19 @@ try {
 
   // Test 1: Real-time SSE Endpoint Handshake
   const sseController = new AbortController();
-  const sseRes = await fetch(`${API_URL}/events`, { signal: sseController.signal });
+  const ticketRes = await fetch(`${API_URL}/events-ticket`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${adminToken}` }
+  });
+  const { ticket } = await ticketRes.json();
+  const sseRes = await fetch(`${API_URL}/events?ticket=${ticket}`, { signal: sseController.signal });
   assert.equal(sseRes.status, 200);
   assert.equal(sseRes.headers.get('content-type'), 'text/event-stream');
   console.log('✓ GET /api/events established real-time Server-Sent Events stream');
   sseController.abort();
 
   // Test 2: Instant JWT Revocation (Deactivating account revokes JWT immediately)
-  const roguePhone = '0779991122';
+  const roguePhone = '0779' + Date.now().toString().slice(-6);
   const rogueRegRes = await fetch(`${API_URL}/auth/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -920,11 +937,11 @@ try {
   const geofence1KmData = await geofence1KmRes.json();
   assert(geofence1KmData.providers.length >= 1, 'At least 1 provider should be within 1.0 km');
   assert(geofence1KmData.providers.every(p => p.distanceKm <= 1.0), 'All providers in 1km query must be <= 1.0 km away');
-  assert(geofence1KmData.providers.length < 4, 'Out-of-range providers must be excluded by 1km geofence');
+  assert(!geofence1KmData.providers.some(p => p.id === 'user-provider-quickfix'), 'Out-of-range providers must be excluded by 1km geofence');
   console.log(`✓ Geofencing boundary verified: 1km filter returned ${geofence1KmData.providers.length} providers (out-of-range excluded)`);
 
   // Test 2: Online escrow-dependent actions stay unavailable without verified gateway funds.
-  const cancelCustPhone = '0774445566';
+  const cancelCustPhone = '0775' + Date.now().toString().slice(-6);
   const cCustShield = await (await fetch(`${API_URL}/auth/shield/challenge`)).json();
   const cCustOtp = await (await fetch(`${API_URL}/auth/otp/send`, {
     method: 'POST',
