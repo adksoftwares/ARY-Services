@@ -32,6 +32,26 @@ const pinMatches = (pin, digest) => {
   return actual.length === expected.length && crypto.timingSafeEqual(actual, expected);
 };
 
+
+async function updateGroceryDeliveryStatus(job, deliveryStatus, broadcastEvent) {
+  if (job.serviceType !== 'food_delivery' || !String(job.orderReference || '').startsWith('gord-')) return;
+  const ordersFile = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'data', 'grocery-orders.json');
+  const order = await mutatePersistentState('grocery_orders', ordersFile, [], stored => {
+    const current = stored.find(item => item.id === job.orderReference);
+    if (!current) return null;
+    current.deliveryStatus = deliveryStatus;
+    if (deliveryStatus === 'delivered') current.status = 'delivered';
+    current.updatedAt = new Date().toISOString();
+    current.statusHistory = Array.isArray(current.statusHistory) ? current.statusHistory : [];
+    current.statusHistory.push({ status: deliveryStatus === 'delivered' ? 'delivered' : current.status, deliveryStatus, at: current.updatedAt, by: job.driverId });
+    return current;
+  });
+  if (order) broadcastEvent?.('grocery:order_updated', {
+    orderId: order.id, providerId: order.providerId, customerId: order.customerId,
+    status: order.status, deliveryStatus
+  });
+}
+
 export async function createGroceryOrderDeliveryJob(order, provider) {
   const pickupAddress = String(provider?.address || provider?.location || provider?.shopAddress || '').trim();
   if (!pickupAddress) return { available: false, reason: 'provider_address_missing' };
@@ -258,12 +278,16 @@ export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadc
   app.post('/api/driver-jobs/:id/verify-pickup',requireAuth,async(req,res)=>{
     if(req.user.accountType!=='driver')return res.status(403).json({error:'Driver account required.'});
     const result=await mutateJobs(state=>{const job=state.jobs.find(item=>item.id===req.params.id);if(!job)return {status:404,error:'Job not found.'};if(job.driverId!==req.user.id)return {status:403,error:'Only the assigned driver can verify pickup.'};const expected=job.serviceType==='ride'?'arrived':'arrived_pickup';if(job.status!==expected)return {status:409,error:'Driver must mark arrival before pickup verification.'};if((job.pinAttempts||0)>=5)return {status:429,error:'Pickup PIN attempts exceeded. Contact ARY support.'};const hash=job.serviceType==='ride'?job.startPinHash:job.pickupPinHash;if(!pinMatches(req.body?.pin,hash)){job.pinAttempts=(job.pinAttempts||0)+1;return {status:400,error:'Incorrect pickup PIN.'};}job.status=job.serviceType==='ride'?'in_progress':'picked_up';job.pickupVerifiedAt=new Date().toISOString();job.pinAttempts=0;return {status:200,job};});
-    if(result.error)return res.status(result.status).json({error:result.error});broadcastEvent?.('driver:job_updated',{job:safeMobilityJob(result.job),customerId:result.job.customerId,driverId:result.job.driverId});return res.json({job:safeMobilityJob(result.job,req.user.id)});
+    if(result.error)return res.status(result.status).json({error:result.error});
+    await updateGroceryDeliveryStatus(result.job,'picked_up',broadcastEvent);
+    broadcastEvent?.('driver:job_updated',{job:safeMobilityJob(result.job),customerId:result.job.customerId,driverId:result.job.driverId});return res.json({job:safeMobilityJob(result.job,req.user.id)});
   });
   app.post('/api/driver-jobs/:id/verify-delivery',requireAuth,async(req,res)=>{
     if(req.user.accountType!=='driver')return res.status(403).json({error:'Driver account required.'});
     const result=await mutateJobs(state=>{const job=state.jobs.find(item=>item.id===req.params.id);if(!job)return {status:404,error:'Job not found.'};if(job.driverId!==req.user.id)return {status:403,error:'Only the assigned driver can verify delivery.'};const allowed=job.serviceType==='ride'?job.status==='in_progress':['picked_up','in_transit'].includes(job.status);if(!allowed)return {status:409,error:'Pickup must be verified before completing this job.'};if((job.deliveryPinAttempts||0)>=5)return {status:429,error:'Delivery PIN attempts exceeded. Contact ARY support.'};if(!pinMatches(req.body?.pin,job.deliveryPinHash)){job.deliveryPinAttempts=(job.deliveryPinAttempts||0)+1;return {status:400,error:'Incorrect delivery PIN.'};}job.status=job.serviceType==='ride'?'completed':'delivered';job.completedAt=new Date().toISOString();job.deliveryVerifiedAt=job.completedAt;job.deliveryPinAttempts=0;return {status:200,job};});
-    if(result.error)return res.status(result.status).json({error:result.error});broadcastEvent?.('driver:job_updated',{job:safeMobilityJob(result.job),customerId:result.job.customerId,driverId:result.job.driverId});return res.json({job:safeMobilityJob(result.job,req.user.id)});
+    if(result.error)return res.status(result.status).json({error:result.error});
+    await updateGroceryDeliveryStatus(result.job,'delivered',broadcastEvent);
+    broadcastEvent?.('driver:job_updated',{job:safeMobilityJob(result.job),customerId:result.job.customerId,driverId:result.job.driverId});return res.json({job:safeMobilityJob(result.job,req.user.id)});
   });
 
   // Admin-only operational view: expose dispatch health without account/KYC/payment data.
