@@ -1144,6 +1144,7 @@ app.patch('/api/bookings/:id/quote', requireAuth, async (req, res) => {
     if (req.user.accountType !== 'customer' || booking.customerId !== req.user.id) {
       return res.status(403).json({ error: 'Only the booking customer can decide this quote.' });
     }
+    if (!['requested', 'accepted'].includes(booking.status)) return res.status(409).json({ error: 'This booking is no longer eligible for quote acceptance.' });
     if (booking.quote?.status !== 'pending') return res.status(409).json({ error: 'There is no pending quote to decide.' });
     if (Date.parse(booking.quote.validUntil || '') <= Date.now()) return res.status(409).json({ error: 'This quote has expired. Ask the provider for a new quote.' });
     const updated = await updateBooking(booking.id, current => {
@@ -1212,6 +1213,7 @@ app.patch('/api/bookings/:id/reschedule', requireAuth, async (req, res) => {
     if (!isAdmin && (req.user.accountType !== 'provider' || booking.providerId !== req.user.id)) {
       return res.status(403).json({ error: 'Only the assigned provider or Admin can decide this request.' });
     }
+    if (!['requested', 'accepted'].includes(booking.status)) return res.status(409).json({ error: 'This booking is no longer eligible for rescheduling.' });
     if (booking.rescheduleRequest?.status !== 'pending') return res.status(409).json({ error: 'No pending reschedule request exists.' });
     const updated = await updateBooking(booking.id, current => {
       const request = current.rescheduleRequest;
@@ -1253,7 +1255,7 @@ app.patch('/api/bookings/:id/cancel', requireAuth, async (req, res) => {
       return res.status(403).json({ error: 'You are not authorized to cancel this booking.' });
     }
 
-    if (booking.status === 'completed' || booking.status === 'cancelled' || booking.status === 'refunded') {
+    if (['completed', 'cancelled', 'refunded', 'disputed', 'settled_split'].includes(booking.status)) {
       return res.status(400).json({ error: `Cannot cancel a booking that is already ${booking.status}.` });
     }
 
@@ -1342,9 +1344,14 @@ app.post('/api/bookings/:id/dispute', requireAuth, async (req, res) => {
       return res.status(403).json({ error: 'You are only authorized to dispute bookings under your own account.' });
     }
 
-    if (booking.status === 'cancelled' || booking.status === 'refunded' || booking.status === 'settled_split') {
-      return res.status(400).json({ error: `Cannot dispute a booking that is already ${booking.status}.` });
+    if (booking.status !== 'completed') {
+      return res.status(409).json({ error: 'A workmanship dispute can only be opened after the service is completed.' });
     }
+    const completedAt = Date.parse(booking.completedAt || booking.updatedAt || booking.createdAt);
+    if (!Number.isFinite(completedAt) || Date.now() - completedAt > 14 * 24 * 60 * 60 * 1000) {
+      return res.status(409).json({ error: 'The 14-day workmanship dispute window has expired.' });
+    }
+    if (booking.status === 'disputed') return res.status(409).json({ error: 'A dispute is already open for this booking.' });
 
     const updated = await updateBooking(id, b => {
       b.status = 'disputed';
