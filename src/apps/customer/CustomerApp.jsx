@@ -96,6 +96,25 @@ function CustomerWorkspace() {
     }
   }, [currentUser]);
 
+  async function requestReschedule(bookingId, date, time) {
+    if (!currentUser?.token) return false;
+    try {
+      const response = await fetch(`${API_BASE}/bookings/${encodeURIComponent(bookingId)}/reschedule`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${currentUser.token}` },
+        body: JSON.stringify({ date, time })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Could not request a new booking time.');
+      setNotice(data.message || 'Reschedule request sent.');
+      await fetchBookings();
+      return true;
+    } catch (error) {
+      setNotice(error.message || 'Could not request a new booking time.');
+      return false;
+    }
+  }
+
   useEffect(() => { fetchBookings(); }, [fetchBookings]);
   useEffect(() => {
     const refresh = () => { fetchBookings(); };
