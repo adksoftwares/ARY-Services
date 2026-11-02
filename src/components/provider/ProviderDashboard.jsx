@@ -697,7 +697,7 @@ export default function ProviderDashboard({
                     )}
                     {b.quote?.status === 'pending' && (
                       <div style={{margin:'10px 0',padding:12,border:'1px solid #bfdbfe',background:'#eff6ff',borderRadius:9}}>
-                        <b style={{fontSize:12,color:'#1e40af'}}>Quote awaiting customer decision</b>
+                        <b style={{fontSize:12,color:'#1e40af'}}>Quote awaiting customer decision{Date.parse(b.quote.validUntil || '') <= Date.now() ? ' · expired' : ''}</b>
                         <p style={{fontSize:12,color:'#334155',margin:'5px 0'}}>LKR {Number(b.quote.amount).toLocaleString('en-LK')} · {b.quote.description}</p>
                         <small style={{color:'#64748b'}}>Valid until {new Date(b.quote.validUntil).toLocaleDateString()}</small>
                       </div>
@@ -705,7 +705,7 @@ export default function ProviderDashboard({
                     {b.quote?.status === 'accepted' && (
                       <p style={{margin:'8px 0',fontSize:12,color:'#166534'}}>Customer accepted the quote: <b>LKR {Number(b.quote.amount).toLocaleString('en-LK')}</b></p>
                     )}
-                    {['requested','accepted'].includes(b.status) && b.quote?.status !== 'pending' && b.quote?.status !== 'accepted' && (
+                    {['requested','accepted'].includes(b.status) && (b.quote?.status !== 'pending' || Date.parse(b.quote.validUntil || '') <= Date.now()) && b.quote?.status !== 'accepted' && (
                       <form onSubmit={event=>{event.preventDefault();sendServiceQuote(b);}} style={{margin:'10px 0',padding:12,border:'1px solid #dce5dc',background:'#f8fbf8',borderRadius:9}}>
                         <b style={{fontSize:12,color:'#24543b'}}>Send / revise service quote</b>
                         <div style={{display:'grid',gridTemplateColumns:'minmax(110px,160px) 1fr',gap:8,marginTop:8}}>
