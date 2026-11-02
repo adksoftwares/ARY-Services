@@ -1160,12 +1160,16 @@ app.patch('/api/bookings/:id/status', requireAuth, async (req, res) => {
       return res.status(409).json({ error: `Cannot move a ${booking.status} booking to ${status}.` });
     }
 
+    const previousProviderId = booking.providerId;
     let releasedTx = null;
     const updated = await updateBooking(id, b => {
       // Cascading Dispatch: If contractor declines, cascade to broadcast pool so another contractor can claim it
       if (status === 'rejected') {
         b.status = 'broadcast_pool';
-        b.declinedBy = [...(b.declinedBy || []), b.providerId];
+        if (b.providerId && !b.declinedBy?.includes(b.providerId)) b.declinedBy = [...(b.declinedBy || []), b.providerId];
+        b.providerId = null;
+        b.providerName = null;
+        b.providerPhone = null;
         b.broadcastAt = new Date().toISOString();
       } else {
         b.status = status;
@@ -1195,7 +1199,9 @@ app.patch('/api/bookings/:id/status', requireAuth, async (req, res) => {
     publishEvent('booking:status_updated', {
       bookingId: id,
       status: updated.status,
-      booking: updated
+      booking: updated,
+      customerId: updated.customerId,
+      providerId: previousProviderId
     });
 
     res.json({
