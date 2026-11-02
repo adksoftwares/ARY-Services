@@ -100,6 +100,9 @@ export default function AdminWorkspace({
   const [arbitratingBookingId, setArbitratingBookingId] = useState(null);
   const [payoutResult, setPayoutResult] = useState(null);
   const [isSettling, setIsSettling] = useState(false);
+  const [dispatchSnapshot, setDispatchSnapshot] = useState({ drivers: [], activeJobs: [], summary: { onlineDrivers: 0, unassignedJobs: 0, assignedJobs: 0 } });
+  const [dispatchLoading, setDispatchLoading] = useState(false);
+  const [dispatchError, setDispatchError] = useState('');
 
   useEffect(() => {
     if (currentUser?.token && currentUser.accountType === 'admin') {
@@ -122,6 +125,24 @@ export default function AdminWorkspace({
       console.warn('Could not fetch admin bookings:', e);
     } finally {
       setIsLoadingBookings(false);
+    }
+  }
+
+  async function fetchDispatchSnapshot() {
+    if (!currentUser?.token) return;
+    setDispatchLoading(true);
+    setDispatchError('');
+    try {
+      const response = await fetch(`${API_BASE}/admin/driver-dispatch`, {
+        headers: { Authorization: `Bearer ${currentUser.token}` }
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Could not load dispatch operations.');
+      setDispatchSnapshot(data);
+    } catch (error) {
+      setDispatchError(error.message || 'Could not load dispatch operations.');
+    } finally {
+      setDispatchLoading(false);
     }
   }
 
@@ -349,12 +370,35 @@ export default function AdminWorkspace({
           <AlertTriangle size={16} color={disputedBookings.length > 0 ? '#ef4444' : undefined} /> Dispute Arbitration ({disputedBookings.length})
         </button>
         <button
+          className={`admin-nav-tab ${adminTab === 'dispatch' ? 'active' : ''}`}
+          onClick={() => { setAdminTab('dispatch'); fetchDispatchSnapshot(); }}
+        >
+          <Bike size={16} /> Live Dispatch
+        </button>
+        <button
           className={`admin-nav-tab ${adminTab === 'payouts' ? 'active' : ''}`}
           onClick={() => setAdminTab('payouts')}
         >
           <Banknote size={16} /> CEFT Banking Payouts
         </button>
       </div>
+
+      {adminTab === 'dispatch' && (
+        <section style={{background:'#fff',border:'1px solid #e2e8f0',borderRadius:14,padding:20}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:12,flexWrap:'wrap'}}>
+            <div><h3 style={{margin:0}}>Driver dispatch operations</h3><p style={{margin:'5px 0 0',fontSize:13,color:'#64748b'}}>Fresh GPS locations and active ride / delivery requests.</p></div>
+            <button type="button" onClick={fetchDispatchSnapshot} disabled={dispatchLoading} style={{border:'1px solid #cbd5e1',borderRadius:8,padding:'9px 12px',background:'#fff',color:'#174d3d'}}><RefreshCw size={14}/> Refresh</button>
+          </div>
+          {dispatchError && <p role="alert" style={{color:'#b91c1c'}}>{dispatchError}</p>}
+          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(150px,1fr))',gap:12,margin:'18px 0'}}>
+            {Object.entries({ 'Online drivers':dispatchSnapshot.summary.onlineDrivers,'Unassigned jobs':dispatchSnapshot.summary.unassignedJobs,'Assigned jobs':dispatchSnapshot.summary.assignedJobs }).map(([label,value])=><div key={label} style={{padding:15,border:'1px solid #e2e8f0',borderRadius:10,background:'#f8fafc'}}><b style={{fontSize:24,color:'#174d3d'}}>{value}</b><div style={{fontSize:12,color:'#64748b'}}>{label}</div></div>)}
+          </div>
+          <h4>Online approved drivers</h4>
+          {dispatchLoading ? <p>Loading dispatch…</p> : dispatchSnapshot.drivers.length===0 ? <p style={{color:'#64748b'}}>No approved drivers currently sharing fresh GPS.</p> : dispatchSnapshot.drivers.map(driver=><article key={driver.driverId} style={{padding:12,border:'1px solid #e2e8f0',borderRadius:9,marginBottom:8}}><b>{driver.driverName}</b><p style={{margin:'4px 0',fontSize:12,color:'#64748b'}}>Networks: {driver.networks.join(', ')} · GPS {Number(driver.lat).toFixed(4)}, {Number(driver.lng).toFixed(4)}</p></article>)}
+          <h4 style={{marginTop:20}}>Active ride & delivery jobs</h4>
+          {dispatchSnapshot.activeJobs.length===0 ? <p style={{color:'#64748b'}}>No active mobility jobs.</p> : dispatchSnapshot.activeJobs.map(job=><article key={job.id} style={{padding:12,border:'1px solid #e2e8f0',borderRadius:9,marginBottom:8}}><div style={{display:'flex',justifyContent:'space-between',gap:10,flexWrap:'wrap'}}><b>{job.serviceType==='ride'?'Passenger ride':'Food delivery'} · {job.id}</b><span className="status-pill muted">{job.status.replaceAll('_',' ')}</span></div><p style={{margin:'5px 0',fontSize:12,color:'#64748b'}}>Customer: {job.customerName} · Driver: {job.driverName||'Unassigned'}</p><p style={{margin:0,fontSize:12,color:'#64748b'}}>{job.pickupAddress} → {job.destinationAddress}</p></article>)}
+        </section>
+      )}
 
       {adminTab === 'users' && (
         <div className="admin-users-view">
