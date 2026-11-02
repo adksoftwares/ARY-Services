@@ -16,6 +16,7 @@ export default function NotificationCenter() {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [permission, setPermission] = useState(typeof window !== 'undefined' && 'Notification' in window ? window.Notification.permission : 'unsupported');
 
   const refresh = useCallback(async () => {
     if (!currentUser?.token) { setItems([]); return; }
@@ -26,11 +27,20 @@ export default function NotificationCenter() {
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || 'Could not load notifications.');
-      setItems(data.notifications || []);
+      const nextItems = data.notifications || [];
+      setItems(previous => {
+        if (previous.length && permission === 'granted') {
+          const known = new Set(previous.map(item => item.id));
+          nextItems.filter(item => !known.has(item.id) && !item.readAt).slice(0, 3).forEach(item => {
+            try { new window.Notification(item.title, { body: item.body, tag: item.id }); } catch {}
+          });
+        }
+        return nextItems;
+      });
       setError('');
     } catch (err) { setError(err.message || 'Could not load notifications.'); }
     finally { setLoading(false); }
-  }, [currentUser?.token]);
+  }, [currentUser?.token, permission]);
 
   useEffect(() => { refresh(); }, [refresh]);
   useEffect(() => {
@@ -72,6 +82,8 @@ export default function NotificationCenter() {
         <strong style={{fontSize:14,color:'#173b2f'}}>Notifications</strong>
         <button type="button" onClick={markAllRead} disabled={!unread} style={{border:0,background:'transparent',color:unread?'#176343':'#94a39a',fontSize:11,fontWeight:700,cursor:unread?'pointer':'default',display:'flex',gap:4,alignItems:'center'}}><CheckCheck size={13}/> Mark all read</button>
       </div>
+        {'Notification' in window && permission !== 'granted' && permission !== 'denied' && <button type="button" onClick={async()=>{const next=await window.Notification.requestPermission();setPermission(next);}} style={{width:'100%',padding:'8px',marginBottom:8,border:'1px solid #dbe5dc',borderRadius:8,background:'#f8fbf8',color:'#24543b',fontSize:11,fontWeight:700}}>Enable browser alerts</button>}
+        {permission === 'denied' && <p style={{fontSize:11,color:'#8a5b24'}}>Browser alerts are blocked in your browser settings.</p>}
       {error&&<p role="alert" style={{fontSize:12,color:'#b91c1c'}}>{error}</p>}
       {loading?<p style={{fontSize:12,color:'#647368',padding:12}}>Loading…</p>:items.length===0?<p style={{fontSize:12,color:'#647368',padding:12}}>You're all caught up. New booking and order updates will appear here.</p>:items.map(item=><button key={item.id} type="button" onClick={()=>markRead(item)} style={{width:'100%',textAlign:'left',display:'block',padding:'10px 9px',marginTop:4,border:0,borderRadius:9,background:item.readAt?'#fff':'#f0f7f1',cursor:'pointer'}}>
         <span style={{display:'flex',justifyContent:'space-between',gap:8}}><b style={{fontSize:12,color:'#173b2f'}}>{item.title}</b>{!item.readAt&&<span style={{width:7,height:7,borderRadius:'50%',background:'#16804a',flexShrink:0,marginTop:4}}/>}</span>
