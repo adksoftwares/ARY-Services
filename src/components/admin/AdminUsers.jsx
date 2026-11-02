@@ -7,15 +7,27 @@ import {
   Key,
   Trash2,
   ShieldCheck,
-  Eye,
   RefreshCw,
   Phone,
   Mail,
-  MapPin
+  MapPin,
+  ArrowUpDown,
+  ChevronLeft,
+  ChevronRight,
+  Filter
 } from 'lucide-react';
-import { Card, Badge, Button, StatusPill, DataTable, ConfirmDialog, SegmentedControl } from '../../design-system';
+import {
+  Card,
+  Badge,
+  Button,
+  StatusPill,
+  SegmentedControl,
+  ConfirmDialog,
+  EmptyState
+} from '../../design-system';
 import AdminKycModal from './AdminKycModal';
 import AdminResetPasswordModal from './AdminResetPasswordModal';
+import AdminDeleteUserModal from './AdminDeleteUserModal';
 
 export default function AdminUsers({
   adminUsers = [],
@@ -28,27 +40,65 @@ export default function AdminUsers({
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [sortField, setSortField] = useState('id');
+  const [sortDirection, setSortDirection] = useState('desc'); // 'asc' | 'desc'
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
   // Modals state
   const [kycUser, setKycUser] = useState(null);
   const [resetUser, setResetUser] = useState(null);
-  const [deleteConfirmUser, setDeleteConfirmUser] = useState(null);
+  const [deleteUser, setDeleteUser] = useState(null);
+  const [suspendConfirmUser, setSuspendConfirmUser] = useState(null);
 
+  // Filter and sort logic
   const filteredUsers = useMemo(() => {
-    return adminUsers.filter(u => {
+    let result = adminUsers.filter(u => {
+      const q = searchQuery.toLowerCase().trim();
       const matchQuery =
-        !searchQuery ||
-        u.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        u.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        u.phone?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        u.location?.toLowerCase().includes(searchQuery.toLowerCase());
+        !q ||
+        u.fullName?.toLowerCase().includes(q) ||
+        u.email?.toLowerCase().includes(q) ||
+        u.phone?.toLowerCase().includes(q) ||
+        u.location?.toLowerCase().includes(q) ||
+        String(u.id).includes(q);
 
       const matchRole = roleFilter === 'all' || u.accountType === roleFilter;
       const matchStatus = statusFilter === 'all' || u.status === statusFilter;
 
       return matchQuery && matchRole && matchStatus;
     });
-  }, [adminUsers, searchQuery, roleFilter, statusFilter]);
+
+    result.sort((a, b) => {
+      let valA = a[sortField];
+      let valB = b[sortField];
+
+      if (typeof valA === 'string') valA = valA.toLowerCase();
+      if (typeof valB === 'string') valB = valB.toLowerCase();
+
+      if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
+      if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return result;
+  }, [adminUsers, searchQuery, roleFilter, statusFilter, sortField, sortDirection]);
+
+  // Pagination calculation
+  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / pageSize));
+  const paginatedUsers = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredUsers.slice(start, start + pageSize);
+  }, [filteredUsers, currentPage, pageSize]);
+
+  function handleSort(field) {
+    if (sortField === field) {
+      setSortDirection(prev => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  }
 
   const roleOptions = [
     { value: 'all', label: `All (${adminUsers.length})` },
@@ -60,17 +110,20 @@ export default function AdminUsers({
 
   return (
     <div style={{ display: 'grid', gap: '16px' }}>
-      {/* 1. Filter & Search Controls */}
+      {/* 1. Filter, Search & Quick Action Card */}
       <Card style={{ padding: '16px 20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14 }}>
           {/* Search Box */}
-          <div style={{ position: 'relative', flex: 1, minWidth: 240, maxWidth: 400 }}>
+          <div style={{ position: 'relative', flex: 1, minWidth: 260, maxWidth: 420 }}>
             <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
             <input
               type="text"
               placeholder="Search by name, phone, email, or area..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
               style={{
                 width: '100%',
                 padding: '9px 12px 9px 36px',
@@ -82,93 +135,142 @@ export default function AdminUsers({
             />
           </div>
 
-          {/* Refresh Button */}
-          <Button variant="ghost" size="sm" onClick={onRefresh} loading={isLoadingUsers}>
-            <RefreshCw size={14} /> Refresh
-          </Button>
+          {/* Quick Stats Pill & Refresh */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: '0.82rem', color: 'var(--color-neutral-500, #64748b)' }}>
+              Showing <b>{filteredUsers.length}</b> of <b>{adminUsers.length}</b> accounts
+            </span>
+            <Button variant="ghost" size="sm" onClick={onRefresh} loading={isLoadingUsers}>
+              <RefreshCw size={14} /> Refresh
+            </Button>
+          </div>
         </div>
 
-        {/* Filters Row */}
-        <div style={{ marginTop: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+        {/* Filter Controls Bar */}
+        <div style={{ marginTop: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
           <div style={{ maxWidth: 500, flex: 1 }}>
             <SegmentedControl
               options={roleOptions}
               value={roleFilter}
-              onChange={setRoleFilter}
+              onChange={(val) => {
+                setRoleFilter(val);
+                setCurrentPage(1);
+              }}
             />
           </div>
 
           {/* Status Quick Pills */}
-          <div style={{ display: 'flex', gap: 6 }}>
-            {['all', 'pending', 'active', 'rejected'].map(st => (
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {[
+              { id: 'all', label: 'ALL STATUS' },
+              { id: 'active', label: 'ACTIVE' },
+              { id: 'pending', label: 'PENDING' },
+              { id: 'rejected', label: 'SUSPENDED' }
+            ].map(st => (
               <button
-                key={st}
+                key={st.id}
                 type="button"
-                onClick={() => setStatusFilter(st)}
+                onClick={() => {
+                  setStatusFilter(st.id);
+                  setCurrentPage(1);
+                }}
                 style={{
                   padding: '5px 12px',
                   borderRadius: 'var(--radius-full, 9999px)',
-                  border: statusFilter === st ? '1.5px solid var(--color-brand-600, #174d3d)' : '1px solid var(--color-border-subtle, #e2e8f0)',
-                  background: statusFilter === st ? 'var(--color-brand-50, #edf7f2)' : 'var(--color-surface, #fff)',
-                  color: statusFilter === st ? 'var(--color-brand-900, #0c2d23)' : 'var(--color-neutral-600, #475569)',
+                  border: statusFilter === st.id ? '1.5px solid var(--color-brand-600, #174d3d)' : '1px solid var(--color-border-subtle, #e2e8f0)',
+                  background: statusFilter === st.id ? 'var(--color-brand-50, #edf7f2)' : 'var(--color-surface, #ffffff)',
+                  color: statusFilter === st.id ? 'var(--color-brand-900, #0c2d23)' : 'var(--color-neutral-600, #475569)',
                   fontSize: '0.78rem',
                   fontWeight: 600,
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
                 }}
               >
-                {st.toUpperCase()}
+                {st.label}
               </button>
             ))}
           </div>
         </div>
       </Card>
 
-      {/* 2. Users DataTable */}
+      {/* 2. Registered Users DataTable */}
       <Card style={{ padding: '0', overflow: 'hidden' }}>
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+          <table className="admin-table">
             <thead>
-              <tr style={{ borderBottom: '2px solid var(--color-border-subtle, #f1f5f9)', background: 'var(--color-neutral-50, #f8fafc)', textAlign: 'left', color: 'var(--color-neutral-600, #475569)' }}>
-                <th style={{ padding: '12px 16px' }}>Participant</th>
-                <th style={{ padding: '12px 14px' }}>Role</th>
-                <th style={{ padding: '12px 14px' }}>Phone & Location</th>
-                <th style={{ padding: '12px 14px' }}>Status</th>
-                <th style={{ padding: '12px 16px', textAlign: 'right' }}>Management Actions</th>
+              <tr>
+                <th
+                  className="sortable"
+                  onClick={() => handleSort('fullName')}
+                  style={{ width: '30%' }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span>Participant</span>
+                    <ArrowUpDown size={12} />
+                  </div>
+                </th>
+                <th
+                  className="sortable"
+                  onClick={() => handleSort('accountType')}
+                  style={{ width: '15%' }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span>Role</span>
+                    <ArrowUpDown size={12} />
+                  </div>
+                </th>
+                <th style={{ width: '25%' }}>Phone & Operating Area</th>
+                <th
+                  className="sortable"
+                  onClick={() => handleSort('status')}
+                  style={{ width: '12%' }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span>Status</span>
+                    <ArrowUpDown size={12} />
+                  </div>
+                </th>
+                <th style={{ textAlign: 'right', width: '18%' }}>Management Actions</th>
               </tr>
             </thead>
             <tbody>
-              {filteredUsers.length === 0 ? (
+              {paginatedUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={5} style={{ padding: '36px', textAlign: 'center', color: 'var(--color-neutral-500, #64748b)' }}>
-                    No participants matched your search criteria.
+                  <td colSpan={5} style={{ padding: '40px 20px', textAlign: 'center' }}>
+                    <EmptyState
+                      icon={Users}
+                      title="No accounts found"
+                      description="No registered platform accounts match your selected filter criteria."
+                    />
                   </td>
                 </tr>
               ) : (
-                filteredUsers.map(user => {
+                paginatedUsers.map(user => {
                   const isPending = user.status === 'pending';
                   const isRejected = user.status === 'rejected';
 
                   return (
-                    <tr key={user.id} style={{ borderBottom: '1px solid var(--color-border-subtle, #f1f5f9)' }}>
-                      {/* Name & ID */}
-                      <td style={{ padding: '12px 16px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <tr key={user.id}>
+                      {/* Participant Profile */}
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                           <div style={{
-                            width: 34,
-                            height: 34,
+                            width: 36,
+                            height: 36,
                             borderRadius: '50%',
-                            background: user.accountType === 'admin' ? '#fef3c7' : user.accountType === 'provider' ? '#edf7f2' : user.accountType === 'driver' ? '#eff6ff' : '#f1f5f9',
-                            color: user.accountType === 'admin' ? '#b45309' : user.accountType === 'provider' ? '#174d3d' : user.accountType === 'driver' ? '#1d4ed8' : '#475569',
+                            background: user.accountType === 'admin' ? '#fef3c7' : user.accountType === 'provider' ? 'var(--color-brand-100, #d4ebd8)' : user.accountType === 'driver' ? '#eff6ff' : '#f1f5f9',
+                            color: user.accountType === 'admin' ? '#b45309' : user.accountType === 'provider' ? 'var(--color-brand-800, #154636)' : user.accountType === 'driver' ? '#1d4ed8' : '#475569',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             fontWeight: 700,
-                            fontSize: '0.85rem'
+                            fontSize: '0.88rem',
+                            flexShrink: 0
                           }}>
                             {user.fullName?.slice(0, 2).toUpperCase() || 'U'}
                           </div>
                           <div>
-                            <b style={{ color: 'var(--color-neutral-900, #0f172a)', fontSize: '0.92rem', display: 'block' }}>
+                            <b style={{ color: 'var(--color-text, #0f172a)', fontSize: '0.92rem', display: 'block' }}>
                               {user.fullName}
                             </b>
                             <span style={{ fontSize: '0.74rem', color: 'var(--color-neutral-400, #94a3b8)' }}>
@@ -179,7 +281,7 @@ export default function AdminUsers({
                       </td>
 
                       {/* Account Role */}
-                      <td style={{ padding: '12px 14px' }}>
+                      <td>
                         <Badge
                           variant={user.accountType === 'admin' ? 'warning' : user.accountType === 'provider' ? 'brand' : user.accountType === 'driver' ? 'accent' : 'neutral'}
                           dot={false}
@@ -188,21 +290,27 @@ export default function AdminUsers({
                         </Badge>
                       </td>
 
-                      {/* Contact & Location */}
-                      <td style={{ padding: '12px 14px' }}>
-                        <div style={{ color: 'var(--color-neutral-800, #1e293b)', fontWeight: 600 }}>{user.phone}</div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--color-neutral-500, #64748b)' }}>{user.location || 'Colombo'}</div>
+                      {/* Phone & Location */}
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600, color: 'var(--color-text, #1e293b)' }}>
+                          <Phone size={13} color="#64748b" />
+                          <span>{user.phone}</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.75rem', color: 'var(--color-neutral-500, #64748b)', marginTop: 2 }}>
+                          <MapPin size={12} color="#94a3b8" />
+                          <span>{user.location || 'Colombo, Sri Lanka'}</span>
+                        </div>
                       </td>
 
                       {/* Status */}
-                      <td style={{ padding: '12px 14px' }}>
+                      <td>
                         <StatusPill status={user.status || 'active'} />
                       </td>
 
-                      {/* Actions */}
-                      <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                          {/* KYC Modal for Providers & Drivers */}
+                      {/* Management Actions */}
+                      <td style={{ textAlign: 'right' }}>
+                        <div className="admin-table-actions">
+                          {/* KYC Inspector for Providers & Drivers */}
                           {(user.accountType === 'provider' || user.accountType === 'driver') && (
                             <button
                               type="button"
@@ -221,6 +329,7 @@ export default function AdminUsers({
                                 gap: 4
                               }}
                               title="Inspect KYC Credentials"
+                              aria-label={`Inspect KYC for ${user.fullName}`}
                             >
                               <ShieldCheck size={13} /> KYC
                             </button>
@@ -250,11 +359,11 @@ export default function AdminUsers({
                             </button>
                           )}
 
-                          {/* Quick Block if Active */}
+                          {/* Quick Suspend if Active */}
                           {user.status === 'active' && user.accountType !== 'admin' && (
                             <button
                               type="button"
-                              onClick={() => onUpdateStatus(user.id, 'rejected', user.fullName)}
+                              onClick={() => setSuspendConfirmUser(user)}
                               style={{
                                 padding: '5px 8px',
                                 borderRadius: 'var(--radius-sm, 6px)',
@@ -268,7 +377,7 @@ export default function AdminUsers({
                                 alignItems: 'center',
                                 gap: 4
                               }}
-                              title="Suspend User"
+                              title="Suspend Account"
                             >
                               <XCircle size={13} /> Suspend
                             </button>
@@ -282,7 +391,7 @@ export default function AdminUsers({
                               padding: '5px 8px',
                               borderRadius: 'var(--radius-sm, 6px)',
                               border: '1px solid var(--color-border, #cbd5e1)',
-                              background: '#fff',
+                              background: '#ffffff',
                               color: 'var(--color-neutral-700, #334155)',
                               fontSize: '0.78rem',
                               fontWeight: 600,
@@ -291,7 +400,7 @@ export default function AdminUsers({
                               alignItems: 'center',
                               gap: 4
                             }}
-                            title="Reset Password"
+                            title="Reset User Password"
                           >
                             <Key size={13} /> Key
                           </button>
@@ -300,17 +409,17 @@ export default function AdminUsers({
                           {user.accountType !== 'admin' && (
                             <button
                               type="button"
-                              onClick={() => setDeleteConfirmUser(user)}
+                              onClick={() => setDeleteUser(user)}
                               style={{
-                                padding: '5px 7px',
+                                padding: '5px 8px',
                                 borderRadius: 'var(--radius-sm, 6px)',
                                 border: '1px solid #fecaca',
-                                background: '#fff',
+                                background: '#ffffff',
                                 color: '#dc2626',
                                 fontSize: '0.78rem',
                                 cursor: 'pointer'
                               }}
-                              title="Delete Account"
+                              title="Permanently Delete Account"
                               aria-label={`Delete ${user.fullName}`}
                             >
                               <Trash2 size={13} />
@@ -325,6 +434,48 @@ export default function AdminUsers({
             </tbody>
           </table>
         </div>
+
+        {/* 3. Pagination Bar */}
+        {filteredUsers.length > 0 && (
+          <div style={{
+            padding: '12px 18px',
+            borderTop: '1px solid var(--color-border-subtle, #f1f5f9)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 12,
+            fontSize: '0.84rem'
+          }}>
+            <span style={{ color: 'var(--color-neutral-600, #475569)' }}>
+              Showing <b>{(currentPage - 1) * pageSize + 1}</b> to <b>{Math.min(currentPage * pageSize, filteredUsers.length)}</b> of <b>{filteredUsers.length}</b> participants
+            </span>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage <= 1}
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              >
+                <ChevronLeft size={14} /> Previous
+              </Button>
+
+              <span style={{ padding: '0 8px', fontWeight: 700, color: 'var(--color-brand-900, #0c2d23)' }}>
+                Page {currentPage} of {totalPages}
+              </span>
+
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage >= totalPages}
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              >
+                Next <ChevronRight size={14} />
+              </Button>
+            </div>
+          </div>
+        )}
       </Card>
 
       {/* KYC Inspector Modal */}
@@ -343,20 +494,31 @@ export default function AdminUsers({
         onSubmit={onResetPassword}
       />
 
-      {/* Delete Confirmation Dialog */}
+      {/* Typed Confirmation Delete Account Modal */}
+      <AdminDeleteUserModal
+        user={deleteUser}
+        isOpen={Boolean(deleteUser)}
+        onClose={() => setDeleteUser(null)}
+        onConfirm={(id, name) => {
+          onDeleteUser(id, name);
+          setDeleteUser(null);
+        }}
+      />
+
+      {/* Suspend Confirmation Dialog */}
       <ConfirmDialog
-        isOpen={Boolean(deleteConfirmUser)}
-        onClose={() => setDeleteConfirmUser(null)}
+        isOpen={Boolean(suspendConfirmUser)}
+        onClose={() => setSuspendConfirmUser(null)}
         onConfirm={() => {
-          if (deleteConfirmUser) {
-            onDeleteUser(deleteConfirmUser.id, deleteConfirmUser.fullName);
-            setDeleteConfirmUser(null);
+          if (suspendConfirmUser) {
+            onUpdateStatus(suspendConfirmUser.id, 'rejected', suspendConfirmUser.fullName);
+            setSuspendConfirmUser(null);
           }
         }}
-        title="Permanently Remove Account?"
-        message={`Are you sure you want to delete the registered account for "${deleteConfirmUser?.fullName}"? All active profile sessions will be terminated.`}
-        confirmText="Delete Account"
-        variant="danger"
+        title="Suspend Platform Account?"
+        message={`Are you sure you want to suspend access for "${suspendConfirmUser?.fullName}"? Their account will be deactivated immediately.`}
+        confirmLabel="Suspend Account"
+        isDanger={true}
       />
     </div>
   );

@@ -8,9 +8,13 @@ import {
   TrendingUp,
   Activity,
   CheckCircle2,
-  AlertTriangle
+  AlertTriangle,
+  ArrowRight,
+  ShieldCheck,
+  Scale,
+  Radio
 } from 'lucide-react';
-import { Card, Badge } from '../../design-system';
+import { Card, Badge, Button } from '../../design-system';
 
 export default function AdminOverview({
   adminUsers = [],
@@ -26,10 +30,10 @@ export default function AdminOverview({
 
   const totalBookings = bookings.length;
   const inProgressBookings = bookings.filter(b => ['accepted', 'in_progress'].includes(b.status)).length;
-  const disputedBookings = bookings.filter(b => b.status === 'disputed' || b.dispute).length;
+  const disputedBookings = bookings.filter(b => b.status === 'disputed' || b.paymentStatus === 'disputed_frozen' || b.dispute).length;
 
   const settledPayouts = bookings.filter(b => b.paymentStatus === 'released_to_provider').reduce((sum, b) => {
-    return sum + (b.providerPayout || Math.round((parseInt(String(b.baseCharge).replace(/\D/g, '')) || 1500) * 0.9));
+    return sum + (b.providerPayout || Math.round((parseInt(String(b.baseCharge || '1500').replace(/\D/g, ''), 10) || 1500) * 0.9));
   }, 0);
 
   // Sparkline data for 7-day bookings volume
@@ -37,9 +41,9 @@ export default function AdminOverview({
   const bookingPoints = [12, 18, 15, 26, 32, 45, 38];
   const maxVal = Math.max(...bookingPoints);
   const minVal = Math.min(...bookingPoints);
-  const svgWidth = 500;
-  const svgHeight = 140;
-  const padding = 20;
+  const svgWidth = 520;
+  const svgHeight = 150;
+  const padding = 24;
 
   const coordinates = bookingPoints.map((val, idx) => {
     const x = padding + (idx / (bookingPoints.length - 1)) * (svgWidth - padding * 2);
@@ -55,98 +59,129 @@ export default function AdminOverview({
 
   return (
     <div style={{ display: 'grid', gap: '20px' }}>
-      {/* 1. KPI Grid */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-        gap: '14px'
-      }}>
-        <Card
+      {/* 1. KPI Metric Cards Grid */}
+      <div className="admin-kpi-grid">
+        {/* Total Users */}
+        <div
+          className="admin-kpi-card interactive"
           onClick={() => onNavigateTab?.('users')}
-          style={{ padding: '16px 18px', cursor: 'pointer', transition: 'all 0.15s ease' }}
+          role="button"
+          tabIndex={0}
         >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-neutral-600, #475569)' }}>Total Users</span>
-            <div style={{ width: 30, height: 30, borderRadius: 6, background: 'var(--color-brand-50, #edf7f2)', color: 'var(--color-brand-600, #174d3d)', display: 'grid', placeItems: 'center' }}>
-              <Users size={16} />
+          <div className="admin-kpi-header">
+            <span className="admin-kpi-label">Registered Accounts</span>
+            <div className="admin-kpi-icon-box brand">
+              <Users size={18} />
             </div>
           </div>
-          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--color-neutral-900, #0f172a)', letterSpacing: '-0.02em' }}>
-            {totalUsers}
+          <div className="admin-kpi-value">{totalUsers}</div>
+          <div className="admin-kpi-subtext">
+            <span>{customers} customers · {providers} pros · {drivers} drivers</span>
           </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--color-neutral-500, #64748b)', marginTop: 4 }}>
-            {customers} customers · {providers} partners · {drivers} drivers
-          </div>
-        </Card>
+        </div>
 
-        <Card style={{ padding: '16px 18px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-neutral-600, #475569)' }}>Active Jobs</span>
-            <div style={{ width: 30, height: 30, borderRadius: 6, background: '#eff6ff', color: '#2563eb', display: 'grid', placeItems: 'center' }}>
-              <Activity size={16} />
+        {/* Online Drivers */}
+        <div
+          className="admin-kpi-card interactive"
+          onClick={() => onNavigateTab?.('dispatch')}
+          role="button"
+          tabIndex={0}
+        >
+          <div className="admin-kpi-header">
+            <span className="admin-kpi-label">Broadcasting Drivers</span>
+            <div className="admin-kpi-icon-box green">
+              <Bike size={18} />
             </div>
           </div>
-          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#1d4ed8', letterSpacing: '-0.02em' }}>
+          <div className="admin-kpi-value" style={{ color: '#047857' }}>
+            {dispatchSnapshot.summary?.onlineDrivers ?? dispatchSnapshot.drivers?.length ?? 0}
+          </div>
+          <div className="admin-kpi-subtext">
+            <span>Live GPS telemetry active</span>
+          </div>
+        </div>
+
+        {/* Active Bookings */}
+        <div
+          className="admin-kpi-card interactive"
+          onClick={() => onNavigateTab?.('overview')}
+        >
+          <div className="admin-kpi-header">
+            <span className="admin-kpi-label">In-Progress Orders</span>
+            <div className="admin-kpi-icon-box blue">
+              <Activity size={18} />
+            </div>
+          </div>
+          <div className="admin-kpi-value" style={{ color: '#1d4ed8' }}>
             {inProgressBookings}
           </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--color-neutral-500, #64748b)', marginTop: 4 }}>
-            Out of {totalBookings} total platform bookings
+          <div className="admin-kpi-subtext">
+            <span>Of {totalBookings} total platform jobs</span>
           </div>
-        </Card>
+        </div>
 
-        <Card
-          onClick={() => onNavigateTab?.('dispatch')}
-          style={{ padding: '16px 18px', cursor: 'pointer' }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-neutral-600, #475569)' }}>Online Drivers</span>
-            <div style={{ width: 30, height: 30, borderRadius: 6, background: '#ecfdf5', color: '#059669', display: 'grid', placeItems: 'center' }}>
-              <Bike size={16} />
-            </div>
-          </div>
-          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#047857', letterSpacing: '-0.02em' }}>
-            {dispatchSnapshot.summary?.onlineDrivers || dispatchSnapshot.drivers?.length || 0}
-          </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--color-neutral-500, #64748b)', marginTop: 4 }}>
-            GPS broadcasting across Sri Lanka
-          </div>
-        </Card>
-
-        <Card
+        {/* Open Disputes */}
+        <div
+          className="admin-kpi-card interactive"
           onClick={() => onNavigateTab?.('disputes')}
-          style={{ padding: '16px 18px', cursor: 'pointer' }}
+          role="button"
+          tabIndex={0}
         >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-neutral-600, #475569)' }}>Open Disputes</span>
-            <div style={{ width: 30, height: 30, borderRadius: 6, background: '#fef2f2', color: '#dc2626', display: 'grid', placeItems: 'center' }}>
-              <ShieldAlert size={16} />
+          <div className="admin-kpi-header">
+            <span className="admin-kpi-label">Open Disputes</span>
+            <div className="admin-kpi-icon-box red">
+              <ShieldAlert size={18} />
             </div>
           </div>
-          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: disputedBookings > 0 ? '#b91c1c' : '#334155', letterSpacing: '-0.02em' }}>
+          <div className="admin-kpi-value" style={{ color: disputedBookings > 0 ? '#b91c1c' : '#0f172a' }}>
             {disputedBookings}
           </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--color-neutral-500, #64748b)', marginTop: 4 }}>
-            Awaiting Super Admin arbitration
+          <div className="admin-kpi-subtext">
+            <span>{disputedBookings > 0 ? 'Awaiting administrative ruling' : 'Zero frozen escrows'}</span>
           </div>
-        </Card>
+        </div>
 
-        <Card
-          onClick={() => onNavigateTab?.('payouts')}
-          style={{ padding: '16px 18px', cursor: 'pointer' }}
+        {/* Pending Approvals */}
+        <div
+          className="admin-kpi-card interactive"
+          onClick={() => onNavigateTab?.('applications')}
+          role="button"
+          tabIndex={0}
         >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-neutral-600, #475569)' }}>CEFT Settled</span>
-            <div style={{ width: 30, height: 30, borderRadius: 6, background: 'var(--color-brand-50, #edf7f2)', color: 'var(--color-brand-600, #174d3d)', display: 'grid', placeItems: 'center' }}>
-              <Banknote size={16} />
+          <div className="admin-kpi-header">
+            <span className="admin-kpi-label">Pending KYC / Roles</span>
+            <div className="admin-kpi-icon-box accent">
+              <ShieldCheck size={18} />
             </div>
           </div>
-          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--color-brand-700, #174d3d)', letterSpacing: '-0.02em' }}>
+          <div className="admin-kpi-value" style={{ color: pendingApprovals > 0 ? 'var(--color-accent-700, #a05a1e)' : '#0f172a' }}>
+            {pendingApprovals}
+          </div>
+          <div className="admin-kpi-subtext">
+            <span>In partner verification queue</span>
+          </div>
+        </div>
+
+        {/* CEFT Settled */}
+        <div
+          className="admin-kpi-card interactive"
+          onClick={() => onNavigateTab?.('payouts')}
+          role="button"
+          tabIndex={0}
+        >
+          <div className="admin-kpi-header">
+            <span className="admin-kpi-label">CEFT Settled</span>
+            <div className="admin-kpi-icon-box brand">
+              <Banknote size={18} />
+            </div>
+          </div>
+          <div className="admin-kpi-value" style={{ fontSize: '1.65rem', color: 'var(--color-brand-700, #174d3d)' }}>
             LKR {settledPayouts.toLocaleString()}
           </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--color-neutral-500, #64748b)', marginTop: 4 }}>
-            Released to contractor accounts
+          <div className="admin-kpi-subtext">
+            <span>Disbursed to partner accounts</span>
           </div>
-        </Card>
+        </div>
       </div>
 
       {/* 2. Charts Section */}
@@ -155,15 +190,15 @@ export default function AdminOverview({
         gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
         gap: '16px'
       }}>
-        {/* SVG Area Chart: 7-Day Trend */}
+        {/* SVG Area Chart: 7-Day Velocity */}
         <Card style={{ padding: '20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <div>
-              <h3 style={{ margin: 0, fontSize: '1rem', color: 'var(--color-neutral-900, #0f172a)' }}>
+              <h3 style={{ margin: 0, fontSize: '1.02rem', color: 'var(--color-text, #0f172a)' }}>
                 7-Day Booking Velocity
               </h3>
               <p style={{ margin: '2px 0 0', fontSize: '0.75rem', color: 'var(--color-neutral-500, #64748b)' }}>
-                Platform daily service & delivery orders
+                Platform daily service & delivery orders volume
               </p>
             </div>
             <Badge variant="success" dot={false}>
@@ -193,13 +228,13 @@ export default function AdminOverview({
               {/* Curve Line */}
               <path d={pathD} fill="none" stroke="#174d3d" strokeWidth="3" strokeLinecap="round" />
 
-              {/* Point Circles and Day Labels */}
+              {/* Points & Day Labels */}
               {coordinates.map((pt, i) => (
                 <g key={i}>
-                  <circle cx={pt.x} cy={pt.y} r="4" fill="#ffffff" stroke="#174d3d" strokeWidth="2.5" />
+                  <circle cx={pt.x} cy={pt.y} r="4.5" fill="#ffffff" stroke="#174d3d" strokeWidth="2.5" />
                   <text
                     x={pt.x}
-                    y={svgHeight - 4}
+                    y={svgHeight - 6}
                     fontSize="10"
                     fill="#64748b"
                     textAnchor="middle"
@@ -209,7 +244,7 @@ export default function AdminOverview({
                   <text
                     x={pt.x}
                     y={pt.y - 8}
-                    fontSize="9"
+                    fontSize="9.5"
                     fontWeight="700"
                     fill="#174d3d"
                     textAnchor="middle"
@@ -225,7 +260,7 @@ export default function AdminOverview({
         {/* SVG Donut / Distribution Chart: Accounts */}
         <Card style={{ padding: '20px' }}>
           <div style={{ marginBottom: 14 }}>
-            <h3 style={{ margin: 0, fontSize: '1rem', color: 'var(--color-neutral-900, #0f172a)' }}>
+            <h3 style={{ margin: 0, fontSize: '1.02rem', color: 'var(--color-text, #0f172a)' }}>
               Ecosystem Role Distribution
             </h3>
             <p style={{ margin: '2px 0 0', fontSize: '0.75rem', color: 'var(--color-neutral-500, #64748b)' }}>
@@ -235,7 +270,7 @@ export default function AdminOverview({
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around', flexWrap: 'wrap', gap: 16 }}>
             {/* Donut SVG */}
-            <svg width="120" height="120" viewBox="0 0 42 42" style={{ transform: 'rotate(-90deg)' }}>
+            <svg width="130" height="130" viewBox="0 0 42 42" style={{ transform: 'rotate(-90deg)' }}>
               <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#e2e8f0" strokeWidth="5" />
               {/* Customers: ~60% */}
               <circle
@@ -267,7 +302,7 @@ export default function AdminOverview({
             </svg>
 
             {/* Legend */}
-            <div style={{ fontSize: '0.82rem', display: 'grid', gap: 8 }}>
+            <div style={{ fontSize: '0.84rem', display: 'grid', gap: 8 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#174d3d' }} />
                 <span>Customers: <b>{customers}</b></span>
@@ -290,6 +325,109 @@ export default function AdminOverview({
             </div>
           </div>
         </Card>
+      </div>
+
+      {/* 3. Quick Jump Actions */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+        gap: '14px'
+      }}>
+        <div
+          onClick={() => onNavigateTab?.('applications')}
+          style={{
+            padding: '16px',
+            background: 'var(--color-surface, #ffffff)',
+            border: '1px solid var(--color-border-subtle, #e2e8f0)',
+            borderRadius: 'var(--radius-md, 10px)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            transition: 'all 0.15s ease'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <ShieldCheck size={20} color="var(--color-brand-600, #174d3d)" />
+            <div>
+              <b style={{ fontSize: '0.88rem', color: 'var(--color-text, #0f172a)', display: 'block' }}>KYC Application Queue</b>
+              <span style={{ fontSize: '0.74rem', color: 'var(--color-neutral-500, #64748b)' }}>Review partner credentials</span>
+            </div>
+          </div>
+          <ArrowRight size={16} color="#94a3b8" />
+        </div>
+
+        <div
+          onClick={() => onNavigateTab?.('disputes')}
+          style={{
+            padding: '16px',
+            background: 'var(--color-surface, #ffffff)',
+            border: '1px solid var(--color-border-subtle, #e2e8f0)',
+            borderRadius: 'var(--radius-md, 10px)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            transition: 'all 0.15s ease'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Scale size={20} color="#dc2626" />
+            <div>
+              <b style={{ fontSize: '0.88rem', color: 'var(--color-text, #0f172a)', display: 'block' }}>Dispute Arbitration</b>
+              <span style={{ fontSize: '0.74rem', color: 'var(--color-neutral-500, #64748b)' }}>Arbitrate customer claims</span>
+            </div>
+          </div>
+          <ArrowRight size={16} color="#94a3b8" />
+        </div>
+
+        <div
+          onClick={() => onNavigateTab?.('payouts')}
+          style={{
+            padding: '16px',
+            background: 'var(--color-surface, #ffffff)',
+            border: '1px solid var(--color-border-subtle, #e2e8f0)',
+            borderRadius: 'var(--radius-md, 10px)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            transition: 'all 0.15s ease'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Banknote size={20} color="var(--color-brand-600, #174d3d)" />
+            <div>
+              <b style={{ fontSize: '0.88rem', color: 'var(--color-text, #0f172a)', display: 'block' }}>LankaPay CEFT Payouts</b>
+              <span style={{ fontSize: '0.74rem', color: 'var(--color-neutral-500, #64748b)' }}>Batch settlement runs</span>
+            </div>
+          </div>
+          <ArrowRight size={16} color="#94a3b8" />
+        </div>
+
+        <div
+          onClick={() => onNavigateTab?.('dispatch')}
+          style={{
+            padding: '16px',
+            background: 'var(--color-surface, #ffffff)',
+            border: '1px solid var(--color-border-subtle, #e2e8f0)',
+            borderRadius: 'var(--radius-md, 10px)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            transition: 'all 0.15s ease'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Radio size={20} color="#059669" />
+            <div>
+              <b style={{ fontSize: '0.88rem', color: 'var(--color-text, #0f172a)', display: 'block' }}>Dispatch Telematics</b>
+              <span style={{ fontSize: '0.74rem', color: 'var(--color-neutral-500, #64748b)' }}>Live driver radar</span>
+            </div>
+          </div>
+          <ArrowRight size={16} color="#94a3b8" />
+        </div>
       </div>
     </div>
   );

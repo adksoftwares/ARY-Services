@@ -9,6 +9,7 @@
 @import './design-system/customer.css';
 @import './design-system/provider.css';
 @import './design-system/driver.css';
+@import './design-system/admin.css';
 
 
 /* Sign-in required prompt & Modal styles */

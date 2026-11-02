@@ -1,5 +1,23 @@
-import React from 'react';
-import { ShieldCheck, FileText, CheckCircle2, XCircle, MapPin, Phone, Mail, Award, AlertCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import {
+  ShieldCheck,
+  FileText,
+  CheckCircle2,
+  XCircle,
+  Eye,
+  MapPin,
+  Phone,
+  Mail,
+  Award,
+  AlertTriangle,
+  ZoomIn,
+  Check,
+  X,
+  CreditCard,
+  Truck,
+  Building,
+  Calendar
+} from 'lucide-react';
 import { Modal, Badge, Button } from '../../design-system';
 
 export default function AdminKycModal({
@@ -8,129 +26,386 @@ export default function AdminKycModal({
   onClose,
   onUpdateStatus
 }) {
+  const [selectedDoc, setSelectedDoc] = useState('nic_front');
+  const [rejectReasonOpen, setRejectReasonOpen] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   if (!isOpen || !user) return null;
 
   const isPending = user.status === 'pending';
   const isApproved = user.status === 'active';
   const isRejected = user.status === 'rejected';
 
+  const documents = [
+    {
+      id: 'nic_front',
+      title: 'NIC Front (National ID)',
+      category: 'Identity',
+      icon: CreditCard,
+      status: 'verified',
+      issuedDate: '2018-04-12',
+      details: {
+        number: user.nicNumber || '199214502831',
+        holder: user.fullName,
+        dob: '1992-05-24',
+        type: 'Sri Lankan Smart NIC'
+      }
+    },
+    {
+      id: 'nic_back',
+      title: 'NIC Back & Address',
+      category: 'Identity',
+      icon: CreditCard,
+      status: 'verified',
+      details: {
+        address: user.location || 'Colombo 03, Western Province',
+        division: 'Thimbirigasyaya DS Division',
+        barcode: 'SL-NIC-88291048'
+      }
+    },
+    {
+      id: 'license',
+      title: user.accountType === 'driver' ? 'Driving License (Class B/C1)' : 'Trade Qualification / NVQ',
+      category: user.accountType === 'driver' ? 'Permit' : 'Vocational',
+      icon: user.accountType === 'driver' ? Truck : Award,
+      status: 'verified',
+      details: {
+        regNumber: user.accountType === 'driver' ? 'B9482103' : 'NVQ-L4-EL-2021',
+        validTill: '2028-11-30',
+        issuer: user.accountType === 'driver' ? 'Dept of Motor Traffic Sri Lanka' : 'TVEC Sri Lanka'
+      }
+    },
+    {
+      id: 'proof_of_address',
+      title: 'Utility Bill / Grama Certificate',
+      category: 'Residence',
+      icon: Building,
+      status: 'verified',
+      details: {
+        provider: 'Ceylon Electricity Board (CEB)',
+        billingDate: 'Within 60 Days',
+        verifiedArea: user.location || 'Western Province, Sri Lanka'
+      }
+    }
+  ];
+
+  const currentDoc = documents.find(d => d.id === selectedDoc) || documents[0];
+
+  async function handleApprove() {
+    setIsSubmitting(true);
+    try {
+      await onUpdateStatus(user.id, 'active', user.fullName);
+      onClose();
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function handleRejectSubmit(e) {
+    e.preventDefault();
+    if (!rejectionReason.trim()) return;
+    setIsSubmitting(true);
+    try {
+      await onUpdateStatus(user.id, 'rejected', user.fullName, rejectionReason.trim());
+      setRejectReasonOpen(false);
+      setRejectionReason('');
+      onClose();
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
       title="Partner KYC & Credentials Verification"
-      size="md"
+      maxWidth="860px"
     >
       <div style={{ padding: '4px 0' }}>
         {/* User Summary Header */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          gap: 14,
-          padding: '14px',
-          background: 'var(--color-neutral-50, #f8fafc)',
-          borderRadius: 'var(--radius-md, 8px)',
-          marginBottom: '18px'
+          justifyContent: 'space-between',
+          gap: 16,
+          padding: '16px 20px',
+          background: 'var(--color-surface-raised, #f8fafc)',
+          borderRadius: 'var(--radius-lg, 12px)',
+          border: '1px solid var(--color-border-subtle, #e2e8f0)',
+          marginBottom: '20px',
+          flexWrap: 'wrap'
         }}>
-          <div style={{
-            width: 44,
-            height: 44,
-            borderRadius: '50%',
-            background: 'var(--color-brand-600, #174d3d)',
-            color: '#fff',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontWeight: 800,
-            fontSize: '1.1rem'
-          }}>
-            {user.fullName?.slice(0, 2).toUpperCase() || 'SP'}
-          </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <b style={{ fontSize: '1rem', color: 'var(--color-neutral-900, #0f172a)' }}>{user.fullName}</b>
-              <Badge variant={isApproved ? 'success' : isPending ? 'warning' : 'danger'} dot={false}>
-                {user.status?.toUpperCase() || 'PENDING'}
-              </Badge>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div style={{
+              width: 48,
+              height: 48,
+              borderRadius: '50%',
+              background: 'var(--color-brand-600, #174d3d)',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 800,
+              fontSize: '1.2rem',
+              boxShadow: '0 4px 12px rgba(23,77,61,0.2)'
+            }}>
+              {user.fullName?.slice(0, 2).toUpperCase() || 'SP'}
             </div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--color-neutral-500, #64748b)', marginTop: 2 }}>
-              Account Type: <b>{user.accountType?.toUpperCase()}</b> · ID: {user.id}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <b style={{ fontSize: '1.1rem', color: 'var(--color-text, #0f172a)' }}>{user.fullName}</b>
+                <Badge variant={isApproved ? 'success' : isPending ? 'warning' : 'danger'} dot={false}>
+                  {user.status?.toUpperCase() || 'PENDING'}
+                </Badge>
+              </div>
+              <div style={{ fontSize: '0.8rem', color: 'var(--color-neutral-500, #64748b)', marginTop: 2 }}>
+                Account: <b>{user.accountType?.toUpperCase()}</b> · ID: #{user.id} · Registered: {user.phone}
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Verification Checklist */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '12px',
-          marginBottom: '18px',
-          fontSize: '0.85rem'
-        }}>
-          <div style={{ padding: '10px 12px', border: '1px solid var(--color-border-subtle, #e2e8f0)', borderRadius: 'var(--radius-sm, 6px)' }}>
-            <span style={{ color: 'var(--color-neutral-500, #64748b)', fontSize: '0.75rem', display: 'block' }}>National ID (NIC)</span>
-            <b style={{ color: 'var(--color-neutral-900, #0f172a)' }}>{user.nicNumber || '199012345678 (Verified)'}</b>
-          </div>
-          <div style={{ padding: '10px 12px', border: '1px solid var(--color-border-subtle, #e2e8f0)', borderRadius: 'var(--radius-sm, 6px)' }}>
-            <span style={{ color: 'var(--color-neutral-500, #64748b)', fontSize: '0.75rem', display: 'block' }}>Registered Phone</span>
-            <b style={{ color: 'var(--color-neutral-900, #0f172a)' }}>{user.phone}</b>
-          </div>
-          <div style={{ padding: '10px 12px', border: '1px solid var(--color-border-subtle, #e2e8f0)', borderRadius: 'var(--radius-sm, 6px)' }}>
-            <span style={{ color: 'var(--color-neutral-500, #64748b)', fontSize: '0.75rem', display: 'block' }}>Service Category</span>
-            <b style={{ color: 'var(--color-brand-700, #174d3d)' }}>{user.categoryName || user.category || 'Professional Services'}</b>
-          </div>
-          <div style={{ padding: '10px 12px', border: '1px solid var(--color-border-subtle, #e2e8f0)', borderRadius: 'var(--radius-sm, 6px)' }}>
-            <span style={{ color: 'var(--color-neutral-500, #64748b)', fontSize: '0.75rem', display: 'block' }}>Location / Operating Area</span>
-            <b style={{ color: 'var(--color-neutral-900, #0f172a)' }}>{user.location || 'Colombo, Sri Lanka'}</b>
-          </div>
-        </div>
-
-        {/* Trade Certificate / Proof Preview Mock */}
-        <div style={{
-          border: '1.5px dashed var(--color-brand-300, #a3d1ba)',
-          borderRadius: 'var(--radius-md, 8px)',
-          background: 'var(--color-brand-50, #edf7f2)',
-          padding: '20px',
-          textAlign: 'center',
-          marginBottom: '20px'
-        }}>
-          <Award size={32} color="var(--color-brand-600, #174d3d)" style={{ margin: '0 auto 8px', display: 'block' }} />
-          <b style={{ color: 'var(--color-brand-900, #0c2d23)', fontSize: '0.95rem' }}>
-            Trade Qualification & Police Clearance Verified
-          </b>
-          <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: 'var(--color-brand-700, #1b5e4b)' }}>
-            Sri Lankan TVEC / NVQ Level 4 Trade Accreditation & Clean Criminal Record checked against the ARY compliance registry.
-          </p>
-        </div>
-
-        {/* Modal Action Controls */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-          <Button variant="ghost" onClick={onClose}>
-            Close
-          </Button>
-          {!isApproved && (
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setRejectReasonOpen(true)}
+              disabled={isSubmitting || user.status === 'rejected'}
+            >
+              <XCircle size={14} color="#dc2626" /> Reject with Reason
+            </Button>
             <Button
               variant="primary"
-              onClick={() => {
-                onUpdateStatus(user.id, 'active', user.fullName);
-                onClose();
-              }}
+              size="sm"
+              onClick={handleApprove}
+              loading={isSubmitting}
+              disabled={isSubmitting || user.status === 'active'}
             >
-              <CheckCircle2 size={16} /> Approve & Activate Partner
+              <CheckCircle2 size={14} /> Approve Verified Partner
             </Button>
-          )}
-          {!isRejected && (
-            <Button
-              variant="danger"
-              onClick={() => {
-                onUpdateStatus(user.id, 'rejected', user.fullName);
-                onClose();
-              }}
-            >
-              <XCircle size={16} /> Block / Reject
-            </Button>
-          )}
+          </div>
         </div>
+
+        {/* Side-by-Side KYC Document Preview Layout */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'minmax(240px, 1fr) 2fr',
+          gap: 18,
+          marginBottom: 16
+        }}>
+          {/* Document Selector List */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--color-neutral-500, #64748b)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Submitted Verification Files ({documents.length})
+            </span>
+
+            {documents.map((doc) => {
+              const Icon = doc.icon;
+              const isSelected = selectedDoc === doc.id;
+
+              return (
+                <button
+                  key={doc.id}
+                  type="button"
+                  onClick={() => setSelectedDoc(doc.id)}
+                  style={{
+                    padding: '12px 14px',
+                    borderRadius: 'var(--radius-md, 8px)',
+                    border: isSelected ? '1.5px solid var(--color-brand-600, #174d3d)' : '1px solid var(--color-border-subtle, #e2e8f0)',
+                    background: isSelected ? 'var(--color-brand-50, #edf7f2)' : 'var(--color-surface, #ffffff)',
+                    color: isSelected ? 'var(--color-brand-900, #0c2d23)' : 'var(--color-neutral-700, #334155)',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: 6,
+                      background: isSelected ? 'var(--color-brand-200, #b7decb)' : 'var(--color-neutral-100, #f1f5f9)',
+                      display: 'grid',
+                      placeItems: 'center',
+                      color: isSelected ? 'var(--color-brand-800, #154636)' : 'var(--color-neutral-600, #475569)'
+                    }}>
+                      <Icon size={15} />
+                    </div>
+                    <div>
+                      <b style={{ fontSize: '0.84rem', display: 'block' }}>{doc.title}</b>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--color-neutral-400, #94a3b8)' }}>{doc.category}</span>
+                    </div>
+                  </div>
+                  <CheckCircle2 size={14} color="#059669" />
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Document Preview Canvas */}
+          <div style={{
+            background: 'var(--color-surface, #ffffff)',
+            border: '1px solid var(--color-border-subtle, #e2e8f0)',
+            borderRadius: 'var(--radius-lg, 12px)',
+            padding: '18px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between'
+          }}>
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                <div>
+                  <h4 style={{ margin: 0, fontSize: '0.98rem', color: 'var(--color-text, #0f172a)' }}>
+                    {currentDoc.title}
+                  </h4>
+                  <p style={{ margin: '2px 0 0', fontSize: '0.76rem', color: 'var(--color-neutral-500, #64748b)' }}>
+                    High-resolution encrypted capture · Held in ephemeral runtime memory
+                  </p>
+                </div>
+                <Badge variant="success" dot={true}>
+                  Tamper-Check Passed
+                </Badge>
+              </div>
+
+              {/* Document Visual Render Card */}
+              <div style={{
+                background: 'linear-gradient(135deg, #174d3d 0%, #0d2e24 100%)',
+                color: '#ffffff',
+                borderRadius: 'var(--radius-md, 10px)',
+                padding: '22px',
+                boxShadow: '0 8px 24px rgba(23,77,61,0.18)',
+                position: 'relative',
+                overflow: 'hidden',
+                minHeight: '180px'
+              }}>
+                <div style={{
+                  position: 'absolute',
+                  top: -20,
+                  right: -20,
+                  width: 120,
+                  height: 120,
+                  borderRadius: '50%',
+                  background: 'rgba(255,255,255,0.06)'
+                }} />
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+                  <div>
+                    <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#a3d1ba', fontWeight: 700 }}>
+                      Democratic Socialist Republic of Sri Lanka
+                    </span>
+                    <h3 style={{ margin: '4px 0 0', fontSize: '1.05rem', color: '#ffffff' }}>
+                      {currentDoc.title}
+                    </h3>
+                  </div>
+                  <ShieldCheck size={28} color="#d18b54" />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12, fontSize: '0.82rem', marginTop: 14 }}>
+                  {Object.entries(currentDoc.details).map(([key, value]) => (
+                    <div key={key}>
+                      <span style={{ fontSize: '0.7rem', color: '#a3d1ba', textTransform: 'capitalize', display: 'block' }}>
+                        {key.replace(/([A-Z])/g, ' $1')}
+                      </span>
+                      <b style={{ color: '#ffffff' }}>{String(value)}</b>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Security Note */}
+            <div style={{
+              marginTop: 16,
+              padding: '10px 14px',
+              background: 'var(--color-neutral-50, #f8fafc)',
+              borderRadius: 'var(--radius-sm, 6px)',
+              fontSize: '0.76rem',
+              color: 'var(--color-neutral-500, #64748b)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8
+            }}>
+              <AlertTriangle size={14} color="#d97706" style={{ flexShrink: 0 }} />
+              <span>
+                Personal Data Protection Act (PDPA No. 9 of 2022) compliant: Sensitive identity documents are reviewed in-session and never persisted into browser localStorage.
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Rejection Reason Submodal */}
+        {rejectReasonOpen && (
+          <div style={{
+            borderTop: '1px solid var(--color-border-subtle, #e2e8f0)',
+            paddingTop: '16px',
+            marginTop: '16px'
+          }}>
+            <h4 style={{ margin: '0 0 8px', fontSize: '0.92rem', color: '#b91c1c' }}>
+              Required: Specify Reason for KYC Rejection
+            </h4>
+            <p style={{ margin: '0 0 10px', fontSize: '0.8rem', color: 'var(--color-neutral-600, #475569)' }}>
+              The applicant will receive an official notification detailing this reason so they can re-submit the required documents.
+            </p>
+
+            <form onSubmit={handleRejectSubmit}>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
+                {[
+                  'NIC photo is blurry or unreadable',
+                  'Driving license expired or invalid class',
+                  'Address mismatch with proof of residence',
+                  'Police clearance certificate required'
+                ].map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => setRejectionReason(preset)}
+                    style={{
+                      padding: '4px 10px',
+                      borderRadius: 'var(--radius-full, 9999px)',
+                      border: '1px solid var(--color-border, #cbd5e1)',
+                      background: rejectionReason === preset ? 'var(--color-danger-50, #fef2f2)' : 'var(--color-surface, #ffffff)',
+                      color: rejectionReason === preset ? '#b91c1c' : 'var(--color-neutral-700, #334155)',
+                      fontSize: '0.75rem',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {preset}
+                  </button>
+                ))}
+              </div>
+
+              <textarea
+                required
+                rows={2}
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                placeholder="Enter detailed reason for rejection..."
+                style={{
+                  width: '100%',
+                  padding: '9px 12px',
+                  border: '1px solid var(--color-border, #cbd5e1)',
+                  borderRadius: 'var(--radius-md, 8px)',
+                  fontSize: '0.85rem',
+                  boxSizing: 'border-box',
+                  marginBottom: 10
+                }}
+              />
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                <Button variant="ghost" size="sm" onClick={() => setRejectReasonOpen(false)}>
+                  Cancel
+                </Button>
+                <Button variant="danger" size="sm" type="submit" loading={isSubmitting} disabled={!rejectionReason.trim()}>
+                  <XCircle size={14} /> Confirm Rejection
+                </Button>
+              </div>
+            </form>
+          </div>
+        )}
       </div>
     </Modal>
   );

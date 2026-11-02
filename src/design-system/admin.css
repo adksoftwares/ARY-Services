@@ -1,0 +1,756 @@
+/**
+ * ARY Services - Admin Enterprise Design System
+ * Desktop-first (1280px+) with seamless tablet (768px) and mobile fallbacks.
+ * WCAG 2.2 AA compliant, dark mode support, and print-ready styles.
+ */
+
+/* ==========================================================================
+   1. Root Layout & Shell
+   ========================================================================== */
+
+.admin-layout {
+  display: flex;
+  min-height: 100vh;
+  background: var(--color-bg, #fbfaf7);
+  color: var(--color-text, #1e293b);
+  font-family: var(--font-body, 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif);
+  position: relative;
+}
+
+/* Sidebar Drawer for Desktop */
+.admin-sidebar {
+  width: 270px;
+  background: var(--color-surface, #ffffff);
+  border-right: 1px solid var(--color-border-subtle, #e2e8f0);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  z-index: 50;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease;
+}
+
+.admin-sidebar-header {
+  padding: var(--space-5, 20px) var(--space-4, 16px);
+  border-bottom: 1px solid var(--color-border-subtle, #f1f5f9);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.admin-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+}
+
+.admin-brand-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-md, 10px);
+  background: var(--color-brand-600, #174d3d);
+  color: #ffffff;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 1.15rem;
+  box-shadow: 0 4px 12px rgba(23, 77, 61, 0.25);
+}
+
+.admin-brand-info b {
+  display: block;
+  font-family: var(--font-heading, 'Manrope', sans-serif);
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--color-brand-900, #0c2d23);
+  letter-spacing: -0.01em;
+}
+
+.admin-brand-info span {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--color-neutral-500, #64748b);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Sidebar Navigation */
+.admin-nav-list {
+  padding: var(--space-3, 12px) var(--space-2, 8px);
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin-nav-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-radius: var(--radius-md, 8px);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--color-neutral-700, #334155);
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+  width: 100%;
+}
+
+.admin-nav-item:hover {
+  background: var(--color-neutral-100, #f1f5f9);
+  color: var(--color-brand-800, #134234);
+}
+
+.admin-nav-item.active {
+  background: var(--color-brand-50, #edf7f2);
+  border-color: var(--color-brand-200, #bfe2cc);
+  color: var(--color-brand-900, #0c2d23);
+  font-weight: 700;
+}
+
+.admin-nav-item:focus-visible {
+  outline: 2px solid var(--color-brand-500, #247a61);
+  outline-offset: 2px;
+}
+
+.admin-nav-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.admin-nav-badge {
+  padding: 2px 7px;
+  border-radius: var(--radius-full, 9999px);
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.admin-nav-badge.danger {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.admin-nav-badge.warning {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.admin-nav-badge.brand {
+  background: var(--color-brand-100, #d4ebd8);
+  color: var(--color-brand-800, #154636);
+}
+
+/* Sidebar Footer */
+.admin-sidebar-footer {
+  padding: var(--space-4, 16px) var(--space-3, 12px);
+  border-top: 1px solid var(--color-border-subtle, #f1f5f9);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--color-surface, #ffffff);
+}
+
+.admin-profile-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-profile-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-full, 9999px);
+  background: var(--color-accent-100, #faedd8);
+  color: var(--color-accent-700, #a05a1e);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 0.84rem;
+  border: 1.5px solid var(--color-accent-300, #e9bb8b);
+}
+
+.admin-profile-info b {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--color-text, #0f172a);
+  line-height: 1.2;
+}
+
+.admin-profile-info span {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--color-neutral-500, #64748b);
+}
+
+/* ==========================================================================
+   2. Main Content Canvas & Header Topbar
+   ========================================================================== */
+
+.admin-canvas {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--color-bg, #fbfaf7);
+}
+
+.admin-topbar {
+  height: 64px;
+  background: var(--color-surface, #ffffff);
+  border-bottom: 1px solid var(--color-border-subtle, #e2e8f0);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-6, 24px);
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  backdrop-filter: blur(8px);
+}
+
+.admin-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.admin-breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+}
+
+.admin-breadcrumbs span {
+  color: var(--color-neutral-400, #94a3b8);
+}
+
+.admin-breadcrumbs b {
+  color: var(--color-brand-900, #173b2f);
+  font-weight: 700;
+}
+
+.admin-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Global Search Input */
+.admin-search-wrapper {
+  position: relative;
+  width: 280px;
+}
+
+.admin-search-input {
+  width: 100%;
+  height: 38px;
+  padding: 0 12px 0 36px;
+  border: 1px solid var(--color-border-subtle, #cbd5e1);
+  border-radius: var(--radius-md, 8px);
+  background: var(--color-surface-raised, #f8fafc);
+  color: var(--color-text, #1e293b);
+  font-size: 0.86rem;
+  transition: all 0.18s ease;
+}
+
+.admin-search-input:focus {
+  outline: none;
+  background: var(--color-surface, #ffffff);
+  border-color: var(--color-brand-500, #247a61);
+  box-shadow: 0 0 0 3px rgba(36, 122, 97, 0.12);
+}
+
+.admin-search-icon {
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-neutral-400, #94a3b8);
+  pointer-events: none;
+}
+
+/* Page Container */
+.admin-page-container {
+  padding: var(--space-6, 24px);
+  max-width: 1360px;
+  width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ==========================================================================
+   3. KPI Cards Grid & Stats
+   ========================================================================== */
+
+.admin-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 16px;
+}
+
+.admin-kpi-card {
+  background: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-border-subtle, #e2e8f0);
+  border-radius: var(--radius-lg, 14px);
+  padding: 18px 20px;
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.05));
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-kpi-card.interactive {
+  cursor: pointer;
+}
+
+.admin-kpi-card.interactive:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md, 0 8px 24px rgba(23, 77, 61, 0.08));
+  border-color: var(--color-brand-300, #a3d1ba);
+}
+
+.admin-kpi-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.admin-kpi-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-neutral-600, #475569);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.admin-kpi-icon-box {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md, 8px);
+  display: grid;
+  place-items: center;
+}
+
+.admin-kpi-icon-box.brand {
+  background: var(--color-brand-50, #edf7f2);
+  color: var(--color-brand-600, #174d3d);
+}
+
+.admin-kpi-icon-box.accent {
+  background: var(--color-accent-50, #fdf8f3);
+  color: var(--color-accent-600, #d18b54);
+}
+
+.admin-kpi-icon-box.blue {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.admin-kpi-icon-box.green {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.admin-kpi-icon-box.red {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.admin-kpi-value {
+  font-family: var(--font-heading, 'Manrope', sans-serif);
+  font-size: 1.95rem;
+  font-weight: 800;
+  color: var(--color-text, #0f172a);
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.admin-kpi-subtext {
+  font-size: 0.76rem;
+  color: var(--color-neutral-500, #64748b);
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ==========================================================================
+   4. Data Tables & Advanced Controls
+   ========================================================================== */
+
+.admin-table-card {
+  background: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-border-subtle, #e2e8f0);
+  border-radius: var(--radius-lg, 14px);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.05));
+}
+
+.admin-table-container {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.86rem;
+  text-align: left;
+}
+
+.admin-table th {
+  padding: 12px 16px;
+  background: var(--color-surface-raised, #f8fafc);
+  color: var(--color-neutral-600, #475569);
+  font-weight: 700;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 2px solid var(--color-border-subtle, #e2e8f0);
+  white-space: nowrap;
+}
+
+.admin-table th.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.admin-table th.sortable:hover {
+  color: var(--color-brand-700, #174d3d);
+  background: var(--color-neutral-100, #f1f5f9);
+}
+
+.admin-table td {
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--color-border-subtle, #f1f5f9);
+  color: var(--color-text, #1e293b);
+  vertical-align: middle;
+}
+
+.admin-table tr:hover td {
+  background: var(--color-neutral-50, #f8fafc);
+}
+
+.admin-table tr.highlight td {
+  background: var(--color-brand-50, #edf7f2);
+}
+
+.admin-table-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+/* ==========================================================================
+   5. KYC Document Preview & Inspector
+   ========================================================================== */
+
+.kyc-doc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  margin: 16px 0;
+}
+
+.kyc-doc-card {
+  background: var(--color-surface-raised, #f8fafc);
+  border: 1px solid var(--color-border-subtle, #e2e8f0);
+  border-radius: var(--radius-md, 10px);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.kyc-doc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.kyc-doc-title {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--color-text, #0f172a);
+}
+
+.kyc-doc-preview-box {
+  width: 100%;
+  height: 160px;
+  background: var(--color-surface, #ffffff);
+  border: 1.5px dashed var(--color-border, #cbd5e1);
+  border-radius: var(--radius-sm, 6px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--color-neutral-500, #64748b);
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.18s ease;
+}
+
+.kyc-doc-preview-box:hover {
+  border-color: var(--color-brand-500, #247a61);
+  background: var(--color-brand-50, #edf7f2);
+}
+
+/* ==========================================================================
+   6. Dispute Arbitration & Double-Entry Ledger Preview
+   ========================================================================== */
+
+.dispute-ledger-card {
+  background: var(--color-surface, #ffffff);
+  border: 1.5px solid var(--color-danger-300, #fca5a5);
+  border-radius: var(--radius-lg, 14px);
+  padding: 22px;
+  box-shadow: 0 4px 20px rgba(220, 38, 38, 0.06);
+}
+
+.dispute-breakdown-box {
+  background: var(--color-neutral-50, #f8fafc);
+  border: 1px solid var(--color-border-subtle, #e2e8f0);
+  border-radius: var(--radius-md, 10px);
+  padding: 16px;
+  margin: 14px 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+}
+
+.dispute-decision-option {
+  border: 1.5px solid var(--color-border-subtle, #e2e8f0);
+  border-radius: var(--radius-md, 10px);
+  padding: 14px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  background: var(--color-surface, #ffffff);
+}
+
+.dispute-decision-option:hover {
+  border-color: var(--color-brand-400, #56a582);
+  background: var(--color-brand-50, #edf7f2);
+}
+
+.dispute-decision-option.selected {
+  border-color: var(--color-brand-600, #174d3d);
+  background: var(--color-brand-50, #edf7f2);
+  box-shadow: 0 0 0 2px var(--color-brand-600, #174d3d);
+}
+
+.dispute-calc-live {
+  background: var(--color-brand-50, #edf7f2);
+  border: 1px solid var(--color-brand-200, #b7decb);
+  border-radius: var(--radius-md, 8px);
+  padding: 14px;
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  text-align: center;
+}
+
+/* ==========================================================================
+   7. CEFT Payouts & Manifest
+   ========================================================================== */
+
+.payout-manifest-card {
+  background: var(--color-surface, #ffffff);
+  border: 1.5px solid var(--color-brand-400, #56a582);
+  border-radius: var(--radius-lg, 14px);
+  padding: 22px;
+}
+
+.payout-checksum-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.78rem;
+  background: var(--color-surface-raised, #f1f5f9);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm, 4px);
+  word-break: break-all;
+  color: var(--color-brand-900, #0c2d23);
+  border: 1px solid var(--color-border-subtle, #e2e8f0);
+}
+
+/* ==========================================================================
+   8. Dispatch Radar & Fleet Monitor
+   ========================================================================== */
+
+.dispatch-radar-container {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 18px;
+}
+
+@media (max-width: 1024px) {
+  .dispatch-radar-container {
+    grid-template-columns: 1fr;
+  }
+}
+
+.dispatch-map-svg {
+  width: 100%;
+  height: 380px;
+  background: #0f241d;
+  border-radius: var(--radius-lg, 12px);
+  overflow: hidden;
+  position: relative;
+}
+
+.driver-marker-pulse {
+  animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(1.4); opacity: 0; }
+  100% { transform: scale(0.95); opacity: 0; }
+}
+
+/* ==========================================================================
+   9. Responsive Breakpoints & Mobile Drawer
+   ========================================================================== */
+
+.admin-menu-toggle {
+  display: none;
+  background: none;
+  border: 1px solid var(--color-border-subtle, #e2e8f0);
+  border-radius: var(--radius-md, 8px);
+  padding: 8px;
+  color: var(--color-text, #1e293b);
+  cursor: pointer;
+}
+
+.admin-sidebar-backdrop {
+  display: none;
+}
+
+@media (max-width: 1024px) {
+  .admin-menu-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .admin-sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 100;
+    transform: translateX(-100%);
+    box-shadow: none;
+  }
+
+  .admin-sidebar.open {
+    transform: translateX(0);
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.35);
+  }
+
+  .admin-sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 90;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+  }
+
+  .admin-sidebar-backdrop.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .admin-search-wrapper {
+    width: 200px;
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-topbar {
+    padding: 0 16px;
+  }
+
+  .admin-page-container {
+    padding: 16px;
+    gap: 16px;
+  }
+
+  .admin-search-wrapper {
+    display: none;
+  }
+
+  .admin-kpi-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .dispute-calc-live {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================================================
+   10. Print Media Styles (@media print)
+   ========================================================================== */
+
+@media print {
+  .admin-sidebar,
+  .admin-topbar,
+  .admin-actions,
+  .no-print,
+  .admin-menu-toggle {
+    display: none !important;
+  }
+
+  .admin-layout {
+    display: block !important;
+    background: #ffffff !important;
+  }
+
+  .admin-canvas {
+    width: 100% !important;
+    padding: 0 !important;
+  }
+
+  .admin-page-container {
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+
+  .payout-manifest-card,
+  .dispute-ledger-card {
+    border: 1px solid #000000 !important;
+    box-shadow: none !important;
+    page-break-inside: avoid;
+  }
+}
