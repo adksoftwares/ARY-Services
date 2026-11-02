@@ -318,9 +318,6 @@ export function registerGroceryRoutes(app, { requireAuth, broadcastEvent, getUse
     const target = existing.find(item => item.id === req.params.id && item.customerId === req.user.id);
     if (!target) return res.status(404).json({ error: 'Order not found.' });
     if (target.status !== 'pending') return res.status(409).json({ error: 'A grocery order can only be cancelled before the shop accepts it.' });
-    if (target.deliveryJobId && !(await cancelGroceryOrderDeliveryJob(target.deliveryJobId))) {
-      return res.status(409).json({ error: 'A delivery driver has already accepted this order. Contact ARY support.' });
-    }
     const order = await mutatePersistentState('grocery_orders', ordersFile, EMPTY_ORDERS, stored => {
       const current = stored.find(item => item.id === req.params.id && item.customerId === req.user.id);
       if (!current || current.status !== 'pending') return null;
@@ -332,6 +329,7 @@ export function registerGroceryRoutes(app, { requireAuth, broadcastEvent, getUse
       return current;
     });
     if (!order) return res.status(409).json({ error: 'The shop has already started processing this order.' });
+    if (order.deliveryJobId) await cancelGroceryOrderDeliveryJob(order.deliveryJobId);
     await mutateProducts(products => {
       for (const line of order.items) {
         const product = products.find(item => item.id === line.productId);
