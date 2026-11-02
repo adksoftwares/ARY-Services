@@ -82,7 +82,7 @@ function ProviderWorkspace() {
 
   const isProvider = currentUser?.accountType === 'provider';
 
-  return <div className="app-shell">
+  return <div className="app-shell provider-app-shell">
     <header className="topbar">
       <Link to="/" className="brand" aria-label="ARY Services Provider home">
         <span className="brand-mark">A</span><span>ARY <b>Provider</b></span>

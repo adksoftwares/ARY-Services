@@ -1035,3 +1035,132 @@ button:disabled{cursor:not-allowed;opacity:.58;transform:none!important;box-shad
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
 }
+
+/* ARY Experience refresh — composed layouts, clearer hierarchy and task-focused surfaces */
+:root{
+ --ary-canvas:#f5f7f4;--ary-panel:#fff;--ary-forest:#174d3d;--ary-forest-2:#103b2f;
+ --ary-ink:#172d25;--ary-muted:#68766d;--ary-border:#e3e9e2;--ary-soft:#edf4ee;
+ --ary-radius:16px;--ary-card-shadow:0 3px 14px rgba(23,49,35,.045);
+ --ary-card-hover:0 16px 34px rgba(23,49,35,.09);
+}
+body{background:var(--ary-canvas)}
+.app-shell{max-width:1520px;padding-inline:clamp(18px,4.8vw,76px)}
+.topbar{position:sticky;top:0;z-index:80;min-height:76px;height:auto;background:rgba(249,250,247,.94);backdrop-filter:blur(16px);border-bottom:1px solid rgba(220,228,219,.9);margin-inline:calc(clamp(18px,4.8vw,76px)*-1);padding:12px clamp(18px,4.8vw,76px)}
+.brand{font-size:18px;letter-spacing:-.8px}
+.brand-mark{width:39px;height:39px;border-radius:13px;box-shadow:0 5px 14px rgba(23,77,61,.16)}
+.header-nav-links{gap:5px}
+.nav-link-btn{border-radius:10px;padding:9px 12px;font-size:12px}
+.nav-link-btn.active{background:#e8f0e9;border-color:#d8e5d9}
+.sign-in,.register-nav-btn,.prompt-sign-in-btn,.modal-submit-btn{border-radius:10px;min-height:42px}
+.user-badge{border-radius:10px;max-width:210px}
+.dashboard{max-width:1320px;margin-inline:auto;padding:48px 0 84px}
+.dashboard-heading{max-width:780px;margin-bottom:26px}
+.dashboard-heading h1{font-size:clamp(36px,4.3vw,54px);letter-spacing:-2.2px;margin:12px 0}
+.dashboard-heading>p{max-width:680px}
+.dashboard-grid{grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:18px}
+.dash-card,.admin-panel,.admin-side{border-radius:var(--ary-radius);border-color:var(--ary-border);box-shadow:var(--ary-card-shadow)}
+.dash-card{padding:25px;min-height:180px}
+.dash-card h3{letter-spacing:-.3px}
+.admin-nav-tabs{position:sticky;top:76px;z-index:30;background:rgba(245,247,244,.95);backdrop-filter:blur(12px);padding:12px 0;margin:20px 0 24px;overflow-x:auto;scrollbar-width:thin}
+.admin-nav-tab{border-radius:10px;padding:10px 14px;white-space:nowrap}
+.admin-stats-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.stat-card{border-radius:14px;box-shadow:var(--ary-card-shadow);min-height:82px}
+.admin-users-toolbar{border-radius:13px;box-shadow:var(--ary-card-shadow)}
+.admin-users-table-container{border:1px solid var(--ary-border);border-radius:14px;background:#fff;box-shadow:var(--ary-card-shadow);overflow:auto}
+.admin-users-table{min-width:860px}
+.admin-users-table th{position:sticky;top:0;background:#f7f9f6;color:#637168;font-size:10px;letter-spacing:.55px;text-transform:uppercase}
+.admin-users-table td{border-bottom:1px solid #edf0eb}
+.admin-users-table tr:hover td{background:#fbfcfa}
+.admin-layout{align-items:start}
+.admin-panel{padding:clamp(18px,2.2vw,28px)}
+/* Customer discovery */
+.customer-app-shell .hero{padding:clamp(48px,6vw,82px) 0;min-height:470px}
+.customer-app-shell .hero-copy{max-width:700px}
+.customer-app-shell .hero-copy h1{font-size:clamp(42px,5vw,68px);line-height:1.04;letter-spacing:-3px}
+.customer-app-shell .search-panel{max-width:760px;min-height:68px;border-radius:15px;padding:9px}
+.customer-app-shell .search-button{min-height:48px;border-radius:11px;padding-inline:22px}
+.customer-app-shell .services-section{padding-block:50px 68px}
+.customer-app-shell .service-grid{grid-template-columns:repeat(auto-fit,minmax(255px,1fr));gap:15px}
+.customer-app-shell .service-card{border-radius:15px;min-height:108px;padding:20px}
+.customer-app-shell .service-icon{width:48px;height:48px;border-radius:14px}
+.providers-section{padding:34px 0 42px;border-top:1px solid var(--ary-border)}
+.providers-header{display:flex;justify-content:space-between;align-items:end;gap:16px;margin-bottom:20px}
+.providers-header h3{font:700 clamp(21px,2.4vw,29px)/1.2 Manrope,sans-serif;letter-spacing:-.8px;margin:9px 0 0;display:flex;align-items:center;gap:10px}
+.providers-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,330px),1fr));gap:16px}
+.provider-card-item{display:flex;flex-direction:column;justify-content:space-between;gap:20px;padding:22px;border:1px solid var(--ary-border);border-radius:16px;background:#fff;box-shadow:var(--ary-card-shadow);transition:transform .2s,box-shadow .2s,border-color .2s}
+.provider-card-item:hover{transform:translateY(-3px);box-shadow:var(--ary-card-hover);border-color:#cbd9cc}
+.provider-card-top{display:flex;justify-content:space-between;gap:12px;align-items:start}
+.provider-name-block>b{font-size:16px;letter-spacing:-.25px;color:var(--ary-ink)}
+.provider-category-tag{display:inline-flex;margin-top:8px;padding:5px 9px;border-radius:7px;background:#f1f4ef;color:#64736a;font-size:10px}
+.verified-provider-badge{display:inline-flex;align-items:center;gap:5px;padding:6px 9px;border-radius:20px;background:#edf5ee;color:#286343;font-size:10px;font-weight:700;white-space:nowrap}
+.provider-meta-row{display:flex;flex-wrap:wrap;gap:9px;margin-top:16px}
+.provider-meta-item{display:flex;align-items:center;gap:6px;color:#69776e;font-size:11px;line-height:1.5}
+.provider-rate{width:100%;padding-top:10px;border-top:1px solid #edf0eb}
+.book-provider-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:44px;border:0;border-radius:10px;background:var(--ary-forest);color:white;font-size:12px;font-weight:700;transition:background .18s,transform .18s}
+.book-provider-btn:hover{background:var(--ary-forest-2);transform:translateY(-1px)}
+.no-providers-box{padding:42px 20px;border:1px dashed #ccd8cd;border-radius:16px;background:#fbfcfa;text-align:center;color:#65736a}
+/* Provider workspace */
+.dashboard .bookings-feed{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,390px),1fr));gap:15px}
+.booking-card-item{border:1px solid var(--ary-border)!important;border-radius:15px!important;padding:20px!important;background:#fff;box-shadow:var(--ary-card-shadow);margin:0!important}
+.booking-card-header{gap:12px}
+.booking-service-title{font-size:15px;letter-spacing:-.25px}
+.booking-details-grid{gap:10px}
+.booking-action-btn{border-radius:9px!important;min-height:38px;padding:9px 13px!important;font-size:11px!important}
+.booking-actions-row{gap:8px}
+.urgent-alert-banner{border-radius:14px!important;box-shadow:none!important}
+.sound-alerts-toggle-btn,.refresh-users-btn{border-radius:9px!important;min-height:38px}
+.provider-services-manager{max-width:1320px!important;margin:24px auto!important;padding:24px!important;border:1px solid var(--ary-border)!important;border-radius:16px!important;box-shadow:var(--ary-card-shadow)}
+.provider-services-manager h2{font:700 21px/1.25 Manrope,sans-serif!important;letter-spacing:-.6px}
+.provider-services-manager input,.provider-services-manager select,.provider-services-manager textarea{border:1px solid #dfe6de!important;border-radius:9px!important;padding:11px 12px!important;background:#fff}
+/* Driver task workspace */
+.driver-workspace{max-width:1180px!important;margin:42px auto!important;padding:0 18px 70px!important}
+.driver-workspace>h1{font-size:clamp(38px,4vw,52px)!important;letter-spacing:-2px!important;margin:10px 0 24px!important}
+.driver-workspace>section{border:1px solid var(--ary-border)!important;border-radius:16px!important;box-shadow:var(--ary-card-shadow)!important;padding:22px!important}
+.driver-workspace article{border:1px solid var(--ary-border)!important;border-radius:15px!important;padding:20px!important;box-shadow:var(--ary-card-shadow);transition:box-shadow .18s,border-color .18s}
+.driver-workspace article:hover{border-color:#cbd9cc!important;box-shadow:var(--ary-card-hover)}
+.driver-workspace button{border-radius:10px!important;min-height:39px}
+.driver-workspace input[type=checkbox]{accent-color:var(--ary-forest);width:16px;height:16px}
+.driver-workspace .status-pill{border-radius:20px;padding:7px 11px}
+/* Grocery storefront and cart */
+.grocery-marketplace{padding:34px 0 58px!important}
+.grocery-marketplace h2{font:750 clamp(27px,3vw,36px)/1.15 Manrope,sans-serif!important;letter-spacing:-1.1px!important;color:var(--ary-ink)}
+.grocery-marketplace>div:first-child{padding:24px 26px;background:#edf3ec;border:1px solid #e0e9df;border-radius:17px}
+.grocery-marketplace>div:nth-of-type(3){background:#fff;border-color:var(--ary-border)!important;border-radius:12px!important}
+.grocery-marketplace article.product-card{padding:15px!important;border:1px solid var(--ary-border)!important;border-radius:15px!important;box-shadow:var(--ary-card-shadow);transition:transform .18s,box-shadow .18s}
+.grocery-marketplace article.product-card:hover{transform:translateY(-3px);box-shadow:var(--ary-card-hover)}
+.grocery-marketplace article.product-card>div:first-child{height:130px!important;border-radius:11px!important;background:#f1f5ef!important}
+.grocery-marketplace article.product-card h3{font-size:15px!important;letter-spacing:-.25px}
+.grocery-marketplace button{transition:background .18s,border-color .18s,transform .18s}
+.grocery-marketplace button:not(:disabled):hover{transform:translateY(-1px)}
+.grocery-marketplace .grocery-cart{background:#f0f5ef!important;border:1px solid #dce7db!important;border-radius:16px!important;padding:22px!important}
+.grocery-marketplace input{min-height:40px}
+.grocery-marketplace label{color:#45574b}
+.grocery-marketplace .grocery-cart button[type=submit]{min-height:48px;border-radius:10px!important}
+/* Auth screens, forms and shared interaction states */
+.modal-card{border-radius:18px;box-shadow:0 28px 80px rgba(13,34,23,.24)}
+.modal-form input,.modal-form select,.modal-form textarea{min-height:43px;border-radius:10px}
+input,select,textarea{accent-color:var(--ary-forest)}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid rgba(35,105,69,.23);outline-offset:2px}
+button:disabled{opacity:.58;cursor:not-allowed}
+table{font-variant-numeric:tabular-nums}
+@media(max-width:900px){
+ .app-shell{padding-inline:22px}.topbar{margin-inline:-22px;padding-inline:22px}
+ .admin-nav-tabs{top:70px}.admin-stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .customer-app-shell .hero{grid-template-columns:1fr}.customer-app-shell .hero-art{max-width:620px;width:100%;margin-inline:auto}
+}
+@media(max-width:620px){
+ .app-shell{padding-inline:16px}.topbar{margin-inline:-16px;padding:12px 16px;gap:10px}
+ .topbar .header-nav-links{order:5;width:100%;overflow-x:auto;justify-content:flex-start;flex-wrap:nowrap}
+ .topbar .nav-link-btn{flex:0 0 auto}
+ .user-profile{flex-wrap:wrap;justify-content:flex-end}
+ .dashboard{padding:32px 0 60px}.dashboard-heading h1{font-size:36px}
+ .admin-nav-tabs{top:66px;margin:12px 0 18px}.admin-nav-tab{padding:9px 11px;font-size:11px}
+ .admin-stats-grid{gap:9px}.stat-card{padding:13px;gap:9px}.stat-count{font-size:21px}
+ .providers-header{align-items:start;flex-direction:column}.provider-card-item{padding:17px}
+ .driver-workspace{margin:26px auto!important;padding-inline:0!important}
+ .driver-workspace>section{padding:16px!important}
+ .grocery-marketplace>div:first-child{padding:18px}
+ .grocery-marketplace article.product-card>div:first-child{height:100px!important}
+ .provider-services-manager{padding:16px!important;margin:16px auto!important}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}}

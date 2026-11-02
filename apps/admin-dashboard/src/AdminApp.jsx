@@ -58,7 +58,7 @@ function AdminPortal() {
     return subscribeToAppEvents(currentUser?.token, { 'driver:application_created': refresh, 'driver:application_reviewed': refresh, 'user:registered': refresh, 'user:status_changed': refresh });
   }, [isAdmin, fetchAdminUsers]);
 
-  return <div className="app-shell">
+  return <div className="app-shell admin-app-shell">
     <header className="topbar">
       <Link to="/" className="brand" aria-label="ARY Services Admin home">
         <span className="brand-mark">A</span><span>ARY <b>Admin</b></span>
