@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Link, useNavigate } from 'react-router-dom';
-import { Bike, LogIn, LogOut, ShieldCheck, UserRound } from 'lucide-react';
+import { Bike, LogIn, LogOut, ShieldCheck, UserRound, ArrowLeftRight, Sun } from 'lucide-react';
 import { AuthProvider, useAuth } from '../../context/AuthContext';
 import { API_BASE } from '../../config';
 import { subscribeToAppEvents } from '../../utils/events';
@@ -8,6 +8,7 @@ import DriverWorkspace from '../../components/driver/DriverWorkspace';
 import AuthModal from '../../components/common/AuthModal';
 import Footer from '../../components/common/Footer';
 import NotificationCenter from '../../components/common/NotificationCenter';
+import { ThemeToggle, Button } from '../../design-system';
 
 function DriverPortal() {
   const { currentUser, openAuthModal, logout, switchRole } = useAuth();
@@ -17,42 +18,123 @@ function DriverPortal() {
 
   useEffect(() => {
     if (!isDriver) return undefined;
-    const notify = () => setNotice('Your driver activity has changed. Refresh the job list for the latest details.');
-    return subscribeToAppEvents(currentUser?.token, { 'driver:job_created': notify, 'driver:job_updated': notify, 'driver:application_reviewed': notify });
-  }, [isDriver, currentUser?.id]);
+    const notify = () => setNotice('Your driver dispatch activity has changed. Refresh the job list for the latest details.');
+    return subscribeToAppEvents(currentUser?.token, {
+      'driver:job_created': notify,
+      'driver:job_updated': notify,
+      'driver:application_reviewed': notify
+    });
+  }, [isDriver, currentUser?.token]);
 
-  return <div className="app-shell">
-    <header className="topbar">
-      <Link to="/" className="brand" aria-label="ARY Services Driver home">
-        <span className="brand-mark">A</span><span>ARY <b>Driver</b></span>
-      </Link>
-      <nav className="header-nav-links">
-        <span className="nav-link-btn"><Bike size={14}/> Driver workspace</span>
-      </nav>
-      {isDriver ? <div className="user-profile">
-        <NotificationCenter/>
-        <span className="user-badge"><UserRound size={14}/><span>{currentUser.fullName}</span></span>
-        {(currentUser.roles || []).includes('customer') && <button className="sign-in" onClick={async () => { try { await switchRole('customer'); window.location.href = '/'; } catch (error) { setNotice(error.message); } }}>Customer app</button>}
-        <button className="sign-out-btn" onClick={() => { logout(); navigate('/'); }}><LogOut size={14}/> Sign out</button>
-      </div> : <button className="sign-in" onClick={() => openAuthModal('login')}><LogIn size={14}/> Driver sign in</button>}
-    </header>
+  return (
+    <div className="app-shell">
+      <header className="topbar">
+        <Link to="/" className="brand" aria-label="ARY Services Driver home">
+          <span className="brand-mark">A</span><span>ARY <b>Driver</b></span>
+        </Link>
+        <nav className="header-nav-links">
+          <span className="nav-link-btn"><Bike size={14}/> Driver workspace</span>
+        </nav>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <ThemeToggle />
+          {isDriver ? (
+            <div className="user-profile">
+              <NotificationCenter/>
+              <span className="user-badge"><UserRound size={14}/><span>{currentUser.fullName}</span></span>
+              {(currentUser.roles || []).includes('customer') && (
+                <button
+                  type="button"
+                  className="sign-in"
+                  onClick={async () => {
+                    try {
+                      await switchRole('customer');
+                      window.location.href = '/';
+                    } catch (error) {
+                      setNotice(error.message);
+                    }
+                  }}
+                  title="Switch to Customer Mode"
+                >
+                  <ArrowLeftRight size={13} style={{ marginRight: 4 }} /> Customer app
+                </button>
+              )}
+              <button
+                type="button"
+                className="sign-out-btn"
+                onClick={() => { logout(); navigate('/'); }}
+                aria-label="Sign out"
+              >
+                <LogOut size={14}/> Sign out
+              </button>
+            </div>
+          ) : (
+            <button className="sign-in" onClick={() => openAuthModal('login')}><LogIn size={14}/> Driver sign in</button>
+          )}
+        </div>
+      </header>
 
-    {isDriver ? <DriverWorkspace onNotice={setNotice}/> : <main style={{maxWidth:900,margin:'56px auto',padding:'0 20px',minHeight:'48vh'}}>
-      <section style={{background:'#fff',border:'1px solid #e5ebe2',borderRadius:18,padding:'32px',textAlign:'center',boxShadow:'0 12px 36px rgba(20,45,32,.06)'}}>
-        <div style={{width:54,height:54,borderRadius:16,background:'#edf7ef',color:'#174d3d',display:'grid',placeItems:'center',margin:'0 auto 16px'}}><ShieldCheck size={26}/></div>
-        <p className="eyebrow">ARY DRIVER NETWORK</p>
-        <h1 style={{color:'#173b2f',margin:'8px 0'}}>Every journey, connected.</h1>
-        <p style={{color:'#647368',maxWidth:560,margin:'0 auto 22px',lineHeight:1.7}}>Sign in with your Driver account to apply for approved service networks, view eligible jobs and update ride or delivery progress. Admin approval is required before accepting jobs.</p>
-        <button className="register-nav-btn" onClick={() => openAuthModal('login')}><LogIn size={15}/> Sign in to continue</button>
-      </section>
-    </main>}
+      {isDriver ? (
+        <DriverWorkspace onNotice={setNotice}/>
+      ) : (
+        <main style={{ maxWidth: 840, margin: '56px auto', padding: '0 20px', minHeight: '52vh' }}>
+          <section style={{
+            background: 'var(--color-surface, #fff)',
+            border: '1px solid var(--color-border-subtle, #e5ebe2)',
+            borderRadius: 'var(--radius-xl, 20px)',
+            padding: '40px 32px',
+            textAlign: 'center',
+            boxShadow: 'var(--shadow-md, 0 12px 36px rgba(20,45,32,.06))'
+          }}>
+            <div style={{
+              width: 58,
+              height: 58,
+              borderRadius: 'var(--radius-lg, 16px)',
+              background: 'var(--color-brand-50, #edf7ef)',
+              color: 'var(--color-brand-600, #174d3d)',
+              display: 'grid',
+              placeItems: 'center',
+              margin: '0 auto 18px'
+            }}>
+              <ShieldCheck size={30}/>
+            </div>
+            <p className="eyebrow" style={{ color: 'var(--color-brand-700, #174d3d)', fontWeight: 700, letterSpacing: '0.05em' }}>
+              ARY DRIVER NETWORK
+            </p>
+            <h1 style={{ color: 'var(--color-brand-900, #173b2f)', margin: '8px 0 12px', fontSize: '1.9rem' }}>
+              Every journey, connected.
+            </h1>
+            <p style={{ color: 'var(--color-neutral-600, #647368)', maxWidth: 540, margin: '0 auto 24px', lineHeight: 1.7, fontSize: '0.95rem' }}>
+              Sign in with your Driver account to receive nearby ride and delivery requests, enter secure handoff PINs, and track your daily earnings across Sri Lanka.
+            </p>
+            <Button
+              variant="primary"
+              size="lg"
+              onClick={() => openAuthModal('login')}
+            >
+              <LogIn size={16}/> Sign in to Driver Workspace
+            </Button>
+          </section>
+        </main>
+      )}
 
-    <AuthModal onNotice={setNotice}/>
-    {notice && <div className="toast" role="status">{notice}<button onClick={() => setNotice('')} aria-label="Dismiss">×</button></div>}
-    <Footer/>
-  </div>;
+      <AuthModal onNotice={setNotice}/>
+      {notice && (
+        <div className="toast" role="status">
+          {notice}
+          <button onClick={() => setNotice('')} aria-label="Dismiss">×</button>
+        </div>
+      )}
+      <Footer/>
+    </div>
+  );
 }
 
 export default function DriverApp() {
-  return <AuthProvider><BrowserRouter><DriverPortal/></BrowserRouter></AuthProvider>;
+  return (
+    <AuthProvider>
+      <BrowserRouter>
+        <DriverPortal/>
+      </BrowserRouter>
+    </AuthProvider>
+  );
 }
