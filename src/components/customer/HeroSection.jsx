@@ -8,10 +8,18 @@ import {
   ShieldCheck,
   CheckCircle2,
   Wrench,
-  ShoppingBasket
+  ShoppingBag,
+  Zap,
+  Utensils,
+  Package,
+  Car,
+  Star,
+  Clock,
+  Sparkles
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { fetchCurrentLocationAddress, getLastDetectedCoordinates } from '../../utils/location';
+import { Button } from '../../design-system';
 
 export default function HeroSection({
   address,
@@ -42,45 +50,63 @@ export default function HeroSection({
     }
   }
 
+  const QUICK_CHIPS = [
+    { label: 'Electrical Repair', icon: Zap, query: 'electrical' },
+    { label: 'Plumbing', icon: Wrench, query: 'plumbing' },
+    { label: 'Grocery Products', icon: ShoppingBag, query: 'grocery' },
+    { label: 'Food Delivery', icon: Utensils, query: 'food' },
+    { label: 'Parcel Courier', icon: Package, query: 'parcel' },
+    { label: 'Ride Trip', icon: Car, query: 'ride' }
+  ];
+
   return (
     <section className="hero">
       <div className="hero-copy">
-        <span className="eyebrow">
-          <span className="live-dot" /> LOCAL SERVICES, MADE SIMPLE
-        </span>
+        <div className="hero-badge-pill">
+          <Sparkles size={13} className="hero-badge-icon" />
+          <span>SRI LANKA'S TRUSTED SERVICE & MOBILITY NETWORK</span>
+        </div>
+
         <h1>
           Good help is<br />
           <em>closer than you think.</em>
         </h1>
-        <p>Discover local shops and trusted service providers for the things that matter every day.</p>
+        <p>Discover local shops, verified tradespeople, rides, and reliable delivery across Sri Lanka.</p>
 
         <div className="search-panel">
           <label className="search-field">
-            <MapPin size={19} />
+            <MapPin size={18} className="search-field-icon" />
             <input
               value={address}
               onChange={e => setAddress(e.target.value)}
-              placeholder="Enter your area or address"
+              placeholder="Your area (e.g. Colombo 03)"
+              aria-label="Your location or area"
             />
             <button
               type="button"
               className="search-locate-btn"
               onClick={handleDetectLocation}
               disabled={isLocating}
-              title="Use current location"
+              title="Use current GPS location"
+              aria-label="Detect my current location"
             >
-              <Navigation size={14} className={isLocating ? 'spin' : ''} />
+              <Navigation size={15} className={isLocating ? 'spin' : ''} />
             </button>
           </label>
+
           <label className="search-field service-search">
-            <Search size={19} />
+            <Search size={18} className="search-field-icon" />
             <input
               value={query}
               onChange={e => setQuery(e.target.value)}
               placeholder="What service do you need?"
+              aria-label="Service or shop keyword"
             />
           </label>
-          <button
+
+          <Button
+            variant="primary"
+            size="md"
             className="search-button"
             onClick={() => {
               if (onSearch) onSearch();
@@ -88,40 +114,37 @@ export default function HeroSection({
             }}
           >
             Find services
-          </button>
+          </Button>
         </div>
 
-        {/* Quick Discovery Chips */}
-        <div className="hero-quick-chips">
+        {/* Quick Discovery Chips with Lucide Icons */}
+        <div className="hero-quick-chips" role="group" aria-label="Quick Category Filters">
           <span className="quick-chips-label">Popular:</span>
-          {[
-            { label: 'Electrical Repair', icon: '⚡', query: 'electrical' },
-            { label: 'Plumbing', icon: '🔧', query: 'plumbing' },
-            { label: 'Grocery Products', icon: '🛒', query: 'grocery' },
-            { label: 'Food Delivery', icon: '🍲', query: 'food' },
-            { label: 'Parcel Courier', icon: '📦', query: 'parcel' },
-            { label: 'Ride Trip', icon: '🚗', query: 'ride' }
-          ].map(chip => (
-            <button
-              key={chip.label}
-              type="button"
-              className={`quick-chip-btn ${query.toLowerCase().includes(chip.query) ? 'active' : ''}`}
-              onClick={() => {
-                setQuery(chip.label);
-                if (chip.query === 'parcel' || chip.query === 'ride' || chip.query === 'food') {
-                  const mobEl = document.getElementById('mobility-services') || document.getElementById('mobility-section');
-                  if (mobEl) mobEl.scrollIntoView({ behavior: 'smooth' });
-                } else {
-                  const srvEl = document.querySelector('.services-section');
-                  if (srvEl) srvEl.scrollIntoView({ behavior: 'smooth' });
-                }
-                if (onSearch) onSearch();
-              }}
-            >
-              <span className="chip-icon">{chip.icon}</span>
-              <span>{chip.label}</span>
-            </button>
-          ))}
+          {QUICK_CHIPS.map(chip => {
+            const Icon = chip.icon;
+            const isActive = query.toLowerCase().includes(chip.query);
+            return (
+              <button
+                key={chip.label}
+                type="button"
+                className={`quick-chip-btn ${isActive ? 'active' : ''}`}
+                onClick={() => {
+                  setQuery(chip.label);
+                  if (['parcel', 'ride', 'food'].includes(chip.query)) {
+                    const mobEl = document.getElementById('mobility-services') || document.getElementById('mobility-section');
+                    if (mobEl) mobEl.scrollIntoView({ behavior: 'smooth' });
+                  } else {
+                    const srvEl = document.querySelector('.services-section');
+                    if (srvEl) srvEl.scrollIntoView({ behavior: 'smooth' });
+                  }
+                  if (onSearch) onSearch();
+                }}
+              >
+                <Icon size={14} className="chip-icon" />
+                <span>{chip.label}</span>
+              </button>
+            );
+          })}
         </div>
 
         {!isCustomerLoggedIn && (
@@ -129,59 +152,74 @@ export default function HeroSection({
             <div className="sign-in-prompt-info">
               <span className="prompt-icon-badge"><Lock size={18} /></span>
               <div>
-                <b>Instant 1-Click Booking Available</b>
-                <small>Explore services freely. Sign in with Phone & Password when you are ready to book or order.</small>
+                <b>Direct Sign In & Instant Booking</b>
+                <small>Explore freely. Sign in with Phone & Password to confirm bookings and track drivers in real time.</small>
               </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              <button className="prompt-sign-in-btn" onClick={() => openAuthModal('login')}>
-                Sign in <ArrowRight size={15} />
-              </button>
-              <button
-                type="button"
-                className="prompt-register-btn"
+            <div className="sign-in-prompt-actions">
+              <Button
+                variant="primary"
+                size="sm"
+                iconRight={ArrowRight}
+                onClick={() => openAuthModal('login')}
+              >
+                Sign in
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={() => openAuthModal('register')}
-                style={{
-                  background: '#f0fdf4',
-                  color: '#166534',
-                  border: '1px solid #bbf7d0',
-                  borderRadius: '9px',
-                  padding: '9px 14px',
-                  fontSize: '12px',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '5px',
-                  whiteSpace: 'nowrap'
-                }}
               >
                 Join ARY
-              </button>
+              </Button>
             </div>
           </div>
         )}
 
         <div className="trust-row">
-          <span><ShieldCheck size={17} /> Provider approval process</span>
-          <span><CheckCircle2 size={17} /> Clear service details</span>
+          <span><ShieldCheck size={16} /> 100% Verified Sri Lankan Providers</span>
+          <span><Clock size={16} /> 14-Day Service Guarantee</span>
+          <span><CheckCircle2 size={16} /> Secure PIN Handoff</span>
         </div>
       </div>
 
-      <div className="hero-art" aria-hidden="true">
-        <div className="art-circle circle-one" />
-        <div className="art-circle circle-two" />
-        <div className="art-card card-top">
-          <span className="mini-icon green"><Wrench size={22} /></span>
-          <span><b>Home repairs</b><small>Find local professionals</small></span>
-          <CheckCircle2 className="art-check" size={18} />
+      {/* Refined Trust Showcase Card instead of giant monogram */}
+      <div className="hero-visual-card" aria-hidden="true">
+        <div className="hero-showcase-card">
+          <div className="hero-showcase-header">
+            <div className="hero-provider-avatar">
+              <Wrench size={20} />
+            </div>
+            <div className="hero-provider-info">
+              <div className="hero-provider-name">Verified Electrical & Plumbing</div>
+              <div className="hero-provider-meta">
+                <span className="hero-rating"><Star size={13} fill="currentColor" /> 4.9 (120+ reviews)</span>
+                <span className="hero-dot-separator">•</span>
+                <span className="hero-avail">Available Today</span>
+              </div>
+            </div>
+            <span className="hero-verified-badge"><ShieldCheck size={14} /> Verified</span>
+          </div>
+
+          <div className="hero-showcase-middle">
+            <div className="hero-stat-pill">
+              <span className="stat-label">Starting at</span>
+              <span className="stat-val">LKR 1,800</span>
+            </div>
+            <div className="hero-stat-pill">
+              <span className="stat-label">Avg Arrival</span>
+              <span className="stat-val">30 mins</span>
+            </div>
+            <div className="hero-stat-pill">
+              <span className="stat-label">Warranty</span>
+              <span className="stat-val">14 Days</span>
+            </div>
+          </div>
+
+          <div className="hero-showcase-footer">
+            <span className="hero-pin-note"><Lock size={13} /> Driver & delivery protected with 4-digit PIN handoff</span>
+          </div>
         </div>
-        <div className="art-card card-bottom">
-          <span className="mini-icon orange"><ShoppingBasket size={22} /></span>
-          <span><b>Local food shops</b><small>Explore shops around you</small></span>
-        </div>
-        <div className="art-monogram">A<span>.</span></div>
-        <span className="float-star">✳</span>
       </div>
     </section>
   );

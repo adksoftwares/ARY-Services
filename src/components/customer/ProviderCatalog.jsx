@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   ShieldCheck,
   RefreshCw,
@@ -8,18 +8,25 @@ import {
   Calendar,
   Users,
   Briefcase,
-  Navigation
+  Navigation,
+  SlidersHorizontal,
+  ArrowUpDown,
+  Clock,
+  Sparkles
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { Button, Badge, Avatar, Skeleton, EmptyState } from '../../design-system';
 
 export default function ProviderCatalog({
   selectedCategory,
-  providers,
+  providers = [],
   isLoading,
   onRefresh,
   onBookProvider
 }) {
   const { openAuthModal } = useAuth();
+  const [sortBy, setSortBy] = useState('recommended'); // 'recommended' | 'rating' | 'price'
+  const [minRating, setMinRating] = useState(0);
 
   // If no category selected, no search results and not loading, keep catalog hidden
   if (!selectedCategory && providers.length === 0 && !isLoading) {
@@ -30,146 +37,193 @@ export default function ProviderCatalog({
     ? `Available Providers for ${selectedCategory.name}`
     : `Matching Verified Providers (${providers.length})`;
 
+  // Sort and filter logic
+  const filteredProviders = useMemo(() => {
+    let list = [...providers];
+
+    if (minRating > 0) {
+      list = list.filter(p => (Number(p.rating) || 5) >= minRating);
+    }
+
+    if (sortBy === 'rating') {
+      list.sort((a, b) => (Number(b.rating) || 0) - (Number(a.rating) || 0));
+    } else if (sortBy === 'price') {
+      const getNum = (str) => Number(String(str || '').replace(/[^\d]/g, '')) || 99999;
+      list.sort((a, b) => getNum(a.baseCharge) - getNum(b.baseCharge));
+    } else if (sortBy === 'distance') {
+      list.sort((a, b) => (Number(a.distanceKm) || 99) - (Number(b.distanceKm) || 99));
+    }
+
+    return list;
+  }, [providers, sortBy, minRating]);
+
   return (
     <>
       <section className="providers-section" id="providers-catalog">
         <div className="providers-header">
           <div>
-            <span className="eyebrow">VERIFIED CONTRACTORS</span>
+            <div className="eyebrow">
+              <span className="live-dot" /> VERIFIED CONTRACTORS
+            </div>
             <h3>
-              <ShieldCheck size={22} color="#166534" />
+              <ShieldCheck size={22} className="provider-heading-icon" />
               {catalogTitle}
             </h3>
           </div>
-          <button
-            type="button"
-            className="locate-inline-btn"
-            onClick={onRefresh}
-            disabled={isLoading}
-          >
-            <RefreshCw size={13} className={isLoading ? 'spin' : ''} />
-            {isLoading ? 'Loading...' : 'Refresh List'}
-          </button>
+
+          <div className="providers-header-actions">
+            <Button
+              variant="outline"
+              size="sm"
+              icon={RefreshCw}
+              onClick={onRefresh}
+              loading={isLoading}
+            >
+              Refresh
+            </Button>
+          </div>
         </div>
 
-        {providers.some(p => p.distanceKm !== null && p.distanceKm !== undefined) && (
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 6,
-            fontSize: '0.78rem',
-            color: '#065f46',
-            background: '#ecfdf5',
-            border: '1px solid #a7f3d0',
-            padding: '4px 12px',
-            borderRadius: 20,
-            marginBottom: 16
-          }}>
-            <Navigation size={12} color="#059669" />
-            <span><b>Geofence Active:</b> Showing verified contractors within 25 km service boundary</span>
+        {/* Filter & Sort Bar */}
+        <div className="catalog-toolbar">
+          <div className="catalog-filter-group">
+            <SlidersHorizontal size={15} className="catalog-toolbar-icon" />
+            <span className="catalog-filter-label">Filter:</span>
+            <button
+              type="button"
+              className={`catalog-pill-btn ${minRating === 0 ? 'active' : ''}`}
+              onClick={() => setMinRating(0)}
+            >
+              All
+            </button>
+            <button
+              type="button"
+              className={`catalog-pill-btn ${minRating === 4.5 ? 'active' : ''}`}
+              onClick={() => setMinRating(minRating === 4.5 ? 0 : 4.5)}
+            >
+              <Star size={13} fill="currentColor" /> 4.5+ Rated
+            </button>
+          </div>
+
+          <div className="catalog-sort-group">
+            <ArrowUpDown size={15} className="catalog-toolbar-icon" />
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="catalog-sort-select"
+              aria-label="Sort providers"
+            >
+              <option value="recommended">Sort: Recommended</option>
+              <option value="rating">Sort: Highest Rating</option>
+              <option value="price">Sort: Lowest Starting Rate</option>
+              <option value="distance">Sort: Nearest Distance</option>
+            </select>
+          </div>
+        </div>
+
+        {providers.some(p => p.distanceKm != null) && (
+          <div className="geofence-banner">
+            <Navigation size={13} className="geofence-icon" />
+            <span><b>Geofence Active:</b> Verified contractors serving your detected 25 km boundary</span>
           </div>
         )}
 
         {isLoading ? (
-          <div style={{ textAlign: 'center', padding: '30px', color: '#68776d' }}>
-            <RefreshCw size={24} className="spin" style={{ margin: '0 auto 10px', display: 'block' }} />
-            Loading verified service providers...
-          </div>
-        ) : providers.length > 0 ? (
           <div className="providers-grid">
-            {providers.map(provider => {
-              const selectedService = provider.approvedServices?.find(service => service.categorySlug === selectedCategory?.slug);
-              return <div key={provider.id} className="provider-card-item">
-                <div>
-                  <div className="provider-card-top">
-                    <div className="provider-name-block">
-                      <b>{provider.fullName}</b>
-                      <span className="provider-category-tag">
-                        {selectedService?.serviceName || provider.categoryName || selectedCategory?.name || 'General Services'}
-                      </span>
-                    </div>
-                    <span className="verified-provider-badge">
-                      <CheckCircle2 size={12} /> Verified
-                    </span>
-                  </div>
-
-                  <div className="provider-meta-row">
-                    <div className="provider-meta-item">
-                      <MapPin size={14} color="#52705e" />
-                      <span>{provider.location || 'Local Area'}</span>
-                    </div>
-                    {provider.distanceKm !== undefined && provider.distanceKm !== null && (
-                      <div className="provider-meta-item" style={{
-                        color: '#047857',
-                        fontWeight: 600,
-                        background: '#ecfdf5',
-                        padding: '2px 8px',
-                        borderRadius: 6,
-                        border: '1px solid #a7f3d0'
-                      }}>
-                        <Navigation size={12} color="#059669" />
-                        <span>📍 {provider.distanceKm} km away · ~{provider.etaMinutes} mins arrival</span>
-                      </div>
-                    )}
-                    <div className="provider-meta-item">
-                      <Star size={14} color="#d97706" fill="#d97706" />
-                      <span>
-                        ⭐ {provider.rating ? Number(provider.rating).toFixed(1) : '5.0'} ({provider.reviewCount ?? 0} reviews) · {provider.experienceYears || 3} yrs exp
-                      </span>
-                    </div>
-                    <div className="provider-meta-item provider-rate">
-                      <span>Starting from: <b>{selectedService?.baseCharge ? 'LKR '+Number(selectedService.baseCharge).toLocaleString('en-LK') : provider.baseCharge || 'LKR 1,500'}</b></span>
-                    </div>
-                  </div>
-
-                  <div style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    padding: '4px 10px',
-                    background: '#f0fdf4',
-                    border: '1px solid #bbf7d0',
-                    borderRadius: 6,
-                    fontSize: '0.78rem',
-                    color: '#166534',
-                    fontWeight: 600,
-                    margin: '8px 0 10px'
-                  }}>
-                    <ShieldCheck size={14} color="#16a34a" />
-                    <span>🛡️ 14-Day ARY Workmanship Guarantee</span>
+            {[1, 2, 3].map(n => (
+              <div key={n} className="provider-card-item skeleton-card">
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                  <Skeleton variant="circle" width="48px" height="48px" />
+                  <div style={{ flex: 1 }}>
+                    <Skeleton width="60%" height="18px" style={{ marginBottom: '6px' }} />
+                    <Skeleton width="40%" height="14px" />
                   </div>
                 </div>
+                <Skeleton width="100%" height="60px" style={{ margin: '14px 0' }} />
+                <Skeleton width="100%" height="40px" />
+              </div>
+            ))}
+          </div>
+        ) : filteredProviders.length > 0 ? (
+          <div className="providers-grid">
+            {filteredProviders.map(provider => {
+              const selectedService = provider.approvedServices?.find(
+                service => service.categorySlug === selectedCategory?.slug
+              );
+              const serviceTitle = selectedService?.serviceName || provider.categoryName || selectedCategory?.name || 'General Services';
+              const startingPrice = selectedService?.baseCharge
+                ? `LKR ${Number(selectedService.baseCharge).toLocaleString('en-LK')}`
+                : provider.baseCharge || 'LKR 1,500';
 
-                <button
-                  type="button"
-                  className="book-provider-btn"
-                  onClick={() => onBookProvider(provider)}
-                >
-                  <Calendar size={15} /> Book Service / Request Quote
-                </button>
-              </div>;
+              return (
+                <div key={provider.id} className="provider-card-item">
+                  <div className="provider-card-body">
+                    <div className="provider-card-top">
+                      <div className="provider-avatar-wrap">
+                        <Avatar name={provider.fullName} size="md" isOnline={true} />
+                        <div className="provider-name-block">
+                          <b className="provider-name">{provider.fullName}</b>
+                          <span className="provider-category-tag">{serviceTitle}</span>
+                        </div>
+                      </div>
+                      <Badge variant="success" dot={false} className="verified-badge">
+                        <CheckCircle2 size={13} /> Verified
+                      </Badge>
+                    </div>
+
+                    <div className="provider-meta-row">
+                      <div className="provider-meta-item">
+                        <MapPin size={14} className="meta-icon" />
+                        <span>{provider.location || 'Local Area'}</span>
+                      </div>
+
+                      {provider.distanceKm != null && (
+                        <div className="provider-meta-item distance-badge">
+                          <Navigation size={13} />
+                          <span>{provider.distanceKm} km away · ~{provider.etaMinutes || 25} mins</span>
+                        </div>
+                      )}
+
+                      <div className="provider-meta-item">
+                        <Star size={14} className="meta-star" fill="currentColor" />
+                        <span>
+                          <b>{provider.rating ? Number(provider.rating).toFixed(1) : '5.0'}</b> ({provider.reviewCount ?? 0} reviews) · {provider.experienceYears || 3} yrs exp
+                        </span>
+                      </div>
+
+                      <div className="provider-meta-item provider-rate">
+                        <span>Starting from: <b>{startingPrice}</b></span>
+                      </div>
+                    </div>
+
+                    <div className="warranty-guarantee-badge">
+                      <ShieldCheck size={14} />
+                      <span>14-Day ARY Workmanship Guarantee</span>
+                    </div>
+                  </div>
+
+                  <Button
+                    variant="primary"
+                    size="md"
+                    fullWidth={true}
+                    icon={Calendar}
+                    className="book-provider-btn"
+                    onClick={() => onBookProvider(provider)}
+                  >
+                    Book Service / Request Quote
+                  </Button>
+                </div>
+              );
             })}
           </div>
         ) : (
-          <div className="no-providers-box">
-            <Users size={32} style={{ margin: '0 auto 10px', opacity: 0.5 }} />
-            <b>
-              {selectedCategory
-                ? `No approved providers listed in ${selectedCategory.name} yet.`
-                : 'No approved service providers match your current search.'}
-            </b>
-            <p style={{ fontSize: '12px', margin: '6px 0 16px' }}>
-              Are you an electrician, plumber, or service specialist? Join ARY Services as an approved partner!
-            </p>
-            <button
-              type="button"
-              className="prompt-sign-in-btn"
-              style={{ margin: '0 auto' }}
-              onClick={() => openAuthModal('register')}
-            >
-              <Briefcase size={14} /> Register as Service Provider
-            </button>
-          </div>
+          <EmptyState
+            icon={Users}
+            title={selectedCategory ? `No verified providers in ${selectedCategory.name} yet.` : 'No matching providers found.'}
+            description="Are you a qualified Sri Lankan tradesperson or shop owner? Join ARY Services as a verified partner!"
+            actionLabel="Register as Service Provider"
+            onAction={() => openAuthModal('register')}
+          />
         )}
       </section>
 
@@ -179,9 +233,21 @@ export default function ProviderCatalog({
           <h2>Help, in a few easy steps.</h2>
         </div>
         <div className="steps">
-          <div><span>01</span><b>Choose a service</b><small>Select from verified local categories.</small></div>
-          <div><span>02</span><b>Select a provider</b><small>Check verified badges, ratings and rates.</small></div>
-          <div><span>03</span><b>Confirm booking</b><small>Schedule your preferred date, time and address.</small></div>
+          <div>
+            <span className="step-num">01</span>
+            <b>Choose a service</b>
+            <small>Browse verified trades, shops, and on-demand mobility.</small>
+          </div>
+          <div>
+            <span className="step-num">02</span>
+            <b>Select a verified provider</b>
+            <small>Compare ratings, warranty, distance, and base charges.</small>
+          </div>
+          <div>
+            <span className="step-num">03</span>
+            <b>Confirm & Track</b>
+            <small>Book your preferred slot; track delivery with secure 4-digit PIN.</small>
+          </div>
         </div>
       </section>
     </>

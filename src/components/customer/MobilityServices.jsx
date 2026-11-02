@@ -1,19 +1,50 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Bike, Utensils, MapPin, ArrowRight, PackageCheck, CarFront } from 'lucide-react';
+import {
+  Bike,
+  Utensils,
+  MapPin,
+  ArrowRight,
+  PackageCheck,
+  CarFront,
+  Navigation,
+  Copy,
+  Check,
+  ShieldCheck,
+  AlertCircle,
+  Clock,
+  User,
+  Car
+} from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE } from '../../config';
 import { subscribeToAppEvents } from '../../utils/events';
+import { Button, Input, Select, Badge, SegmentedControl, Card } from '../../design-system';
 
 export default function MobilityServices({ onNotice }) {
   const { currentUser, openAuthModal } = useAuth();
-  const [mode, setMode] = useState('food');
-  const [form, setForm] = useState({ orderReference: '', restaurantName: '', pickupAddress: '', dropoffAddress: '', pickup: '', destination: '', passengerCount: '1', pickupContact: '', recipientContact: '', parcelType: 'standard', weightKg: '1', notes: '' });
+  const [mode, setMode] = useState('food'); // 'food' | 'ride' | 'parcel'
+  const [form, setForm] = useState({
+    orderReference: '',
+    restaurantName: '',
+    pickupAddress: '',
+    dropoffAddress: '',
+    pickup: '',
+    destination: '',
+    passengerCount: '1',
+    pickupContact: '',
+    recipientContact: '',
+    parcelType: 'standard',
+    weightKg: '1',
+    notes: ''
+  });
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
+  const [copiedPin, setCopiedPin] = useState(null);
   const [gps, setGps] = useState(null);
   const [gpsBusy, setGpsBusy] = useState(false);
   const [myJobs, setMyJobs] = useState([]);
   const [jobsError, setJobsError] = useState('');
+
   const change = (key, value) => setForm(old => ({ ...old, [key]: value }));
 
   const refreshJobs = useCallback(async () => {
@@ -52,100 +83,432 @@ export default function MobilityServices({ onNotice }) {
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || 'Could not cancel this request.');
       await refreshJobs();
-      setMessage('Request cancelled.');
+      setMessage('Request cancelled successfully.');
     } catch (err) {
       setJobsError(err.message || 'Could not cancel this request.');
     }
   }
 
   function useCurrentLocation() {
-    if (!navigator.geolocation) { setMessage('This browser does not support GPS location.'); return; }
+    if (!navigator.geolocation) {
+      setMessage('This device does not support GPS location.');
+      return;
+    }
     setGpsBusy(true);
     navigator.geolocation.getCurrentPosition(position => {
       setGps({ lat: position.coords.latitude, lng: position.coords.longitude, accuracyM: position.coords.accuracy });
       setGpsBusy(false);
-      setMessage('GPS location added to this request.');
+      setMessage('GPS coordinates added to request.');
     }, error => {
       setGpsBusy(false);
-      setMessage(error.code === 1 ? 'Location permission was denied. You can still enter the address manually.' : 'Could not read GPS location. Please try again or enter the address manually.');
+      setMessage(error.code === 1 ? 'Location permission was denied.' : 'Could not read GPS location.');
     }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 });
+  }
+
+  function copyPinToClipboard(pin, label) {
+    navigator.clipboard?.writeText(pin);
+    setCopiedPin(pin);
+    onNotice?.(`Copied ${label} PIN: ${pin}`);
+    setTimeout(() => setCopiedPin(null), 2500);
   }
 
   async function submit(e) {
     e.preventDefault();
     if (!currentUser?.token) { openAuthModal('login'); return; }
-    setBusy(true); setMessage('');
+    setBusy(true);
+    setMessage('');
+
     const endpoint = mode === 'food' ? '/food-deliveries' : mode === 'parcel' ? '/parcels' : '/ride-trips';
     const payload = mode === 'food'
       ? { orderReference: form.orderReference.trim(), restaurantName: form.restaurantName.trim(), pickupAddress: form.pickupAddress.trim(), dropoffAddress: form.dropoffAddress.trim(), destinationLat: gps?.lat, destinationLng: gps?.lng, notes: form.notes.trim() }
-      : mode === 'parcel' ? { pickupAddress: form.pickup.trim(), destinationAddress: form.destination.trim(), pickupContact: form.pickupContact.trim(), recipientContact: form.recipientContact.trim(), parcelType: form.parcelType, weightKg: Number(form.weightKg), pickupLat: gps?.lat, pickupLng: gps?.lng, notes: form.notes.trim() } : { pickupAddress: form.pickup.trim(), destinationAddress: form.destination.trim(), pickupLat: gps?.lat, pickupLng: gps?.lng, passengerCount: Number(form.passengerCount), notes: form.notes.trim() };
+      : mode === 'parcel'
+      ? { pickupAddress: form.pickup.trim(), destinationAddress: form.destination.trim(), pickupContact: form.pickupContact.trim(), recipientContact: form.recipientContact.trim(), parcelType: form.parcelType, weightKg: Number(form.weightKg), pickupLat: gps?.lat, pickupLng: gps?.lng, notes: form.notes.trim() }
+      : { pickupAddress: form.pickup.trim(), destinationAddress: form.destination.trim(), pickupLat: gps?.lat, pickupLng: gps?.lng, passengerCount: Number(form.passengerCount), notes: form.notes.trim() };
+
     try {
-      const res = await fetch(API_BASE + endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + currentUser.token }, body: JSON.stringify(payload) });
+      const res = await fetch(API_BASE + endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + currentUser.token },
+        body: JSON.stringify(payload)
+      });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Could not submit request.');
-      setMessage((mode === 'food' ? 'Food delivery' : mode === 'parcel' ? 'Parcel delivery' : 'Ride') + ' request created: ' + data.job.id);
+
+      setMessage(`Request created successfully (ID: #${data.job?.id?.slice(0, 8)})`);
       setForm(old => ({ ...old, orderReference: '', notes: '' }));
       await refreshJobs();
-      onNotice?.((mode === 'food' ? 'Food delivery' : mode === 'parcel' ? 'Parcel delivery' : 'Ride') + ' request sent. A matching approved driver can accept it.');
-    } catch (err) { setMessage(err.message); }
-    finally { setBusy(false); }
+      onNotice?.('Request broadcasted to nearby verified drivers.');
+    } catch (err) {
+      setMessage(err.message);
+    } finally {
+      setBusy(false);
+    }
   }
 
-  const inputStyle = { width: '100%', padding: '12px 13px', border: '1px solid #dce5dc', borderRadius: 9, font: 'inherit', fontSize: 13, background: '#fff', color: '#263a30' };
-  return <section className="services-section" id="mobility-services">
-    <div className="section-heading"><div><span className="eyebrow">TWO DIFFERENT DRIVER NETWORKS</span><h2>Delivery or a ride?</h2></div><span className="section-note">Separate services. Separate drivers.</span></div>
-    <div style={{display:'flex',gap:10,flexWrap:'wrap',marginBottom:18}}>
-      <button type="button" onClick={()=>setMode('food')} style={{display:'flex',alignItems:'center',gap:9,padding:'12px 18px',borderRadius:10,border:'1px solid '+(mode==='food'?'#174d3d':'#e1e8df'),background:mode==='food'?'#edf5ef':'#fff',color:'#204333',fontWeight:700}}><Utensils size={18}/> Food Delivery</button>
-      <button type="button" onClick={()=>setMode('ride')} style={{display:'flex',alignItems:'center',gap:9,padding:'12px 18px',borderRadius:10,border:'1px solid '+(mode==='ride'?'#174d3d':'#e1e8df'),background:mode==='ride'?'#edf5ef':'#fff',color:'#204333',fontWeight:700}}><CarFront size={18}/> Ride Service</button>
-      <button type="button" onClick={()=>setMode('parcel')} style={{display:'flex',alignItems:'center',gap:9,padding:'12px 18px',borderRadius:10,border:'1px solid '+(mode==='parcel'?'#174d3d':'#e1e8df'),background:mode==='parcel'?'#edf5ef':'#fff',color:'#204333',fontWeight:700}}><PackageCheck size={18}/> Parcel Delivery</button>
-    </div>
-    <div style={{display:'grid',gridTemplateColumns:'minmax(0,1fr) minmax(220px,.55fr)',gap:18,alignItems:'start'}}>
-      <form onSubmit={submit} style={{background:'#fff',border:'1px solid #e7ece5',borderRadius:14,padding:20,display:'grid',gap:12}}>
-        {mode==='food' ? <>
-          <b style={{display:'flex',alignItems:'center',gap:8,color:'#244333'}}><PackageCheck size={18}/> Request a food delivery driver</b><p style={{fontSize:11,color:'#718076',margin:0}}>First place a Food Shops order and wait until the shop accepts it. Then enter that booking ID here.</p>
-          <label style={{fontSize:12,fontWeight:600}}>Order reference (if available)<input style={inputStyle} value={form.orderReference} onChange={e=>change('orderReference',e.target.value)} placeholder="Paste your food shop booking ID" required/></label>
-          <label style={{fontSize:12,fontWeight:600}}>Restaurant / food shop<input required style={inputStyle} value={form.restaurantName} onChange={e=>change('restaurantName',e.target.value)} placeholder="Restaurant name"/></label>
-          <label style={{fontSize:12,fontWeight:600}}>Pickup address<input required style={inputStyle} value={form.pickupAddress} onChange={e=>change('pickupAddress',e.target.value)} placeholder="Restaurant pickup location"/></label>
-          <label style={{fontSize:12,fontWeight:600}}>Customer delivery address<input required style={inputStyle} value={form.dropoffAddress} onChange={e=>change('dropoffAddress',e.target.value)} placeholder="Where should the food be delivered?"/></label>
-        </> : mode==='parcel' ? <>
-          <b style={{display:'flex',alignItems:'center',gap:8,color:'#244333'}}><PackageCheck size={18}/> Send a parcel</b>
-          <label style={{fontSize:12,fontWeight:600}}>Pickup address<input required style={inputStyle} value={form.pickup} onChange={e=>change('pickup',e.target.value)} placeholder="Sender pickup address"/></label>
-          <label style={{fontSize:12,fontWeight:600}}>Destination address<input required style={inputStyle} value={form.destination} onChange={e=>change('destination',e.target.value)} placeholder="Recipient address"/></label>
-          <label style={{fontSize:12,fontWeight:600}}>Sender contact number<input required style={inputStyle} value={form.pickupContact} onChange={e=>change('pickupContact',e.target.value)} placeholder="Sender phone number"/></label>
-          <label style={{fontSize:12,fontWeight:600}}>Recipient contact number<input required style={inputStyle} value={form.recipientContact} onChange={e=>change('recipientContact',e.target.value)} placeholder="Recipient phone number"/></label>
-          <label style={{fontSize:12,fontWeight:600}}>Parcel type<select style={inputStyle} value={form.parcelType} onChange={e=>change('parcelType',e.target.value)}><option value="document">Document</option><option value="small">Small parcel</option><option value="standard">Standard parcel</option><option value="fragile">Fragile</option></select></label>
-          <label style={{fontSize:12,fontWeight:600}}>Weight (kg)<input required type="number" min="0.1" max="100" step="0.1" style={inputStyle} value={form.weightKg} onChange={e=>change('weightKg',e.target.value)}/></label>
-        </> : <>
-          <b style={{display:'flex',alignItems:'center',gap:8,color:'#244333'}}><Bike size={18}/> Request a ride driver</b>
-          <label style={{fontSize:12,fontWeight:600}}>Pickup location<input required style={inputStyle} value={form.pickup} onChange={e=>change('pickup',e.target.value)} placeholder="Where should the driver pick you up?"/></label>
-          <label style={{fontSize:12,fontWeight:600}}>Destination<input required style={inputStyle} value={form.destination} onChange={e=>change('destination',e.target.value)} placeholder="Where are you going?"/></label>
-          <label style={{fontSize:12,fontWeight:600}}>Passengers<select style={inputStyle} value={form.passengerCount} onChange={e=>change('passengerCount',e.target.value)}><option value="1">1 passenger</option><option value="2">2 passengers</option><option value="3">3 passengers</option><option value="4">4 passengers</option><option value="5">5 passengers</option><option value="6">6 passengers</option></select></label>
-        </>}
-        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:10,flexWrap:'wrap',padding:'10px 12px',border:'1px solid #e5ebe3',borderRadius:9,background:'#f8faf7'}}>
-          <span style={{fontSize:11,color:'#66756b'}}>{gps ? `GPS added · ±${Math.round(gps.accuracyM || 0)} m` : 'GPS is optional; address entry still works.'}</span>
-          <button type="button" onClick={useCurrentLocation} disabled={gpsBusy} style={{border:'1px solid #cbd9cc',borderRadius:8,padding:'8px 10px',background:'#fff',color:'#174d3d',fontWeight:700,fontSize:11}}>{gpsBusy ? 'Getting location…' : gps ? 'Refresh GPS location' : 'Use current GPS location'}</button>
+  // Estimated fare calculation
+  const estimatedFare = mode === 'food' ? 'LKR 450 - 650' : mode === 'parcel' ? 'LKR 550 - 900' : 'LKR 650 - 1,200';
+
+  return (
+    <section className="services-section" id="mobility-services">
+      <div className="section-heading">
+        <div>
+          <div className="eyebrow">DEDICATED DRIVER FLEETS</div>
+          <h2>Delivery or a Ride?</h2>
         </div>
-        <label style={{fontSize:12,fontWeight:600}}>Additional note (optional)<input style={inputStyle} value={form.notes} onChange={e=>change('notes',e.target.value)} placeholder="Any useful details"/></label>
-        {message && <p role="status" style={{fontSize:12,color:message.includes('created')?'#247347':'#a33'}}>{message}</p>}
-        <button disabled={busy} type="submit" style={{display:'flex',justifyContent:'center',alignItems:'center',gap:8,padding:13,border:0,borderRadius:9,background:'#174d3d',color:'#fff',fontWeight:700}}>{busy?'Sending...':mode==='food'?'Find a food delivery driver':'Find a ride driver'} <ArrowRight size={16}/></button>
-      </form>
-      <aside style={{background:'#f0f4ed',borderRadius:14,padding:20}}>
-        <span style={{display:'grid',placeItems:'center',width:44,height:44,borderRadius:12,background:'#dce9dc',color:'#285a43'}}>{mode==='food'?<Utensils/>:<CarFront/>}</span>
-        <h3 style={{margin:'15px 0 8px',fontSize:16}}>{mode==='food'?'Food delivery network':'Ride network'}</h3>
-        <p style={{fontSize:12,lineHeight:1.8,color:'#657468'}}>{mode==='food'?'A separate delivery driver collects an already placed restaurant order and delivers it to the customer.':'A ride driver accepts a passenger trip from a pickup point to a destination.'}</p>
-        <p style={{fontSize:11,lineHeight:1.7,color:'#718076'}}>These requests are kept separate. A ride driver cannot claim food delivery jobs, and a food delivery driver cannot claim passenger rides.</p>
-      </aside>
-      {currentUser?.token && <section style={{marginTop:24}}>
-        <div className="section-heading"><div><span className="eyebrow">YOUR REQUESTS</span><h2>Ride & delivery status</h2></div><button type="button" onClick={refreshJobs} style={{border:'1px solid #dce5dc',borderRadius:8,padding:'8px 12px',background:'#fff',color:'#174d3d'}}>Refresh</button></div>
-        {jobsError && <p role="alert" style={{fontSize:12,color:'#a33'}}>{jobsError}</p>}
-        {myJobs.length===0 ? <p style={{fontSize:12,color:'#718076'}}>Your ride and delivery requests will appear here.</p> : myJobs.map(job=><article key={job.id} style={{background:'#fff',border:'1px solid #e5ebe3',borderRadius:12,padding:14,marginBottom:10}}>
-          <div style={{display:'flex',justifyContent:'space-between',gap:10,flexWrap:'wrap'}}><b style={{fontSize:13,color:'#244333'}}>{job.serviceType==='food_delivery'?'Food delivery':job.serviceType==='parcel_delivery'?'Parcel delivery':'Passenger ride'} · {job.id}</b><span className="status-pill muted">{String(job.status||'requested').replaceAll('_',' ')}</span></div>
-          <p style={{fontSize:12,lineHeight:1.7,color:'#657468',margin:'8px 0'}}><b>Pickup:</b> {job.pickupAddress}<br/><b>Drop-off:</b> {job.destinationAddress}</p>
-          {job.driverName && <p style={{fontSize:12,color:'#315a42',margin:0}}>Driver: {job.driverName}{job.driverLocation ? ` · latest GPS ${Number(job.driverLocation.lat).toFixed(4)}, ${Number(job.driverLocation.lng).toFixed(4)}` : ' · live location not currently available'}</p>}
-          {(job.startPin||job.pickupPin||job.deliveryPin)&&<div style={{marginTop:10,padding:10,borderRadius:8,background:'#f0f7f1',fontSize:12,color:'#24543b'}}><b>Keep these verification PINs private</b>{job.startPin&&<div>Trip start PIN: <b>{job.startPin}</b></div>}{job.pickupPin&&<div>Pickup PIN: <b>{job.pickupPin}</b></div>}{job.deliveryPin&&<div>Delivery PIN: <b>{job.deliveryPin}</b></div>}<small>Share each PIN only at the correct handoff.</small></div>}
-          {job.status==='requested' && <button type="button" onClick={()=>cancelRequest(job.id)} style={{marginTop:10,border:'1px solid #e5caca',borderRadius:8,padding:'8px 11px',background:'#fff',color:'#a33',fontSize:11,fontWeight:700}}>Cancel request</button>}
-        </article>)}
-      </section>}
-    </div>
-  </section>;
+        <span className="section-note">Separate driver networks · Verified background checks</span>
+      </div>
+
+      <div style={{ marginBottom: 'var(--space-6)' }}>
+        <SegmentedControl
+          options={[
+            { id: 'food', label: 'Food Delivery', icon: Utensils },
+            { id: 'ride', label: 'Ride Service', icon: CarFront },
+            { id: 'parcel', label: 'Parcel Courier', icon: PackageCheck }
+          ]}
+          value={mode}
+          onChange={setMode}
+          aria-label="Select Mobility Service Type"
+        />
+      </div>
+
+      <div className="mobility-grid-layout">
+        {/* Form Column */}
+        <form onSubmit={submit} className="mobility-form-card">
+          <div className="mobility-form-header">
+            <b>
+              {mode === 'food' ? <Utensils size={18} /> : mode === 'parcel' ? <PackageCheck size={18} /> : <Car size={18} />}
+              <span>{mode === 'food' ? 'Food Delivery Driver Request' : mode === 'parcel' ? 'Parcel Courier Request' : 'On-Demand Ride Request'}</span>
+            </b>
+            <Badge variant="brand" dot={false}>
+              Est. Fare: {estimatedFare}
+            </Badge>
+          </div>
+
+          {mode === 'food' && (
+            <>
+              <p className="mobility-hint-text">
+                Place an order with your food shop first. Once accepted, enter the booking ID to dispatch a dedicated food delivery driver.
+              </p>
+              <Input
+                label="Food Shop Order Reference *"
+                required={true}
+                value={form.orderReference}
+                onChange={e => change('orderReference', e.target.value)}
+                placeholder="Paste order booking ID"
+              />
+              <Input
+                label="Restaurant / Food Shop Name *"
+                required={true}
+                value={form.restaurantName}
+                onChange={e => change('restaurantName', e.target.value)}
+                placeholder="Restaurant name"
+              />
+              <Input
+                label="Pickup Address *"
+                required={true}
+                value={form.pickupAddress}
+                onChange={e => change('pickupAddress', e.target.value)}
+                placeholder="Restaurant location"
+                icon={MapPin}
+              />
+              <Input
+                label="Delivery Address *"
+                required={true}
+                value={form.dropoffAddress}
+                onChange={e => change('dropoffAddress', e.target.value)}
+                placeholder="Where should food be delivered?"
+                icon={MapPin}
+              />
+            </>
+          )}
+
+          {mode === 'parcel' && (
+            <>
+              <Input
+                label="Sender Pickup Address *"
+                required={true}
+                value={form.pickup}
+                onChange={e => change('pickup', e.target.value)}
+                placeholder="Address where parcel is collected"
+                icon={MapPin}
+              />
+              <Input
+                label="Recipient Destination Address *"
+                required={true}
+                value={form.destination}
+                onChange={e => change('destination', e.target.value)}
+                placeholder="Recipient address"
+                icon={MapPin}
+              />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
+                <Input
+                  label="Sender Contact *"
+                  required={true}
+                  type="tel"
+                  value={form.pickupContact}
+                  onChange={e => change('pickupContact', e.target.value)}
+                  placeholder="07X XXX XXXX"
+                />
+                <Input
+                  label="Recipient Contact *"
+                  required={true}
+                  type="tel"
+                  value={form.recipientContact}
+                  onChange={e => change('recipientContact', e.target.value)}
+                  placeholder="07X XXX XXXX"
+                />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
+                <Select
+                  label="Parcel Type"
+                  value={form.parcelType}
+                  onChange={e => change('parcelType', e.target.value)}
+                  options={[
+                    { value: 'document', label: 'Document' },
+                    { value: 'small', label: 'Small Box (< 2kg)' },
+                    { value: 'standard', label: 'Standard Parcel' },
+                    { value: 'fragile', label: 'Fragile Package' }
+                  ]}
+                />
+                <Input
+                  label="Weight (kg) *"
+                  type="number"
+                  min="0.1"
+                  max="50"
+                  step="0.1"
+                  value={form.weightKg}
+                  onChange={e => change('weightKg', e.target.value)}
+                />
+              </div>
+            </>
+          )}
+
+          {mode === 'ride' && (
+            <>
+              <Input
+                label="Pickup Location *"
+                required={true}
+                value={form.pickup}
+                onChange={e => change('pickup', e.target.value)}
+                placeholder="Where should driver pick you up?"
+                icon={MapPin}
+              />
+              <Input
+                label="Destination Location *"
+                required={true}
+                value={form.destination}
+                onChange={e => change('destination', e.target.value)}
+                placeholder="Where are you heading?"
+                icon={MapPin}
+              />
+              <Select
+                label="Number of Passengers"
+                value={form.passengerCount}
+                onChange={e => change('passengerCount', e.target.value)}
+                options={[
+                  { value: '1', label: '1 Passenger' },
+                  { value: '2', label: '2 Passengers' },
+                  { value: '3', label: '3 Passengers' },
+                  { value: '4', label: '4 Passengers' }
+                ]}
+              />
+            </>
+          )}
+
+          <div className="gps-location-bar">
+            <span className="gps-accuracy-label">
+              {gps ? `GPS Attached (±${Math.round(gps.accuracyM || 0)} m accuracy)` : 'GPS coordinates are optional.'}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              icon={Navigation}
+              onClick={useCurrentLocation}
+              loading={gpsBusy}
+            >
+              {gps ? 'Refresh GPS' : 'Attach GPS'}
+            </Button>
+          </div>
+
+          <Input
+            label="Driver Notes (Optional)"
+            value={form.notes}
+            onChange={e => change('notes', e.target.value)}
+            placeholder="e.g. Near yellow gate, gate code #1234"
+          />
+
+          {message && (
+            <div className={`ds-toast ${message.includes('created') ? 'ds-toast-success' : 'ds-toast-info'}`} style={{ width: '100%' }}>
+              <span>{message}</span>
+            </div>
+          )}
+
+          <Button
+            variant="primary"
+            size="lg"
+            type="submit"
+            fullWidth={true}
+            loading={busy}
+            iconRight={ArrowRight}
+          >
+            {busy ? 'Broadcasting...' : mode === 'food' ? 'Find Delivery Driver' : mode === 'parcel' ? 'Dispatch Parcel Driver' : 'Request Ride Driver'}
+          </Button>
+        </form>
+
+        {/* Side Info Column */}
+        <aside className="mobility-info-sidebar">
+          <div className="mobility-info-header">
+            <div className="info-icon-badge">
+              {mode === 'food' ? <Utensils size={24} /> : mode === 'parcel' ? <PackageCheck size={24} /> : <CarFront size={24} />}
+            </div>
+            <h3>{mode === 'food' ? 'Food Delivery Network' : mode === 'parcel' ? 'Direct Courier Fleet' : 'On-Demand Rides'}</h3>
+          </div>
+
+          <p className="mobility-info-body">
+            {mode === 'food'
+              ? 'Our food delivery drivers only handle restaurant pickups and meal deliveries to ensure timely and hygienic service.'
+              : mode === 'parcel'
+              ? 'Real-time peer-to-peer parcel courier with mandatory recipient verification PIN before package release.'
+              : 'Direct point-to-point passenger transport with upfront fare estimate and 4-digit ride start PIN.'}
+          </p>
+
+          <div className="pin-security-callout">
+            <ShieldCheck size={18} className="callout-icon" />
+            <div>
+              <b>Secure 4-Digit PIN Handoff</b>
+              <p>Every trip and delivery generates a unique verification PIN. Never share your PIN until the package is handed over or the ride begins.</p>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      {/* Active Requests List */}
+      {currentUser?.token && myJobs.length > 0 && (
+        <section className="active-mobility-feed">
+          <div className="section-heading" style={{ marginTop: 'var(--space-8)' }}>
+            <div>
+              <div className="eyebrow">YOUR DISPATCH STATUS</div>
+              <h3>Active Mobility & Deliveries ({myJobs.length})</h3>
+            </div>
+            <Button variant="outline" size="sm" icon={RefreshCw} onClick={refreshJobs}>
+              Refresh Status
+            </Button>
+          </div>
+
+          {jobsError && (
+            <div className="ds-toast ds-toast-error" style={{ marginBottom: 'var(--space-4)' }}>
+              <span>{jobsError}</span>
+            </div>
+          )}
+
+          <div className="mobility-jobs-list">
+            {myJobs.map(job => {
+              const isAssigned = Boolean(job.driverName);
+              const isRequested = job.status === 'requested';
+
+              return (
+                <div key={job.id} className="mobility-job-card">
+                  <div className="mobility-job-top">
+                    <div>
+                      <b className="mobility-job-title">
+                        {job.serviceType === 'food_delivery' ? 'Food Delivery' : job.serviceType === 'parcel_delivery' ? 'Parcel Courier' : 'Ride Trip'}
+                      </b>
+                      <span className="mobility-job-id">#{job.id?.slice(0, 8)}</span>
+                    </div>
+                    <Badge variant={job.status === 'completed' ? 'success' : job.status === 'in_progress' ? 'brand' : 'warning'}>
+                      {String(job.status || 'requested').replace('_', ' ')}
+                    </Badge>
+                  </div>
+
+                  <div className="mobility-route-box">
+                    <div className="route-point">
+                      <MapPin size={15} className="pickup-pin" />
+                      <span><b>Pickup:</b> {job.pickupAddress}</span>
+                    </div>
+                    <div className="route-point">
+                      <MapPin size={15} className="dest-pin" />
+                      <span><b>Drop-off:</b> {job.destinationAddress}</span>
+                    </div>
+                  </div>
+
+                  {job.driverName && (
+                    <div className="driver-assigned-strip">
+                      <User size={15} />
+                      <span>Assigned Driver: <b>{job.driverName}</b></span>
+                    </div>
+                  )}
+
+                  {/* High Contrast PIN Display Card */}
+                  {(job.startPin || job.pickupPin || job.deliveryPin) && (
+                    <div className="pin-handoff-card">
+                      <div className="pin-card-header">
+                        <ShieldCheck size={16} />
+                        <span>Handoff Verification PINs (Share at handover)</span>
+                      </div>
+                      <div className="pin-card-items">
+                        {job.startPin && (
+                          <div className="pin-pill-box">
+                            <span className="pin-type">Trip Start</span>
+                            <span className="pin-code">{job.startPin}</span>
+                            <button
+                              type="button"
+                              className="pin-copy-btn"
+                              onClick={() => copyPinToClipboard(job.startPin, 'Trip Start')}
+                              aria-label="Copy start PIN"
+                            >
+                              {copiedPin === job.startPin ? <Check size={14} /> : <Copy size={14} />}
+                            </button>
+                          </div>
+                        )}
+                        {job.pickupPin && (
+                          <div className="pin-pill-box">
+                            <span className="pin-type">Pickup</span>
+                            <span className="pin-code">{job.pickupPin}</span>
+                            <button
+                              type="button"
+                              className="pin-copy-btn"
+                              onClick={() => copyPinToClipboard(job.pickupPin, 'Pickup')}
+                              aria-label="Copy pickup PIN"
+                            >
+                              {copiedPin === job.pickupPin ? <Check size={14} /> : <Copy size={14} />}
+                            </button>
+                          </div>
+                        )}
+                        {job.deliveryPin && (
+                          <div className="pin-pill-box">
+                            <span className="pin-type">Delivery / Release</span>
+                            <span className="pin-code">{job.deliveryPin}</span>
+                            <button
+                              type="button"
+                              className="pin-copy-btn"
+                              onClick={() => copyPinToClipboard(job.deliveryPin, 'Delivery')}
+                              aria-label="Copy delivery PIN"
+                            >
+                              {copiedPin === job.deliveryPin ? <Check size={14} /> : <Copy size={14} />}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {isRequested && (
+                    <div style={{ marginTop: 'var(--space-3)' }}>
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        onClick={() => cancelRequest(job.id)}
+                      >
+                        Cancel Request
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+    </section>
+  );
 }

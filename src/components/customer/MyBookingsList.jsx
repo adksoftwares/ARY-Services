@@ -1,8 +1,26 @@
-import React, { useState } from 'react';
-import { RefreshCw, Ban, ClipboardList, Search, Star, ShieldCheck, CheckCircle2, AlertTriangle } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import {
+  RefreshCw,
+  Ban,
+  ClipboardList,
+  Search,
+  Star,
+  ShieldCheck,
+  CheckCircle2,
+  AlertTriangle,
+  Calendar,
+  Clock,
+  Phone,
+  MapPin,
+  Check,
+  X,
+  FileText,
+  AlertCircle
+} from 'lucide-react';
+import { Button, Badge, StatusPill, Tabs, Stepper, ConfirmDialog, Modal } from '../../design-system';
 
 export default function MyBookingsList({
-  bookings,
+  bookings = [],
   isLoading,
   onRefresh,
   onCancelBooking,
@@ -13,293 +31,327 @@ export default function MyBookingsList({
   onRescheduleBooking,
   onQuoteDecision
 }) {
-  const [rescheduleFor, setRescheduleFor] = useState(null);
-  const [rescheduleDate, setRescheduleDate] = useState('');
-  const [rescheduleTime, setRescheduleTime] = useState('Morning (9 AM - 12 PM)');
+  const [activeTab, setActiveTab] = useState('all');
+  const [cancelTargetId, setCancelTargetId] = useState(null);
+  const [rescheduleTarget, setRescheduleTarget] = useState(null);
+  const [newDate, setNewDate] = useState('');
+  const [newTime, setNewTime] = useState('Morning (9 AM - 12 PM)');
   const [rescheduleBusy, setRescheduleBusy] = useState(false);
-  const today = new Date().toLocaleDateString('en-CA');
+
+  const TABS = [
+    { id: 'all', label: 'All', badge: bookings.length },
+    { id: 'upcoming', label: 'Upcoming', badge: bookings.filter(b => ['requested', 'accepted'].includes(b.status)).length },
+    { id: 'in_progress', label: 'In Progress', badge: bookings.filter(b => b.status === 'in_progress').length },
+    { id: 'completed', label: 'Completed', badge: bookings.filter(b => b.status === 'completed').length },
+    { id: 'cancelled', label: 'Cancelled', badge: bookings.filter(b => ['cancelled', 'rejected'].includes(b.status)).length }
+  ];
+
+  const filteredBookings = useMemo(() => {
+    if (activeTab === 'all') return bookings;
+    if (activeTab === 'upcoming') return bookings.filter(b => ['requested', 'accepted'].includes(b.status));
+    if (activeTab === 'in_progress') return bookings.filter(b => b.status === 'in_progress');
+    if (activeTab === 'completed') return bookings.filter(b => b.status === 'completed');
+    if (activeTab === 'cancelled') return bookings.filter(b => ['cancelled', 'rejected'].includes(b.status));
+    return bookings;
+  }, [bookings, activeTab]);
+
+  const getStepIndex = (status) => {
+    switch (status) {
+      case 'requested': return 0;
+      case 'accepted': return 1;
+      case 'in_progress': return 2;
+      case 'completed': return 3;
+      default: return 0;
+    }
+  };
+
+  async function handleConfirmReschedule() {
+    if (!rescheduleTarget || !newDate || !onRescheduleBooking) return;
+    setRescheduleBusy(true);
+    try {
+      await onRescheduleBooking(rescheduleTarget.id, newDate, newTime);
+      setRescheduleTarget(null);
+    } finally {
+      setRescheduleBusy(false);
+    }
+  }
+
   return (
-    <section style={{ margin: '30px 0 60px' }}>
+    <section className="my-bookings-container">
       <div className="section-heading">
         <div>
-          <span className="eyebrow">YOUR ACTIVE REQUESTS</span>
+          <div className="eyebrow">YOUR ACTIVE REQUESTS</div>
           <h2>My Bookings ({bookings.length})</h2>
         </div>
-        <button
-          type="button"
-          className="refresh-users-btn"
+        <Button
+          variant="outline"
+          size="sm"
+          icon={RefreshCw}
           onClick={onRefresh}
-          disabled={isLoading}
+          loading={isLoading}
         >
-          <RefreshCw size={14} className={isLoading ? 'spin' : ''} />
-          <span>{isLoading ? 'Refreshing...' : 'Refresh'}</span>
-        </button>
+          Refresh
+        </Button>
       </div>
 
+      <Tabs
+        tabs={TABS}
+        activeTab={activeTab}
+        onChange={setActiveTab}
+        aria-label="Filter Bookings by Status"
+        className="bookings-tabs-bar"
+      />
+
       {isLoading ? (
-        <div style={{ textAlign: 'center', padding: '40px', color: '#68776d' }}>
-          <RefreshCw size={24} className="spin" style={{ margin: '0 auto 10px', display: 'block' }} />
+        <div style={{ textAlign: 'center', padding: 'var(--space-12) 0', color: 'var(--text-muted)' }}>
+          <RefreshCw size={28} className="spin" style={{ margin: '0 auto var(--space-3)', display: 'block' }} />
           Loading your bookings...
         </div>
-      ) : bookings.length > 0 ? (
+      ) : filteredBookings.length > 0 ? (
         <div className="bookings-feed">
-          {bookings.map(b => (
-            <div key={b.id} className="booking-card-item">
-              <div className="booking-card-header">
-                <div>
-                  <span className="booking-service-title">{b.categoryName || 'Service Request'}</span>
-                  <span style={{ fontSize: '11px', color: '#7c8a81', marginLeft: '10px' }}>
-                    Ref: #{b.id}
-                  </span>
-                </div>
-                <span className={`booking-status-tag ${b.status}`}>
-                  {b.status === 'requested' ? '⏳ Pending Confirmation' :
-                   b.status === 'accepted' ? '✅ Accepted & Scheduled' :
-                   b.status === 'in_progress' ? '⚡ In Progress' :
-                   b.status === 'completed' ? '🎉 Completed' : b.status}
-                </span>
-              </div>
+          {filteredBookings.map(b => {
+            const stepIndex = getStepIndex(b.status);
+            const isTerminal = ['completed', 'cancelled', 'rejected'].includes(b.status);
 
-              <div className="booking-details-grid">
-                <div>
-                  <b>Provider:</b> {b.providerName}
-                </div>
-                <div>
-                  <b>Provider Contact:</b> <a href={`tel:${b.providerPhone}`} style={{ color: '#174d3d', fontWeight: 600 }}>{b.providerPhone}</a>
-                </div>
-                <div>
-                  <b>Scheduled Date:</b> {b.bookingDate} ({b.bookingTime})
-                </div>
-                <div>
-                  <b>Service Address:</b> {b.serviceAddress}
-                </div>
-              </div>
-
-              {b.quote?.status === 'pending' && (
-                <div style={{margin:'10px 0',padding:12,border:'1px solid #bfdbfe',background:'#eff6ff',borderRadius:9}}>
-                  <b style={{fontSize:13,color:'#1e40af'}}>Service quote from {b.providerName}</b>
-                  <div style={{fontSize:20,fontWeight:800,color:'#173b2f',margin:'5px 0'}}>LKR {Number(b.quote.amount).toLocaleString('en-LK')}</div>
-                  <p style={{fontSize:12,color:'#475569',margin:'4px 0'}}>{b.quote.description}</p>
-                  <small style={{color:'#64748b'}}>Valid until {new Date(b.quote.validUntil).toLocaleDateString()} · Cash settlement; no online payment is taken.</small>
-                  <div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:9}}>
-                    <button type="button" className="booking-action-btn accept" onClick={()=>onQuoteDecision?.(b.id,'accept')}>Accept quote</button>
-                    <button type="button" className="booking-action-btn reject" onClick={()=>onQuoteDecision?.(b.id,'reject')}>Decline quote</button>
+            return (
+              <div key={b.id} className="booking-card-item">
+                <div className="booking-card-header">
+                  <div>
+                    <span className="booking-service-title">{b.categoryName || 'Service Request'}</span>
+                    <span className="booking-ref-tag">Ref: #{b.id?.slice(0, 8)}</span>
                   </div>
+                  <StatusPill status={b.status} />
                 </div>
-              )}
-              {b.quote?.status === 'accepted' && <p style={{margin:'8px 0',fontSize:12,color:'#166534'}}>Agreed service quote: <b>LKR {Number(b.quote.amount).toLocaleString('en-LK')}</b></p>}
-              {b.rescheduleRequest?.status === 'pending' && (
-                <p style={{margin:'8px 0',padding:'8px 10px',background:'#fff7ed',borderRadius:7,color:'#9a3412',fontSize:12}}>
-                  New time requested: {b.rescheduleRequest.date} · {b.rescheduleRequest.time} — awaiting provider confirmation
-                </p>
-              )}
-              {b.rescheduleRequest?.status === 'accepted' && (
-                <p style={{margin:'8px 0',padding:'8px 10px',background:'#f0fdf4',borderRadius:7,color:'#166534',fontSize:12}}>
-                  New booking time confirmed: {b.bookingDate} · {b.bookingTime}
-                </p>
-              )}
-              <div className="booking-problem-box">
-                <b>Problem Description:</b> {b.problemDescription}
-              </div>
 
-              {/* Workmanship Guarantee & Review Section */}
-              {b.status === 'completed' && (
-                <div style={{
-                  marginTop: 12,
-                  padding: '12px 14px',
-                  background: '#f8fafc',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: 8
-                }}>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    flexWrap: 'wrap',
-                    gap: 8,
-                    marginBottom: b.review ? 8 : 0
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.82rem', color: '#047857', fontWeight: 600 }}>
-                      <ShieldCheck size={16} color="#059669" />
-                      <span>🛡️ 14-Day ARY Workmanship Guarantee Active</span>
-                    </div>
+                {!isTerminal && (
+                  <div className="booking-stepper-box">
+                    <Stepper
+                      steps={['Requested', 'Accepted', 'In Progress', 'Completed']}
+                      currentStep={stepIndex}
+                    />
+                  </div>
+                )}
 
-                    {!b.review && (
-                      <button
-                        type="button"
-                        onClick={() => onOpenReviewModal && onOpenReviewModal(b)}
-                        style={{
-                          background: '#f59e0b',
-                          color: '#fff',
-                          border: 'none',
-                          padding: '6px 14px',
-                          borderRadius: 6,
-                          fontWeight: 600,
-                          fontSize: '0.82rem',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 6
-                        }}
-                      >
-                        <Star size={14} fill="#fff" /> Rate & Review Service
-                      </button>
+                <div className="booking-details-grid">
+                  <div>
+                    <span className="detail-label">Provider</span>
+                    <span className="detail-val">{b.providerName || 'Assigned Provider'}</span>
+                  </div>
+
+                  <div>
+                    <span className="detail-label">Provider Phone</span>
+                    {b.providerPhone ? (
+                      <a href={`tel:${b.providerPhone}`} className="detail-phone-link">
+                        <Phone size={13} /> {b.providerPhone}
+                      </a>
+                    ) : (
+                      <span className="detail-val">Pending assignment</span>
                     )}
                   </div>
 
-                  {b.review && (
-                    <div style={{
-                      marginTop: 6,
-                      padding: '8px 12px',
-                      background: '#fff',
-                      border: '1px solid #e2e8f0',
-                      borderRadius: 6
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                        <div style={{ display: 'flex', gap: 2 }}>
-                          {[1, 2, 3, 4, 5].map(s => (
-                            <Star
-                              key={s}
-                              size={14}
-                              fill={s <= b.review.rating ? '#f59e0b' : '#e2e8f0'}
-                              color={s <= b.review.rating ? '#d97706' : '#cbd5e1'}
-                            />
-                          ))}
-                        </div>
-                        <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#0f172a' }}>
-                          Verified Review ({b.review.rating}/5)
-                        </span>
-                        <span style={{ fontSize: '0.75rem', color: '#94a3b8', marginLeft: 'auto' }}>
-                          {new Date(b.review.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                      {b.review.comment && (
-                        <p style={{ margin: 0, fontSize: '0.82rem', color: '#475569', fontStyle: 'italic' }}>
-                          "{b.review.comment}"
-                        </p>
-                      )}
+                  <div>
+                    <span className="detail-label">Scheduled Date & Time</span>
+                    <span className="detail-val">{b.bookingDate} ({b.bookingTime})</span>
+                  </div>
+
+                  <div>
+                    <span className="detail-label">Service Address</span>
+                    <span className="detail-val">{b.serviceAddress}</span>
+                  </div>
+                </div>
+
+                {b.problemDescription && (
+                  <div className="booking-problem-note">
+                    <FileText size={14} className="note-icon" />
+                    <span><b>Issue:</b> {b.problemDescription}</span>
+                  </div>
+                )}
+
+                {/* Pending Quote Decision */}
+                {b.quote?.status === 'pending' && (
+                  <div className="booking-quote-card">
+                    <div className="quote-header">
+                      <b>Quote Received: LKR {Number(b.quote.amount).toLocaleString('en-LK')}</b>
+                      <span className="quote-scope">{b.quote.scope}</span>
                     </div>
-                  )}
-                  {b.status === 'completed' && (
-                    <div style={{ marginTop: 8, display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                      <button
-                        type="button"
-                        className="dispute-workmanship-btn"
+                    <div className="quote-actions">
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        icon={Check}
+                        onClick={() => onQuoteDecision && onQuoteDecision(b.id, 'accepted')}
+                      >
+                        Accept Quote
+                      </Button>
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        icon={X}
+                        onClick={() => onQuoteDecision && onQuoteDecision(b.id, 'declined')}
+                      >
+                        Decline
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Reschedule Suggestion by Provider */}
+                {b.reschedule?.status === 'suggested_by_provider' && (
+                  <div className="booking-reschedule-banner">
+                    <Clock size={16} />
+                    <div style={{ flex: 1 }}>
+                      <b>Provider suggested a new time:</b> {b.reschedule.date} ({b.reschedule.time})
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={() => onRescheduleBooking && onRescheduleBooking(b.id, b.reschedule.date, b.reschedule.time, 'accepted')}
+                      >
+                        Accept Time
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Booking Footer Actions */}
+                <div className="booking-card-footer">
+                  <div className="booking-warranty-indicator">
+                    <ShieldCheck size={14} />
+                    <span>14-Day ARY Workmanship Protection</span>
+                  </div>
+
+                  <div className="booking-action-buttons">
+                    {/* Reschedule button for active bookings */}
+                    {['requested', 'accepted'].includes(b.status) && (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        icon={Clock}
                         onClick={() => {
-                          if (onOpenDisputeModal) {
-                            onOpenDisputeModal(b);
-                          } else if (onDisputeBooking) {
-                            onDisputeBooking(b.id);
-                          }
-                        }}
-                        style={{
-                          background: '#fff',
-                          border: '1px solid #fca5a5',
-                          color: '#dc2626',
-                          padding: '4px 10px',
-                          borderRadius: 6,
-                          fontSize: '0.78rem',
-                          fontWeight: 600,
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 4
+                          setRescheduleTarget(b);
+                          setNewDate(b.bookingDate);
+                          setNewTime(b.bookingTime);
                         }}
                       >
-                        <AlertTriangle size={12} color="#dc2626" /> Dispute Workmanship
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
+                        Reschedule
+                      </Button>
+                    )}
 
-              {b.status === 'disputed' && (
-                <div style={{
-                  marginTop: 10,
-                  padding: '8px 12px',
-                  background: '#fef2f2',
-                  border: '1px solid #fecaca',
-                  borderRadius: 6,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  fontSize: '0.8rem',
-                  color: '#991b1b'
-                }}>
-                  <AlertTriangle size={15} color="#ef4444" />
-                  <span><b>Dispute Under Review:</b> Escrow payment is safely frozen while ARY Administration investigates your claim.</span>
-                </div>
-              )}
+                    {/* Cancel button */}
+                    {['requested', 'accepted'].includes(b.status) && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        icon={Ban}
+                        onClick={() => setCancelTargetId(b.id)}
+                      >
+                        Cancel
+                      </Button>
+                    )}
 
-              {b.status === 'refunded' && (
-                <div style={{
-                  marginTop: 10,
-                  padding: '8px 12px',
-                  background: '#f0fdf4',
-                  border: '1px solid #bbf7d0',
-                  borderRadius: 6,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  fontSize: '0.8rem',
-                  color: '#166534'
-                }}>
-                  <CheckCircle2 size={15} color="#16a34a" />
-                  <span><b>Refund Completed:</b> 100% full refund has been credited back to your account under the ARY Guarantee.</span>
-                </div>
-              )}
+                    {/* Review Button for completed bookings */}
+                    {b.status === 'completed' && !b.review && (
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        icon={Star}
+                        onClick={() => onOpenReviewModal && onOpenReviewModal(b)}
+                      >
+                        Rate & Review
+                      </Button>
+                    )}
 
-              {(b.status === 'requested' || b.status === 'accepted' || b.status === 'in_progress') && (
-                <div className="booking-actions-row">
-                  {(b.status === 'requested' || b.status === 'accepted') && b.rescheduleRequest?.status !== 'pending' && (
-                    <button type="button" className="booking-action-btn" onClick={() => { setRescheduleFor(rescheduleFor === b.id ? null : b.id); setRescheduleDate(b.bookingDate || today); }}>
-                      Request new time
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    className="booking-action-btn cancel"
-                    onClick={() => onCancelBooking(b.id)}
-                  >
-                    <Ban size={13} /> {b.status === 'in_progress' ? 'Cancel (Call-Out Fee Applies)' : 'Cancel Booking'}
-                  </button>
+                    {/* Dispute Button */}
+                    {['accepted', 'in_progress', 'completed'].includes(b.status) && !b.dispute && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        icon={AlertTriangle}
+                        onClick={() => onOpenDisputeModal && onOpenDisputeModal(b)}
+                      >
+                        Dispute
+                      </Button>
+                    )}
+                  </div>
                 </div>
-              )}
-                {rescheduleFor === b.id && (
-                  <form onSubmit={async event => {
-                    event.preventDefault();
-                    if (!rescheduleDate || !onRescheduleBooking) return;
-                    setRescheduleBusy(true);
-                    const ok = await onRescheduleBooking(b.id, rescheduleDate, rescheduleTime);
-                    setRescheduleBusy(false);
-                    if (ok) setRescheduleFor(null);
-                  }} style={{display:'flex',gap:8,flexWrap:'wrap',alignItems:'center',marginTop:10,padding:10,background:'#f8faf8',borderRadius:8}}>
-                    <label style={{fontSize:11,color:'#53645a'}}>New date <input type="date" required min={today} value={rescheduleDate} onChange={event=>setRescheduleDate(event.target.value)} style={{display:'block',padding:7,border:'1px solid #d4ddd5',borderRadius:6}}/></label>
-                    <label style={{fontSize:11,color:'#53645a'}}>Time slot <select value={rescheduleTime} onChange={event=>setRescheduleTime(event.target.value)} style={{display:'block',padding:7,border:'1px solid #d4ddd5',borderRadius:6}}><option>Morning (9 AM - 12 PM)</option><option>Afternoon (1 PM - 5 PM)</option><option>Evening (5 PM - 8 PM)</option><option>Emergency (ASAP)</option></select></label>
-                    <button type="submit" disabled={rescheduleBusy} className="booking-action-btn accept">{rescheduleBusy?'Sending…':'Send request'}</button>
-                    <button type="button" onClick={()=>setRescheduleFor(null)} className="booking-action-btn cancel">Close</button>
-                  </form>
-                )}
-            </div>
-          ))}
+              </div>
+            );
+          })}
         </div>
       ) : (
-        <div className="no-providers-box">
-          <ClipboardList size={34} style={{ margin: '0 auto 10px', opacity: 0.5 }} />
-          <b>No bookings placed yet.</b>
-          <p style={{ fontSize: '12px', margin: '6px 0 16px' }}>
-            Need a plumber, electrician or local delivery? Browse services to book a verified provider!
-          </p>
-          <button
-            type="button"
-            className="prompt-sign-in-btn"
-            style={{ margin: '0 auto' }}
+        <div className="no-bookings-placeholder">
+          <ClipboardList size={40} className="placeholder-icon" />
+          <h3>No bookings in this tab</h3>
+          <p>Looking for a verified Sri Lankan electrician, plumber, AC tech, or parcel delivery?</p>
+          <Button
+            variant="primary"
+            size="md"
+            icon={Search}
             onClick={onExploreServices}
           >
-            <Search size={14} /> Explore Available Services
-          </button>
+            Explore Services
+          </Button>
         </div>
       )}
+
+      {/* Confirmation Dialog for Cancellation */}
+      <ConfirmDialog
+        isOpen={Boolean(cancelTargetId)}
+        onClose={() => setCancelTargetId(null)}
+        title="Cancel Service Booking"
+        message="Are you sure you want to cancel this booking? This action will immediately notify the provider."
+        confirmLabel="Yes, Cancel Booking"
+        isDanger={true}
+        onConfirm={async () => {
+          if (cancelTargetId && onCancelBooking) {
+            await onCancelBooking(cancelTargetId);
+          }
+          setCancelTargetId(null);
+        }}
+      />
+
+      {/* Reschedule Modal */}
+      <Modal
+        isOpen={Boolean(rescheduleTarget)}
+        onClose={() => setRescheduleTarget(null)}
+        title="Reschedule Booking"
+        isBottomSheet={true}
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setRescheduleTarget(null)} disabled={rescheduleBusy}>
+              Cancel
+            </Button>
+            <Button variant="primary" onClick={handleConfirmReschedule} loading={rescheduleBusy}>
+              Send Reschedule Request
+            </Button>
+          </>
+        }
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+          <label className="ds-label"><span>New Service Date *</span></label>
+          <input
+            type="date"
+            className="ds-input"
+            value={newDate}
+            onChange={e => setNewDate(e.target.value)}
+            min={new Date().toISOString().split('T')[0]}
+            required
+          />
+
+          <label className="ds-label"><span>New Time Slot *</span></label>
+          <select
+            className="ds-select"
+            value={newTime}
+            onChange={e => setNewTime(e.target.value)}
+          >
+            <option value="Morning (9 AM - 12 PM)">Morning (9 AM - 12 PM)</option>
+            <option value="Afternoon (1 PM - 4 PM)">Afternoon (1 PM - 4 PM)</option>
+            <option value="Evening (4 PM - 7 PM)">Evening (4 PM - 7 PM)</option>
+            <option value="Emergency / As Soon As Possible">Emergency / As Soon As Possible</option>
+          </select>
+        </div>
+      </Modal>
     </section>
   );
 }

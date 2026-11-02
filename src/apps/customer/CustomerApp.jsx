@@ -1,6 +1,24 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { BrowserRouter, Link, Navigate, Route, Routes, useNavigate } from 'react-router-dom';
-import { Search, ClipboardList, LogIn, LogOut, UserRound, ArrowRight, ShoppingBasket, Zap, Wrench, Sparkles, Package, Bike } from 'lucide-react';
+import { BrowserRouter, Link, Navigate, Route, Routes, useNavigate, useLocation } from 'react-router-dom';
+import {
+  Search,
+  ClipboardList,
+  LogIn,
+  LogOut,
+  UserRound,
+  ArrowRight,
+  ShoppingBasket,
+  Zap,
+  Wrench,
+  Sparkles,
+  Package,
+  Bike,
+  Utensils,
+  Moon,
+  Sun,
+  Shield,
+  ShoppingBag
+} from 'lucide-react';
 import { AuthProvider, useAuth } from '../../context/AuthContext';
 import { API_BASE } from '../../config';
 import { subscribeToAppEvents } from '../../utils/events';
@@ -17,6 +35,7 @@ import AccountRoleRequest from '../../components/customer/AccountRoleRequest';
 import AuthModal from '../../components/common/AuthModal';
 import Footer from '../../components/common/Footer';
 import NotificationCenter from '../../components/common/NotificationCenter';
+import { Button, ThemeToggle, ToastProvider, Modal } from '../../design-system';
 
 const SERVICES = [
   { id: 1, name: 'Food Shops', slug: 'food-shops', description: 'Explore local shops and place an order', icon: ShoppingBasket, color: 'peach' },
@@ -26,29 +45,70 @@ const SERVICES = [
   { id: 5, name: 'Other Services', slug: 'other-services', description: 'Discover more services near you', icon: Sparkles, color: 'lilac' }
 ];
 
-function CustomerHeader() {
+function CustomerHeader({ onOpenProfile }) {
   const { currentUser, openAuthModal, logout } = useAuth();
   const navigate = useNavigate();
-  return <header className="topbar">
-    <Link to="/" className="brand" aria-label="ARY Services home"><span className="brand-mark">A</span><span>ARY <b>Services</b></span></Link>
-    <nav className="header-nav-links">
-      <Link to="/" className="nav-link-btn"><Search size={14}/> Explore</Link>
-      {currentUser?.accountType === 'customer' && <Link to="/bookings" className="nav-link-btn"><ClipboardList size={14}/> My Bookings</Link>}
-    </nav>
-    {currentUser ? <div className="user-profile">
-      <NotificationCenter/>
-      <span className="user-badge"><UserRound size={14}/><span>{currentUser.fullName}</span></span>
-      <button className="sign-out-btn" onClick={() => { logout(); navigate('/'); }}><LogOut size={14}/> Sign out</button>
-    </div> : <div style={{display:'flex',gap:8}}>
-      <button className="sign-in" onClick={() => openAuthModal('login')}><LogIn size={14}/> Sign in</button>
-      <button className="register-nav-btn" onClick={() => openAuthModal('register')}>Join ARY <ArrowRight size={14}/></button>
-    </div>}
-  </header>;
+
+  return (
+    <header className="topbar">
+      <Link to="/" className="brand" aria-label="ARY Services home">
+        <span className="brand-mark">A</span>
+        <span>ARY <b>Services</b></span>
+      </Link>
+
+      <nav className="header-nav-links">
+        <Link to="/" className="nav-link-btn">
+          <Search size={15} /> Explore
+        </Link>
+        {currentUser?.accountType === 'customer' && (
+          <Link to="/bookings" className="nav-link-btn">
+            <ClipboardList size={15} /> My Bookings
+          </Link>
+        )}
+      </nav>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <ThemeToggle />
+
+        {currentUser ? (
+          <div className="user-profile">
+            <NotificationCenter />
+            <button
+              type="button"
+              className="user-badge"
+              onClick={onOpenProfile}
+              title="View account profile & roles"
+              style={{ cursor: 'pointer', border: '1px solid var(--border-default)', background: 'transparent' }}
+            >
+              <UserRound size={14} />
+              <span>{currentUser.fullName}</span>
+            </button>
+            <button
+              className="sign-out-btn"
+              onClick={() => { logout(); navigate('/'); }}
+            >
+              <LogOut size={14} /> Sign out
+            </button>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <Button variant="primary" size="sm" onClick={() => openAuthModal('login')}>
+              <LogIn size={14} /> Sign in
+            </Button>
+            <Button variant="secondary" size="sm" onClick={() => openAuthModal('register')}>
+              Join ARY <ArrowRight size={14} />
+            </Button>
+          </div>
+        )}
+      </div>
+    </header>
+  );
 }
 
-function CustomerMobileBottomNav({ bookingsCount = 0 }) {
+function CustomerMobileBottomNav({ bookingsCount = 0, onOpenProfile }) {
   const { currentUser, openAuthModal } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   function scrollToSection(id) {
     navigate('/');
@@ -58,16 +118,19 @@ function CustomerMobileBottomNav({ bookingsCount = 0 }) {
     }, 100);
   }
 
+  const isHome = location.pathname === '/';
+  const isBookings = location.pathname === '/bookings';
+
   return (
     <nav className="mobile-bottom-nav" aria-label="Mobile Bottom Navigation">
-      <Link to="/" className="mob-nav-item">
-        <Search size={19} />
+      <Link to="/" className={`mob-nav-item ${isHome ? 'active' : ''}`}>
+        <Search size={20} />
         <span>Explore</span>
       </Link>
 
       <Link
         to="/bookings"
-        className="mob-nav-item"
+        className={`mob-nav-item ${isBookings ? 'active' : ''}`}
         onClick={(e) => {
           if (!currentUser) {
             e.preventDefault();
@@ -76,7 +139,7 @@ function CustomerMobileBottomNav({ bookingsCount = 0 }) {
         }}
       >
         <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <ClipboardList size={19} />
+          <ClipboardList size={20} />
           {bookingsCount > 0 && <span className="mob-nav-badge">{bookingsCount}</span>}
         </div>
         <span>Bookings</span>
@@ -87,21 +150,26 @@ function CustomerMobileBottomNav({ bookingsCount = 0 }) {
         className="mob-nav-item"
         onClick={() => scrollToSection('mobility-services')}
       >
-        <Bike size={19} />
+        <Bike size={20} />
         <span>Rides & Food</span>
+      </button>
+
+      <button
+        type="button"
+        className="mob-nav-item"
+        onClick={() => scrollToSection('grocery-section')}
+      >
+        <ShoppingBag size={20} />
+        <span>Grocery</span>
       </button>
 
       {currentUser ? (
         <button
           type="button"
           className="mob-nav-item"
-          onClick={() => {
-            const profileEl = document.querySelector('.user-profile');
-            if (profileEl) profileEl.scrollIntoView({ behavior: 'smooth' });
-            else navigate('/');
-          }}
+          onClick={onOpenProfile}
         >
-          <UserRound size={19} />
+          <UserRound size={20} />
           <span>{currentUser.fullName ? currentUser.fullName.split(' ')[0] : 'Profile'}</span>
         </button>
       ) : (
@@ -110,7 +178,7 @@ function CustomerMobileBottomNav({ bookingsCount = 0 }) {
           className="mob-nav-item highlight"
           onClick={() => openAuthModal('login')}
         >
-          <LogIn size={19} />
+          <LogIn size={20} />
           <span>Sign In</span>
         </button>
       )}
@@ -134,6 +202,7 @@ function CustomerWorkspace() {
   const [bookingOpen, setBookingOpen] = useState(false);
   const [reviewBooking, setReviewBooking] = useState(null);
   const [disputeBookingItem, setDisputeBookingItem] = useState(null);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
 
   const fetchProviders = useCallback(async (category = selectedCategory?.slug, search = query, location = coords) => {
     setLoadingProviders(true);
@@ -151,165 +220,278 @@ function CustomerWorkspace() {
     } finally {
       setLoadingProviders(false);
     }
-  }, [selectedCategory, query, coords]);
+  }, [selectedCategory?.slug, query, coords]);
 
   const fetchBookings = useCallback(async () => {
     if (!currentUser?.token || currentUser.accountType !== 'customer') { setBookings([]); return; }
     setLoadingBookings(true);
     try {
       const response = await fetch(`${API_BASE}/bookings`, { headers: { Authorization: `Bearer ${currentUser.token}` } });
-      if (!response.ok) throw new Error('Could not load your bookings.');
+      if (!response.ok) throw new Error('Could not load bookings.');
       const data = await response.json();
       setBookings(data.bookings || []);
     } catch (error) {
-      setNotice(error.message);
+      setNotice(error.message || 'Could not load your bookings.');
     } finally {
       setLoadingBookings(false);
     }
-  }, [currentUser]);
+  }, [currentUser?.token, currentUser?.accountType]);
 
-  async function decideQuote(bookingId, decision) {
+  useEffect(() => {
+    fetchProviders();
+  }, [fetchProviders]);
+
+  useEffect(() => {
+    fetchBookings();
+  }, [fetchBookings]);
+
+  useEffect(() => {
+    if (!currentUser?.token) return undefined;
+    const unsub = subscribeToAppEvents(currentUser.token, {
+      'booking:created': () => fetchBookings(),
+      'booking:status_changed': () => fetchBookings(),
+      'booking:cancelled': () => fetchBookings(),
+      'quote:created': () => fetchBookings(),
+      'quote:accepted': () => fetchBookings(),
+      'quote:declined': () => fetchBookings(),
+      'reschedule:suggested': () => fetchBookings(),
+      'reschedule:accepted': () => fetchBookings(),
+      'dispute:raised': () => fetchBookings()
+    });
+    return unsub;
+  }, [currentUser?.token, fetchBookings]);
+
+  const handleCategorySelect = (category) => {
+    setSelectedCategory(category);
+    fetchProviders(category.slug, query, coords);
+    const catalogEl = document.getElementById('providers-catalog') || document.querySelector('.providers-section');
+    if (catalogEl) {
+      catalogEl.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const handleQuoteDecision = async (bookingId, decision) => {
     if (!currentUser?.token) return;
     try {
-      const response = await fetch(`${API_BASE}/bookings/${encodeURIComponent(bookingId)}/quote`, {
+      const response = await fetch(`${API_BASE}/bookings/${bookingId}/quote-decision`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${currentUser.token}` },
         body: JSON.stringify({ decision })
       });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || 'Could not update quote.');
-      setNotice(data.message || 'Quote updated.');
-      await fetchBookings();
-    } catch (error) { setNotice(error.message || 'Could not update quote.'); }
-  }
-
-  async function requestReschedule(bookingId, date, time) {
-    if (!currentUser?.token) return false;
-    try {
-      const response = await fetch(`${API_BASE}/bookings/${encodeURIComponent(bookingId)}/reschedule`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${currentUser.token}` },
-        body: JSON.stringify({ date, time })
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || 'Could not request a new booking time.');
-      setNotice(data.message || 'Reschedule request sent.');
-      await fetchBookings();
-      return true;
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to update quote decision.');
+      setNotice(`Quote ${decision === 'accepted' ? 'accepted' : 'declined'}.`);
+      fetchBookings();
     } catch (error) {
-      setNotice(error.message || 'Could not request a new booking time.');
-      return false;
+      setNotice(error.message || 'Failed to update quote.');
     }
-  }
+  };
 
-  useEffect(() => { fetchBookings(); }, [fetchBookings]);
-  useEffect(() => {
-    const refresh = () => { fetchBookings(); };
-    return subscribeToAppEvents(currentUser?.token, { 'booking:created': refresh, 'booking:status_updated': refresh, 'booking:quote_sent': refresh, 'booking:quote_decided': refresh, 'booking:reschedule_requested': refresh, 'booking:reschedule_decided': refresh, 'grocery:order_updated': refresh, 'driver:job_created': refresh, 'driver:job_updated': refresh });
-  }, [fetchBookings]);
-
-  const visibleServices = useMemo(() => SERVICES.filter(service =>
-    `${service.name} ${service.description}`.toLowerCase().includes(query.toLowerCase())
-  ), [query]);
-
-  function selectCategory(category) {
-    const next = selectedCategory?.id === category.id ? null : category;
-    setSelectedCategory(next);
-    if (next) fetchProviders(next.slug, query);
-    else setProviders([]);
-  }
-
-  function openBooking(provider) {
-    if (!currentUser) { setNotice('Sign in to book a service.'); openAuthModal('login'); return; }
-    if (currentUser.accountType !== 'customer') {
-      setNotice('This app is for customer bookings. Please use the matching ARY workspace for your account.');
-      return;
-    }
-    setBookingProvider(provider);
-    setBookingOpen(true);
-  }
-
-  async function updateBookingStatus(id, status) {
+  const handleRescheduleBooking = async (bookingId, date, time, customerDecision = null) => {
     if (!currentUser?.token) return;
     try {
-      const response = await fetch(`${API_BASE}/bookings/${id}/status`, {
+      const response = await fetch(`${API_BASE}/bookings/${bookingId}/reschedule`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${currentUser.token}` },
-        body: JSON.stringify({ status })
+        body: JSON.stringify({ date, time, customerDecision })
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Could not update booking.');
-      setNotice('Booking updated.');
+      if (!response.ok) throw new Error(data.error || 'Failed to reschedule booking.');
+      setNotice(data.message || 'Reschedule updated.');
       fetchBookings();
-    } catch (error) { setNotice(error.message); }
-  }
+    } catch (error) {
+      setNotice(error.message || 'Failed to reschedule.');
+    }
+  };
 
-  async function cancelBooking(id) {
-    if (!currentUser?.token || !window.confirm('Are you sure you want to cancel this booking?')) return;
-    try {
-      const response = await fetch(`${API_BASE}/bookings/${id}/cancel`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${currentUser.token}` },
-        body: JSON.stringify({ reason: 'Cancelled by customer' })
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Could not cancel booking.');
-      setNotice(data.message || 'Booking cancelled.');
-      fetchBookings();
-    } catch (error) { setNotice(error.message); }
-  }
-
-  async function disputeBooking(id) {
+  const handleCancelBooking = async (bookingId) => {
     if (!currentUser?.token) return;
-    const reason = window.prompt('Please enter the reason for disputing this booking:');
-    if (!reason?.trim()) return;
     try {
-      const response = await fetch(`${API_BASE}/bookings/${id}/dispute`, {
-        method: 'POST',
+      const response = await fetch(`${API_BASE}/bookings/${bookingId}/status`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${currentUser.token}` },
-        body: JSON.stringify({ reason: reason.trim() })
+        body: JSON.stringify({ status: 'cancelled' })
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Could not submit dispute.');
-      setNotice('Dispute submitted for Admin review.');
+      if (!response.ok) throw new Error(data.error || 'Failed to cancel booking.');
+      setNotice('Booking cancelled.');
       fetchBookings();
-    } catch (error) { setNotice(error.message); }
-  }
+    } catch (error) {
+      setNotice(error.message || 'Failed to cancel booking.');
+    }
+  };
 
-  return <div className="app-shell customer-app-shell">
-    <CustomerHeader/>
-    <Routes>
-      <Route path="/" element={<main>
-        <HeroSection address={address} setAddress={setAddress} query={query} setQuery={setQuery}
-          onNotice={setNotice} onSearch={() => fetchProviders(selectedCategory?.slug, query)}
-          onLocationDetected={next => { setCoords(next); fetchProviders(selectedCategory?.slug, query, next); }}/>
-        <CategoryGrid services={visibleServices} selectedCategory={selectedCategory} onSelectCategory={selectCategory}/>
-        <MobilityServices onNotice={setNotice}/>
-        {selectedCategory?.slug === 'grocery-products' && <GroceryMarketplace/>}
-        <ProviderCatalog selectedCategory={selectedCategory} providers={providers} isLoading={loadingProviders}
-          onRefresh={() => fetchProviders(selectedCategory?.slug, query)} onBookProvider={openBooking}/>
-      </main>}/>
-      <Route path="/bookings" element={currentUser?.accountType === 'customer' ? <main style={{minHeight:'60vh',padding:'20px 0'}}>
-        <MyBookingsList bookings={bookings} isLoading={loadingBookings} onRefresh={fetchBookings}
-          onCancelBooking={cancelBooking} onDisputeBooking={disputeBooking}
-          onOpenDisputeModal={booking => setDisputeBookingItem(booking)}
-          onExploreServices={() => navigate('/')} onOpenReviewModal={booking => setReviewBooking(booking)}/>
-      </main> : <Navigate to="/" replace/>}/>
-      <Route path="*" element={<Navigate to="/" replace/>}/>
-    </Routes>
-    <AccountRoleRequest onNotice={setNotice}/>
-    <AuthModal onNotice={setNotice}/>
-    <ReviewModal isOpen={Boolean(reviewBooking)} onClose={() => setReviewBooking(null)} booking={reviewBooking} onReviewSuccess={() => { setReviewBooking(null); setNotice('Thank you for your review.'); fetchBookings(); }}/>
-    <DisputeModal isOpen={Boolean(disputeBookingItem)} onClose={() => setDisputeBookingItem(null)} booking={disputeBookingItem} onDisputeSuccess={() => { setDisputeBookingItem(null); setNotice('Dispute submitted for Admin review.'); fetchBookings(); }}/>
-    <BookingModal isOpen={bookingOpen} onClose={() => setBookingOpen(false)} provider={bookingProvider}
-      selectedCategory={selectedCategory} initialAddress={address}
-      onBookingSuccess={(_booking, provider) => { setBookingOpen(false); setNotice(`Booking request sent to ${provider.fullName}.`); navigate('/bookings'); fetchBookings(); }}/>
-    {notice && <div className="toast" role="status">{notice}<button onClick={() => setNotice('')} aria-label="Dismiss">×</button></div>}
-    <Footer/>
-    <CustomerMobileBottomNav bookingsCount={bookings.filter(b => !['completed', 'cancelled'].includes(b.status)).length}/>
-  </div>;
+  const activeBookingsCount = bookings.filter(b => !['completed', 'cancelled', 'rejected'].includes(b.status)).length;
+
+  return (
+    <div className="app-shell">
+      <CustomerHeader onOpenProfile={() => setProfileModalOpen(true)} />
+
+      <main tabIndex={-1}>
+        <Routes>
+          <Route path="/" element={
+            <>
+              <HeroSection
+                address={address}
+                setAddress={setAddress}
+                query={query}
+                setQuery={setQuery}
+                onNotice={setNotice}
+                onSearch={() => fetchProviders(selectedCategory?.slug, query, coords)}
+                onLocationDetected={(newCoords) => {
+                  setCoords(newCoords);
+                  fetchProviders(selectedCategory?.slug, query, newCoords);
+                }}
+              />
+
+              <CategoryGrid
+                services={SERVICES}
+                selectedCategory={selectedCategory}
+                onSelectCategory={handleCategorySelect}
+              />
+
+              <ProviderCatalog
+                selectedCategory={selectedCategory}
+                providers={providers}
+                isLoading={loadingProviders}
+                onRefresh={() => fetchProviders(selectedCategory?.slug, query, coords)}
+                onBookProvider={(provider) => {
+                  if (!currentUser) {
+                    setNotice('Please sign in or create an account to book a service.');
+                    openAuthModal('login');
+                    return;
+                  }
+                  setBookingProvider(provider);
+                  setBookingOpen(true);
+                }}
+              />
+
+              <div id="mobility-section">
+                <MobilityServices onNotice={setNotice} />
+              </div>
+
+              <div id="grocery-section">
+                <GroceryMarketplace />
+              </div>
+
+              {currentUser && (
+                <div style={{ margin: 'var(--space-8) 0' }}>
+                  <AccountRoleRequest onNotice={setNotice} />
+                </div>
+              )}
+            </>
+          } />
+
+          <Route path="/bookings" element={
+            <MyBookingsList
+              bookings={bookings}
+              isLoading={loadingBookings}
+              onRefresh={fetchBookings}
+              onCancelBooking={handleCancelBooking}
+              onOpenDisputeModal={setDisputeBookingItem}
+              onOpenReviewModal={setReviewBooking}
+              onRescheduleBooking={handleRescheduleBooking}
+              onQuoteDecision={handleQuoteDecision}
+              onExploreServices={() => navigate('/')}
+            />
+          } />
+
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </main>
+
+      <BookingModal
+        isOpen={bookingOpen}
+        onClose={() => setBookingOpen(false)}
+        provider={bookingProvider}
+        selectedCategory={selectedCategory}
+        initialAddress={address}
+        onBookingSuccess={(_booking, provider) => {
+          setBookingOpen(false);
+          setNotice(`Booking request sent to ${provider.fullName}.`);
+          navigate('/bookings');
+          fetchBookings();
+        }}
+      />
+
+      {reviewBooking && (
+        <ReviewModal
+          isOpen={Boolean(reviewBooking)}
+          onClose={() => setReviewBooking(null)}
+          booking={reviewBooking}
+          onSuccess={() => { setNotice('Review published. Thank you!'); fetchBookings(); }}
+        />
+      )}
+
+      {disputeBookingItem && (
+        <DisputeModal
+          isOpen={Boolean(disputeBookingItem)}
+          onClose={() => setDisputeBookingItem(null)}
+          booking={disputeBookingItem}
+          onSuccess={() => { setNotice('Dispute submitted for admin review.'); fetchBookings(); }}
+        />
+      )}
+
+      {/* Account Profile Bottom Sheet Modal */}
+      <Modal
+        isOpen={profileModalOpen}
+        onClose={() => setProfileModalOpen(false)}
+        title="My Account Profile"
+        isBottomSheet={true}
+      >
+        {currentUser && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: 'var(--space-3) 0', borderBottom: '1px solid var(--border-subtle)' }}>
+              <div style={{ width: 50, height: 50, borderRadius: '50%', background: 'var(--brand-primary)', color: '#fff', display: 'grid', placeItems: 'center', fontWeight: 'bold', fontSize: '18px' }}>
+                {currentUser.fullName ? currentUser.fullName.slice(0, 2).toUpperCase() : 'U'}
+              </div>
+              <div>
+                <b style={{ fontSize: 'var(--text-base)' }}>{currentUser.fullName}</b>
+                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>{currentUser.phone || currentUser.email}</div>
+                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--brand-primary)', fontWeight: 'bold', textTransform: 'capitalize' }}>
+                  Role: {currentUser.accountType}
+                </div>
+              </div>
+            </div>
+
+            <AccountRoleRequest onNotice={setNotice} />
+          </div>
+        )}
+      </Modal>
+
+      <AuthModal onNotice={setNotice} />
+
+      {notice && (
+        <div className="ds-toast ds-toast-info" role="status">
+          <span>{notice}</span>
+          <button
+            type="button"
+            className="ds-icon-btn sm"
+            onClick={() => setNotice('')}
+            aria-label="Dismiss notice"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
+      <Footer />
+      <CustomerMobileBottomNav
+        bookingsCount={activeBookingsCount}
+        onOpenProfile={() => setProfileModalOpen(true)}
+      />
+    </div>
+  );
 }
 
 export default function CustomerApp() {
-  return <AuthProvider><BrowserRouter><CustomerWorkspace/></BrowserRouter></AuthProvider>;
+  return (
+    <ToastProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          <CustomerWorkspace />
+        </BrowserRouter>
+      </AuthProvider>
+    </ToastProvider>
+  );
 }
