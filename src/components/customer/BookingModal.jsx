@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
-  X,
   CheckCircle2,
   Navigation,
   MapPin,
@@ -12,12 +12,14 @@ import {
   FileText,
   CreditCard,
   Banknote,
-  Check
+  Check,
+  AlertCircle,
+  ExternalLink
 } from 'lucide-react';
 import { fetchCurrentLocationAddress } from '../../utils/location';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE } from '../../config';
-import { Button, Input, Textarea, Badge, Stepper } from '../../design-system';
+import { Button, Input, Textarea, Badge, Stepper, Modal } from '../../design-system';
 
 export default function BookingModal({
   isOpen,
@@ -28,8 +30,9 @@ export default function BookingModal({
   onBookingSuccess
 }) {
   const { currentUser } = useAuth();
+  const navigate = useNavigate();
 
-  const [step, setStep] = useState(1); // 1: Details -> 2: Date/Time -> 3: Address -> 4: Review -> 5: Success
+  const [step, setStep] = useState(1); // 1: Service/Problem -> 2: Date/Time -> 3: Address -> 4: Review -> 5: Success
   const [bookingAddress, setBookingAddress] = useState(() => initialAddress || currentUser?.location || '');
   const [bookingDate, setBookingDate] = useState(() => {
     const tomorrow = new Date(Date.now() + 86400000);
@@ -65,10 +68,35 @@ export default function BookingModal({
       const loc = await fetchCurrentLocationAddress();
       setBookingAddress(loc);
     } catch (err) {
-      setError(err.message || 'Could not detect location.');
+      setError(err.message || 'Could not detect location. Please type your address manually.');
     } finally {
       setIsLocating(false);
     }
+  }
+
+  // Inline Validation for Each Step
+  function canProceedNext() {
+    if (step === 1) {
+      return Boolean(bookingProblem.trim());
+    }
+    if (step === 2) {
+      return Boolean(bookingDate) && Boolean(bookingTimeSlot);
+    }
+    if (step === 3) {
+      return Boolean(bookingAddress.trim());
+    }
+    return true;
+  }
+
+  function handleNextStep() {
+    setError('');
+    if (!canProceedNext()) {
+      if (step === 1) setError('Please briefly describe the service required.');
+      if (step === 2) setError('Please select a valid service date and time slot.');
+      if (step === 3) setError('Please provide your service address.');
+      return;
+    }
+    setStep(s => s + 1);
   }
 
   async function handleSubmitBooking() {
@@ -120,250 +148,244 @@ export default function BookingModal({
     'Emergency / As Soon As Possible'
   ];
 
+  const STEP_TITLES = ['Describe Need', 'Date & Time', 'Address', 'Review & Pay'];
+
   return (
-    <div
-      className="ds-modal-backdrop ds-bottom-sheet"
-      onClick={onClose}
-      role="presentation"
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={step === 5 ? 'Booking Confirmed!' : `Book ${provider.fullName}`}
+      isBottomSheet={true}
+      size="md"
     >
-      <div
-        className="ds-modal-dialog"
-        onClick={e => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-        style={{ maxWidth: 540 }}
-      >
-        <div className="ds-sheet-handle" aria-hidden="true" />
-
-        <div className="ds-modal-header">
-          <div>
-            <h2 className="ds-modal-title">Book Service Request</h2>
-            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: '2px' }}>
-              with <b>{provider.fullName}</b> ({provider.categoryName || 'Service Specialist'})
-            </div>
-          </div>
-          <button
-            type="button"
-            className="ds-icon-btn sm"
-            onClick={onClose}
-            aria-label="Close modal"
-          >
-            <X size={18} />
-          </button>
-        </div>
-
+      <div className="booking-wizard-content">
+        {/* Multi-step Progress Bar (Steps 1-4) */}
         {step < 5 && (
-          <div style={{ padding: '0 var(--space-6)' }}>
+          <div className="booking-stepper-container">
             <Stepper
-              steps={['Details', 'Date & Time', 'Address', 'Review']}
+              steps={STEP_TITLES}
               currentStep={step - 1}
             />
           </div>
         )}
 
-        <div className="ds-modal-body">
-          {error && (
-            <div className="ds-toast ds-toast-error" style={{ marginBottom: 'var(--space-4)' }} role="alert">
-              <span>{error}</span>
+        {/* Error notification banner */}
+        {error && (
+          <div className="wizard-error-banner" role="alert">
+            <AlertCircle size={15} />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {/* Step 1: Service & Problem Description */}
+        {step === 1 && (
+          <div className="wizard-step-pane">
+            <div className="provider-quick-card">
+              <b>{provider.fullName}</b>
+              <span>{selectedCategory?.name || provider.categoryName || 'Trades Specialist'} • Starting at {provider.baseCharge || 'LKR 1,500'}</span>
             </div>
-          )}
 
-          {/* STEP 1: Details */}
-          {step === 1 && (
-            <div className="booking-step-content">
-              <div className="booking-rate-card">
-                <div>
-                  <span className="rate-card-label">Estimated Visit Charge</span>
-                  <div className="rate-card-price">{provider.baseCharge || 'LKR 1,500'}</div>
-                </div>
-                <Badge variant="success" dot={false}>
-                  <ShieldCheck size={13} /> Verified Professional
-                </Badge>
-              </div>
-
+            <label className="wizard-form-label">
+              <span>What service or issue do you need help with? *</span>
               <Textarea
-                label="Describe your problem or service requirement"
-                required={true}
-                placeholder="e.g. Main power tripping in kitchen, or water leakage under sink..."
-                value={bookingProblem}
-                onChange={e => setBookingProblem(e.target.value)}
-                helperText="Be as specific as possible so the technician brings the correct tools and equipment."
                 rows={4}
+                value={bookingProblem}
+                onChange={e => { setBookingProblem(e.target.value); setError(''); }}
+                placeholder="e.g. Kitchen light tripping the main breaker, need circuit inspection and new switch installed."
+                required={true}
+                className="wizard-textarea"
+                aria-describedby="problem-hint"
               />
-            </div>
-          )}
+              <small id="problem-hint" className="wizard-input-hint">
+                Provide as much detail as possible so the technician can bring the right tools and parts.
+              </small>
+            </label>
+          </div>
+        )}
 
-          {/* STEP 2: Date & Time */}
-          {step === 2 && (
-            <div className="booking-step-content">
+        {/* Step 2: Date & Time Picker */}
+        {step === 2 && (
+          <div className="wizard-step-pane">
+            <label className="wizard-form-label">
+              <span>Preferred Service Date *</span>
               <Input
-                label="Preferred Service Date"
                 type="date"
-                required={true}
                 value={bookingDate}
-                onChange={e => setBookingDate(e.target.value)}
                 min={new Date().toISOString().split('T')[0]}
-                icon={Calendar}
+                onChange={e => { setBookingDate(e.target.value); setError(''); }}
+                required={true}
               />
+            </label>
 
-              <div className="ds-form-field">
-                <label className="ds-label"><span>Preferred Time Slot *</span></label>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px' }}>
-                  {TIME_SLOTS.map(slot => (
-                    <label
-                      key={slot}
-                      className={`slot-radio-card ${bookingTimeSlot === slot ? 'active' : ''}`}
-                    >
-                      <input
-                        type="radio"
-                        name="timeSlot"
-                        value={slot}
-                        checked={bookingTimeSlot === slot}
-                        onChange={() => setBookingTimeSlot(slot)}
-                      />
-                      <Clock size={16} />
-                      <span>{slot}</span>
-                    </label>
-                  ))}
-                </div>
+            <div className="time-slots-group">
+              <span className="slots-title">Select Arrival Window *</span>
+              <div className="time-slots-grid">
+                {TIME_SLOTS.map(slot => (
+                  <button
+                    key={slot}
+                    type="button"
+                    className={`time-slot-btn ${bookingTimeSlot === slot ? 'active' : ''}`}
+                    onClick={() => { setBookingTimeSlot(slot); setError(''); }}
+                  >
+                    <Clock size={14} className="slot-icon" />
+                    <span>{slot}</span>
+                  </button>
+                ))}
               </div>
             </div>
-          )}
+          </div>
+        )}
 
-          {/* STEP 3: Address */}
-          {step === 3 && (
-            <div className="booking-step-content">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                <span style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--font-semibold)' }}>Job Location Address *</span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  icon={Navigation}
-                  onClick={handleDetectLocation}
-                  loading={isLocating}
-                >
-                  Use GPS
-                </Button>
+        {/* Step 3: Service Address with GPS */}
+        {step === 3 && (
+          <div className="wizard-step-pane">
+            <div className="address-detect-header">
+              <span className="wizard-label-text">Where should the provider visit? *</span>
+              <button
+                type="button"
+                className="use-gps-pill"
+                onClick={handleDetectLocation}
+                disabled={isLocating}
+                aria-label="Use current GPS location"
+              >
+                <Navigation size={13} className={isLocating ? 'spin' : ''} />
+                <span>{isLocating ? 'Locating...' : 'Use my current location'}</span>
+              </button>
+            </div>
+
+            <Textarea
+              rows={3}
+              value={bookingAddress}
+              onChange={e => { setBookingAddress(e.target.value); setError(''); }}
+              placeholder="House/Apartment #, Street, Landmark, Town"
+              required={true}
+              className="wizard-textarea"
+            />
+            <small className="wizard-input-hint">
+              Accurate address helps the verified provider estimate travel time and reach you punctually.
+            </small>
+          </div>
+        )}
+
+        {/* Step 4: Review & Payment Selection */}
+        {step === 4 && (
+          <div className="wizard-step-pane">
+            <div className="booking-summary-card">
+              <div className="summary-row">
+                <span className="sum-label">Provider</span>
+                <b className="sum-val">{provider.fullName}</b>
               </div>
+              <div className="summary-row">
+                <span className="sum-label">Category</span>
+                <span className="sum-val">{selectedCategory?.name || provider.categoryName || 'Service'}</span>
+              </div>
+              <div className="summary-row">
+                <span className="sum-label">Schedule</span>
+                <span className="sum-val">{bookingDate} • {bookingTimeSlot}</span>
+              </div>
+              <div className="summary-row">
+                <span className="sum-label">Address</span>
+                <span className="sum-val">{bookingAddress}</span>
+              </div>
+              <div className="summary-row">
+                <span className="sum-label">Starting Rate</span>
+                <b className="sum-val" style={{ color: 'var(--brand-primary)' }}>{provider.baseCharge || 'LKR 1,500'}</b>
+              </div>
+            </div>
 
-              <Input
-                placeholder="e.g. No. 45, Galle Road, Colombo 03"
-                value={bookingAddress}
-                onChange={e => setBookingAddress(e.target.value)}
-                icon={MapPin}
-                required={true}
-                helperText="Include building name, floor number or landmark if applicable."
-              />
-
-              {currentUser?.location && (
+            <div className="payment-method-selector">
+              <span className="payment-title">Payment Method</span>
+              <div className="payment-options-grid">
                 <button
                   type="button"
-                  className="quick-fill-btn"
-                  onClick={() => setBookingAddress(currentUser.location)}
+                  className={`payment-option-btn ${paymentMethod === 'cash' ? 'active' : ''}`}
+                  onClick={() => setPaymentMethod('cash')}
                 >
-                  Fill saved profile address: <b>{currentUser.location}</b>
+                  <Banknote size={18} />
+                  <div>
+                    <b>Cash on Completion</b>
+                    <small>Pay directly to the provider after inspection.</small>
+                  </div>
                 </button>
+
+                <button
+                  type="button"
+                  className={`payment-option-btn ${paymentMethod === 'escrow' ? 'active' : ''}`}
+                  onClick={() => setPaymentMethod('escrow')}
+                >
+                  <CreditCard size={18} />
+                  <div>
+                    <b>ARY Escrow Shield</b>
+                    <small>Funds held securely until you approve completion.</small>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            <div className="trust-guarantee-note">
+              <ShieldCheck size={16} />
+              <span>Includes 14-day ARY workmanship warranty. Quote changes require your approval.</span>
+            </div>
+          </div>
+        )}
+
+        {/* Step 5: Success Screen */}
+        {step === 5 && (
+          <div className="wizard-success-pane">
+            <div className="success-icon-badge">
+              <CheckCircle2 size={44} className="success-check-icon" />
+            </div>
+
+            <h3 className="success-heading">Booking Request Sent!</h3>
+            <p className="success-subtext">
+              We've dispatched your service request to <b>{provider.fullName}</b>.
+              {createdBooking?.id && (
+                <span className="booking-ref-chip">Ref #{createdBooking.id.slice(0, 8)}</span>
               )}
+            </p>
+
+            <div className="next-steps-card">
+              <b>What happens next?</b>
+              <ol className="next-steps-list">
+                <li>Provider reviews your schedule request within 15-30 minutes.</li>
+                <li>If special parts or scope is needed, they will send a formal quote.</li>
+                <li>You can accept or decline quotes anytime in <b>My Bookings</b>.</li>
+              </ol>
             </div>
-          )}
 
-          {/* STEP 4: Review */}
-          {step === 4 && (
-            <div className="booking-step-content">
-              <div className="review-summary-card">
-                <div className="review-row">
-                  <span className="review-label">Provider</span>
-                  <span className="review-val"><b>{provider.fullName}</b></span>
-                </div>
-                <div className="review-row">
-                  <span className="review-label">Service</span>
-                  <span className="review-val">{selectedCategory?.name || provider.categoryName || 'General Service'}</span>
-                </div>
-                <div className="review-row">
-                  <span className="review-label">Date & Time</span>
-                  <span className="review-val">{bookingDate} ({bookingTimeSlot})</span>
-                </div>
-                <div className="review-row">
-                  <span className="review-label">Location</span>
-                  <span className="review-val">{bookingAddress}</span>
-                </div>
-                <div className="review-row">
-                  <span className="review-label">Estimated Visit Fee</span>
-                  <span className="review-val" style={{ color: 'var(--brand-primary)', fontWeight: 'bold' }}>
-                    {provider.baseCharge || 'LKR 1,500'}
-                  </span>
-                </div>
-              </div>
-
-              <div style={{ marginTop: 'var(--space-4)' }}>
-                <label className="ds-label"><span>Payment Option</span></label>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '6px' }}>
-                  <label className={`slot-radio-card ${paymentMethod === 'cash' ? 'active' : ''}`}>
-                    <input
-                      type="radio"
-                      name="payment"
-                      value="cash"
-                      checked={paymentMethod === 'cash'}
-                      onChange={() => setPaymentMethod('cash')}
-                    />
-                    <Banknote size={18} />
-                    <span>Cash on Completion</span>
-                  </label>
-
-                  <label className="slot-radio-card disabled" title="Online payment via PayHere available on delivery">
-                    <input type="radio" disabled name="payment" value="online" />
-                    <CreditCard size={18} />
-                    <span>Card (PayHere)</span>
-                  </label>
-                </div>
-              </div>
-
-              <div className="warranty-guarantee-badge" style={{ marginTop: 'var(--space-4)' }}>
-                <ShieldCheck size={16} />
-                <span>Backed by ARY 14-Day Free Re-service Guarantee</span>
-              </div>
-            </div>
-          )}
-
-          {/* STEP 5: Success Confirmation Screen */}
-          {step === 5 && (
-            <div style={{ textAlign: 'center', padding: 'var(--space-6) 0' }}>
-              <div style={{
-                width: 64,
-                height: 64,
-                borderRadius: '50%',
-                background: 'var(--color-success-50)',
-                color: 'var(--color-success-600)',
-                display: 'grid',
-                placeItems: 'center',
-                margin: '0 auto var(--space-4)'
-              }}>
-                <Check size={36} />
-              </div>
-              <h3 style={{ margin: '0 0 var(--space-2)', fontFamily: 'var(--font-heading)' }}>Booking Request Sent!</h3>
-              <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)', margin: '0 0 var(--space-6)' }}>
-                Booking ID: <b>#{createdBooking?.id?.slice(0, 8)}</b>. {provider.fullName} has received your request and will confirm shortly.
-              </p>
+            <div className="success-actions-row">
               <Button
                 variant="primary"
                 size="lg"
                 fullWidth={true}
-                onClick={onClose}
+                onClick={() => {
+                  onClose();
+                  navigate('/bookings');
+                }}
               >
-                Track in My Bookings
+                Go to My Bookings <ArrowRight size={16} />
               </Button>
-            </div>
-          )}
-        </div>
-
-        {step < 5 && (
-          <div className="ds-modal-footer">
-            {step > 1 && (
               <Button
                 variant="ghost"
                 size="md"
+                fullWidth={true}
+                onClick={onClose}
+              >
+                Done / Keep Exploring
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Wizard Footer Navigation Controls */}
+        {step < 5 && (
+          <div className="wizard-footer-bar">
+            {step > 1 && (
+              <Button
+                variant="secondary"
+                size="md"
                 icon={ArrowLeft}
-                onClick={() => setStep(s => s - 1)}
+                onClick={() => { setStep(s => s - 1); setError(''); }}
                 disabled={isSubmitting}
               >
                 Back
@@ -374,31 +396,25 @@ export default function BookingModal({
               <Button
                 variant="primary"
                 size="md"
-                iconRight={ArrowRight}
-                onClick={() => {
-                  if (step === 3 && !bookingAddress.trim()) {
-                    setError('Please specify a valid service address.');
-                    return;
-                  }
-                  setError('');
-                  setStep(s => s + 1);
-                }}
+                className="wizard-next-btn"
+                onClick={handleNextStep}
               >
-                Continue
+                Continue <ArrowRight size={15} />
               </Button>
             ) : (
               <Button
                 variant="primary"
-                size="md"
+                size="lg"
+                className="wizard-next-btn"
                 loading={isSubmitting}
                 onClick={handleSubmitBooking}
               >
-                Confirm Request
+                Confirm Booking Request
               </Button>
             )}
           </div>
         )}
       </div>
-    </div>
+    </Modal>
   );
 }

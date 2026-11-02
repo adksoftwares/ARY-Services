@@ -6,6 +6,7 @@
 @import './design-system/base.css';
 @import './design-system/layout.css';
 @import './design-system/components.css';
+@import './design-system/customer.css';
 
 
 /* Sign-in required prompt & Modal styles */

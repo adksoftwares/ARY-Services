@@ -12,11 +12,15 @@ import {
   ShieldCheck,
   Check,
   X,
-  ArrowRight
+  ArrowRight,
+  Truck,
+  CheckCircle2,
+  Clock,
+  Info
 } from 'lucide-react';
 import { API_BASE } from '../../config';
 import { useAuth } from '../../context/AuthContext';
-import { Button, Input, Badge, ConfirmDialog, Skeleton, EmptyState } from '../../design-system';
+import { Button, Input, Badge, ConfirmDialog, Skeleton, EmptyState, Stepper, Modal } from '../../design-system';
 
 const money = value => 'LKR ' + Number(value || 0).toLocaleString('en-LK', { maximumFractionDigits: 2 });
 
@@ -32,6 +36,7 @@ export default function GroceryMarketplace() {
   const [notes, setNotes] = useState('');
   const [orders, setOrders] = useState([]);
   const [showOrders, setShowOrders] = useState(false);
+  const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [cancelTargetId, setCancelTargetId] = useState(null);
@@ -86,10 +91,12 @@ export default function GroceryMarketplace() {
     .filter(x => x.product);
 
   const total = cartLines.reduce((sum, x) => sum + Number(x.product.price) * x.quantity, 0);
+  const totalItemsCount = cartLines.reduce((sum, x) => sum + x.quantity, 0);
 
   // Check unique shops in cart
   const uniqueShopIds = useMemo(() => new Set(cartLines.map(x => x.product.providerId)), [cartLines]);
   const hasMultipleShops = uniqueShopIds.size > 1;
+  const currentShopName = cartLines[0]?.product?.providerName;
 
   function changeQty(product, delta) {
     setCart(old => {
@@ -161,6 +168,7 @@ export default function GroceryMarketplace() {
         ? 'Order placed! An approved delivery driver has been requested. Your handoff PINs are shown in My Orders.'
         : 'Order placed! The shop will prepare your order for delivery. Pay cash on delivery.');
       setCart({});
+      setIsCheckoutModalOpen(false);
       await load();
       await loadOrders();
     } catch (e) {
@@ -170,13 +178,23 @@ export default function GroceryMarketplace() {
     }
   }
 
+  const getOrderStatusStep = (status) => {
+    switch (status) {
+      case 'pending': return 0;
+      case 'preparing': case 'accepted': return 1;
+      case 'in_transit': case 'out_for_delivery': return 2;
+      case 'completed': return 3;
+      default: return 0;
+    }
+  };
+
   return (
-    <section className="grocery-marketplace-section">
+    <section className="grocery-marketplace-section" id="grocery-section" aria-labelledby="grocery-heading">
       <div className="section-heading">
         <div>
-          <div className="eyebrow">FRESH ESSENTIALS & LOCAL SHOPS</div>
-          <h2>Grocery Products</h2>
-          <p className="section-desc">Everyday household goods and groceries from verified local suppliers.</p>
+          <div className="eyebrow">LOCAL SHOPS & ESSENTIALS</div>
+          <h2 id="grocery-heading">Grocery & Everyday Essentials</h2>
+          <p className="section-desc">Order groceries, pantry items, and gas cylinders from verified neighborhood shops.</p>
         </div>
 
         <div className="grocery-header-actions">
@@ -196,7 +214,7 @@ export default function GroceryMarketplace() {
             variant="outline"
             size="sm"
             icon={RefreshCw}
-            onClick={load}
+            onClick={() => { load(); loadOrders(); }}
             loading={loading}
           >
             Refresh
@@ -212,7 +230,7 @@ export default function GroceryMarketplace() {
 
       {/* Orders Viewer */}
       {showOrders && (
-        <div className="grocery-orders-drawer">
+        <div className="grocery-orders-drawer" role="region" aria-label="Customer Grocery Orders">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
             <h3 style={{ margin: 0, fontFamily: 'var(--font-heading)' }}>Your Grocery Orders</h3>
             <button
@@ -229,58 +247,76 @@ export default function GroceryMarketplace() {
             <p style={{ color: 'var(--text-muted)' }}>No previous grocery orders placed yet.</p>
           ) : (
             <div className="grocery-orders-feed">
-              {orders.map(o => (
-                <div key={o.id} className="grocery-order-card">
-                  <div className="order-top">
-                    <div>
-                      <b>{o.providerName}</b>
-                      <span className="order-id">Ref #{o.id?.slice(0, 8)}</span>
-                    </div>
-                    <Badge variant={o.status === 'completed' ? 'success' : 'warning'}>
-                      {o.status?.replace('_', ' ')}
-                    </Badge>
-                  </div>
+              {orders.map(o => {
+                const stepIndex = getOrderStatusStep(o.status);
+                const isTerminal = ['completed', 'cancelled'].includes(o.status);
 
-                  <div className="order-items-list">
-                    {o.items.map((it, idx) => (
-                      <span key={idx} className="order-item-tag">
-                        {it.name} × {it.quantity}
-                      </span>
-                    ))}
-                  </div>
-
-                  <div className="order-total-bar">
-                    <span>Total Amount: <b>{money(o.total)}</b> (Cash on Delivery)</span>
-                  </div>
-
-                  {o.deliveryPickupPin && o.deliveryPin && (
-                    <div className="order-pins-box">
-                      <ShieldCheck size={14} />
+                return (
+                  <div key={o.id} className="grocery-order-card">
+                    <div className="order-top">
                       <div>
-                        <span>Handoff PIN: <b>{o.deliveryPin}</b> (Share when receiving package)</span>
+                        <b>{o.providerName}</b>
+                        <span className="order-id">Ref #{o.id?.slice(0, 8)}</span>
                       </div>
+                      <Badge variant={o.status === 'completed' ? 'success' : o.status === 'cancelled' ? 'danger' : 'warning'}>
+                        {o.status?.replace('_', ' ')}
+                      </Badge>
                     </div>
-                  )}
 
-                  {o.status === 'pending' && (
-                    <div style={{ marginTop: 'var(--space-2)' }}>
-                      <Button
-                        variant="danger"
-                        size="sm"
-                        onClick={() => setCancelTargetId(o.id)}
-                      >
-                        Cancel Order
-                      </Button>
+                    {!isTerminal && (
+                      <div style={{ margin: '12px 0' }}>
+                        <Stepper
+                          steps={['Placed', 'Preparing', 'Out for Delivery', 'Delivered']}
+                          currentStep={stepIndex}
+                        />
+                      </div>
+                    )}
+
+                    <div className="order-items-list">
+                      {o.items.map((it, idx) => (
+                        <span key={idx} className="order-item-tag">
+                          {it.name} × {it.quantity}
+                        </span>
+                      ))}
                     </div>
-                  )}
-                </div>
-              ))}
+
+                    <div className="order-total-bar">
+                      <span>Total: <b>{money(o.total)}</b></span>
+                      <Badge variant="neutral" dot={false} className="cod-badge">
+                        Cash on Delivery
+                      </Badge>
+                    </div>
+
+                    {o.deliveryPickupPin && o.deliveryPin && (
+                      <div className="order-pins-box">
+                        <ShieldCheck size={16} />
+                        <div>
+                          <span>Delivery Release PIN: <b>{o.deliveryPin}</b></span>
+                          <small>Share with the driver only upon inspecting your packages.</small>
+                        </div>
+                      </div>
+                    )}
+
+                    {o.status === 'pending' && (
+                      <div style={{ marginTop: 'var(--space-3)' }}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setCancelTargetId(o.id)}
+                        >
+                          Cancel Order
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
       )}
 
-      {/* Search and Category Filter */}
+      {/* Search and Category Filter Toolbar */}
       <div className="grocery-toolbar">
         <Input
           placeholder="Search rice, dhal, milk, cooking oil, gas cylinder..."
@@ -304,18 +340,26 @@ export default function GroceryMarketplace() {
         </div>
       </div>
 
-      {/* Single Shop Cart Rule Notice */}
+      {/* Single Shop Rule Explanation Banner */}
+      <div className="single-shop-rule-card">
+        <Info size={16} className="rule-icon" />
+        <div>
+          <b>Single-Shop Cart Rule</b>
+          <p>To ensure freshness and rapid point-to-point courier delivery, items in your cart must come from a single shop per order.</p>
+        </div>
+      </div>
+
       {hasMultipleShops && (
         <div className="ds-toast ds-toast-warning" style={{ width: '100%', marginBottom: 'var(--space-4)' }} role="alert">
           <AlertCircle size={16} />
-          <span><b>Single Shop Rule:</b> Your cart contains items from multiple shops. Please order from one shop at a time for dedicated delivery.</span>
+          <span><b>Multiple shops detected:</b> Your cart contains items from more than one store. Please clear items or checkout one shop at a time.</span>
         </div>
       )}
 
-      {/* Product Grid */}
+      {/* Product Grid / Loading Skeletons */}
       {loading ? (
         <div className="product-catalog-grid">
-          {[1, 2, 3, 4].map(n => (
+          {[1, 2, 3, 4, 5, 6].map(n => (
             <div key={n} className="product-item-card skeleton-card">
               <Skeleton width="100%" height="80px" />
               <Skeleton width="70%" height="16px" style={{ margin: '8px 0 4px' }} />
@@ -369,17 +413,17 @@ export default function GroceryMarketplace() {
                       className="ds-icon-btn sm"
                       onClick={() => changeQty(p, -1)}
                       disabled={qty <= 0}
-                      aria-label="Decrease quantity"
+                      aria-label={`Decrease ${p.name} quantity`}
                     >
                       <Minus size={14} />
                     </button>
-                    <span className="qty-counter">{qty}</span>
+                    <span className="qty-counter" aria-label={`Current quantity ${qty}`}>{qty}</span>
                     <button
                       type="button"
                       className="ds-icon-btn sm"
                       onClick={() => changeQty(p, 1)}
                       disabled={qty >= stock || isOutOfStock}
-                      aria-label="Increase quantity"
+                      aria-label={`Increase ${p.name} quantity`}
                     >
                       <Plus size={14} />
                     </button>
@@ -397,14 +441,45 @@ export default function GroceryMarketplace() {
         </div>
       )}
 
-      {/* Cart Summary & Checkout */}
+      {/* Persistent Floating Cart Bar (Shown when items > 0) */}
       {cartLines.length > 0 && (
-        <form className="floating-cart-panel" onSubmit={checkout}>
-          <div className="cart-header">
-            <h3>
+        <div className="persistent-cart-bar" role="region" aria-label="Persistent Shopping Cart">
+          <div className="persistent-cart-left">
+            <div className="cart-count-badge">
               <ShoppingCart size={18} />
-              <span>Your Cart ({cartLines.reduce((s, x) => s + x.quantity, 0)} items)</span>
-            </h3>
+              <span>{totalItemsCount}</span>
+            </div>
+            <div className="cart-pricing-details">
+              <b className="cart-total-amount">{money(total)}</b>
+              <span className="cart-shop-name">
+                <Store size={12} /> {currentShopName} • <span className="cod-label">Cash on Delivery</span>
+              </span>
+            </div>
+          </div>
+
+          <Button
+            variant="primary"
+            size="md"
+            className="cart-checkout-cta"
+            disabled={hasMultipleShops}
+            onClick={() => setIsCheckoutModalOpen(true)}
+          >
+            Review & Checkout <ArrowRight size={16} />
+          </Button>
+        </div>
+      )}
+
+      {/* Checkout BottomSheet Modal */}
+      <Modal
+        isOpen={isCheckoutModalOpen}
+        onClose={() => setIsCheckoutModalOpen(false)}
+        title="Checkout Grocery Order"
+        isBottomSheet={true}
+        size="md"
+      >
+        <form onSubmit={checkout} className="checkout-modal-form">
+          <div className="cart-header">
+            <b>{currentShopName}</b>
             <span className="cart-total-badge">{money(total)}</span>
           </div>
 
@@ -423,7 +498,7 @@ export default function GroceryMarketplace() {
               required={true}
               value={address}
               onChange={e => setAddress(e.target.value)}
-              placeholder="Where should groceries be delivered?"
+              placeholder="House/Apartment #, Street, Town"
             />
             <Input
               label="Contact Phone *"
@@ -437,35 +512,49 @@ export default function GroceryMarketplace() {
               label="Delivery Notes (Optional)"
               value={notes}
               onChange={e => setNotes(e.target.value)}
-              placeholder="Any specific delivery instructions"
+              placeholder="e.g. Leave with security or call on arrival"
             />
           </div>
 
-          <div className="cart-checkout-actions">
-            <span className="cash-on-delivery-note">
-              Payment: Cash on Delivery (Pay driver upon arrival)
-            </span>
+          <div className="cod-security-callout">
+            <ShieldCheck size={18} />
+            <div>
+              <b>Cash on Delivery (COD)</b>
+              <p>Pay cash directly to the delivery driver upon receiving and inspecting your items. 4-digit verification PIN provided.</p>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '8px', marginTop: 'var(--space-4)' }}>
+            <Button
+              variant="ghost"
+              size="lg"
+              type="button"
+              onClick={() => setIsCheckoutModalOpen(false)}
+              style={{ flex: 1 }}
+            >
+              Back
+            </Button>
             <Button
               variant="primary"
               size="lg"
               type="submit"
               loading={busy}
               disabled={hasMultipleShops}
-              iconRight={ArrowRight}
+              style={{ flex: 2 }}
             >
-              {busy ? 'Placing Order...' : `Place Order · ${money(total)}`}
+              Place Cash on Delivery Order
             </Button>
           </div>
         </form>
-      )}
+      </Modal>
 
-      {/* Confirm Cancel Dialog */}
+      {/* Confirmation Dialog for Order Cancellation */}
       <ConfirmDialog
         isOpen={Boolean(cancelTargetId)}
         onClose={() => setCancelTargetId(null)}
         title="Cancel Grocery Order"
-        message="Cancel this grocery order? Reserved items will be returned to stock."
-        confirmLabel="Yes, Cancel"
+        message="Are you sure you want to cancel this pending grocery order? The shop will be notified immediately."
+        confirmLabel="Yes, Cancel Order"
         isDanger={true}
         onConfirm={handleConfirmCancel}
       />

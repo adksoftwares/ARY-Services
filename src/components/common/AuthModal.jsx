@@ -14,7 +14,8 @@ import {
   RefreshCw,
   Bike,
   ShieldCheck,
-  Lock
+  Lock,
+  Sparkles
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { fetchCurrentLocationAddress } from '../../utils/location';
@@ -227,6 +228,8 @@ export default function AuthModal({ onNotice }) {
                   value={loginIdentifier}
                   onChange={e => setLoginIdentifier(e.target.value)}
                   placeholder="e.g. 077 123 4567 or user@example.com"
+                  autoComplete="username"
+                  inputMode="email"
                   autoFocus
                 />
               </label>
@@ -241,6 +244,7 @@ export default function AuthModal({ onNotice }) {
                     value={loginPassword}
                     onChange={e => setLoginPassword(e.target.value)}
                     placeholder="Enter your password"
+                    autoComplete="current-password"
                   />
                   <button
                     type="button"
@@ -317,7 +321,7 @@ export default function AuthModal({ onNotice }) {
             {regAccountType === 'customer' ? (
               <>
                 <div className="quick-reg-banner">
-                  ⚡ <b>Quick Customer Sign-Up:</b> Just enter your Name, Mobile Number, Password and Address!
+                  <Sparkles size={15} style={{ verticalAlign: "middle", marginRight: 4 }} /> <b>Quick Customer Sign-Up:</b> Just enter your Name, Mobile Number, Password and Address!
                 </div>
 
                 <label>
@@ -328,6 +332,7 @@ export default function AuthModal({ onNotice }) {
                     value={regFullName}
                     onChange={e => setRegFullName(e.target.value)}
                     placeholder="e.g. Kannan Kumar"
+                    autoComplete="name"
                     autoFocus
                   />
                 </label>
@@ -340,6 +345,8 @@ export default function AuthModal({ onNotice }) {
                     value={regPhone}
                     onChange={e => setRegPhone(e.target.value)}
                     placeholder="e.g. 077 123 4567"
+                    autoComplete="tel"
+                    inputMode="tel"
                   />
                 </label>
 
@@ -354,6 +361,7 @@ export default function AuthModal({ onNotice }) {
                       value={regPassword}
                       onChange={e => setRegPassword(e.target.value)}
                       placeholder="Create a password (min. 6 characters)"
+                    autoComplete="new-password"
                     />
                     <button
                       type="button"

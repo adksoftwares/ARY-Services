@@ -15,9 +15,10 @@ import {
   Check,
   X,
   FileText,
-  AlertCircle
+  AlertCircle,
+  ChevronRight
 } from 'lucide-react';
-import { Button, Badge, StatusPill, Tabs, Stepper, ConfirmDialog, Modal } from '../../design-system';
+import { Button, Badge, StatusPill, Tabs, Stepper, ConfirmDialog, Modal, Skeleton, EmptyState } from '../../design-system';
 
 export default function MyBookingsList({
   bookings = [],
@@ -31,7 +32,7 @@ export default function MyBookingsList({
   onRescheduleBooking,
   onQuoteDecision
 }) {
-  const [activeTab, setActiveTab] = useState('all');
+  const [activeTab, setActiveTab] = useState('upcoming');
   const [cancelTargetId, setCancelTargetId] = useState(null);
   const [rescheduleTarget, setRescheduleTarget] = useState(null);
   const [newDate, setNewDate] = useState('');
@@ -39,11 +40,11 @@ export default function MyBookingsList({
   const [rescheduleBusy, setRescheduleBusy] = useState(false);
 
   const TABS = [
-    { id: 'all', label: 'All', badge: bookings.length },
     { id: 'upcoming', label: 'Upcoming', badge: bookings.filter(b => ['requested', 'accepted'].includes(b.status)).length },
     { id: 'in_progress', label: 'In Progress', badge: bookings.filter(b => b.status === 'in_progress').length },
     { id: 'completed', label: 'Completed', badge: bookings.filter(b => b.status === 'completed').length },
-    { id: 'cancelled', label: 'Cancelled', badge: bookings.filter(b => ['cancelled', 'rejected'].includes(b.status)).length }
+    { id: 'cancelled', label: 'Cancelled', badge: bookings.filter(b => ['cancelled', 'rejected'].includes(b.status)).length },
+    { id: 'all', label: 'All Requests', badge: bookings.length }
   ];
 
   const filteredBookings = useMemo(() => {
@@ -76,12 +77,20 @@ export default function MyBookingsList({
     }
   }
 
+  const emptyTabDescriptions = {
+    upcoming: 'You have no pending or accepted upcoming service appointments.',
+    in_progress: 'No technicians or trade specialists currently on-site or in transit.',
+    completed: 'You haven\'t completed any service appointments yet.',
+    cancelled: 'No cancelled or rejected service requests.',
+    all: 'No booking history found.'
+  };
+
   return (
-    <section className="my-bookings-container">
+    <section className="my-bookings-container" aria-labelledby="bookings-main-title">
       <div className="section-heading">
         <div>
           <div className="eyebrow">YOUR ACTIVE REQUESTS</div>
-          <h2>My Bookings ({bookings.length})</h2>
+          <h2 id="bookings-main-title">My Bookings ({bookings.length})</h2>
         </div>
         <Button
           variant="outline"
@@ -94,6 +103,7 @@ export default function MyBookingsList({
         </Button>
       </div>
 
+      {/* Tabs navigation */}
       <Tabs
         tabs={TABS}
         activeTab={activeTab}
@@ -102,10 +112,20 @@ export default function MyBookingsList({
         className="bookings-tabs-bar"
       />
 
+      {/* Loading Skeletons */}
       {isLoading ? (
-        <div style={{ textAlign: 'center', padding: 'var(--space-12) 0', color: 'var(--text-muted)' }}>
-          <RefreshCw size={28} className="spin" style={{ margin: '0 auto var(--space-3)', display: 'block' }} />
-          Loading your bookings...
+        <div className="bookings-feed">
+          {[1, 2, 3].map(n => (
+            <div key={n} className="booking-card-item skeleton-card">
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+                <Skeleton width="40%" height="20px" />
+                <Skeleton width="20%" height="20px" />
+              </div>
+              <Skeleton width="100%" height="40px" style={{ marginBottom: 14 }} />
+              <Skeleton width="80%" height="16px" style={{ marginBottom: 8 }} />
+              <Skeleton width="60%" height="16px" />
+            </div>
+          ))}
         </div>
       ) : filteredBookings.length > 0 ? (
         <div className="bookings-feed">
@@ -114,15 +134,19 @@ export default function MyBookingsList({
             const isTerminal = ['completed', 'cancelled', 'rejected'].includes(b.status);
 
             return (
-              <div key={b.id} className="booking-card-item">
+              <div key={b.id} className="booking-card-item" aria-labelledby={`booking-title-${b.id}`}>
+                {/* Header */}
                 <div className="booking-card-header">
                   <div>
-                    <span className="booking-service-title">{b.categoryName || 'Service Request'}</span>
+                    <span id={`booking-title-${b.id}`} className="booking-service-title">
+                      {b.categoryName || 'Service Request'}
+                    </span>
                     <span className="booking-ref-tag">Ref: #{b.id?.slice(0, 8)}</span>
                   </div>
                   <StatusPill status={b.status} />
                 </div>
 
+                {/* Status Timeline / Stepper */}
                 {!isTerminal && (
                   <div className="booking-stepper-box">
                     <Stepper
@@ -132,6 +156,7 @@ export default function MyBookingsList({
                   </div>
                 )}
 
+                {/* Details Grid */}
                 <div className="booking-details-grid">
                   <div>
                     <span className="detail-label">Provider</span>
@@ -167,12 +192,15 @@ export default function MyBookingsList({
                   </div>
                 )}
 
-                {/* Pending Quote Decision */}
+                {/* Pending Quote Decision Card */}
                 {b.quote?.status === 'pending' && (
-                  <div className="booking-quote-card">
+                  <div className="booking-quote-card" role="region" aria-label="Quote received">
                     <div className="quote-header">
-                      <b>Quote Received: LKR {Number(b.quote.amount).toLocaleString('en-LK')}</b>
-                      <span className="quote-scope">{b.quote.scope}</span>
+                      <div>
+                        <span className="quote-badge">New Quote Received</span>
+                        <h4 className="quote-price">LKR {Number(b.quote.amount).toLocaleString('en-LK')}</h4>
+                      </div>
+                      <p className="quote-scope"><b>Scope:</b> {b.quote.scope}</p>
                     </div>
                     <div className="quote-actions">
                       <Button
@@ -200,7 +228,7 @@ export default function MyBookingsList({
                   <div className="booking-reschedule-banner">
                     <Clock size={16} />
                     <div style={{ flex: 1 }}>
-                      <b>Provider suggested a new time:</b> {b.reschedule.date} ({b.reschedule.time})
+                      <b>Provider suggested a new schedule:</b> {b.reschedule.date} ({b.reschedule.time})
                     </div>
                     <div style={{ display: 'flex', gap: '8px' }}>
                       <Button
@@ -280,19 +308,13 @@ export default function MyBookingsList({
           })}
         </div>
       ) : (
-        <div className="no-bookings-placeholder">
-          <ClipboardList size={40} className="placeholder-icon" />
-          <h3>No bookings in this tab</h3>
-          <p>Looking for a verified Sri Lankan electrician, plumber, AC tech, or parcel delivery?</p>
-          <Button
-            variant="primary"
-            size="md"
-            icon={Search}
-            onClick={onExploreServices}
-          >
-            Explore Services
-          </Button>
-        </div>
+        <EmptyState
+          icon={ClipboardList}
+          title={`No ${activeTab.replace('_', ' ')} bookings`}
+          description={emptyTabDescriptions[activeTab] || emptyTabDescriptions.all}
+          actionLabel="Explore Services"
+          onAction={onExploreServices}
+        />
       )}
 
       {/* Confirmation Dialog for Cancellation */}
@@ -300,7 +322,7 @@ export default function MyBookingsList({
         isOpen={Boolean(cancelTargetId)}
         onClose={() => setCancelTargetId(null)}
         title="Cancel Service Booking"
-        message="Are you sure you want to cancel this booking? This action will immediately notify the provider."
+        message="Are you sure you want to cancel this booking? The assigned provider will be notified immediately."
         confirmLabel="Yes, Cancel Booking"
         isDanger={true}
         onConfirm={async () => {
@@ -318,38 +340,42 @@ export default function MyBookingsList({
         title="Reschedule Booking"
         isBottomSheet={true}
         footer={
-          <>
-            <Button variant="ghost" onClick={() => setRescheduleTarget(null)} disabled={rescheduleBusy}>
+          <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+            <Button variant="ghost" onClick={() => setRescheduleTarget(null)} disabled={rescheduleBusy} style={{ flex: 1 }}>
               Cancel
             </Button>
-            <Button variant="primary" onClick={handleConfirmReschedule} loading={rescheduleBusy}>
-              Send Reschedule Request
+            <Button variant="primary" onClick={handleConfirmReschedule} loading={rescheduleBusy} style={{ flex: 2 }}>
+              Confirm New Schedule
             </Button>
-          </>
+          </div>
         }
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-          <label className="ds-label"><span>New Service Date *</span></label>
-          <input
-            type="date"
-            className="ds-input"
-            value={newDate}
-            onChange={e => setNewDate(e.target.value)}
-            min={new Date().toISOString().split('T')[0]}
-            required
-          />
+          <label className="wizard-form-label">
+            <span>New Service Date *</span>
+            <input
+              type="date"
+              className="ds-input"
+              value={newDate}
+              onChange={e => setNewDate(e.target.value)}
+              min={new Date().toISOString().split('T')[0]}
+              required
+            />
+          </label>
 
-          <label className="ds-label"><span>New Time Slot *</span></label>
-          <select
-            className="ds-select"
-            value={newTime}
-            onChange={e => setNewTime(e.target.value)}
-          >
-            <option value="Morning (9 AM - 12 PM)">Morning (9 AM - 12 PM)</option>
-            <option value="Afternoon (1 PM - 4 PM)">Afternoon (1 PM - 4 PM)</option>
-            <option value="Evening (4 PM - 7 PM)">Evening (4 PM - 7 PM)</option>
-            <option value="Emergency / As Soon As Possible">Emergency / As Soon As Possible</option>
-          </select>
+          <label className="wizard-form-label">
+            <span>New Time Slot *</span>
+            <select
+              className="ds-select"
+              value={newTime}
+              onChange={e => setNewTime(e.target.value)}
+            >
+              <option value="Morning (9 AM - 12 PM)">Morning (9 AM - 12 PM)</option>
+              <option value="Afternoon (1 PM - 4 PM)">Afternoon (1 PM - 4 PM)</option>
+              <option value="Evening (4 PM - 7 PM)">Evening (4 PM - 7 PM)</option>
+              <option value="Emergency / As Soon As Possible">Emergency / As Soon As Possible</option>
+            </select>
+          </label>
         </div>
       </Modal>
     </section>

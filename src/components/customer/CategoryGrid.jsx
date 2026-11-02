@@ -24,9 +24,9 @@ export default function CategoryGrid({
           const isSelected = selectedCategory?.id === service.id;
           return (
             <button
+              type="button"
               className={`service-card ${isSelected ? 'active-category-card' : ''}`}
               key={service.id}
-              style={isSelected ? { borderColor: '#174d3d', background: '#f5faf6', transform: 'translateY(-2px)' } : {}}
               onClick={() => onSelectCategory(service)}
             >
               <span className={'service-icon ' + (service.color || 'lilac')}>

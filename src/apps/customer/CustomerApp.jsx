@@ -17,7 +17,9 @@ import {
   Moon,
   Sun,
   Shield,
-  ShoppingBag
+  ShoppingBag,
+  Bell,
+  Home
 } from 'lucide-react';
 import { AuthProvider, useAuth } from '../../context/AuthContext';
 import { API_BASE } from '../../config';
@@ -31,13 +33,13 @@ import BookingModal from '../../components/customer/BookingModal';
 import MyBookingsList from '../../components/customer/MyBookingsList';
 import ReviewModal from '../../components/customer/ReviewModal';
 import DisputeModal from '../../components/customer/DisputeModal';
-import AccountRoleRequest from '../../components/customer/AccountRoleRequest';
+import AccountView from '../../components/customer/AccountView';
 import DesignSystemShowcase from '../../components/design-system-showcase/DesignSystemShowcase';
 import AuthModal from '../../components/common/AuthModal';
 import Footer from '../../components/common/Footer';
 import NotificationCenter from '../../components/common/NotificationCenter';
 import OfflineBanner from '../../components/common/OfflineBanner';
-import { Button, ThemeToggle, ToastProvider, Modal, LanguageSwitcher } from '../../design-system';
+import { Button, ThemeToggle, ToastProvider, Modal, LanguageSwitcher, useToast } from '../../design-system';
 import { LanguageProvider, useT } from '../../utils/i18n';
 
 const SERVICES = [
@@ -82,7 +84,7 @@ function CustomerHeader({ onOpenProfile }) {
               className="user-badge"
               onClick={onOpenProfile}
               title="View account profile & roles"
-              style={{ cursor: 'pointer', border: '1px solid var(--border-default)', background: 'transparent' }}
+              style={{ cursor: 'pointer', border: '1px solid var(--border-subtle)', background: 'transparent' }}
             >
               <UserRound size={14} />
               <span>{currentUser.fullName}</span>
@@ -109,7 +111,7 @@ function CustomerHeader({ onOpenProfile }) {
   );
 }
 
-function CustomerMobileBottomNav({ bookingsCount = 0, onOpenProfile }) {
+function CustomerMobileBottomNav({ bookingsCount = 0, onOpenProfile, onOpenAlerts }) {
   const { currentUser, openAuthModal } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -127,11 +129,13 @@ function CustomerMobileBottomNav({ bookingsCount = 0, onOpenProfile }) {
 
   return (
     <nav className="mobile-bottom-nav" aria-label="Mobile Bottom Navigation">
+      {/* 1. Home */}
       <Link to="/" className={`mob-nav-item ${isHome ? 'active' : ''}`}>
-        <Search size={20} />
+        <Home size={20} />
         <span>Explore</span>
       </Link>
 
+      {/* 2. Bookings */}
       <Link
         to="/bookings"
         className={`mob-nav-item ${isBookings ? 'active' : ''}`}
@@ -149,24 +153,33 @@ function CustomerMobileBottomNav({ bookingsCount = 0, onOpenProfile }) {
         <span>Bookings</span>
       </Link>
 
-      <button
-        type="button"
-        className="mob-nav-item"
-        onClick={() => scrollToSection('mobility-services')}
-      >
-        <Bike size={20} />
-        <span>Rides & Food</span>
-      </button>
-
+      {/* 3. Orders */}
       <button
         type="button"
         className="mob-nav-item"
         onClick={() => scrollToSection('grocery-section')}
       >
         <ShoppingBag size={20} />
-        <span>Grocery</span>
+        <span>Orders</span>
       </button>
 
+      {/* 4. Alerts / Notifications */}
+      <button
+        type="button"
+        className="mob-nav-item"
+        onClick={() => {
+          if (!currentUser) {
+            openAuthModal('login');
+          } else if (onOpenAlerts) {
+            onOpenAlerts();
+          }
+        }}
+      >
+        <Bell size={20} />
+        <span>Alerts</span>
+      </button>
+
+      {/* 5. Account */}
       {currentUser ? (
         <button
           type="button"
@@ -207,6 +220,30 @@ function CustomerWorkspace() {
   const [reviewBooking, setReviewBooking] = useState(null);
   const [disputeBookingItem, setDisputeBookingItem] = useState(null);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
+
+  // Hardware Back Button Handling for Capacitor WebView
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.Capacitor?.Plugins?.App) {
+      const handleBack = window.Capacitor.Plugins.App.addListener('backButton', ({ canGoBack }) => {
+        if (profileModalOpen) {
+          setProfileModalOpen(false);
+        } else if (bookingOpen) {
+          setBookingOpen(false);
+        } else if (reviewBooking) {
+          setReviewBooking(null);
+        } else if (disputeBookingItem) {
+          setDisputeBookingItem(null);
+        } else if (canGoBack) {
+          window.history.back();
+        } else {
+          window.Capacitor.Plugins.App.exitApp();
+        }
+      });
+      return () => {
+        handleBack.then(h => h?.remove?.());
+      };
+    }
+  }, [profileModalOpen, bookingOpen, reviewBooking, disputeBookingItem]);
 
   const fetchProviders = useCallback(async (category = selectedCategory?.slug, search = query, location = coords) => {
     setLoadingProviders(true);
@@ -343,9 +380,20 @@ function CustomerWorkspace() {
                 setQuery={setQuery}
                 onNotice={setNotice}
                 onSearch={() => fetchProviders(selectedCategory?.slug, query, coords)}
+                onSelectCategory={handleCategorySelect}
                 onLocationDetected={(newCoords) => {
                   setCoords(newCoords);
                   fetchProviders(selectedCategory?.slug, query, newCoords);
+                }}
+                popularProviders={providers}
+                onBookProvider={(provider) => {
+                  if (!currentUser) {
+                    setNotice('Please sign in or create an account to book a service.');
+                    openAuthModal('login');
+                    return;
+                  }
+                  setBookingProvider(provider);
+                  setBookingOpen(true);
                 }}
               />
 
@@ -360,6 +408,7 @@ function CustomerWorkspace() {
                 providers={providers}
                 isLoading={loadingProviders}
                 onRefresh={() => fetchProviders(selectedCategory?.slug, query, coords)}
+                onSelectCategory={handleCategorySelect}
                 onBookProvider={(provider) => {
                   if (!currentUser) {
                     setNotice('Please sign in or create an account to book a service.');
@@ -378,12 +427,6 @@ function CustomerWorkspace() {
               <div id="grocery-section">
                 <GroceryMarketplace />
               </div>
-
-              {currentUser && (
-                <div style={{ margin: 'var(--space-8) 0' }}>
-                  <AccountRoleRequest onNotice={setNotice} />
-                </div>
-              )}
             </>
           } />
 
@@ -406,6 +449,7 @@ function CustomerWorkspace() {
         </Routes>
       </main>
 
+      {/* Guided Multi-step Booking BottomSheet Modal */}
       <BookingModal
         isOpen={bookingOpen}
         onClose={() => setBookingOpen(false)}
@@ -420,6 +464,7 @@ function CustomerWorkspace() {
         }}
       />
 
+      {/* Review Modal */}
       {reviewBooking && (
         <ReviewModal
           isOpen={Boolean(reviewBooking)}
@@ -429,6 +474,7 @@ function CustomerWorkspace() {
         />
       )}
 
+      {/* Dispute Modal */}
       {disputeBookingItem && (
         <DisputeModal
           isOpen={Boolean(disputeBookingItem)}
@@ -438,53 +484,44 @@ function CustomerWorkspace() {
         />
       )}
 
-      {/* Account Profile Bottom Sheet Modal */}
+      {/* Account Profile BottomSheet Modal */}
       <Modal
         isOpen={profileModalOpen}
         onClose={() => setProfileModalOpen(false)}
-        title="My Account Profile"
+        title="My ARY Account"
         isBottomSheet={true}
+        size="md"
       >
-        {currentUser && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: 'var(--space-3) 0', borderBottom: '1px solid var(--border-subtle)' }}>
-              <div style={{ width: 50, height: 50, borderRadius: '50%', background: 'var(--brand-primary)', color: '#fff', display: 'grid', placeItems: 'center', fontWeight: 'bold', fontSize: '18px' }}>
-                {currentUser.fullName ? currentUser.fullName.slice(0, 2).toUpperCase() : 'U'}
-              </div>
-              <div>
-                <b style={{ fontSize: 'var(--text-base)' }}>{currentUser.fullName}</b>
-                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>{currentUser.phone || currentUser.email}</div>
-                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--brand-primary)', fontWeight: 'bold', textTransform: 'capitalize' }}>
-                  Role: {currentUser.accountType}
-                </div>
-              </div>
-            </div>
-
-            <AccountRoleRequest onNotice={setNotice} />
-          </div>
-        )}
+        <AccountView
+          onNotice={setNotice}
+          onClose={() => setProfileModalOpen(false)}
+        />
       </Modal>
 
       <AuthModal onNotice={setNotice} />
 
       {notice && (
-        <div className="ds-toast ds-toast-info" role="status">
+        <div
+          className="toast"
+          role="status"
+          aria-live="polite"
+          style={{ cursor: 'pointer' }}
+          onClick={() => setNotice('')}
+        >
           <span>{notice}</span>
-          <button
-            type="button"
-            className="ds-icon-btn sm"
-            onClick={() => setNotice('')}
-            aria-label="Dismiss notice"
-          >
+          <button type="button" onClick={() => setNotice('')} aria-label="Dismiss message">
             ×
           </button>
         </div>
       )}
 
       <Footer />
+
+      {/* Mobile Bottom Navigation */}
       <CustomerMobileBottomNav
         bookingsCount={activeBookingsCount}
         onOpenProfile={() => setProfileModalOpen(true)}
+        onOpenAlerts={() => setProfileModalOpen(true)}
       />
     </div>
   );
@@ -492,14 +529,14 @@ function CustomerWorkspace() {
 
 export default function CustomerApp() {
   return (
-    <LanguageProvider>
-      <ToastProvider>
-        <AuthProvider>
+    <AuthProvider>
+      <LanguageProvider>
+        <ToastProvider>
           <BrowserRouter>
             <CustomerWorkspace />
           </BrowserRouter>
-        </AuthProvider>
-      </ToastProvider>
-    </LanguageProvider>
+        </ToastProvider>
+      </LanguageProvider>
+    </AuthProvider>
   );
 }

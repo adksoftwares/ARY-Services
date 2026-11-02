@@ -13,12 +13,15 @@ import {
   AlertCircle,
   Clock,
   User,
-  Car
+  Car,
+  Ban,
+  RefreshCw,
+  Info
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE } from '../../config';
 import { subscribeToAppEvents } from '../../utils/events';
-import { Button, Input, Select, Badge, SegmentedControl, Card } from '../../design-system';
+import { Button, Input, Select, Badge, SegmentedControl, Card, Stepper, ConfirmDialog } from '../../design-system';
 
 export default function MobilityServices({ onNotice }) {
   const { currentUser, openAuthModal } = useAuth();
@@ -44,6 +47,7 @@ export default function MobilityServices({ onNotice }) {
   const [gpsBusy, setGpsBusy] = useState(false);
   const [myJobs, setMyJobs] = useState([]);
   const [jobsError, setJobsError] = useState('');
+  const [cancelTargetJobId, setCancelTargetJobId] = useState(null);
 
   const change = (key, value) => setForm(old => ({ ...old, [key]: value }));
 
@@ -84,8 +88,11 @@ export default function MobilityServices({ onNotice }) {
       if (!response.ok) throw new Error(data.error || 'Could not cancel this request.');
       await refreshJobs();
       setMessage('Request cancelled successfully.');
+      onNotice?.('Mobility request cancelled.');
     } catch (err) {
       setJobsError(err.message || 'Could not cancel this request.');
+    } finally {
+      setCancelTargetJobId(null);
     }
   }
 
@@ -98,7 +105,7 @@ export default function MobilityServices({ onNotice }) {
     navigator.geolocation.getCurrentPosition(position => {
       setGps({ lat: position.coords.latitude, lng: position.coords.longitude, accuracyM: position.coords.accuracy });
       setGpsBusy(false);
-      setMessage('GPS coordinates added to request.');
+      setMessage('GPS coordinates attached.');
     }, error => {
       setGpsBusy(false);
       setMessage(error.code === 1 ? 'Location permission was denied.' : 'Could not read GPS location.');
@@ -148,12 +155,19 @@ export default function MobilityServices({ onNotice }) {
   // Estimated fare calculation
   const estimatedFare = mode === 'food' ? 'LKR 450 - 650' : mode === 'parcel' ? 'LKR 550 - 900' : 'LKR 650 - 1,200';
 
+  const getJobStep = (job) => {
+    if (job.status === 'completed') return 3;
+    if (job.status === 'in_progress') return 2;
+    if (job.assignedDriverId || job.driverName) return 1;
+    return 0; // requested
+  };
+
   return (
-    <section className="services-section" id="mobility-services">
+    <section className="services-section" id="mobility-services" aria-labelledby="mobility-heading">
       <div className="section-heading">
         <div>
-          <div className="eyebrow">DEDICATED DRIVER FLEETS</div>
-          <h2>Delivery or a Ride?</h2>
+          <div className="eyebrow">DEDICATED MOBILITY FLEETS</div>
+          <h2 id="mobility-heading">Rides, Food & Parcel Delivery</h2>
         </div>
         <span className="section-note">Separate driver networks · Verified background checks</span>
       </div>
@@ -182,6 +196,11 @@ export default function MobilityServices({ onNotice }) {
             <Badge variant="brand" dot={false}>
               Est. Fare: {estimatedFare}
             </Badge>
+          </div>
+
+          <div className="fare-estimate-notice">
+            <Info size={14} />
+            <span>Fares shown are <b>estimates</b> based on straight-line distance. Road routing, traffic, and toll conditions may adjust final meter.</span>
           </div>
 
           {mode === 'food' && (
@@ -225,19 +244,19 @@ export default function MobilityServices({ onNotice }) {
           {mode === 'parcel' && (
             <>
               <Input
-                label="Sender Pickup Address *"
+                label="Pickup Address *"
                 required={true}
                 value={form.pickup}
                 onChange={e => change('pickup', e.target.value)}
-                placeholder="Address where parcel is collected"
+                placeholder="Sender pickup address"
                 icon={MapPin}
               />
               <Input
-                label="Recipient Destination Address *"
+                label="Drop-off Address *"
                 required={true}
                 value={form.destination}
                 onChange={e => change('destination', e.target.value)}
-                placeholder="Recipient address"
+                placeholder="Recipient delivery address"
                 icon={MapPin}
               />
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
@@ -334,7 +353,7 @@ export default function MobilityServices({ onNotice }) {
             label="Driver Notes (Optional)"
             value={form.notes}
             onChange={e => change('notes', e.target.value)}
-            placeholder="e.g. Near yellow gate, gate code #1234"
+            placeholder="e.g. Near yellow gate, call on arrival"
           />
 
           {message && (
@@ -366,10 +385,10 @@ export default function MobilityServices({ onNotice }) {
 
           <p className="mobility-info-body">
             {mode === 'food'
-              ? 'Our food delivery drivers only handle restaurant pickups and meal deliveries to ensure timely and hygienic service.'
+              ? 'Dedicated food couriers equipped with insulated bags to keep hot meals fresh from restaurant to door.'
               : mode === 'parcel'
-              ? 'Real-time peer-to-peer parcel courier with mandatory recipient verification PIN before package release.'
-              : 'Direct point-to-point passenger transport with upfront fare estimate and 4-digit ride start PIN.'}
+              ? 'Point-to-point courier service with mandatory 4-digit recipient verification PIN before package release.'
+              : 'Direct passenger rides with upfront fare estimate and 4-digit ride start PIN for peace of mind.'}
           </p>
 
           <div className="pin-security-callout">
@@ -382,13 +401,13 @@ export default function MobilityServices({ onNotice }) {
         </aside>
       </div>
 
-      {/* Active Requests List */}
+      {/* Active Requests Feed with Live Status Stepper */}
       {currentUser?.token && myJobs.length > 0 && (
-        <section className="active-mobility-feed">
+        <section className="active-mobility-feed" aria-labelledby="active-mobility-title">
           <div className="section-heading" style={{ marginTop: 'var(--space-8)' }}>
             <div>
-              <div className="eyebrow">YOUR DISPATCH STATUS</div>
-              <h3>Active Mobility & Deliveries ({myJobs.length})</h3>
+              <div className="eyebrow">YOUR LIVE FLEET STATUS</div>
+              <h3 id="active-mobility-title">Active Trips & Deliveries ({myJobs.length})</h3>
             </div>
             <Button variant="outline" size="sm" icon={RefreshCw} onClick={refreshJobs}>
               Refresh Status
@@ -405,6 +424,7 @@ export default function MobilityServices({ onNotice }) {
             {myJobs.map(job => {
               const isAssigned = Boolean(job.driverName);
               const isRequested = job.status === 'requested';
+              const stepIndex = getJobStep(job);
 
               return (
                 <div key={job.id} className="mobility-job-card">
@@ -413,11 +433,19 @@ export default function MobilityServices({ onNotice }) {
                       <b className="mobility-job-title">
                         {job.serviceType === 'food_delivery' ? 'Food Delivery' : job.serviceType === 'parcel_delivery' ? 'Parcel Courier' : 'Ride Trip'}
                       </b>
-                      <span className="mobility-job-id">#{job.id?.slice(0, 8)}</span>
+                      <span className="mobility-job-id">Ref: #{job.id?.slice(0, 8)}</span>
                     </div>
                     <Badge variant={job.status === 'completed' ? 'success' : job.status === 'in_progress' ? 'brand' : 'warning'}>
                       {String(job.status || 'requested').replace('_', ' ')}
                     </Badge>
+                  </div>
+
+                  {/* Live Status Stepper */}
+                  <div style={{ margin: '14px 0' }}>
+                    <Stepper
+                      steps={['Broadcasted', 'Driver Assigned', 'In Transit', 'Completed']}
+                      currentStep={stepIndex}
+                    />
                   </div>
 
                   <div className="mobility-route-box">
@@ -434,21 +462,21 @@ export default function MobilityServices({ onNotice }) {
                   {job.driverName && (
                     <div className="driver-assigned-strip">
                       <User size={15} />
-                      <span>Assigned Driver: <b>{job.driverName}</b></span>
+                      <span>Assigned Driver: <b>{job.driverName}</b> {job.driverPhone ? `(${job.driverPhone})` : ''}</span>
                     </div>
                   )}
 
-                  {/* High Contrast PIN Display Card */}
-                  {(job.startPin || job.pickupPin || job.deliveryPin) && (
+                  {/* Big Copyable PIN Card (Shown only when PINs exist and relevant) */}
+                  {(job.startPin || job.pickupPin || job.deliveryPin) && job.status !== 'completed' && (
                     <div className="pin-handoff-card">
                       <div className="pin-card-header">
                         <ShieldCheck size={16} />
-                        <span>Handoff Verification PINs (Share at handover)</span>
+                        <span>Handoff Verification PINs (Share ONLY at Handover)</span>
                       </div>
                       <div className="pin-card-items">
                         {job.startPin && (
                           <div className="pin-pill-box">
-                            <span className="pin-type">Trip Start</span>
+                            <span className="pin-type">Trip Start PIN</span>
                             <span className="pin-code">{job.startPin}</span>
                             <button
                               type="button"
@@ -462,7 +490,7 @@ export default function MobilityServices({ onNotice }) {
                         )}
                         {job.pickupPin && (
                           <div className="pin-pill-box">
-                            <span className="pin-type">Pickup</span>
+                            <span className="pin-type">Pickup PIN</span>
                             <span className="pin-code">{job.pickupPin}</span>
                             <button
                               type="button"
@@ -476,7 +504,7 @@ export default function MobilityServices({ onNotice }) {
                         )}
                         {job.deliveryPin && (
                           <div className="pin-pill-box">
-                            <span className="pin-type">Delivery / Release</span>
+                            <span className="pin-type">Delivery Release PIN</span>
                             <span className="pin-code">{job.deliveryPin}</span>
                             <button
                               type="button"
@@ -492,14 +520,16 @@ export default function MobilityServices({ onNotice }) {
                     </div>
                   )}
 
+                  {/* Cancel Button while Unassigned */}
                   {isRequested && (
                     <div style={{ marginTop: 'var(--space-3)' }}>
                       <Button
-                        variant="danger"
+                        variant="ghost"
                         size="sm"
-                        onClick={() => cancelRequest(job.id)}
+                        icon={Ban}
+                        onClick={() => setCancelTargetJobId(job.id)}
                       >
-                        Cancel Request
+                        Cancel Unassigned Request
                       </Button>
                     </div>
                   )}
@@ -509,6 +539,19 @@ export default function MobilityServices({ onNotice }) {
           </div>
         </section>
       )}
+
+      {/* Confirmation Dialog for Mobility Job Cancellation */}
+      <ConfirmDialog
+        isOpen={Boolean(cancelTargetJobId)}
+        onClose={() => setCancelTargetJobId(null)}
+        title="Cancel Trip / Delivery Request"
+        message="Are you sure you want to cancel this request? Nearby drivers will no longer receive this dispatch."
+        confirmLabel="Yes, Cancel Request"
+        isDanger={true}
+        onConfirm={() => {
+          if (cancelTargetJobId) cancelRequest(cancelTargetJobId);
+        }}
+      />
     </section>
   );
 }
