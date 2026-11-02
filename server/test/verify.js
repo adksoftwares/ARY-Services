@@ -95,56 +95,56 @@ assert.equal(normalizePhone('077 123 4567'), '0771234567', 'Normalize spaces');
 console.log('✓ Phone number normalization (+94, hyphens, spaces) verified');
 
 const testPhone = '077 987 6543';
-const sendRes = sendOtp(testPhone);
+const sendRes = await sendOtp(testPhone);
 assert(sendRes.success === true, 'OTP send should succeed');
 assert(sendRes.devCode && sendRes.devCode.length === 6, 'OTP must be 6 digits');
 console.log(`✓ OTP generated successfully: [${sendRes.devCode}] for ${sendRes.phone}`);
 
 // Test 30s Cooldown
-const cooldownRes = sendOtp(testPhone);
+const cooldownRes = await sendOtp(testPhone);
 assert(cooldownRes.success === false, 'Immediate second OTP request must be rejected by cooldown');
 assert(cooldownRes.waitSeconds > 0, 'Wait seconds must be greater than 0');
 console.log(`✓ Cooldown rate-limit enforced: rejected with wait seconds: ${cooldownRes.waitSeconds}`);
 
 // Test Invalid Code
-const wrongRes = verifyOtp(testPhone, '000000');
+const wrongRes = await verifyOtp(testPhone, '000000');
 assert(wrongRes.valid === false, 'Invalid OTP must be rejected');
 console.log('✓ Invalid code correctly rejected');
 
 // Test Valid Code
-const correctRes = verifyOtp(testPhone, sendRes.devCode);
+const correctRes = await verifyOtp(testPhone, sendRes.devCode);
 assert(correctRes.valid === true, 'Valid OTP must be accepted');
 console.log('✓ Valid code accepted');
 
 // Test Single-Use (Replay attack prevention)
-const replayRes = verifyOtp(testPhone, sendRes.devCode);
+const replayRes = await verifyOtp(testPhone, sendRes.devCode);
 assert(replayRes.valid === false, 'Replaying consumed OTP must be rejected');
 console.log('✓ Replay prevention confirmed: code cannot be reused');
 
 // Test Rate Limit Preservation after code consumption
-const cooldownAfterConsume = sendOtp(testPhone);
+const cooldownAfterConsume = await sendOtp(testPhone);
 assert(cooldownAfterConsume.success === false, 'Send cooldown must NOT be reset by consuming an OTP');
 console.log('✓ Rate-limit preservation confirmed: consuming OTP preserves phone send cooldown');
 
 // Test Brute-force 5-attempt threshold
 console.log('Testing OTP brute-force lockout...');
 const brutePhone = '077 111 2233';
-const bruteSend = sendOtp(brutePhone);
+const bruteSend = await sendOtp(brutePhone);
 assert(bruteSend.success === true);
 
 // 4 wrong attempts
 for (let attempt = 1; attempt <= 4; attempt++) {
-  const res = verifyOtp(brutePhone, '000000');
+  const res = await verifyOtp(brutePhone, '000000');
   assert.equal(res.valid, false);
   assert(res.error.includes(`${5 - attempt} attempt`), `Should show remaining attempts: ${res.error}`);
 }
 // 5th wrong attempt should lock out immediately
-const lockRes = verifyOtp(brutePhone, '000000');
+const lockRes = await verifyOtp(brutePhone, '000000');
 assert.equal(lockRes.valid, false);
 assert(lockRes.error.includes('invalidated for security'), 'Must be invalidated on 5th attempt');
 
 // Subsequent attempt even with the CORRECT code must be rejected because code was deleted
-const tryCorrectAfterLockout = verifyOtp(brutePhone, bruteSend.devCode);
+const tryCorrectAfterLockout = await verifyOtp(brutePhone, bruteSend.devCode);
 assert.equal(tryCorrectAfterLockout.valid, false, 'Correct code must be rejected after brute-force lockout');
 console.log('✓ Brute-force lockout confirmed: code immediately destroyed on 5th failure');
 

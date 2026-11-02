@@ -83,17 +83,24 @@ export function registerRoleAccessRoutes(app, { requireAuth, requireAdmin, getUs
       const location = String(details.location || current.location || '').trim();
       const nicNumber = String(details.nicNumber || '').trim().toUpperCase();
       const operatingMode = String(details.operatingMode || '').trim();
-      if (!PROVIDER_CATEGORIES.has(category) || !location || !nicNumber || !operatingMode) {
-        return res.status(400).json({ error: 'Provider applications require a valid category, business/service address, NIC number and operating mode.' });
+      const nsnNumber = String(details.nsnNumber || '').trim();
+      if (!PROVIDER_CATEGORIES.has(category) || !location || !nicNumber || !operatingMode || !nsnNumber) {
+        return res.status(400).json({ error: 'Provider applications require a valid category, business/service address, NIC number, operating mode and NSN number.' });
       }
       if (!/^([0-9]{9}[VX]|[0-9]{12})$/.test(nicNumber)) {
         return res.status(400).json({ error: 'Enter a valid Sri Lankan NIC number.' });
       }
+      if (!['shop', 'online', 'mobile'].includes(operatingMode)) {
+        return res.status(400).json({ error: 'Choose Shop-based, Online or Mobile / On-location as the operating mode.' });
+      }
+      if (nsnNumber.length > 40) {
+        return res.status(400).json({ error: 'NSN number must be 40 characters or fewer.' });
+      }
       application.details = {
         category, categoryName: String(details.categoryName || category).slice(0, 100),
         location: location.slice(0, 300), nicNumber,
-        operatingMode: operatingMode.slice(0, 40),
-        nsnNumber: String(details.nsnNumber || '').trim().slice(0, 40),
+        operatingMode,
+        nsnNumber,
         baseCharge: String(details.baseCharge || 'LKR 1,500').slice(0, 40)
       };
     } else {

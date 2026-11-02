@@ -4,6 +4,7 @@ import cors from 'cors';
 import pg from 'pg';
 import crypto from 'node:crypto';
 import rateLimit from 'express-rate-limit';
+import { findLiveUserForToken } from './sessionIdentity.js';
 
 import {
   getUsers,
@@ -45,7 +46,8 @@ const port = Number(process.env.PORT || 4000);
 
 // Structured Request Correlation & Observability Middleware
 app.use((req, res, next) => {
-  req.id = req.headers['x-request-id'] || `req-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+  const suppliedRequestId = typeof req.headers['x-request-id'] === 'string' ? req.headers['x-request-id'].trim() : '';
+  req.id = /^[a-zA-Z0-9._-]{8,80}$/.test(suppliedRequestId) ? suppliedRequestId : crypto.randomUUID();
   res.setHeader('x-request-id', req.id);
   const startTime = Date.now();
   res.on('finish', () => {
@@ -157,7 +159,14 @@ function verifyToken(token) {
     const decodedHeader = JSON.parse(Buffer.from(header, 'base64url').toString('utf-8'));
     if (decodedHeader.alg !== 'HS256' || decodedHeader.typ !== 'JWT') return null;
     const payload = JSON.parse(Buffer.from(body, 'base64url').toString('utf-8'));
-    if (payload.exp && payload.exp < Date.now()) return null;
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return null;
+    if (!Number.isFinite(payload.exp) || payload.exp <= Date.now()) return null;
+    const isRegistrationToken = payload.purpose === 'customer_registration';
+    if (isRegistrationToken) {
+      if (typeof payload.phone !== 'string' || !payload.phone.trim()) return null;
+    } else if (typeof payload.id !== 'string' || !payload.id.trim()) {
+      return null;
+    }
     return payload;
   } catch {
     return null;
@@ -179,12 +188,10 @@ async function requireAuth(req, res, next) {
 
     // Real-time account active check (instant revocation on admin reject/suspend)
     const users = await getUsers();
-    const decodedPhoneDigits = decoded.phone ? normalizePhone(decoded.phone) : null;
-    const liveUser = users.find(u =>
-      u.id === decoded.id ||
-      (decodedPhoneDigits && u.phone && normalizePhone(u.phone) === decodedPhoneDigits) ||
-      (u.email && decoded.email && u.email.toLowerCase() === decoded.email.toLowerCase())
-    );
+    // The immutable account ID is the only identity key accepted from a signed token.
+    // Falling back to phone/email can silently attach an old session to a different
+    // account after a contact detail is changed or recycled.
+    const liveUser = findLiveUserForToken(users, decoded);
 
     if (!liveUser) {
       return res.status(401).json({ error: 'User account no longer exists.' });
@@ -474,6 +481,8 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
       categoryName = 'General Services',
       baseCharge = 'LKR 1,500',
       nicNumber,
+      nsnNumber,
+      operatingMode,
       nicDocument,
       tradeCertificate,
       driverServices = []
@@ -486,7 +495,7 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
     const cleanEmail = email ? email.trim().toLowerCase() : null;
     const cleanPhone = phone ? phone.trim() : (cleanEmail ? cleanEmail.split('@')[0] : '');
     const cleanLocation = (location || '').trim();
-    const effectivePassword = password || (role === 'customer' ? 'customer123' : null);
+    const effectivePassword = password || (role === 'customer' ? crypto.randomBytes(32).toString('hex') : null);
 
     if (!fullName || (role === 'customer' && !cleanPhone) || !effectivePassword) {
       return res.status(400).json({
@@ -496,11 +505,22 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
       });
     }
 
+    // Provider onboarding must capture the business operating model and NSN
+    // before the application can enter the Admin approval queue.
+    const cleanNsn = role === 'provider' ? String(nsnNumber || '').trim() : null;
+    const cleanOperatingMode = role === 'provider' ? String(operatingMode || '').trim() : null;
+    if (role === 'provider' && (!cleanNsn || cleanNsn.length > 40 || !['shop', 'online', 'mobile'].includes(cleanOperatingMode))) {
+      return res.status(400).json({ error: 'Provider registration requires an NSN number and a valid operating mode (shop, online or mobile).' });
+    }
+    if (['provider', 'driver'].includes(role) && !String(nicNumber || '').trim()) {
+      return res.status(400).json({ error: 'A National Identity Card number is required for Provider and Driver registration.' });
+    }
+
     // Sri Lankan NIC verification for service providers
     let cleanNic = null;
     if (['provider', 'driver'].includes(role) && nicNumber) {
       const trimmedNic = String(nicNumber).trim().toUpperCase();
-      const isValidNic = /^([0-9]{9}[V|X]|[0-9]{12})$/.test(trimmedNic);
+      const isValidNic = /^([0-9]{9}[VX]|[0-9]{12})$/.test(trimmedNic);
       if (!isValidNic) {
         return res.status(400).json({ error: 'Invalid Sri Lankan NIC number format. Must be 9 digits followed by V/X or 12 digits.' });
       }
@@ -555,6 +575,8 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
       reviewCount: role === 'provider' ? 0 : null,
       experienceYears: role === 'provider' ? 3 : null,
       nicNumber: cleanNic,
+      nsnNumber: cleanNsn,
+      operatingMode: cleanOperatingMode,
       nicDocument: nicDocument || null,
       tradeCertificate: tradeCertificate || null,
       kycStatus: ['provider', 'driver'].includes(role) ? (cleanNic ? 'pending' : 'unverified') : 'verified',

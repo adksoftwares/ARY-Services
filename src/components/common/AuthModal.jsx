@@ -66,6 +66,8 @@ export default function AuthModal({ onNotice }) {
   const [regAccountType, setRegAccountType] = useState('customer');
   const [regCategory, setRegCategory] = useState('electrical-repair');
   const [regBaseCharge, setRegBaseCharge] = useState('LKR 1,500');
+  const [regNsnNumber, setRegNsnNumber] = useState('');
+  const [regOperatingMode, setRegOperatingMode] = useState('mobile');
   const [regNicNumber, setRegNicNumber] = useState('');
   const [regNicDoc, setRegNicDoc] = useState('');
   const [regTradeCert, setRegTradeCert] = useState('');
@@ -224,6 +226,8 @@ export default function AuthModal({ onNotice }) {
           regCategory === 'grocery-products' ? 'Grocery Products / Mini Mart' : 'Other Services'
         ) : null,
         baseCharge: regAccountType === 'provider' ? regBaseCharge : null,
+        nsnNumber: regAccountType === 'provider' ? regNsnNumber.trim() : null,
+        operatingMode: regAccountType === 'provider' ? regOperatingMode : null,
         nicNumber: ['provider', 'driver'].includes(regAccountType) ? regNicNumber.trim() : null,
         nicDocument: ['provider', 'driver'].includes(regAccountType) ? regNicDoc : null,
         tradeCertificate: ['provider', 'driver'].includes(regAccountType) ? regTradeCert : null
@@ -281,6 +285,8 @@ export default function AuthModal({ onNotice }) {
     setRegPassword('');
     setRegAccountType('customer');
     setRegNicNumber('');
+    setRegNsnNumber('');
+    setRegOperatingMode('mobile');
     setRegNicDoc('');
     setRegTradeCert('');
     setRegDriverServices(['food_delivery']);
@@ -822,6 +828,21 @@ export default function AuthModal({ onNotice }) {
                     <option value="other-services">Other Services (AC, Cleaning, Carpentry)</option>
                   </select>
                 </label>}
+
+                {regAccountType === 'provider' && <>
+                  <label>
+                    <span>Business Operating Mode *</span>
+                    <select required value={regOperatingMode} onChange={e => setRegOperatingMode(e.target.value)} style={{width:'100%',padding:'11px',borderRadius:'8px',border:'1px solid #dce2d9',background:'white',fontSize:'13px',color:'#20332d'}}>
+                      <option value="shop">Shop-based</option>
+                      <option value="online">Online</option>
+                      <option value="mobile">Mobile / On-location</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span>NSN Number *</span>
+                    <input required type="text" value={regNsnNumber} onChange={e => setRegNsnNumber(e.target.value)} placeholder="Enter your NSN number"/>
+                  </label>
+                </>}
 
                 {regAccountType === 'provider' && <label>
                   <span>Base Service / Inspection Charge</span>
