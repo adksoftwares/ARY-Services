@@ -42,16 +42,16 @@ export function subscribeToEvents(req, res, identity) {
     res
   };
   clients.add(client);
-  res.write(`event: connected\\ndata: {"status":"connected"}\\n\\n`);
+  res.write(`event: connected\ndata: {"status":"connected"}\n\n`);
   const heartbeat = setInterval(() => {
-    try { res.write(': keepalive\\n\\n'); }
+    try { res.write(': keepalive\n\n'); }
     catch { clearInterval(heartbeat); clients.delete(client); }
   }, 25000);
   req.on('close', () => { clearInterval(heartbeat); clients.delete(client); });
 }
 
 export function broadcastEvent(eventType, payload = {}) {
-  const message = `event: ${eventType}\\ndata: {"event":"${eventType}"}\\n\\n`;
+  const message = `event: ${eventType}\ndata: {"event":"${eventType}"}\n\n`;
   for (const client of clients) {
     if (!canReceive(client, eventType, payload)) continue;
     try { client.res.write(message); }
