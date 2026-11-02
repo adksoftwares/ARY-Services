@@ -8,6 +8,7 @@ import ProviderDashboard from '../../components/provider/ProviderDashboard';
 import AuthModal from '../../components/common/AuthModal';
 import Footer from '../../components/common/Footer';
 import NotificationCenter from '../../components/common/NotificationCenter';
+import OfflineBanner from '../../components/common/OfflineBanner';
 import ProviderServicesManager from '../../components/provider/ProviderServicesManager';
 import { ThemeToggle, Button } from '../../design-system';
 
@@ -95,6 +96,7 @@ function ProviderWorkspace() {
 
   return (
     <div className="app-shell">
+      <OfflineBanner />
       <header className="topbar">
         <Link to="/" className="brand" aria-label="ARY Services Provider home">
           <span className="brand-mark">A</span><span>ARY <b>Provider</b></span>

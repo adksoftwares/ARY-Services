@@ -35,6 +35,7 @@ import AccountRoleRequest from '../../components/customer/AccountRoleRequest';
 import AuthModal from '../../components/common/AuthModal';
 import Footer from '../../components/common/Footer';
 import NotificationCenter from '../../components/common/NotificationCenter';
+import OfflineBanner from '../../components/common/OfflineBanner';
 import { Button, ThemeToggle, ToastProvider, Modal } from '../../design-system';
 
 const SERVICES = [
@@ -325,6 +326,7 @@ function CustomerWorkspace() {
 
   return (
     <div className="app-shell">
+      <OfflineBanner />
       <CustomerHeader onOpenProfile={() => setProfileModalOpen(true)} />
 
       <main tabIndex={-1}>

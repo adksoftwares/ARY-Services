@@ -351,7 +351,7 @@ export default function AuthModal({ onNotice }) {
                       type={showRegPassword ? 'text' : 'password'}
                       value={regPassword}
                       onChange={e => setRegPassword(e.target.value)}
-                      placeholder="Enter a password (e.g. 123456)"
+                      placeholder="Create a password (min. 6 characters)"
                     />
                     <button
                       type="button"

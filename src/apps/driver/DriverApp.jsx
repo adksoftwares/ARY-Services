@@ -8,6 +8,7 @@ import DriverWorkspace from '../../components/driver/DriverWorkspace';
 import AuthModal from '../../components/common/AuthModal';
 import Footer from '../../components/common/Footer';
 import NotificationCenter from '../../components/common/NotificationCenter';
+import OfflineBanner from '../../components/common/OfflineBanner';
 import { ThemeToggle, Button } from '../../design-system';
 
 function DriverPortal() {
@@ -28,6 +29,7 @@ function DriverPortal() {
 
   return (
     <div className="app-shell">
+      <OfflineBanner />
       <header className="topbar">
         <Link to="/" className="brand" aria-label="ARY Services Driver home">
           <span className="brand-mark">A</span><span>ARY <b>Driver</b></span>

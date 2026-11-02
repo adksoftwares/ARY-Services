@@ -6,6 +6,7 @@ import { API_BASE } from '../../config';
 import AdminWorkspace from '../../components/admin/AdminWorkspace';
 import AuthModal from '../../components/common/AuthModal';
 import Footer from '../../components/common/Footer';
+import OfflineBanner from '../../components/common/OfflineBanner';
 import { subscribeToAppEvents } from '../../utils/events';
 import { ThemeToggle, Button } from '../../design-system';
 
@@ -60,6 +61,7 @@ function AdminPortal() {
 
   return (
     <div className="app-shell" style={{ background: 'var(--color-bg, #fbfaf7)' }}>
+      <OfflineBanner />
       {isAdmin ? (
         <AdminWorkspace
           adminUsers={adminUsers}
