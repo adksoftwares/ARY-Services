@@ -1,11 +1,12 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { BrowserRouter, Link, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, LogIn, LogOut, ShieldCheck, Users, Bike, UserRound } from 'lucide-react';
+import { LayoutDashboard, LogIn, LogOut, ShieldCheck, Users, Bike, UserRound, BriefcaseBusiness } from 'lucide-react';
 import { AuthProvider, useAuth } from '../../context/AuthContext';
 import { API_BASE } from '../../config';
 import AdminWorkspace from '../../components/admin/AdminWorkspace';
 import DriverApplicationsAdmin from '../../components/admin/DriverApplicationsAdmin';
 import RoleApplicationsAdmin from '../../components/admin/RoleApplicationsAdmin';
+import ProviderServiceRequestsAdmin from '../../components/admin/ProviderServiceRequestsAdmin';
 import AuthModal from '../../components/common/AuthModal';
 import Footer from '../../components/common/Footer';
 import NotificationCenter from '../../components/common/NotificationCenter';
@@ -68,6 +69,7 @@ function AdminPortal() {
           <button className="nav-link-btn" onClick={() => setActiveSection('workspace')}><LayoutDashboard size={14}/> Admin workspace</button>
           <button className="nav-link-btn" onClick={() => setActiveSection('drivers')}><Bike size={14}/> Driver approvals</button>
           <button className="nav-link-btn" onClick={() => setActiveSection('roles')}><Users size={14}/> Role applications</button>
+          <button className="nav-link-btn" onClick={() => setActiveSection('services')}><BriefcaseBusiness size={14}/> Service approvals</button>
         </nav>
         <div className="user-profile">
           <span className="user-badge"><UserRound size={14}/><span>{currentUser.fullName}</span></span>
@@ -76,7 +78,7 @@ function AdminPortal() {
       </> : <button className="sign-in" onClick={() => openAuthModal('login')}><LogIn size={14}/> Admin sign in</button>}
     </header>
 
-    {isAdmin ? activeSection === 'drivers' ? <DriverApplicationsAdmin/> : activeSection === 'roles' ? <RoleApplicationsAdmin/> : <AdminWorkspace
+    {isAdmin ? activeSection === 'drivers' ? <DriverApplicationsAdmin/> : activeSection === 'roles' ? <RoleApplicationsAdmin/> : activeSection === 'services' ? <ProviderServiceRequestsAdmin/> : <AdminWorkspace
       adminUsers={adminUsers}
       setAdminUsers={setAdminUsers}
       services={services}
