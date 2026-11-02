@@ -40,6 +40,7 @@ import { issueSecurityChallenge, verifySecurityChallenge } from './securityShiel
 import { registerDriverServiceRoutes } from './driverServiceRoutes.js';
 import { registerGroceryRoutes } from './groceryRoutes.js';
 import { registerRoleAccessRoutes } from './roleAccessRoutes.js';
+import { listNotifications, markNotificationRead, markAllNotificationsRead, persistEventNotifications } from './notificationService.js';
 
 const app = express();
 const port = Number(process.env.PORT || 4000);
@@ -235,9 +236,40 @@ async function requireAdmin(req, res, next) {
   });
 }
 
-registerDriverServiceRoutes(app, { requireAuth, requireAdmin, broadcastEvent, getBookings, getUsers });
-registerRoleAccessRoutes(app, { requireAuth, requireAdmin, getUsers, updateUser, generateToken, broadcastEvent });
-registerGroceryRoutes(app, { requireAuth });
+async function publishEvent(eventType, payload = {}) {
+  broadcastEvent(eventType, payload);
+  persistEventNotifications(eventType, payload).catch(error => {
+    console.error('Notification persistence failed:', error);
+  });
+}
+
+app.get('/api/notifications', requireAuth, async (req, res) => {
+  try {
+    const notifications = await listNotifications(req.user, req.query.limit);
+    return res.json({ notifications, unreadCount: notifications.filter(item => !item.readAt).length });
+  } catch {
+    return res.status(500).json({ error: 'Could not load notifications.' });
+  }
+});
+
+app.patch('/api/notifications/read-all', requireAuth, async (req, res) => {
+  try { return res.json(await markAllNotificationsRead(req.user)); }
+  catch { return res.status(500).json({ error: 'Could not update notifications.' }); }
+});
+
+app.patch('/api/notifications/:id/read', requireAuth, async (req, res) => {
+  try {
+    const notification = await markNotificationRead(req.user, req.params.id);
+    if (!notification) return res.status(404).json({ error: 'Notification not found.' });
+    return res.json({ notification });
+  } catch {
+    return res.status(500).json({ error: 'Could not update notification.' });
+  }
+});
+
+registerDriverServiceRoutes(app, { requireAuth, requireAdmin, broadcastEvent: publishEvent, getBookings, getUsers });
+registerRoleAccessRoutes(app, { requireAuth, requireAdmin, getUsers, updateUser, generateToken, broadcastEvent: publishEvent });
+registerGroceryRoutes(app, { requireAuth, broadcastEvent: publishEvent });
 
 // Initialize atomic file storage on boot
 await initStorage();
@@ -593,7 +625,7 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
 
     await addUser(newUser);
 
-    broadcastEvent('user:registered', {
+    publishEvent('user:registered', {
       user: {
         id: newUser.id,
         fullName: newUser.fullName,
@@ -974,7 +1006,7 @@ app.post('/api/bookings', requireAuth, async (req, res) => {
     // Escrow ledger entries are written only after a verified payment-provider callback.
 
     // Instant Real-Time SSE Dispatch to Provider & Admins
-    broadcastEvent('booking:created', {
+    publishEvent('booking:created', {
       booking: newBooking,
       providerId: newBooking.providerId,
       providerPhone: newBooking.providerPhone,
@@ -1052,7 +1084,7 @@ app.patch('/api/bookings/:id/status', requireAuth, async (req, res) => {
     }
 
     // Real-Time SSE Dispatch
-    broadcastEvent('booking:status_updated', {
+    publishEvent('booking:status_updated', {
       bookingId: id,
       status: updated.status,
       booking: updated
@@ -1142,7 +1174,7 @@ app.patch('/api/bookings/:id/cancel', requireAuth, async (req, res) => {
       return b;
     });
 
-    broadcastEvent('booking:status_updated', {
+    publishEvent('booking:status_updated', {
       bookingId: id,
       status: 'cancelled',
       booking: updated
@@ -1198,7 +1230,7 @@ app.post('/api/bookings/:id/dispute', requireAuth, async (req, res) => {
       return b;
     });
 
-    broadcastEvent('booking:status_updated', {
+    publishEvent('booking:status_updated', {
       bookingId: id,
       status: 'disputed',
       booking: updated
@@ -1282,7 +1314,7 @@ app.post('/api/admin/bookings/:id/arbitrate', requireAdmin, async (req, res) => 
       return b;
     });
 
-    broadcastEvent('booking:status_updated', {
+    publishEvent('booking:status_updated', {
       bookingId: id,
       status: newStatus,
       booking: updated
@@ -1394,7 +1426,7 @@ app.post('/api/bookings/:id/claim', requireAuth, async (req, res) => {
     });
 
     // Real-Time SSE Dispatch to customer and other contractors
-    broadcastEvent('booking:status_updated', {
+    publishEvent('booking:status_updated', {
       bookingId: id,
       status: 'accepted',
       booking: updated
@@ -1460,7 +1492,7 @@ app.post('/api/reviews', requireAuth, async (req, res) => {
     await addReview(newReview);
 
     // Broadcast review event in real time
-    broadcastEvent('review:submitted', {
+    publishEvent('review:submitted', {
       review: newReview,
       providerId: newReview.providerId
     });
@@ -1613,7 +1645,7 @@ app.patch('/api/admin/users/:id/status', requireAdmin, async (req, res) => {
     }
 
     // Broadcast user status change so client sessions update/revoke immediately
-    broadcastEvent('user:status_changed', {
+    publishEvent('user:status_changed', {
       userId: id,
       status
     });
