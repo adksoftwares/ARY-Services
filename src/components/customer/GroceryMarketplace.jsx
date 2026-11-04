@@ -476,8 +476,32 @@ export default function GroceryMarketplace() {
         title="Checkout Grocery Order"
         isBottomSheet={true}
         size="md"
+        footer={
+          <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+            <Button
+              variant="ghost"
+              size="lg"
+              type="button"
+              onClick={() => setIsCheckoutModalOpen(false)}
+              style={{ flex: 1 }}
+            >
+              Back
+            </Button>
+            <Button
+              variant="primary"
+              size="lg"
+              type="submit"
+              form="grocery-checkout-form"
+              loading={busy}
+              disabled={hasMultipleShops}
+              style={{ flex: 2 }}
+            >
+              Place Cash on Delivery Order
+            </Button>
+          </div>
+        }
       >
-        <form onSubmit={checkout} className="checkout-modal-form">
+        <form id="grocery-checkout-form" onSubmit={checkout} className="checkout-modal-form">
           <div className="cart-header">
             <b>{currentShopName}</b>
             <span className="cart-total-badge">{money(total)}</span>
@@ -522,28 +546,6 @@ export default function GroceryMarketplace() {
               <b>Cash on Delivery (COD)</b>
               <p>Pay cash directly to the delivery driver upon receiving and inspecting your items. 4-digit verification PIN provided.</p>
             </div>
-          </div>
-
-          <div style={{ display: 'flex', gap: '8px', marginTop: 'var(--space-4)' }}>
-            <Button
-              variant="ghost"
-              size="lg"
-              type="button"
-              onClick={() => setIsCheckoutModalOpen(false)}
-              style={{ flex: 1 }}
-            >
-              Back
-            </Button>
-            <Button
-              variant="primary"
-              size="lg"
-              type="submit"
-              loading={busy}
-              disabled={hasMultipleShops}
-              style={{ flex: 2 }}
-            >
-              Place Cash on Delivery Order
-            </Button>
           </div>
         </form>
       </Modal>

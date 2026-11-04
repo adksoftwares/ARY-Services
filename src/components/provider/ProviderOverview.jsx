@@ -119,6 +119,7 @@ export default function ProviderOverview({
               variant="outline"
               size="sm"
               onClick={() => onNavigateTab?.('jobs')}
+              style={{ background: '#ffffff', color: 'var(--color-danger-900, #7f1d1d)', borderColor: 'var(--color-danger-300, #fca5a5)', fontWeight: 600 }}
             >
               View All in Jobs <ArrowRight size={14} />
             </Button>

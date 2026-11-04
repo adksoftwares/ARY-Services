@@ -150,6 +150,43 @@ export default function BookingModal({
 
   const STEP_TITLES = ['Describe Need', 'Date & Time', 'Address', 'Review & Pay'];
 
+  const footerContent = step < 5 ? (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: 'var(--space-3)' }}>
+      {step > 1 ? (
+        <Button
+          variant="secondary"
+          size="md"
+          icon={ArrowLeft}
+          onClick={() => { setStep(s => s - 1); setError(''); }}
+          disabled={isSubmitting}
+        >
+          Back
+        </Button>
+      ) : <div />}
+
+      {step < 4 ? (
+        <Button
+          variant="primary"
+          size="md"
+          className="wizard-next-btn"
+          onClick={handleNextStep}
+        >
+          Continue <ArrowRight size={15} />
+        </Button>
+      ) : (
+        <Button
+          variant="primary"
+          size="lg"
+          className="wizard-next-btn"
+          loading={isSubmitting}
+          onClick={handleSubmitBooking}
+        >
+          Confirm Booking Request
+        </Button>
+      )}
+    </div>
+  ) : null;
+
   return (
     <Modal
       isOpen={isOpen}
@@ -157,6 +194,7 @@ export default function BookingModal({
       title={step === 5 ? 'Booking Confirmed!' : `Book ${provider.fullName}`}
       isBottomSheet={true}
       size="md"
+      footer={footerContent}
     >
       <div className="booking-wizard-content">
         {/* Multi-step Progress Bar (Steps 1-4) */}
@@ -374,44 +412,6 @@ export default function BookingModal({
                 Done / Keep Exploring
               </Button>
             </div>
-          </div>
-        )}
-
-        {/* Wizard Footer Navigation Controls */}
-        {step < 5 && (
-          <div className="wizard-footer-bar">
-            {step > 1 && (
-              <Button
-                variant="secondary"
-                size="md"
-                icon={ArrowLeft}
-                onClick={() => { setStep(s => s - 1); setError(''); }}
-                disabled={isSubmitting}
-              >
-                Back
-              </Button>
-            )}
-
-            {step < 4 ? (
-              <Button
-                variant="primary"
-                size="md"
-                className="wizard-next-btn"
-                onClick={handleNextStep}
-              >
-                Continue <ArrowRight size={15} />
-              </Button>
-            ) : (
-              <Button
-                variant="primary"
-                size="lg"
-                className="wizard-next-btn"
-                loading={isSubmitting}
-                onClick={handleSubmitBooking}
-              >
-                Confirm Booking Request
-              </Button>
-            )}
           </div>
         )}
       </div>

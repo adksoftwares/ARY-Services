@@ -57,7 +57,7 @@ export default function DriverPinKeypadModal({
       isBottomSheet={true}
     >
       <div style={{ textAlign: 'center', padding: '6px 0 16px' }}>
-        <p style={{ margin: '0 0 16px', fontSize: '0.88rem', color: 'var(--color-neutral-600, #475569)' }}>
+        <p style={{ margin: '0 0 16px', fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
           {subtitle}
         </p>
 
@@ -138,7 +138,7 @@ export default function DriverPinKeypadModal({
                 ⚠️ Security limit: {attemptsLeft} of 5 attempts remaining
               </span>
             ) : (
-              <span style={{ color: 'var(--color-neutral-500, #64748b)' }}>
+              <span style={{ color: 'var(--text-muted)' }}>
                 Ask customer / recipient for their 4-digit verification code
               </span>
             )}

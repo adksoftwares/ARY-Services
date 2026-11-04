@@ -39,23 +39,37 @@ export function RatingStars({
   size = 18,
   className = ''
 }) {
+  const isInteractive = interactive || Boolean(onChange);
+  const numericSize = typeof size === 'number'
+    ? size
+    : size === 'lg' ? 28
+    : size === 'md' ? 22
+    : size === 'sm' ? 16
+    : 18;
+
   return (
-    <div className={`ds-rating-stars ${className}`} role="img" aria-label={`Rating: ${rating} out of ${max} stars`}>
+    <div
+      className={`ds-rating-stars ${className}`}
+      role={isInteractive ? 'radiogroup' : 'img'}
+      aria-label={`Rating: ${rating} out of ${max} stars`}
+    >
       {Array.from({ length: max }).map((_, i) => {
         const starIndex = i + 1;
         const isFilled = starIndex <= Math.round(rating);
 
-        if (interactive) {
+        if (isInteractive) {
           return (
             <button
               key={i}
               type="button"
               className="ds-star-interactive"
               onClick={() => onChange && onChange(starIndex)}
-              aria-label={`Rate ${starIndex} stars`}
+              role="radio"
+              aria-checked={starIndex === rating}
+              aria-label={`Rate ${starIndex} of ${max} stars`}
             >
               <Star
-                size={size}
+                size={numericSize}
                 fill={isFilled ? 'currentColor' : 'none'}
               />
             </button>
@@ -65,7 +79,7 @@ export function RatingStars({
         return (
           <Star
             key={i}
-            size={size}
+            size={numericSize}
             fill={isFilled ? 'currentColor' : 'none'}
           />
         );

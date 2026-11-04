@@ -369,7 +369,7 @@ export default function DriverWorkspace({ onNotice }) {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
               <div className={`driver-switch-beacon ${presence.online ? 'online' : 'offline'}`} />
-              <h1 style={{ fontSize: '1.25rem', margin: 0, color: presence.online ? '#ffffff' : 'var(--color-neutral-900, #0f172a)' }}>
+              <h1 style={{ fontSize: '1.25rem', margin: 0, letterSpacing: 'normal', fontWeight: 700, color: presence.online ? '#ffffff' : 'var(--color-neutral-900, #0f172a)' }}>
                 {presence.online ? 'ONLINE · Receiving Dispatches' : 'OFFLINE · Paused'}
               </h1>
             </div>
@@ -396,7 +396,7 @@ export default function DriverWorkspace({ onNotice }) {
           disabled={presenceBusy}
         >
           <Power size={20} />
-          <span>{presenceBusy ? 'Connecting GPS...' : presence.online ? 'Go Offline (End Shift)' : 'GO ONLINE NOW (56px)'}</span>
+          <span>{presenceBusy ? 'Connecting GPS...' : presence.online ? 'Go Offline (End Shift)' : 'GO ONLINE NOW'}</span>
         </button>
       </div>
 
