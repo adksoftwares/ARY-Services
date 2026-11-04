@@ -137,10 +137,10 @@ export default function MyBookingsList({
               <div key={b.id} className="booking-card-item" aria-labelledby={`booking-title-${b.id}`}>
                 {/* Header */}
                 <div className="booking-card-header">
-                  <div>
-                    <span id={`booking-title-${b.id}`} className="booking-service-title">
+                  <div className="booking-card-title-col">
+                    <h3 id={`booking-title-${b.id}`} className="booking-service-title">
                       {b.categoryName || 'Service Request'}
-                    </span>
+                    </h3>
                     <span className="booking-ref-tag">Ref: #{b.id?.slice(0, 8)}</span>
                   </div>
                   <StatusPill status={b.status} />
@@ -158,12 +158,12 @@ export default function MyBookingsList({
 
                 {/* Details Grid */}
                 <div className="booking-details-grid">
-                  <div>
+                  <div className="detail-item">
                     <span className="detail-label">Provider</span>
                     <span className="detail-val">{b.providerName || 'Assigned Provider'}</span>
                   </div>
 
-                  <div>
+                  <div className="detail-item">
                     <span className="detail-label">Provider Phone</span>
                     {b.providerPhone ? (
                       <a href={`tel:${b.providerPhone}`} className="detail-phone-link">
@@ -174,12 +174,12 @@ export default function MyBookingsList({
                     )}
                   </div>
 
-                  <div>
+                  <div className="detail-item">
                     <span className="detail-label">Scheduled Date & Time</span>
                     <span className="detail-val">{b.bookingDate} ({b.bookingTime})</span>
                   </div>
 
-                  <div>
+                  <div className="detail-item">
                     <span className="detail-label">Service Address</span>
                     <span className="detail-val">{b.serviceAddress}</span>
                   </div>

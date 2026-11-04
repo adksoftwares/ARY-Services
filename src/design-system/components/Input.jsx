@@ -18,13 +18,14 @@ export function Input({
   const id = customId || autoId;
   const helperId = `${id}-helper`;
   const errorId = `${id}-error`;
+  const displayLabel = typeof label === 'string' ? label.replace(/\s*\*+$/, '') : label;
 
   return (
     <div className={`ds-form-field ${className}`}>
       {label && (
         <label htmlFor={id} className="ds-label">
           <span>
-            {label}
+            {displayLabel}
             {required && <span className="ds-label-required" aria-hidden="true">*</span>}
           </span>
         </label>
@@ -123,13 +124,14 @@ export function Textarea({
   const id = customId || autoId;
   const helperId = `${id}-helper`;
   const errorId = `${id}-error`;
+  const displayLabel = typeof label === 'string' ? label.replace(/\s*\*+$/, '') : label;
 
   return (
     <div className={`ds-form-field ${className}`}>
       {label && (
         <label htmlFor={id} className="ds-label">
           <span>
-            {label}
+            {displayLabel}
             {required && <span className="ds-label-required" aria-hidden="true">*</span>}
           </span>
         </label>
@@ -174,13 +176,14 @@ export function Select({
   const id = customId || autoId;
   const helperId = `${id}-helper`;
   const errorId = `${id}-error`;
+  const displayLabel = typeof label === 'string' ? label.replace(/\s*\*+$/, '') : label;
 
   return (
     <div className={`ds-form-field ${className}`}>
       {label && (
         <label htmlFor={id} className="ds-label">
           <span>
-            {label}
+            {displayLabel}
             {required && <span className="ds-label-required" aria-hidden="true">*</span>}
           </span>
         </label>

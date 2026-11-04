@@ -209,21 +209,21 @@ export default function MobilityServices({ onNotice }) {
                 Place an order with your food shop first. Once accepted, enter the booking ID to dispatch a dedicated food delivery driver.
               </p>
               <Input
-                label="Food Shop Order Reference *"
+                label="Food Shop Order Reference"
                 required={true}
                 value={form.orderReference}
                 onChange={e => change('orderReference', e.target.value)}
                 placeholder="Paste order booking ID"
               />
               <Input
-                label="Restaurant / Food Shop Name *"
+                label="Restaurant / Food Shop Name"
                 required={true}
                 value={form.restaurantName}
                 onChange={e => change('restaurantName', e.target.value)}
                 placeholder="Restaurant name"
               />
               <Input
-                label="Pickup Address *"
+                label="Pickup Address"
                 required={true}
                 value={form.pickupAddress}
                 onChange={e => change('pickupAddress', e.target.value)}
@@ -231,7 +231,7 @@ export default function MobilityServices({ onNotice }) {
                 icon={MapPin}
               />
               <Input
-                label="Delivery Address *"
+                label="Delivery Address"
                 required={true}
                 value={form.dropoffAddress}
                 onChange={e => change('dropoffAddress', e.target.value)}
@@ -244,7 +244,7 @@ export default function MobilityServices({ onNotice }) {
           {mode === 'parcel' && (
             <>
               <Input
-                label="Pickup Address *"
+                label="Pickup Address"
                 required={true}
                 value={form.pickup}
                 onChange={e => change('pickup', e.target.value)}
@@ -252,7 +252,7 @@ export default function MobilityServices({ onNotice }) {
                 icon={MapPin}
               />
               <Input
-                label="Drop-off Address *"
+                label="Drop-off Address"
                 required={true}
                 value={form.destination}
                 onChange={e => change('destination', e.target.value)}
@@ -261,7 +261,7 @@ export default function MobilityServices({ onNotice }) {
               />
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
                 <Input
-                  label="Sender Contact *"
+                  label="Sender Contact"
                   required={true}
                   type="tel"
                   value={form.pickupContact}
@@ -269,7 +269,7 @@ export default function MobilityServices({ onNotice }) {
                   placeholder="07X XXX XXXX"
                 />
                 <Input
-                  label="Recipient Contact *"
+                  label="Recipient Contact"
                   required={true}
                   type="tel"
                   value={form.recipientContact}
@@ -290,7 +290,7 @@ export default function MobilityServices({ onNotice }) {
                   ]}
                 />
                 <Input
-                  label="Weight (kg) *"
+                  label="Weight (kg)"
                   type="number"
                   min="0.1"
                   max="50"
@@ -305,7 +305,7 @@ export default function MobilityServices({ onNotice }) {
           {mode === 'ride' && (
             <>
               <Input
-                label="Pickup Location *"
+                label="Pickup Location"
                 required={true}
                 value={form.pickup}
                 onChange={e => change('pickup', e.target.value)}
@@ -313,7 +313,7 @@ export default function MobilityServices({ onNotice }) {
                 icon={MapPin}
               />
               <Input
-                label="Destination Location *"
+                label="Destination Location"
                 required={true}
                 value={form.destination}
                 onChange={e => change('destination', e.target.value)}

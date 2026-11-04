@@ -227,9 +227,11 @@
 
 .provider-heading-name {
   margin: 0;
-  font-size: 1.15rem;
+  font-size: 1.25rem;
   font-weight: 800;
-  color: var(--color-brand-900, #173b2f);
+  color: var(--text-primary);
+  letter-spacing: normal !important;
+  word-spacing: 0.12em;
 }
 
 .provider-category-subtitle {
@@ -601,4 +603,35 @@
   outline: 0;
   border-color: var(--color-brand-600, #174d3d);
   box-shadow: 0 0 0 3px rgba(23, 77, 61, 0.12);
+}
+
+/* ==========================================================================
+   Urgent Incoming Bookings Banner & Items
+   ========================================================================== */
+.provider-urgent-banner {
+  background: var(--color-danger-50, #fef2f2);
+  border: 1.5px solid var(--color-danger-300, #fca5a5);
+  border-radius: var(--radius-lg, 12px);
+  padding: 18px 20px;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.08);
+  margin-bottom: var(--space-5, 20px);
+}
+.provider-urgent-item {
+  background: var(--surface-primary, #ffffff);
+  border: 1px solid var(--color-danger-100, #fee2e2);
+  border-radius: var(--radius-md, 8px);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+[data-theme="dark"] .provider-urgent-banner {
+  background: rgba(220, 38, 38, 0.12) !important;
+  border-color: rgba(220, 38, 38, 0.3) !important;
+}
+[data-theme="dark"] .provider-urgent-item {
+  background: var(--surface-secondary, #17241f) !important;
+  border-color: rgba(220, 38, 38, 0.25) !important;
 }

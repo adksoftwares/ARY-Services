@@ -86,12 +86,7 @@ export default function ProviderOverview({
 
       {/* 2. Urgent Incoming Bookings Banner */}
       {pendingRequests.length > 0 && (
-        <Card style={{
-          background: 'linear-gradient(135deg, #fff5f5 0%, #fef2f2 100%)',
-          border: '1.5px solid var(--color-danger-300, #fca5a5)',
-          padding: '18px 20px',
-          boxShadow: '0 4px 14px rgba(239, 68, 68, 0.12)'
-        }}>
+        <div className="provider-urgent-banner">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexWrap: 'wrap', gap: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <div style={{
@@ -116,12 +111,12 @@ export default function ProviderOverview({
               </div>
             </div>
             <Button
-              variant="outline"
+              variant="danger"
               size="sm"
+              iconRight={ArrowRight}
               onClick={() => onNavigateTab?.('jobs')}
-              style={{ background: '#ffffff', color: 'var(--color-danger-900, #7f1d1d)', borderColor: 'var(--color-danger-300, #fca5a5)', fontWeight: 600 }}
             >
-              View All in Jobs <ArrowRight size={14} />
+              View All in Jobs
             </Button>
           </div>
 
@@ -129,17 +124,7 @@ export default function ProviderOverview({
             {pendingRequests.slice(0, 3).map(b => (
               <div
                 key={b.id}
-                style={{
-                  background: '#ffffff',
-                  border: '1px solid var(--color-danger-200, #fecaca)',
-                  borderRadius: 'var(--radius-md, 8px)',
-                  padding: '12px 16px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  flexWrap: 'wrap',
-                  gap: 12
-                }}
+                className="provider-urgent-item" 
               >
                 <div style={{ flex: 1, minWidth: 240 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
@@ -175,7 +160,7 @@ export default function ProviderOverview({
               </div>
             ))}
           </div>
-        </Card>
+        </div>
       )}
 
       {/* 3. KPI Metrics Grid */}
