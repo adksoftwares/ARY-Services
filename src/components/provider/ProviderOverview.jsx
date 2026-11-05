@@ -210,7 +210,7 @@ export default function ProviderOverview({
       <Card style={{ padding: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <div>
-            <h2 style={{ margin: 0, fontSize: '1.05rem', color: 'var(--color-brand-900, #173b2f)' }}>
+            <h2 style={{ margin: 0, fontSize: '1.05rem', color: 'var(--text-primary, #f8fafc)' }}>
               Upcoming Schedule & Active Tasks
             </h2>
             <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: 'var(--color-neutral-500, #64748b)' }}>

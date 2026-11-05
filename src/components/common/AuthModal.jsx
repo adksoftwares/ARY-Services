@@ -270,9 +270,9 @@ export default function AuthModal({ onNotice }) {
                 textAlign: 'center',
                 marginTop: '12px',
                 paddingTop: '12px',
-                borderTop: '1px solid #edf0ec',
+                borderTop: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.1))',
                 fontSize: '12px',
-                color: '#65736b'
+                color: 'var(--text-muted, #94a3b8)'
               }}>
                 Don't have an account yet?{' '}
                 <button
@@ -281,7 +281,7 @@ export default function AuthModal({ onNotice }) {
                   style={{
                     background: 'none',
                     border: 0,
-                    color: '#174d3d',
+                    color: 'var(--brand-primary, #ffffff)',
                     fontWeight: 700,
                     cursor: 'pointer',
                     textDecoration: 'underline',
@@ -414,9 +414,9 @@ export default function AuthModal({ onNotice }) {
                   textAlign: 'center',
                   marginTop: '12px',
                   paddingTop: '12px',
-                  borderTop: '1px solid #edf0ec',
+                  borderTop: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.1))',
                   fontSize: '12px',
-                  color: '#65736b'
+                  color: 'var(--text-muted, #94a3b8)'
                 }}>
                   Already have an account?{' '}
                   <button
@@ -425,7 +425,7 @@ export default function AuthModal({ onNotice }) {
                     style={{
                       background: 'none',
                       border: 0,
-                      color: '#174d3d',
+                      color: 'var(--brand-primary, #ffffff)',
                       fontWeight: 700,
                       cursor: 'pointer',
                       textDecoration: 'underline',
@@ -549,7 +549,7 @@ export default function AuthModal({ onNotice }) {
                 </label>}
 
                 {regAccountType === 'driver' && <section style={{background:'#f0f7f3',border:'1px solid #cfe3d6',borderRadius:10,padding:12,margin:'8px 0 12px'}}>
-                  <b style={{fontSize:13,color:'#174d3d'}}>Choose your driver services *</b>
+                  <b style={{fontSize:13,color: 'var(--brand-primary, #ffffff)'}}>Choose your driver services *</b>
                   <p style={{fontSize:12,color:'#647268',margin:'5px 0 10px'}}>Register for one service or both using a single Driver Account.</p>
                   {[["ride","Passenger Ride Service"],["food_delivery","Food Delivery Service"]].map(([value,label]) => <label key={value} style={{display:'flex',alignItems:'center',gap:8,margin:'8px 0',fontSize:13}}><input type="checkbox" checked={regDriverServices.includes(value)} onChange={e=>setRegDriverServices(prev=>e.target.checked?[...prev,value]:prev.filter(x=>x!==value))}/>{label}</label>)}
                 </section>}
@@ -657,7 +657,7 @@ export default function AuthModal({ onNotice }) {
                     fontSize: '14px',
                     fontWeight: 700,
                     background: '#15803d',
-                    boxShadow: '0 4px 14px rgba(22, 101, 52, 0.25)'
+                    boxShadow: '0 4px 14px rgba(0, 0, 0, 0.4)'
                   }}
                 >
                   {isSubmitting ? 'Submitting Registration...' : (regAccountType === 'driver' ? 'Register as Driver' : 'Register as Service Provider')} <ArrowRight size={18} />
@@ -667,9 +667,9 @@ export default function AuthModal({ onNotice }) {
                   textAlign: 'center',
                   marginTop: '12px',
                   paddingTop: '12px',
-                  borderTop: '1px solid #edf0ec',
+                  borderTop: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.1))',
                   fontSize: '12px',
-                  color: '#65736b'
+                  color: 'var(--text-muted, #94a3b8)'
                 }}>
                   Already have an account?{' '}
                   <button
@@ -678,7 +678,7 @@ export default function AuthModal({ onNotice }) {
                     style={{
                       background: 'none',
                       border: 0,
-                      color: '#174d3d',
+                      color: 'var(--brand-primary, #ffffff)',
                       fontWeight: 700,
                       cursor: 'pointer',
                       textDecoration: 'underline',

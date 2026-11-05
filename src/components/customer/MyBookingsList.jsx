@@ -185,6 +185,27 @@ export default function MyBookingsList({
                   </div>
                 </div>
 
+                {/* Cancelled / Declined Reason Banner */}
+                {['cancelled', 'rejected'].includes(b.status) && (
+                  <div className="booking-cancelled-banner" style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '8px 12px',
+                    borderRadius: 'var(--radius-md, 8px)',
+                    background: 'rgba(239, 68, 68, 0.1)',
+                    border: '1px solid rgba(239, 68, 68, 0.22)',
+                    color: '#f87171',
+                    fontSize: 'var(--text-xs, 0.78rem)',
+                    margin: '6px 0 10px'
+                  }}>
+                    <Ban size={14} style={{ flexShrink: 0 }} />
+                    <span>
+                      <b>{b.status === 'cancelled' ? 'Booking Cancelled' : 'Booking Declined'}:</b> {b.cancelReason || b.reason || 'This service request was cancelled.'}
+                    </span>
+                  </div>
+                )}
+
                 {b.problemDescription && (
                   <div className="booking-problem-note">
                     <FileText size={14} className="note-icon" />
@@ -267,7 +288,7 @@ export default function MyBookingsList({
                     )}
 
                     {/* Cancel button */}
-                    {['requested', 'accepted'].includes(b.status) && (
+                    {['requested', 'accepted', 'in_progress'].includes(b.status) && (
                       <Button
                         variant="ghost"
                         size="sm"
@@ -290,8 +311,8 @@ export default function MyBookingsList({
                       </Button>
                     )}
 
-                    {/* Dispute Button */}
-                    {['accepted', 'in_progress', 'completed'].includes(b.status) && !b.dispute && (
+                    {/* Dispute Button (14-day workmanship warranty on completed jobs) */}
+                    {b.status === 'completed' && !b.dispute && (
                       <Button
                         variant="outline"
                         size="sm"
@@ -371,9 +392,9 @@ export default function MyBookingsList({
               onChange={e => setNewTime(e.target.value)}
             >
               <option value="Morning (9 AM - 12 PM)">Morning (9 AM - 12 PM)</option>
-              <option value="Afternoon (1 PM - 4 PM)">Afternoon (1 PM - 4 PM)</option>
-              <option value="Evening (4 PM - 7 PM)">Evening (4 PM - 7 PM)</option>
-              <option value="Emergency / As Soon As Possible">Emergency / As Soon As Possible</option>
+              <option value="Afternoon (1 PM - 5 PM)">Afternoon (1 PM - 5 PM)</option>
+              <option value="Evening (5 PM - 8 PM)">Evening (5 PM - 8 PM)</option>
+              <option value="Emergency (ASAP)">Emergency (ASAP)</option>
             </select>
           </label>
         </div>

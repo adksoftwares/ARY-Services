@@ -35,7 +35,7 @@ export default function DriverGpsPermissionModal({
           {isDenied ? <AlertTriangle size={28} /> : <Compass size={28} />}
         </div>
 
-        <h3 style={{ margin: '0 0 8px', fontSize: '1.2rem', color: 'var(--color-brand-900, #173b2f)' }}>
+        <h3 style={{ margin: '0 0 8px', fontSize: '1.2rem', color: 'var(--text-primary, #f8fafc)' }}>
           {isDenied ? 'Location Permission Needed' : 'Connect Your Real-Time GPS'}
         </h3>
 

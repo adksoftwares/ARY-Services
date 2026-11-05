@@ -1664,8 +1664,8 @@
   align-items: flex-start;
   gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
-  background: rgba(23, 77, 61, 0.08);
-  border: 1px solid rgba(23, 77, 61, 0.2);
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-lg);
   margin-bottom: var(--space-6);
   color: var(--text-primary);
@@ -2249,7 +2249,7 @@
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-2) var(--space-3);
-  background: rgba(23, 77, 61, 0.08);
+  background: var(--surface-secondary);
   border-radius: var(--radius-md);
   font-size: var(--text-xs);
   color: var(--brand-primary);
@@ -2318,9 +2318,10 @@
   border-color: var(--border-subtle) !important;
 }
 [data-theme="dark"] .cat-pill-btn.active {
-  background: var(--brand-primary) !important;
-  color: #ffffff !important;
-  border-color: var(--brand-primary) !important;
+  background: #ffffff !important;
+  color: #07080a !important;
+  font-weight: 700 !important;
+  border-color: #ffffff !important;
 }
 [data-theme="dark"] .product-item-card {
   background: var(--surface-primary) !important;
@@ -2330,8 +2331,8 @@
   background: var(--surface-secondary) !important;
 }
 [data-theme="dark"] .single-shop-rule-card {
-  background: rgba(23, 77, 61, 0.25) !important;
-  border-color: rgba(23, 77, 61, 0.5) !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
 }
 [data-theme="dark"] .fare-estimate-notice {
   background: rgba(209, 139, 84, 0.18) !important;
@@ -2634,8 +2635,8 @@
   color: var(--text-muted) !important;
 }
 [data-theme="dark"] .booking-problem-note {
-  background: rgba(43, 132, 101, 0.16) !important;
-  border-color: rgba(43, 132, 101, 0.3) !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
   color: var(--text-secondary) !important;
 }
 [data-theme="dark"] .booking-quote-card {

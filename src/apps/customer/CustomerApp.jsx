@@ -322,49 +322,50 @@ function CustomerWorkspace() {
 
   const handleQuoteDecision = async (bookingId, decision) => {
     if (!currentUser?.token) return;
+    const normalizedDecision = (decision === 'accepted' || decision === 'accept') ? 'accept' : 'reject';
     try {
-      const response = await fetch(`${API_BASE}/bookings/${bookingId}/quote-decision`, {
+      const response = await fetch(`${API_BASE}/bookings/${bookingId}/quote`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${currentUser.token}` },
-        body: JSON.stringify({ decision })
+        body: JSON.stringify({ decision: normalizedDecision })
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Failed to update quote decision.');
-      setNotice(`Quote ${decision === 'accepted' ? 'accepted' : 'declined'}.`);
+      setNotice(data.message || `Quote ${normalizedDecision === 'accept' ? 'accepted' : 'declined'}.`);
       fetchBookings();
     } catch (error) {
       setNotice(error.message || 'Failed to update quote.');
     }
   };
 
-  const handleRescheduleBooking = async (bookingId, date, time, customerDecision = null) => {
+  const handleRescheduleBooking = async (bookingId, date, time, reason = 'Customer requested reschedule') => {
     if (!currentUser?.token) return;
     try {
       const response = await fetch(`${API_BASE}/bookings/${bookingId}/reschedule`, {
-        method: 'PATCH',
+        method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${currentUser.token}` },
-        body: JSON.stringify({ date, time, customerDecision })
+        body: JSON.stringify({ date, time, reason })
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Failed to reschedule booking.');
-      setNotice(data.message || 'Reschedule updated.');
+      setNotice(data.message || 'Reschedule request submitted.');
       fetchBookings();
     } catch (error) {
       setNotice(error.message || 'Failed to reschedule.');
     }
   };
 
-  const handleCancelBooking = async (bookingId) => {
+  const handleCancelBooking = async (bookingId, reason = 'Customer requested cancellation') => {
     if (!currentUser?.token) return;
     try {
-      const response = await fetch(`${API_BASE}/bookings/${bookingId}/status`, {
+      const response = await fetch(`${API_BASE}/bookings/${bookingId}/cancel`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${currentUser.token}` },
-        body: JSON.stringify({ status: 'cancelled' })
+        body: JSON.stringify({ reason })
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Failed to cancel booking.');
-      setNotice('Booking cancelled.');
+      setNotice(data.message || 'Booking cancelled successfully.');
       fetchBookings();
     } catch (error) {
       setNotice(error.message || 'Failed to cancel booking.');

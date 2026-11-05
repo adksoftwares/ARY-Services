@@ -96,8 +96,8 @@ export default function DesignSystemShowcase() {
         position: 'sticky',
         top: 0,
         zIndex: 1000,
-        background: '#121c17',
-        borderBottom: '1px solid #1f302a',
+        background: '#0f1115',
+        borderBottom: '1px solid #1e222b',
         padding: '12px 20px',
         display: 'flex',
         alignItems: 'center',
@@ -124,7 +124,7 @@ export default function DesignSystemShowcase() {
         </div>
 
         {/* Viewport Width Switches */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#17241f', padding: '3px', borderRadius: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#161920', padding: '3px', borderRadius: 8 }}>
           <button
             type="button"
             onClick={() => setViewportWidth('360px')}
@@ -192,7 +192,7 @@ export default function DesignSystemShowcase() {
               type="button"
               onClick={() => setPreviewTheme(th)}
               style={{
-                background: previewTheme === th ? '#d18b54' : '#1f302a',
+                background: previewTheme === th ? '#d18b54' : '#1e222b',
                 color: previewTheme === th ? '#000' : '#c5d4cd',
                 border: 0,
                 borderRadius: 6,

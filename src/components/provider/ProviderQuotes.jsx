@@ -66,7 +66,7 @@ export default function ProviderQuotes({
           <span style={{ fontSize: '0.8rem', color: 'var(--color-neutral-500, #64748b)', display: 'flex', alignItems: 'center', gap: 6 }}>
             <FileText size={15} color="var(--color-brand-600, #174d3d)" /> Total Quotes Sent
           </span>
-          <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--color-brand-900, #173b2f)', marginTop: 4 }}>
+          <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary, #f8fafc)', marginTop: 4 }}>
             {quotesList.length}
           </div>
         </Card>
@@ -152,7 +152,7 @@ export default function ProviderQuotes({
                     <b>Scope of Work:</b> {q.description}
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, fontSize: '0.85rem' }}>
-                    <span>Total Quoted: <b style={{ fontSize: '1rem', color: 'var(--color-brand-900, #173b2f)' }}>LKR {q.amount.toLocaleString()}</b></span>
+                    <span>Total Quoted: <b style={{ fontSize: '1rem', color: 'var(--text-primary, #f8fafc)' }}>LKR {q.amount.toLocaleString()}</b></span>
                     <span style={{ color: 'var(--color-neutral-500, #64748b)' }}>ARY Platform Fee (10%): - LKR {fee.toLocaleString()}</span>
                     <span style={{ color: 'var(--color-success-700, #047857)', fontWeight: 700 }}>
                       Net Payout: LKR {net.toLocaleString()}

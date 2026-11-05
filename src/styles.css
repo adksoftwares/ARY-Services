@@ -10,6 +10,7 @@
 @import './design-system/provider.css';
 @import './design-system/driver.css';
 @import './design-system/admin.css';
+@import './design-system/dark-theme.css';
 
 
 /* Sign-in required prompt & Modal styles */
@@ -1506,4 +1507,220 @@ table{font-variant-numeric:tabular-nums}
 [data-theme="dark"] .admin-users-table-container {
   background: var(--surface-primary) !important;
   border-color: var(--border-subtle) !important;
+}
+
+
+/* ==========================================================================
+   OLED Pure Pitch Black & Dark Blur Comprehensive System
+   ========================================================================== */
+[data-theme="dark"] html,
+[data-theme="dark"] body {
+  background-color: var(--surface-canvas, #07080a) !important;
+  color: var(--text-primary, #f8fafc) !important;
+}
+
+/* Dark Blur Modals & Overlays */
+[data-theme="dark"] .modal-backdrop {
+  background: rgba(0, 0, 0, 0.78) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+}
+[data-theme="dark"] .modal-card {
+  background: var(--surface-primary, #0f1115) !important;
+  border: 1px solid rgba(255, 255, 255, 0.09) !important;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.9) !important;
+  color: var(--text-primary, #f8fafc) !important;
+}
+[data-theme="dark"] .modal-header h3 {
+  color: var(--text-primary, #f8fafc) !important;
+}
+[data-theme="dark"] .modal-header p {
+  color: var(--text-secondary, #94a3b8) !important;
+}
+[data-theme="dark"] .modal-close {
+  color: var(--text-secondary, #94a3b8) !important;
+}
+[data-theme="dark"] .modal-close:hover {
+  background: var(--surface-secondary, #161920) !important;
+  color: var(--text-primary, #f8fafc) !important;
+}
+[data-theme="dark"] .modal-form label span {
+  color: var(--text-secondary, #94a3b8) !important;
+}
+[data-theme="dark"] .modal-form input {
+  background: var(--surface-secondary, #161920) !important;
+  border: 1px solid var(--border-default, #222631) !important;
+  color: var(--text-primary, #f8fafc) !important;
+}
+[data-theme="dark"] .modal-form input:focus {
+  border-color: #ffffff !important;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.22) !important;
+}
+[data-theme="dark"] .modal-submit-btn {
+  background: #ffffff !important;
+  color: #07080a !important;
+  font-weight: 700 !important;
+  border: 1px solid #ffffff !important;
+  box-shadow: 0 4px 16px rgba(255, 255, 255, 0.15) !important;
+}
+[data-theme="dark"] .modal-submit-btn:hover {
+  background: #e2e8f0 !important;
+  border-color: #e2e8f0 !important;
+  color: #07080a !important;
+}
+[data-theme="dark"] .modal-divider::before,
+[data-theme="dark"] .modal-divider::after {
+  border-bottom-color: var(--border-default, #222631) !important;
+}
+[data-theme="dark"] .modal-divider span {
+  color: var(--text-muted, #64748b) !important;
+}
+[data-theme="dark"] .quick-demo-btn {
+  background: var(--surface-secondary, #161920) !important;
+  color: var(--text-primary, #f8fafc) !important;
+  border: 1px dashed rgba(255, 255, 255, 0.2) !important;
+}
+[data-theme="dark"] .quick-demo-btn:hover {
+  background: var(--surface-tertiary, #1e222b) !important;
+  border-color: #ffffff !important;
+}
+
+/* Dark Mode Auth & Navigation Elements */
+[data-theme="dark"] .auth-tabs {
+  background: var(--surface-secondary, #161920) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+[data-theme="dark"] .auth-tab {
+  color: var(--text-secondary, #94a3b8) !important;
+}
+[data-theme="dark"] .auth-tab.active {
+  background: #ffffff !important;
+  color: #07080a !important;
+  font-weight: 700 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6) !important;
+}
+[data-theme="dark"] .type-btn {
+  background: var(--surface-secondary, #161920) !important;
+  border-color: var(--border-default, #222631) !important;
+  color: var(--text-secondary, #94a3b8) !important;
+}
+[data-theme="dark"] .type-btn.selected {
+  background: rgba(255, 255, 255, 0.12) !important;
+  border-color: #ffffff !important;
+  color: #ffffff !important;
+}
+[data-theme="dark"] .demo-account-pill {
+  background: var(--surface-secondary, #161920) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: var(--text-secondary, #94a3b8) !important;
+}
+[data-theme="dark"] .demo-account-pill:hover {
+  background: var(--surface-tertiary, #1e222b) !important;
+  border-color: #ffffff !important;
+  color: #ffffff !important;
+}
+[data-theme="dark"] .prompt-sign-in-btn {
+  background: #ffffff !important;
+  color: #07080a !important;
+  font-weight: 700 !important;
+}
+[data-theme="dark"] .prompt-sign-in-btn:hover {
+  background: #e2e8f0 !important;
+}
+[data-theme="dark"] .prompt-icon-badge {
+  background: var(--surface-secondary, #161920) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+[data-theme="dark"] .locate-inline-btn {
+  background: var(--surface-secondary, #161920) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+}
+[data-theme="dark"] .locate-inline-btn:hover:not(:disabled) {
+  background: var(--surface-tertiary, #1e222b) !important;
+  border-color: #ffffff !important;
+}
+
+/* Dark Mode Admin Table & Workspace */
+[data-theme="dark"] .admin-search-box {
+  background: var(--surface-secondary, #161920) !important;
+  border-color: var(--border-default, #222631) !important;
+}
+[data-theme="dark"] .admin-search-box input {
+  color: var(--text-primary, #f8fafc) !important;
+}
+[data-theme="dark"] .role-filter-group {
+  background: var(--surface-secondary, #161920) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+[data-theme="dark"] .filter-btn {
+  color: var(--text-secondary, #94a3b8) !important;
+}
+[data-theme="dark"] .filter-btn.active {
+  background: #ffffff !important;
+  color: #07080a !important;
+  font-weight: 700 !important;
+}
+[data-theme="dark"] .refresh-users-btn {
+  background: var(--surface-secondary, #161920) !important;
+  border-color: var(--border-default, #222631) !important;
+  color: var(--text-primary, #f8fafc) !important;
+}
+[data-theme="dark"] .admin-users-table th {
+  background: var(--surface-secondary, #161920) !important;
+  color: var(--text-muted, #64748b) !important;
+  border-bottom-color: var(--border-default, #222631) !important;
+}
+[data-theme="dark"] .admin-users-table td {
+  border-bottom-color: var(--border-default, #222631) !important;
+  color: var(--text-secondary, #94a3b8) !important;
+}
+[data-theme="dark"] .admin-users-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03) !important;
+}
+[data-theme="dark"] .super-admin-row {
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+[data-theme="dark"] .user-name {
+  color: var(--text-primary, #f8fafc) !important;
+}
+[data-theme="dark"] .stat-count {
+  color: var(--text-primary, #f8fafc) !important;
+}
+[data-theme="dark"] .stat-label {
+  color: var(--text-secondary, #94a3b8) !important;
+}
+[data-theme="dark"] .stat-card.total .stat-icon-wrap {
+  background: var(--surface-secondary, #161920) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+[data-theme="dark"] .stat-card.customer .stat-icon-wrap {
+  background: rgba(37, 99, 235, 0.15) !important;
+  color: #60a5fa !important;
+}
+[data-theme="dark"] .stat-card.provider .stat-icon-wrap {
+  background: rgba(245, 158, 11, 0.15) !important;
+  color: #fbbf24 !important;
+}
+[data-theme="dark"] .stat-card.admin .stat-icon-wrap {
+  background: rgba(168, 85, 247, 0.15) !important;
+  color: #c084fc !important;
+}
+[data-theme="dark"] .admin-nav-tabs {
+  border-bottom-color: var(--border-default, #222631) !important;
+}
+[data-theme="dark"] .admin-nav-tab {
+  color: var(--text-secondary, #94a3b8) !important;
+}
+[data-theme="dark"] .admin-nav-tab.active {
+  background: #ffffff !important;
+  color: #07080a !important;
+  font-weight: 700 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5) !important;
+}
+[data-theme="dark"] .admin-nav-tab:not(.active):hover {
+  background: var(--surface-secondary, #161920) !important;
+  color: var(--text-primary, #f8fafc) !important;
 }

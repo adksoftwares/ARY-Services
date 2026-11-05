@@ -53,7 +53,7 @@ export default function ProviderProfile({
 
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-              <h2 style={{ margin: 0, fontSize: '1.35rem', color: 'var(--color-brand-900, #173b2f)' }}>
+              <h2 style={{ margin: 0, fontSize: '1.35rem', color: 'var(--text-primary, #f8fafc)' }}>
                 {currentUser?.fullName}
               </h2>
               <Badge variant="success" dot={false}>

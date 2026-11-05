@@ -36,7 +36,7 @@ export default function ProviderVerificationBanner({ currentUser }) {
             <ShieldCheck size={18} />
           </div>
           <div>
-            <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--color-brand-900, #0c2d23)' }}>
+            <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary, #f8fafc)' }}>
               Verified ARY Service Partner
             </div>
             <div style={{ fontSize: '0.8rem', color: 'var(--color-brand-700, #1b5e4b)' }}>

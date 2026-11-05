@@ -61,7 +61,7 @@ function AdminPortal() {
   }, [isAdmin, fetchAdminUsers, currentUser?.token]);
 
   return (
-    <div className="app-shell" style={{ background: 'var(--color-bg, #fbfaf7)' }}>
+    <div className="app-shell" style={{ background: 'var(--surface-canvas, #07080a)' }}>
       <OfflineBanner />
       {isAdmin ? (
         <AdminWorkspace
@@ -90,32 +90,33 @@ function AdminPortal() {
 
           <main style={{ maxWidth: 840, margin: '56px auto', padding: '0 20px', minHeight: '52vh' }}>
             <section style={{
-              background: 'var(--color-surface, #fff)',
-              border: '1px solid var(--color-border-subtle, #e5ebe2)',
+              background: 'var(--surface-primary, #0f1115)',
+              border: '1px solid var(--border-subtle, rgba(255,255,255,0.08))',
               borderRadius: 'var(--radius-xl, 20px)',
               padding: '40px 32px',
               textAlign: 'center',
-              boxShadow: 'var(--shadow-md, 0 12px 36px rgba(20,45,32,.06))'
+              boxShadow: 'var(--shadow-md, 0 12px 36px rgba(0,0,0,0.5))'
             }}>
               <div style={{
                 width: 58,
                 height: 58,
                 borderRadius: 'var(--radius-lg, 16px)',
-                background: 'var(--color-brand-50, #edf7ef)',
-                color: 'var(--color-brand-600, #174d3d)',
+                background: 'var(--surface-secondary, #161920)',
+                color: 'var(--brand-primary, #22c55e)',
                 display: 'grid',
                 placeItems: 'center',
-                margin: '0 auto 18px'
+                margin: '0 auto 18px',
+                border: '1px solid var(--border-default, #222631)'
               }}>
                 <ShieldCheck size={30}/>
               </div>
-              <p className="eyebrow" style={{ color: 'var(--color-brand-700, #174d3d)', fontWeight: 700, letterSpacing: '0.05em' }}>
+              <p className="eyebrow" style={{ color: 'var(--brand-primary, #22c55e)', fontWeight: 700, letterSpacing: '0.05em' }}>
                 ARY PLATFORM CONTROL
               </p>
-              <h1 style={{ color: 'var(--color-brand-900, #173b2f)', margin: '8px 0 12px', fontSize: '1.9rem' }}>
+              <h1 style={{ color: 'var(--text-primary, #f8fafc)', margin: '8px 0 12px', fontSize: '1.9rem' }}>
                 Super Admin workspace.
               </h1>
-              <p style={{ color: 'var(--color-neutral-600, #647368)', maxWidth: 540, margin: '0 auto 24px', lineHeight: 1.7, fontSize: '0.95rem' }}>
+              <p style={{ color: 'var(--text-secondary, #94a3b8)', maxWidth: 540, margin: '0 auto 24px', lineHeight: 1.7, fontSize: '0.95rem' }}>
                 Sign in with your authorized Super Admin account to inspect registered accounts, verify KYC documents, arbitrate customer disputes, and disburse LankaPay CEFT batch payouts.
               </p>
               <Button

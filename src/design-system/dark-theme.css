@@ -1,0 +1,775 @@
+/**
+ * ARY Services - OLED Pure Pitch Black & Frosted Dark Blur System
+ * Ultra-premium, human-crafted dark aesthetic inspired by Apple iOS & Linear
+ * Pure Obsidian Black (#07080a) + Slate Neutral (#0f1115 / #161920) + Frosted Dark Blur Glass
+ */
+
+[data-theme="dark"] {
+  /* Surface Tokens: Pure Obsidian & Sleek Slates */
+  --surface: #0f1115 !important;
+  --surface-canvas: #07080a !important;
+  --surface-primary: #0f1115 !important;
+  --surface-secondary: #161920 !important;
+  --surface-tertiary: #1e222b !important;
+  --surface-raised: #161920 !important;
+  --surface-elevated: #161920 !important;
+  --surface-glass: rgba(15, 17, 21, 0.82) !important;
+  --surface-glass-border: rgba(255, 255, 255, 0.08) !important;
+
+  /* Typography: Crisp Radiant White & Cool Silver Slate */
+  --text: #f8fafc !important;
+  --text-primary: #f8fafc !important;
+  --text-secondary: #94a3b8 !important;
+  --text-muted: #64748b !important;
+  --text-inverse: #07080a !important;
+
+  /* Borders: Delicate Charcoal Lines */
+  --border: #222631 !important;
+  --border-subtle: rgba(255, 255, 255, 0.07) !important;
+  --border-default: #222631 !important;
+  --border-strong: #323847 !important;
+  --border-focus: #ffffff !important;
+  --focus-ring: 0 0 0 3px rgba(255, 255, 255, 0.2) !important;
+
+  /* Brand Accents: High Contrast Monochrome Luxury */
+  --brand-primary: #ffffff !important;
+  --brand-hover: #e2e8f0 !important;
+  --brand-active: #cbd5e1 !important;
+  --brand-subtle: rgba(255, 255, 255, 0.08) !important;
+  --brand-text: #ffffff !important;
+
+  --accent-primary: #f59e0b !important;
+  --accent-hover: #d97706 !important;
+  --accent-subtle: rgba(245, 158, 11, 0.14) !important;
+
+  --surface-muted: rgba(255, 255, 255, 0.04) !important;
+
+  /* Legacy color aliases */
+  --color-surface: var(--surface-primary) !important;
+  --color-surface-raised: var(--surface-raised) !important;
+  --color-surface-subtle: var(--surface-secondary) !important;
+  --color-border: var(--border-default) !important;
+  --color-border-subtle: var(--border-subtle) !important;
+  --color-brand-900: var(--text-primary) !important;
+  --color-brand-800: var(--text-primary) !important;
+  --color-brand-700: var(--text-secondary) !important;
+  --color-brand-600: #ffffff !important;
+  --color-brand-500: #e2e8f0 !important;
+  --color-brand-50: rgba(255, 255, 255, 0.06) !important;
+  --ary-ink: var(--text-primary) !important;
+  --ary-ink-soft: var(--text-secondary) !important;
+  --ary-muted: var(--text-muted) !important;
+  --ary-line: var(--border-subtle) !important;
+  --ary-border: var(--border-default) !important;
+  --ary-paper: var(--surface-canvas) !important;
+  --ary-surface: var(--surface-primary) !important;
+  --ary-soft: var(--brand-subtle) !important;
+  --ary-green: #ffffff !important;
+  --ary-green-deep: #e2e8f0 !important;
+}
+
+/* Base Body & Root Canvas */
+[data-theme="dark"] html,
+[data-theme="dark"] body {
+  background-color: #07080a !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .app-shell {
+  background-color: #07080a !important;
+  color: #f8fafc !important;
+}
+
+/* ==========================================================================
+   Header Topbar & Brand Mark
+   ========================================================================== */
+[data-theme="dark"] .topbar {
+  background: rgba(7, 8, 10, 0.85) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-theme="dark"] .brand-mark {
+  background: #161920 !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6) !important;
+}
+
+[data-theme="dark"] .brand b {
+  color: #94a3b8 !important;
+}
+
+/* ==========================================================================
+   Buttons & Actions
+   ========================================================================== */
+[data-theme="dark"] .ds-btn-primary,
+[data-theme="dark"] .hero-search-action-btn,
+[data-theme="dark"] .book-provider-btn,
+[data-theme="dark"] .modal-submit-btn,
+[data-theme="dark"] .prompt-sign-in-btn,
+[data-theme="dark"] button.sign-in,
+[data-theme="dark"] .driver-field-action-btn.primary {
+  background: #ffffff !important;
+  color: #07080a !important;
+  border-color: #ffffff !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 16px rgba(255, 255, 255, 0.15) !important;
+}
+
+[data-theme="dark"] .ds-btn-primary:hover:not(:disabled),
+[data-theme="dark"] .hero-search-action-btn:hover:not(:disabled),
+[data-theme="dark"] .book-provider-btn:hover:not(:disabled),
+[data-theme="dark"] .modal-submit-btn:hover:not(:disabled),
+[data-theme="dark"] .prompt-sign-in-btn:hover,
+[data-theme="dark"] button.sign-in:hover {
+  background: #e2e8f0 !important;
+  border-color: #e2e8f0 !important;
+  color: #07080a !important;
+}
+
+[data-theme="dark"] .ds-btn-secondary {
+  background: #161920 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .ds-btn-secondary:hover:not(:disabled) {
+  background: #1e222b !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* ==========================================================================
+   Filter Chips, Pills & Navigation Tabs
+   ========================================================================== */
+[data-theme="dark"] .category-chip {
+  background: #0f1115 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .category-chip:hover {
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .category-chip.active,
+[data-theme="dark"] .quick-chip-btn.active,
+[data-theme="dark"] .cat-pill-btn.active,
+[data-theme="dark"] .customer-tab-btn.active,
+[data-theme="dark"] .status-pill-tab.active,
+[data-theme="dark"] .admin-nav-tab.active,
+[data-theme="dark"] .filter-btn.active,
+[data-theme="dark"] .provider-nav-item.active {
+  background: #ffffff !important;
+  color: #07080a !important;
+  border-color: #ffffff !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 14px rgba(255, 255, 255, 0.15) !important;
+}
+
+[data-theme="dark"] .quick-chip-btn,
+[data-theme="dark"] .cat-pill-btn,
+[data-theme="dark"] .customer-tab-btn,
+[data-theme="dark"] .status-pill-tab,
+[data-theme="dark"] .admin-nav-tab,
+[data-theme="dark"] .filter-btn {
+  background: #161920 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  color: #94a3b8 !important;
+}
+
+/* ==========================================================================
+   Floating Mobile Bottom Navigation Bar (Dark Blur Glass)
+   ========================================================================== */
+[data-theme="dark"] .mobile-bottom-nav {
+  background: rgba(7, 8, 10, 0.88) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.7) !important;
+}
+
+[data-theme="dark"] .mob-nav-item {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .mob-nav-item:hover,
+[data-theme="dark"] .mob-nav-item.active {
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .mob-nav-item.active {
+  background: rgba(255, 255, 255, 0.12) !important;
+  backdrop-filter: blur(8px) !important;
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .mob-nav-item.highlight {
+  background: #ffffff !important;
+  color: #07080a !important;
+  font-weight: 700 !important;
+}
+
+/* ==========================================================================
+   Cards, Surfaces & Grids
+   ========================================================================== */
+[data-theme="dark"] .search-panel,
+[data-theme="dark"] .service-card,
+[data-theme="dark"] .dash-card,
+[data-theme="dark"] .admin-panel,
+[data-theme="dark"] .art-card,
+[data-theme="dark"] .product-item-card,
+[data-theme="dark"] .mobility-form-card,
+[data-theme="dark"] .mobility-job-card,
+[data-theme="dark"] .grocery-order-card,
+[data-theme="dark"] .booking-card-item,
+[data-theme="dark"] .stat-card,
+[data-theme="dark"] .admin-users-toolbar,
+[data-theme="dark"] .admin-users-table-container,
+[data-theme="dark"] .providers-section,
+[data-theme="dark"] .provider-card-item {
+  background: #0f1115 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5) !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .provider-card-item::before {
+  display: none !important;
+}
+
+/* Insets, Sub-panels & Drawers */
+[data-theme="dark"] .mobility-info-sidebar,
+[data-theme="dark"] .grocery-orders-drawer,
+[data-theme="dark"] .mobility-route-box,
+[data-theme="dark"] .gps-location-bar,
+[data-theme="dark"] .pin-handoff-card,
+[data-theme="dark"] .booking-details-grid,
+[data-theme="dark"] .booking-ref-tag,
+[data-theme="dark"] .provider-meta-row,
+[data-theme="dark"] .single-shop-rule-card,
+[data-theme="dark"] .driver-assigned-strip,
+[data-theme="dark"] .admin-search-box,
+[data-theme="dark"] .role-filter-group,
+[data-theme="dark"] .auth-tabs {
+  background: #161920 !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  color: #f8fafc !important;
+}
+
+/* ==========================================================================
+   Modals, Backdrops & Dialogs (Frosted Glass Dark Blur)
+   ========================================================================== */
+[data-theme="dark"] .modal-backdrop {
+  background: rgba(0, 0, 0, 0.82) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+}
+
+[data-theme="dark"] .modal-card {
+  background: rgba(15, 17, 21, 0.94) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.9) !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .modal-header h3 {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .modal-header p {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .modal-close {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .modal-close:hover {
+  background: #161920 !important;
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .modal-form label span {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .modal-form input,
+[data-theme="dark"] .admin-search-box input {
+  background: #161920 !important;
+  border: 1px solid #222631 !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .modal-form input:focus {
+  border-color: #ffffff !important;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2) !important;
+}
+
+[data-theme="dark"] .quick-demo-btn {
+  background: #161920 !important;
+  color: #f8fafc !important;
+  border: 1px dashed rgba(255, 255, 255, 0.18) !important;
+}
+
+[data-theme="dark"] .quick-demo-btn:hover {
+  background: #1e222b !important;
+  border-color: #ffffff !important;
+}
+
+/* ==========================================================================
+   Admin Tables & Workspaces
+   ========================================================================== */
+[data-theme="dark"] .admin-users-table th {
+  background: #161920 !important;
+  color: #64748b !important;
+  border-bottom: 1px solid #222631 !important;
+}
+
+[data-theme="dark"] .admin-users-table td {
+  border-bottom: 1px solid #222631 !important;
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .admin-users-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03) !important;
+}
+
+[data-theme="dark"] .super-admin-row {
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+
+[data-theme="dark"] .dispatch-map-svg {
+  background: #07080a !important;
+}
+
+/* ==========================================================================
+   Driver Mobility Cockpit
+   ========================================================================== */
+[data-theme="dark"] .driver-master-switch-card.online {
+  background: linear-gradient(135deg, #11141a 0%, #1a1e28 100%) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important;
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .driver-active-hud-card {
+  background: #0f1115 !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.6) !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .pin-pill-box {
+  background: #161920 !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+[data-theme="dark"] .pin-code {
+  color: #ffffff !important;
+}
+
+/* ==========================================================================
+   Footer & Meta
+   ========================================================================== */
+[data-theme="dark"] .adk-signature-badge {
+  background: #161920 !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: #94a3b8 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5) !important;
+}
+
+[data-theme="dark"] .adk-signature-badge:hover {
+  background: #1e222b !important;
+  border-color: rgba(255, 255, 255, 0.22) !important;
+}
+
+[data-theme="dark"] .adk-dot {
+  background: #ffffff !important;
+}
+
+[data-theme="dark"] .adk-brand-name {
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .adk-prefix {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .hero h1 em {
+  color: #ffffff !important;
+  text-decoration: underline;
+  text-decoration-color: #475569;
+}
+
+[data-theme="dark"] .eyebrow {
+  color: #94a3b8 !important;
+}
+
+/* ==========================================================================
+   Comprehensive Dark Theme Additions: Cart, Steppers, Provider, Badges
+   ========================================================================== */
+
+/* Cart & Floating Bar (Frosted Dark Blur Glass) */
+[data-theme="dark"] .persistent-cart-bar {
+  background: rgba(15, 17, 21, 0.88) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.8) !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .cart-count-badge {
+  background: #ffffff !important;
+  color: #07080a !important;
+  font-weight: 700 !important;
+}
+
+[data-theme="dark"] .cart-total-amount {
+  color: #f8fafc !important;
+  font-weight: 700 !important;
+}
+
+[data-theme="dark"] .cart-shop-name {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .persistent-cart-bar .cart-checkout-cta {
+  background: #ffffff !important;
+  color: #07080a !important;
+  font-weight: 700 !important;
+}
+
+[data-theme="dark"] .cod-label {
+  color: #f8fafc !important;
+}
+
+/* Stepper dots & Filters */
+[data-theme="dark"] .ds-badge-brand {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #f8fafc !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  font-weight: 700 !important;
+}
+
+[data-theme="dark"] .ds-step.completed .ds-step-dot {
+  background: #ffffff !important;
+  border-color: #ffffff !important;
+  color: #07080a !important;
+}
+
+[data-theme="dark"] .filter-badge-count {
+  background: #ffffff !important;
+  color: #07080a !important;
+}
+
+[data-theme="dark"] .filter-chip.active {
+  background: #ffffff !important;
+  color: #07080a !important;
+  border-color: #ffffff !important;
+  font-weight: 700 !important;
+}
+
+[data-theme="dark"] .filter-chip {
+  background: #161920 !important;
+  color: #94a3b8 !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Provider Workspace Elements */
+[data-theme="dark"] .kpi-val {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .kpi-label {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .provider-kpi-card {
+  background: #0f1115 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-theme="dark"] .kpi-icon-wrap.brand {
+  background: #161920 !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme="dark"] .provider-avatar-circle {
+  background: #161920 !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+[data-theme="dark"] .provider-sidebar {
+  background: #0f1115 !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-theme="dark"] .provider-name-block b {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .provider-rate {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .provider-category-tag {
+  background: #161920 !important;
+  color: #94a3b8 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-theme="dark"] .verified-provider-badge {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #f8fafc !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+[data-theme="dark"] .job-card {
+  background: #0f1115 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .quote-composer-card {
+  background: #0f1115 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-theme="dark"] .quote-preview-callout {
+  background: #161920 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .grocery-column {
+  background: #0f1115 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-theme="dark"] .grocery-column-title {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .inventory-product-card {
+  background: #0f1115 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .stock-stepper-btn {
+  background: #161920 !important;
+  color: #f8fafc !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme="dark"] .stock-stepper-btn:hover {
+  background: #1e222b !important;
+  border-color: #ffffff !important;
+}
+
+[data-theme="dark"] .provider-form-input,
+[data-theme="dark"] .provider-form-select,
+[data-theme="dark"] .provider-form-textarea {
+  background: #161920 !important;
+  border: 1px solid #222631 !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .provider-form-label {
+  color: #94a3b8 !important;
+}
+
+/* User Profile & Navigation */
+[data-theme="dark"] .user-badge {
+  background: #161920 !important;
+  color: #f8fafc !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+[data-theme="dark"] .sign-out-btn {
+  background: #161920 !important;
+  color: #94a3b8 !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme="dark"] .sign-out-btn:hover {
+  background: #1e222b !important;
+  color: #f87171 !important;
+  border-color: rgba(248, 113, 113, 0.3) !important;
+}
+
+[data-theme="dark"] .nav-link-btn {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .nav-link-btn:hover {
+  background: #161920 !important;
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .nav-link-btn.active {
+  background: #ffffff !important;
+  color: #07080a !important;
+  font-weight: 700 !important;
+  border-color: #ffffff !important;
+}
+
+[data-theme="dark"] .sign-in-prompt-card {
+  background: #0f1115 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-left: 4px solid #ffffff !important;
+}
+
+[data-theme="dark"] .sign-in-prompt-info b {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .sign-in-prompt-info small {
+  color: #94a3b8 !important;
+}
+
+/* Booking Cards & Dialogs */
+[data-theme="dark"] .booking-service-title {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .booking-problem-box {
+  background: #161920 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .booking-details-grid {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .booking-actions-row {
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-theme="dark"] .booking-card-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-theme="dark"] .no-providers-box {
+  background: #0f1115 !important;
+  border: 1px dashed rgba(255, 255, 255, 0.15) !important;
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .popular-provider-card {
+  background: #0f1115 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .popular-name {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .popular-category {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .rating-pill {
+  background: #161920 !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #f59e0b !important;
+}
+
+[data-theme="dark"] .distance-pill {
+  background: #161920 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .rate-text {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .rate-text b {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .quick-book-btn {
+  background: #ffffff !important;
+  color: #07080a !important;
+  font-weight: 700 !important;
+}
+
+/* ==========================================================================
+   Driver Cockpit & Switch Master Card Dark Theme Overrides
+   ========================================================================== */
+[data-theme="dark"] .driver-master-switch-card.online {
+  background: linear-gradient(135deg, rgba(22, 25, 32, 0.95) 0%, rgba(15, 17, 21, 0.95) 100%) !important;
+  color: #f8fafc !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-theme="dark"] .driver-master-switch-card.offline {
+  background: #0f1115 !important;
+  color: #94a3b8 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-theme="dark"] .driver-switch-beacon.online {
+  background: #38bdf8 !important;
+  box-shadow: 0 0 12px #38bdf8, 0 0 20px rgba(56, 189, 248, 0.5) !important;
+}
+
+[data-theme="dark"] .driver-switch-beacon.offline {
+  background: #64748b !important;
+}
+
+[data-theme="dark"] .driver-giant-power-btn.go-online {
+  background: #ffffff !important;
+  color: #07080a !important;
+  box-shadow: 0 4px 18px rgba(255, 255, 255, 0.18) !important;
+}
+
+[data-theme="dark"] .driver-giant-power-btn.go-offline {
+  background: #ef4444 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 18px rgba(239, 68, 68, 0.3) !important;
+}
+
+[data-theme="dark"] .gps-status-chip.fresh,
+[data-theme="dark"] .driver-master-switch-card.online .gps-status-chip.fresh {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #f8fafc !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+[data-theme="dark"] .route-point .pickup-pin {
+  color: #38bdf8 !important;
+}
+
+/* ==========================================================================
+   Provider KPIs & Status Badges Dark Theme
+   ========================================================================== */
+[data-theme="dark"] .kpi-icon-wrap.brand,
+[data-theme="dark"] .kpi-icon-wrap.success {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .provider-status-badge.available {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+[data-theme="dark"] .ds-badge-success {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.18) !important;
+}

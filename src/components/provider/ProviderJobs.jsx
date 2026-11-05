@@ -182,7 +182,7 @@ export default function ProviderJobs({
               >
                 <div style={{ flex: 1, minWidth: 260 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                    <b style={{ color: 'var(--color-neutral-900, #1e293b)', fontSize: '0.95rem' }}>{b.categoryName || 'Service Job'}</b>
+                    <b style={{ color: 'var(--text-primary, #f8fafc)', fontSize: '0.95rem' }}>{b.categoryName || 'Service Job'}</b>
                     <span style={{ fontSize: '0.75rem', color: 'var(--color-neutral-500, #64748b)' }}>#{b.id.slice(-6)}</span>
                     <Badge variant="success" dot={false}>{b.baseCharge || 'LKR 1,500'}</Badge>
                   </div>
@@ -232,7 +232,7 @@ export default function ProviderJobs({
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12, marginBottom: 14 }}>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                      <h3 style={{ margin: 0, fontSize: '1.05rem', color: 'var(--color-brand-900, #173b2f)' }}>
+                      <h3 style={{ margin: 0, fontSize: '1.05rem', color: 'var(--text-primary, #f8fafc)' }}>
                         {b.categoryName || 'Service Request'}
                       </h3>
                       <span style={{ fontSize: '0.75rem', color: 'var(--color-neutral-500, #64748b)' }}>
@@ -259,7 +259,7 @@ export default function ProviderJobs({
 
                 {/* Progress Stepper (Only for direct claimed/accepted bookings) */}
                 {!isBroadcast && (
-                  <div style={{ margin: '14px 0 16px', padding: '12px 16px', background: 'var(--color-neutral-50, #f8fafc)', borderRadius: 'var(--radius-md, 8px)' }}>
+                  <div style={{ margin: '14px 0 16px', padding: '12px 16px', background: 'var(--surface-secondary, #161920)', borderRadius: 'var(--radius-md, 8px)' }}>
                     <Stepper
                       currentStep={stepIndex}
                       steps={[
@@ -276,7 +276,7 @@ export default function ProviderJobs({
                 <div className="job-detail-grid">
                   <div>
                     <span style={{ color: 'var(--color-neutral-500, #64748b)', fontSize: '0.75rem', display: 'block' }}>Customer</span>
-                    <b style={{ color: 'var(--color-neutral-900, #0f172a)' }}>
+                    <b style={{ color: 'var(--text-primary, #f8fafc)' }}>
                       {isBroadcast ? 'Confidential (Unassigned)' : (b.customerName || 'Ary Client')}
                     </b>
                   </div>
@@ -315,7 +315,7 @@ export default function ProviderJobs({
                   <div style={{
                     marginTop: 10,
                     padding: '10px 14px',
-                    background: 'var(--color-neutral-50, #f8fafc)',
+                    background: 'var(--surface-secondary, #161920)',
                     borderLeft: '3px solid var(--color-brand-500, #174d3d)',
                     borderRadius: '0 var(--radius-md, 8px) var(--radius-md, 8px) 0',
                     fontSize: '0.85rem'
@@ -562,11 +562,12 @@ export default function ProviderJobs({
       {/* Confirm Decline Modal */}
       <ConfirmDialog
         isOpen={Boolean(confirmDeclineId)}
+        onClose={() => setConfirmDeclineId(null)}
         title="Decline Booking Request?"
         message="Declining will pass this booking to the next available provider in your area. Are you sure you cannot attend to this job?"
         confirmLabel="Yes, Decline"
         cancelLabel="Keep Request"
-        variant="danger"
+        isDanger={true}
         onConfirm={() => {
           if (confirmDeclineId) {
             onUpdateStatus?.(confirmDeclineId, 'rejected');

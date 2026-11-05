@@ -20,7 +20,7 @@ export function useTheme() {
     document.documentElement.setAttribute('data-theme', newTheme);
     const metaThemeColor = document.querySelector('meta[name="theme-color"]');
     if (metaThemeColor) {
-      if (newTheme === 'dark') metaThemeColor.setAttribute('content', '#0c1411');
+      if (newTheme === 'dark') metaThemeColor.setAttribute('content', '#07080a');
       else if (newTheme === 'sunlight') metaThemeColor.setAttribute('content', '#ffffff');
       else metaThemeColor.setAttribute('content', '#174d3d');
     }

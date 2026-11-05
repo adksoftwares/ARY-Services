@@ -427,7 +427,7 @@
 .ds-badge-neutral .ds-badge-dot { background: var(--text-muted); }
 
 /* Dark mode adjustments for badges */
-[data-theme="dark"] .ds-badge-brand { background: rgba(43, 132, 101, 0.2); color: #8bc4a9; border-color: rgba(43, 132, 101, 0.4); }
+[data-theme="dark"] .ds-badge-brand { background: rgba(255, 255, 255, 0.1) !important; color: #f8fafc !important; border-color: rgba(255, 255, 255, 0.2) !important; font-weight: 700 !important; }
 [data-theme="dark"] .ds-badge-success { background: rgba(22, 163, 74, 0.2); color: #86efac; border-color: rgba(22, 163, 74, 0.4); }
 [data-theme="dark"] .ds-badge-warning { background: rgba(217, 119, 6, 0.2); color: #fde047; border-color: rgba(217, 119, 6, 0.4); }
 [data-theme="dark"] .ds-badge-danger { background: rgba(220, 38, 38, 0.2); color: #fca5a5; border-color: rgba(220, 38, 38, 0.4); }

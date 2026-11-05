@@ -143,9 +143,9 @@ export default function BookingModal({
 
   const TIME_SLOTS = [
     'Morning (9 AM - 12 PM)',
-    'Afternoon (1 PM - 4 PM)',
-    'Evening (4 PM - 7 PM)',
-    'Emergency / As Soon As Possible'
+    'Afternoon (1 PM - 5 PM)',
+    'Evening (5 PM - 8 PM)',
+    'Emergency (ASAP)'
   ];
 
   const STEP_TITLES = ['Describe Need', 'Date & Time', 'Address', 'Review & Pay'];
@@ -341,20 +341,24 @@ export default function BookingModal({
                 >
                   <Banknote size={18} />
                   <div>
-                    <b>Cash on Completion</b>
-                    <small>Pay directly to the provider after inspection.</small>
+                    <b>Cash on Completion (Recommended)</b>
+                    <small>Pay directly to the provider after inspection and satisfaction.</small>
                   </div>
                 </button>
 
                 <button
                   type="button"
-                  className={`payment-option-btn ${paymentMethod === 'escrow' ? 'active' : ''}`}
-                  onClick={() => setPaymentMethod('escrow')}
+                  className="payment-option-btn disabled"
+                  style={{ opacity: 0.65, cursor: 'not-allowed' }}
+                  onClick={() => {
+                    setError('Online card escrow is temporarily paused pending LankaPay gateway certification. Please use Cash on Completion.');
+                    setPaymentMethod('cash');
+                  }}
                 >
                   <CreditCard size={18} />
                   <div>
-                    <b>ARY Escrow Shield</b>
-                    <small>Funds held securely until you approve completion.</small>
+                    <b>ARY Escrow Shield (Cards / Online)</b>
+                    <small>Coming soon · Please choose Cash on Completion for now.</small>
                   </div>
                 </button>
               </div>

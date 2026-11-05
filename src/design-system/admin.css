@@ -612,7 +612,7 @@
 .dispatch-map-svg {
   width: 100%;
   height: 380px;
-  background: #0f241d;
+  background: var(--surface-canvas, #07080a);
   border-radius: var(--radius-lg, 12px);
   overflow: hidden;
   position: relative;

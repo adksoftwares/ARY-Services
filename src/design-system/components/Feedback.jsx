@@ -91,27 +91,32 @@ export function RatingStars({
 export function ConfirmDialog({
   isOpen,
   onClose,
+  onCancel,
   onConfirm,
   title = 'Are you sure?',
   message = 'This action cannot be undone.',
   confirmLabel = 'Confirm',
   cancelLabel = 'Cancel',
   isDanger = false,
+  variant = 'primary',
   loading = false
 }) {
+  const handleDismiss = onClose || onCancel || (() => {});
+  const danger = isDanger || variant === 'danger';
+
   return (
     <Modal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={handleDismiss}
       title={title}
       maxWidth="440px"
       footer={
         <>
-          <Button variant="ghost" onClick={onClose} disabled={loading}>
+          <Button variant="ghost" onClick={handleDismiss} disabled={loading}>
             {cancelLabel}
           </Button>
           <Button
-            variant={isDanger ? 'danger' : 'primary'}
+            variant={danger ? 'danger' : 'primary'}
             onClick={onConfirm}
             loading={loading}
           >

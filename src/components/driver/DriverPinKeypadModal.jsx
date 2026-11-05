@@ -84,7 +84,7 @@ export default function DriverPinKeypadModal({
                   justifyContent: 'center',
                   fontSize: '2rem',
                   fontWeight: 800,
-                  color: 'var(--color-brand-900, #0c2d23)',
+                  color: 'var(--text-primary, #f8fafc)',
                   boxShadow: digit ? '0 4px 12px rgba(23, 77, 61, 0.15)' : 'none',
                   transition: 'all 0.12s ease'
                 }}

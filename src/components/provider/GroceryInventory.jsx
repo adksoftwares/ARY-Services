@@ -254,7 +254,7 @@ export default function GroceryInventory() {
       {/* 1. Toolbar & Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h2 style={{ margin: 0, fontSize: '1.25rem', color: 'var(--color-brand-900, #173b2f)' }}>
+          <h2 style={{ margin: 0, fontSize: '1.25rem', color: 'var(--text-primary, #f8fafc)' }}>
             Grocery & Retail Inventory
           </h2>
           <p style={{ margin: '2px 0 0', fontSize: '0.82rem', color: 'var(--color-neutral-500, #64748b)' }}>
@@ -283,7 +283,7 @@ export default function GroceryInventory() {
             <Package size={18} />
           </div>
           <div>
-            <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--color-brand-900, #173b2f)', lineHeight: 1 }}>
+            <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary, #f8fafc)', lineHeight: 1 }}>
               {items.length}
             </div>
             <span style={{ fontSize: '0.75rem', color: 'var(--color-neutral-500, #64748b)' }}>Total Catalog SKUs</span>

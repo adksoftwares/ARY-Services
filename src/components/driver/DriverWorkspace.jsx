@@ -417,7 +417,7 @@ export default function DriverWorkspace({ onNotice }) {
                 {activeTrip.serviceType === 'food_delivery' ? <PackageCheck size={16} /> : activeTrip.serviceType === 'parcel_delivery' ? <Package size={16} /> : <Bike size={16} />}
               </div>
               <div>
-                <b style={{ fontSize: '0.95rem', color: 'var(--color-brand-900, #173b2f)' }}>
+                <b style={{ fontSize: '0.95rem', color: 'var(--text-primary, #f8fafc)' }}>
                   ACTIVE DISPATCH #{activeTrip.id.slice(-6)}
                 </b>
                 <div style={{ fontSize: '0.75rem', color: 'var(--color-neutral-500, #64748b)' }}>
@@ -567,7 +567,7 @@ export default function DriverWorkspace({ onNotice }) {
       {/* 4. Available Job Feed */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 12 }}>
         <div>
-          <h2 style={{ fontSize: '1.15rem', margin: 0, color: 'var(--color-brand-900, #173b2f)' }}>
+          <h2 style={{ fontSize: '1.15rem', margin: 0, color: 'var(--text-primary, #f8fafc)' }}>
             Available Nearby Dispatches ({availableJobs.length})
           </h2>
           <p style={{ fontSize: '0.78rem', color: 'var(--color-neutral-500, #64748b)', margin: '2px 0 0' }}>

@@ -61,7 +61,7 @@ export default function DriverEarningsSummary({
               Completed Trips
             </span>
           </div>
-          <div style={{ fontSize: '1.7rem', fontWeight: 800, color: 'var(--color-brand-900, #0c2d23)', letterSpacing: '-0.02em' }}>
+          <div style={{ fontSize: '1.7rem', fontWeight: 800, color: 'var(--text-primary, #f8fafc)', letterSpacing: '-0.02em' }}>
             {completedCount}
           </div>
           <small style={{ fontSize: '0.72rem', color: 'var(--color-neutral-500, #64748b)' }}>

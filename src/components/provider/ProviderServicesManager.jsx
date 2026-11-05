@@ -100,10 +100,10 @@ export default function ProviderServicesManager() {
       {/* 1. Header Toolbar */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h2 style={{ margin: 0, fontSize: '1.25rem', color: 'var(--color-brand-900, #173b2f)' }}>
+          <h2 style={{ margin: 0, fontSize: '1.25rem', color: 'var(--text-primary, #0f172a)', fontWeight: 800 }}>
             Services & Trade Offerings
           </h2>
-          <p style={{ margin: '2px 0 0', fontSize: '0.82rem', color: 'var(--color-neutral-500, #64748b)' }}>
+          <p style={{ margin: '2px 0 0', fontSize: '0.82rem', color: 'var(--text-secondary, #64748b)' }}>
             Expand your contractor portfolio across multiple trade categories
           </p>
         </div>
@@ -158,10 +158,10 @@ export default function ProviderServicesManager() {
           <Card style={{ padding: '16px 18px', borderLeft: '4px solid var(--color-brand-600, #174d3d)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
               <div>
-                <b style={{ fontSize: '1rem', color: 'var(--color-brand-900, #173b2f)' }}>
+                <b style={{ fontSize: '1rem', color: 'var(--text-primary, #0f172a)' }}>
                   {data.primaryCategory?.categoryName || data.primaryCategory?.categorySlug || 'Primary Service'}
                 </b>
-                <span style={{ display: 'block', fontSize: '0.78rem', color: 'var(--color-neutral-500, #64748b)' }}>
+                <span style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-secondary, #64748b)' }}>
                   Primary Certified Trade
                 </span>
               </div>
@@ -169,10 +169,10 @@ export default function ProviderServicesManager() {
                 <CheckCircle2 size={12} /> Approved
               </Badge>
             </div>
-            <p style={{ margin: '6px 0 0', fontSize: '0.82rem', color: 'var(--color-neutral-600, #475569)' }}>
-              Base charge: <b>LKR {Number(currentUser?.baseCharge || 1500).toLocaleString('en-LK')}</b>
+            <p style={{ margin: '6px 0 0', fontSize: '0.82rem', color: 'var(--text-secondary, #475569)' }}>
+              Base charge: <b>LKR {(typeof currentUser?.baseCharge === 'number' ? currentUser.baseCharge : (parseFloat(String(currentUser?.baseCharge || '1500').replace(/[^0-9.]/g, '')) || 1500)).toLocaleString('en-LK')}</b>
             </p>
-            <div style={{ marginTop: 8, fontSize: '0.75rem', color: 'var(--color-brand-700, #174d3d)', display: 'flex', alignItems: 'center', gap: 4 }}>
+            <div style={{ marginTop: 8, fontSize: '0.75rem', color: 'var(--brand-primary, #16a34a)', display: 'flex', alignItems: 'center', gap: 4 }}>
               <ShieldCheck size={14} /> Active in public customer search
             </div>
           </Card>
@@ -344,11 +344,12 @@ export default function ProviderServicesManager() {
           </div>
 
           <div style={{
-            background: 'var(--color-brand-50, #edf7f2)',
+            background: 'var(--brand-subtle, rgba(43, 132, 101, 0.16))',
             padding: '10px 14px',
             borderRadius: 'var(--radius-md, 8px)',
             fontSize: '0.8rem',
-            color: 'var(--color-brand-800, #154636)',
+            color: 'var(--brand-text, #60cba5)',
+            border: '1px solid rgba(96, 203, 165, 0.2)',
             display: 'flex',
             alignItems: 'center',
             gap: 8

@@ -137,21 +137,24 @@ export default function ProviderWallet({
 
       {/* 3. Payout Action Banner */}
       <Card style={{
-        padding: '16px 20px',
+        padding: '18px 22px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         flexWrap: 'wrap',
         gap: 14,
-        background: 'linear-gradient(135deg, var(--color-brand-900, #0c2d23) 0%, var(--color-brand-800, #154636) 100%)',
-        color: '#fff'
+        background: 'linear-gradient(135deg, #0d2b20 0%, #154636 100%)',
+        border: '1px solid rgba(43, 132, 101, 0.3)',
+        borderRadius: 'var(--radius-lg, 12px)',
+        color: '#ffffff',
+        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2)'
       }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Landmark size={20} color="var(--color-accent-400, #e2a87a)" />
-            <b style={{ fontSize: '1.05rem', color: '#fff' }}>CEFT Direct Bank Payout</b>
+            <Landmark size={20} color="#f6ad55" />
+            <b style={{ fontSize: '1.05rem', color: '#ffffff', letterSpacing: '0.02em' }}>CEFT Direct Bank Payout</b>
           </div>
-          <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: '#c3d9cf' }}>
+          <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: '#e2e8f0', opacity: 0.9 }}>
             Request instant settlement to your registered Sri Lankan bank account (BOC, Commercial Bank, Sampath, HNB).
           </p>
         </div>
@@ -172,18 +175,19 @@ export default function ProviderWallet({
           border: '2px solid var(--color-brand-500, #174d3d)',
           background: 'var(--color-surface, #fff)'
         }}>
-          <h4 style={{ margin: '0 0 10px', color: 'var(--color-brand-900, #173b2f)' }}>
+          <h4 style={{ margin: '0 0 10px', color: 'var(--text-primary, #0f172a)' }}>
             Confirm CEFT Bank Settlement
           </h4>
-          <p style={{ fontSize: '0.85rem', color: 'var(--color-neutral-600, #475569)', marginBottom: 14 }}>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary, #64748b)', marginBottom: 14 }}>
             Net payable amount: <b>LKR {totalEarnedPayout.toLocaleString()}</b> will be transferred to:
           </p>
           <div style={{
-            background: 'var(--color-neutral-50, #f8fafc)',
+            background: 'var(--surface-secondary, #f8fafc)',
             padding: '12px 16px',
             borderRadius: 'var(--radius-md, 8px)',
             fontSize: '0.85rem',
-            marginBottom: 16
+            marginBottom: 16,
+            color: 'var(--text-primary, #0f172a)'
           }}>
             <div><b>Beneficiary Name:</b> {currentUser?.fullName}</div>
             <div><b>Registered Bank:</b> Commercial Bank of Ceylon PLC</div>

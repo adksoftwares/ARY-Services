@@ -13,7 +13,7 @@ const getApiBase = () => {
     const isCapacitor = Boolean(
       window.Capacitor ||
       window.location.protocol === 'capacitor:' ||
-      (window.location.protocol === 'https:' && window.location.hostname === 'localhost' && !window.location.port)
+      ((window.location.protocol === 'https:' || window.location.protocol === 'http:') && window.location.hostname === 'localhost' && !window.location.port)
     );
     if (isCapacitor) {
       return 'http://localhost:4000/api';

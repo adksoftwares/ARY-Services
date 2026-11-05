@@ -651,7 +651,7 @@
   opacity: 0.9;
 }
 [data-theme="dark"] .provider-urgent-item {
-  background: var(--surface-secondary, #17241f) !important;
+  background: var(--surface-secondary, #161920) !important;
   border-color: rgba(220, 38, 38, 0.25) !important;
 }
 [data-theme="dark"] .provider-urgent-item b {

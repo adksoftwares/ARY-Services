@@ -133,21 +133,22 @@ function DriverPortal() {
               width: 58,
               height: 58,
               borderRadius: 'var(--radius-lg, 16px)',
-              background: 'var(--color-brand-50, #edf7ef)',
-              color: 'var(--color-brand-600, #174d3d)',
+              background: 'var(--surface-secondary, #161920)',
+              color: 'var(--brand-primary, #22c55e)',
               display: 'grid',
               placeItems: 'center',
-              margin: '0 auto 18px'
+              margin: '0 auto 18px',
+              border: '1px solid var(--border-default, #222631)'
             }}>
               <ShieldCheck size={30}/>
             </div>
-            <p className="eyebrow" style={{ color: 'var(--color-brand-700, #174d3d)', fontWeight: 700, letterSpacing: '0.05em' }}>
+            <p className="eyebrow" style={{ color: 'var(--brand-primary, #22c55e)', fontWeight: 700, letterSpacing: '0.05em' }}>
               ARY DRIVER NETWORK
             </p>
-            <h1 style={{ color: 'var(--color-brand-900, #173b2f)', margin: '8px 0 12px', fontSize: '1.9rem' }}>
+            <h1 style={{ color: 'var(--text-primary, #f8fafc)', margin: '8px 0 12px', fontSize: '1.9rem' }}>
               Every journey, connected.
             </h1>
-            <p style={{ color: 'var(--color-neutral-600, #64748b)', maxWidth: 540, margin: '0 auto 24px', lineHeight: 1.7, fontSize: '0.95rem' }}>
+            <p style={{ color: 'var(--text-secondary, #94a3b8)', maxWidth: 540, margin: '0 auto 24px', lineHeight: 1.7, fontSize: '0.95rem' }}>
               Sign in with your Driver account to receive nearby ride and delivery requests, enter secure handoff PINs, and track your daily earnings across Sri Lanka.
             </p>
             <Button

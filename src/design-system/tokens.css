@@ -122,8 +122,8 @@
   --color-brand-500: #338763;
   --color-brand-600: #236c4f;
   --color-brand-700: #174d3d; /* Primary ARY Brand Green */
-  --color-brand-800: #133f32;
-  --color-brand-900: #0f3329;
+  --color-brand-800: #0f382c;
+  --color-brand-900: #09261e;
   --color-brand-950: #071f19;
 
   /* Warm Accent Palette */
@@ -245,40 +245,40 @@
    Dark Theme [data-theme="dark"]
    ========================================================================== */
 [data-theme="dark"] {
-  --surface: #121c17;
-  --surface-raised: #1a2923;
-  --surface-canvas: #0c1411;
-  --surface-primary: #121c17;
-  --surface-secondary: #17241f;
-  --surface-tertiary: #1f302a;
-  --surface-elevated: #1a2923;
-  --surface-glass: rgba(18, 28, 23, 0.88);
-  --surface-glass-border: rgba(43, 64, 55, 0.7);
+  --surface: #0f1115;
+  --surface-raised: #161920;
+  --surface-canvas: #07080a;
+  --surface-primary: #0f1115;
+  --surface-secondary: #161920;
+  --surface-tertiary: #1e222b;
+  --surface-elevated: #161920;
+  --surface-glass: rgba(15, 17, 21, 0.82);
+  --surface-glass-border: rgba(255, 255, 255, 0.08);
 
-  --text: #e6ede9;
-  --text-primary: #e6ede9;
-  --text-secondary: #a9bbb2;
-  --text-muted: #788a81;
-  --text-inverse: #0c1411;
+  --text: #f8fafc;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --text-inverse: #07080a;
 
-  --border: #2b3d35;
-  --border-subtle: #1e2c26;
-  --border-default: #2b3d35;
-  --border-strong: #3f554b;
-  --border-focus: var(--color-brand-400);
-  --focus-ring: 0 0 0 3px rgba(96, 203, 165, 0.4);
+  --border: #222631;
+  --border-subtle: rgba(255, 255, 255, 0.07);
+  --border-default: #222631;
+  --border-strong: #323847;
+  --border-focus: #ffffff;
+  --focus-ring: 0 0 0 3px rgba(255, 255, 255, 0.22);
 
-  --brand-primary: #2b8465;
-  --brand-hover: #379e7a;
-  --brand-active: #47b890;
-  --brand-subtle: rgba(43, 132, 101, 0.16);
-  --brand-text: #60cba5;
+  --brand-primary: #ffffff;
+  --brand-hover: #e2e8f0;
+  --brand-active: #cbd5e1;
+  --brand-subtle: rgba(255, 255, 255, 0.08);
+  --brand-text: #ffffff;
 
-  --accent-primary: #e09b67;
-  --accent-hover: #e8ab7d;
-  --accent-subtle: rgba(209, 139, 84, 0.16);
+  --accent-primary: #f59e0b;
+  --accent-hover: #d97706;
+  --accent-subtle: rgba(245, 158, 11, 0.14);
 
-  --surface-muted: rgba(43, 132, 101, 0.16);
+  --surface-muted: rgba(255, 255, 255, 0.04);
 
   /* Unified Semantic Aliases for Dark Theme */
   --color-surface: var(--surface-primary);
@@ -301,12 +301,35 @@
   --ary-green: var(--brand-primary);
   --ary-green-deep: var(--brand-hover);
 
-  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.35);
-  --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.45);
-  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.55);
-  --shadow-lg: 0 16px 36px rgba(0, 0, 0, 0.65);
-  --shadow-xl: 0 24px 48px rgba(0, 0, 0, 0.75);
-  --shadow-glow: 0 0 24px rgba(43, 132, 101, 0.4);
+  /* Legacy Color Scale Overrides for Dark Theme */
+  --color-neutral-900: var(--text-primary);
+  --color-neutral-800: var(--text-primary);
+  --color-neutral-700: var(--text-secondary);
+  --color-neutral-600: var(--text-secondary);
+  --color-neutral-500: var(--text-muted);
+  --color-neutral-400: var(--text-muted);
+  --color-neutral-300: var(--border-strong);
+  --color-neutral-200: var(--border-default);
+  --color-neutral-100: var(--border-subtle);
+  --color-neutral-50: var(--surface-secondary);
+
+  --color-brand-900: var(--text-primary);
+  --color-brand-800: var(--text-primary);
+  --color-brand-700: var(--text-secondary);
+  --color-brand-600: var(--brand-primary);
+  --color-brand-500: #e2e8f0;
+  --color-brand-50: rgba(255, 255, 255, 0.06);
+
+  --color-text: var(--text-primary);
+  --color-text-subtle: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.6);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.7);
+  --shadow-lg: 0 16px 36px rgba(0, 0, 0, 0.8);
+  --shadow-xl: 0 24px 48px rgba(0, 0, 0, 0.9);
+  --shadow-glow: 0 0 24px rgba(0, 0, 0, 0.8);
 }
 
 /* ==========================================================================
