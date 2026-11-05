@@ -9,9 +9,6 @@ export function useTheme() {
     if (saved && ['light', 'dark', 'sunlight'].includes(saved)) {
       return saved;
     }
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      return 'dark';
-    }
     return 'light';
   });
 
