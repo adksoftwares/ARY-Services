@@ -45,16 +45,17 @@ export function SegmentedControl({
   return (
     <div className={`ds-segmented ${className}`} role="radiogroup" aria-label={ariaLabel}>
       {options.map((opt) => {
-        const isSelected = opt.id === value;
+        const optionId = opt.id ?? opt.value;
+        const isSelected = optionId === value;
         const Icon = opt.icon;
         return (
           <button
-            key={opt.id}
+            key={optionId}
             type="button"
             role="radio"
             aria-checked={isSelected}
             className={`ds-segmented-btn ${isSelected ? 'active' : ''}`}
-            onClick={() => onChange && onChange(opt.id)}
+            onClick={() => onChange && onChange(optionId)}
           >
             {Icon && <Icon size={15} />}
             <span>{opt.label}</span>

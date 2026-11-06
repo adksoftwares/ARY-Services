@@ -101,11 +101,11 @@ export default function AdminUsers({
   }
 
   const roleOptions = [
-    { value: 'all', label: `All (${adminUsers.length})` },
-    { value: 'customer', label: 'Customers' },
-    { value: 'provider', label: 'Providers' },
-    { value: 'driver', label: 'Drivers' },
-    { value: 'admin', label: 'Admins' }
+    { id: 'all', value: 'all', label: `All (${adminUsers.length})` },
+    { id: 'customer', value: 'customer', label: 'Customers' },
+    { id: 'provider', value: 'provider', label: 'Providers' },
+    { id: 'driver', value: 'driver', label: 'Drivers' },
+    { id: 'admin', value: 'admin', label: 'Admins' }
   ];
 
   return (

@@ -207,10 +207,10 @@ export default function AdminApplications({
   }
 
   const typeOptions = [
-    { value: 'all', label: `All Queue (${unifiedList.length})` },
-    { value: 'driver', label: 'Drivers' },
-    { value: 'provider', label: 'Providers' },
-    { value: 'role', label: 'Role Upgrades' }
+    { id: 'all', value: 'all', label: `All Queue (${unifiedList.length})` },
+    { id: 'driver', value: 'driver', label: 'Drivers' },
+    { id: 'provider', value: 'provider', label: 'Providers' },
+    { id: 'role', value: 'role', label: 'Role Upgrades' }
   ];
 
   const pendingCount = unifiedList.filter(i => i.status === 'pending').length;
