@@ -303,15 +303,15 @@ export default function AdminDisputes({
                     gap: 10,
                     textAlign: 'center'
                   }}>
-                    <div style={{ background: '#ffffff', padding: '10px', borderRadius: 6, border: '1px solid var(--color-brand-200, #b7decb)' }}>
+                    <div style={{ background: 'var(--color-surface, #ffffff)', padding: '10px', borderRadius: 6, border: '1px solid var(--color-brand-200, #b7decb)' }}>
                       <span style={{ fontSize: '0.72rem', color: 'var(--color-neutral-500, #64748b)', display: 'block' }}>Customer Refund</span>
                       <b style={{ fontSize: '1.05rem', color: '#166534' }}>LKR {preview.customerRefund.toLocaleString()}</b>
                     </div>
-                    <div style={{ background: '#ffffff', padding: '10px', borderRadius: 6, border: '1px solid var(--color-brand-200, #b7decb)' }}>
+                    <div style={{ background: 'var(--color-surface, #ffffff)', padding: '10px', borderRadius: 6, border: '1px solid var(--color-brand-200, #b7decb)' }}>
                       <span style={{ fontSize: '0.72rem', color: 'var(--color-neutral-500, #64748b)', display: 'block' }}>Provider Payout</span>
                       <b style={{ fontSize: '1.05rem', color: 'var(--color-brand-700, #174d3d)' }}>LKR {preview.providerPayout.toLocaleString()}</b>
                     </div>
-                    <div style={{ background: '#ffffff', padding: '10px', borderRadius: 6, border: '1px solid var(--color-brand-200, #b7decb)' }}>
+                    <div style={{ background: 'var(--color-surface, #ffffff)', padding: '10px', borderRadius: 6, border: '1px solid var(--color-brand-200, #b7decb)' }}>
                       <span style={{ fontSize: '0.72rem', color: 'var(--color-neutral-500, #64748b)', display: 'block' }}>ARY Commission</span>
                       <b style={{ fontSize: '1.05rem', color: 'var(--color-neutral-700, #334155)' }}>LKR {preview.platformCommission.toLocaleString()}</b>
                     </div>

@@ -391,7 +391,7 @@ export default function AdminUsers({
                               padding: '5px 8px',
                               borderRadius: 'var(--radius-sm, 6px)',
                               border: '1px solid var(--color-border, #cbd5e1)',
-                              background: '#ffffff',
+                              background: 'var(--color-surface, #ffffff)',
                               color: 'var(--color-neutral-700, #334155)',
                               fontSize: '0.78rem',
                               fontWeight: 600,
@@ -414,7 +414,7 @@ export default function AdminUsers({
                                 padding: '5px 8px',
                                 borderRadius: 'var(--radius-sm, 6px)',
                                 border: '1px solid #fecaca',
-                                background: '#ffffff',
+                                background: 'var(--color-surface, #ffffff)',
                                 color: '#dc2626',
                                 fontSize: '0.78rem',
                                 cursor: 'pointer'
