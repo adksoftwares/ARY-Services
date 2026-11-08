@@ -863,6 +863,28 @@ app.get('/api/providers', async (req, res) => {
   }
 });
 
+// User: Update active location (Customer / Provider / Driver)
+app.patch('/api/users/location', requireAuth, async (req, res) => {
+  try {
+    const { location, lat, lng } = req.body || {};
+    const cleanLocation = String(location || '').trim().slice(0, 500);
+    if (!cleanLocation) {
+      return res.status(400).json({ error: 'Location name is required.' });
+    }
+    const updated = await updateUser(req.user.id, user => {
+      user.location = cleanLocation;
+      if (Number.isFinite(Number(lat)) && Number.isFinite(Number(lng))) {
+        user.coords = { lat: Number(lat), lng: Number(lng) };
+      }
+      return user;
+    });
+    return res.json({ status: 'ok', location: cleanLocation, user: updated });
+  } catch (err) {
+    console.error('Update user location error:', err);
+    return res.status(500).json({ error: 'Could not update user location.' });
+  }
+});
+
 // Provider: Update own business profile
 app.patch('/api/providers/profile', requireAuth, async (req, res) => {
   try {

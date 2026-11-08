@@ -19,8 +19,12 @@ import {
   Shield,
   ShoppingBag,
   Bell,
-  Home
+  Home,
+  MapPin,
+  ChevronDown
 } from 'lucide-react';
+import CustomerLocationModal from '../../components/customer/CustomerLocationModal';
+import { fetchCurrentLocationAddress, fetchCurrentLocationCoords, getLastDetectedCoordinates, resolveCoordinates } from '../../utils/location';
 import { AuthProvider, useAuth } from '../../context/AuthContext';
 import { API_BASE } from '../../config';
 import { subscribeToAppEvents } from '../../utils/events';
@@ -59,16 +63,60 @@ const SERVICES = [
   { id: 5, name: 'Other Services', slug: 'other-services', description: 'Discover more services near you', icon: Sparkles, color: 'lilac' }
 ];
 
-function CustomerHeader({ onOpenProfile }) {
+function CustomerHeader({ address, onOpenLocationModal, onOpenProfile }) {
   const { currentUser, openAuthModal, logout } = useAuth();
   const navigate = useNavigate();
 
   return (
     <header className="topbar">
-      <Link to="/" className="brand" aria-label="ARY Services home">
-        <span className="brand-mark">A</span>
-        <span>ARY <b>Services</b></span>
-      </Link>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <Link to="/" className="brand" aria-label="ARY Services home">
+          <span className="brand-mark">A</span>
+          <span>ARY <b>Services</b></span>
+        </Link>
+
+        {/* Dynamic Location Switcher Button */}
+        <button
+          type="button"
+          onClick={onOpenLocationModal}
+          className="header-location-pill"
+          title="Click to view or change your delivery and service location"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '7px',
+            background: 'var(--surface-muted, rgba(21, 128, 61, 0.08))',
+            border: '1px solid var(--border-subtle, rgba(21, 128, 61, 0.25))',
+            borderRadius: '9999px',
+            padding: '5px 12px',
+            fontSize: '12px',
+            cursor: 'pointer',
+            color: 'var(--text-primary, inherit)',
+            maxWidth: '220px',
+            transition: 'all 0.2s ease'
+          }}
+        >
+          <span style={{
+            width: '6px',
+            height: '6px',
+            borderRadius: '50%',
+            background: '#10b981',
+            boxShadow: '0 0 0 2px rgba(16, 185, 129, 0.2)',
+            flexShrink: 0
+          }} />
+          <MapPin size={13} style={{ color: 'var(--brand-primary, #15803d)', flexShrink: 0 }} />
+          <span style={{
+            fontWeight: 600,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            fontSize: '12px'
+          }}>
+            {address || 'Select Location'}
+          </span>
+          <ChevronDown size={12} style={{ opacity: 0.6, flexShrink: 0 }} />
+        </button>
+      </div>
 
       <nav className="header-nav-links">
         <Link to="/" className="nav-link-btn">
@@ -213,11 +261,59 @@ function CustomerMobileBottomNav({ bookingsCount = 0, onOpenProfile, onOpenAlert
 }
 
 function CustomerWorkspace() {
-  const { currentUser, openAuthModal } = useAuth();
+  const { currentUser, openAuthModal, updateUserLocation } = useAuth();
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [address, setAddress] = useState(currentUser?.location || '');
-  const [coords, setCoords] = useState(null);
+  const [coords, setCoords] = useState(currentUser?.coords || null);
+  const [locationModalOpen, setLocationModalOpen] = useState(false);
+  const autoDetectDoneRef = React.useRef(false);
+
+  // Auto-detect current location on Customer Sign In / initial mount
+  useEffect(() => {
+    if (currentUser?.accountType === 'customer') {
+      if (!autoDetectDoneRef.current) {
+        autoDetectDoneRef.current = true;
+        handleAutoDetectLocation();
+      }
+    } else {
+      autoDetectDoneRef.current = false;
+    }
+  }, [currentUser?.id, currentUser?.accountType]);
+
+  const handleAutoDetectLocation = useCallback(async () => {
+    try {
+      setNotice('📍 Detecting your current location in Sri Lanka...');
+      const detectedAddress = await fetchCurrentLocationAddress();
+      const detectedCoords = getLastDetectedCoordinates() || await fetchCurrentLocationCoords().catch(() => null);
+      const effectiveCoords = detectedCoords || resolveCoordinates(detectedAddress);
+
+      setAddress(detectedAddress);
+      setCoords(effectiveCoords);
+      if (updateUserLocation) {
+        await updateUserLocation(detectedAddress, effectiveCoords);
+      }
+      fetchProviders(selectedCategory?.slug, query, effectiveCoords);
+      setNotice(`📍 Location automatically detected: ${detectedAddress}`);
+    } catch (err) {
+      console.log('Location detection fallback:', err.message);
+      if (currentUser?.location) {
+        setAddress(currentUser.location);
+        const savedCoords = currentUser?.coords || resolveCoordinates(currentUser.location);
+        setCoords(savedCoords);
+        fetchProviders(selectedCategory?.slug, query, savedCoords);
+      }
+    }
+  }, [currentUser?.location, currentUser?.coords, selectedCategory?.slug, query, updateUserLocation, fetchProviders]);
+
+  const handleSelectLocation = useCallback((newAddress, newCoords) => {
+    setAddress(newAddress);
+    setCoords(newCoords);
+    if (updateUserLocation) {
+      updateUserLocation(newAddress, newCoords);
+    }
+    fetchProviders(selectedCategory?.slug, query, newCoords);
+  }, [updateUserLocation, fetchProviders, selectedCategory?.slug, query]);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [providers, setProviders] = useState([]);
   const [loadingProviders, setLoadingProviders] = useState(false);
@@ -377,7 +473,11 @@ function CustomerWorkspace() {
   return (
     <div className="app-shell">
       <OfflineBanner />
-      <CustomerHeader onOpenProfile={() => setProfileModalOpen(true)} />
+      <CustomerHeader
+        address={address}
+        onOpenLocationModal={() => setLocationModalOpen(true)}
+        onOpenProfile={() => setProfileModalOpen(true)}
+      />
 
       <main tabIndex={-1}>
         <Routes>
@@ -389,6 +489,7 @@ function CustomerWorkspace() {
                 query={query}
                 setQuery={setQuery}
                 onNotice={setNotice}
+                onOpenLocationModal={() => setLocationModalOpen(true)}
                 onSearch={() => {
                   fetchProviders(selectedCategory?.slug, query, coords);
                   const catalogEl = document.getElementById('providers-catalog') || document.querySelector('.providers-section');
@@ -523,6 +624,14 @@ function CustomerWorkspace() {
           onClose={() => setProfileModalOpen(false)}
         />
       </Modal>
+
+      <CustomerLocationModal
+        isOpen={locationModalOpen}
+        onClose={() => setLocationModalOpen(false)}
+        currentAddress={address}
+        onSelectLocation={handleSelectLocation}
+        onNotice={setNotice}
+      />
 
       <AuthModal onNotice={setNotice} />
 

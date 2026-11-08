@@ -33,7 +33,8 @@ export default function HeroSection({
   onLocationDetected,
   onSelectCategory,
   onBookProvider,
-  popularProviders = []
+  popularProviders = [],
+  onOpenLocationModal
 }) {
   const { isCustomerLoggedIn, openAuthModal } = useAuth();
   const { t } = useT();
@@ -95,17 +96,35 @@ export default function HeroSection({
               aria-label="Your location or area"
               className="search-text-input"
             />
-            <button
-              type="button"
-              className="gps-detect-btn"
-              onClick={handleDetectLocation}
-              disabled={isLocating}
-              title="Detect current GPS location"
-              aria-label="Use my current GPS location"
-            >
-              <Navigation size={15} className={isLocating ? 'spin' : ''} aria-hidden="true" />
-              <span className="gps-btn-label">{isLocating ? 'Locating...' : 'My location'}</span>
-            </button>
+            <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+              <button
+                type="button"
+                className="gps-detect-btn"
+                onClick={handleDetectLocation}
+                disabled={isLocating}
+                title="Detect current GPS location"
+                aria-label="Use my current GPS location"
+              >
+                <Navigation size={15} className={isLocating ? 'spin' : ''} aria-hidden="true" />
+                <span className="gps-btn-label">{isLocating ? 'Locating...' : 'Auto GPS'}</span>
+              </button>
+              {onOpenLocationModal && (
+                <button
+                  type="button"
+                  className="gps-detect-btn"
+                  onClick={onOpenLocationModal}
+                  title="Choose area from city list or custom location"
+                  aria-label="Change location area"
+                  style={{
+                    background: 'var(--surface-muted, rgba(255, 255, 255, 0.08))',
+                    color: 'var(--text-secondary, #475569)',
+                    fontWeight: 600
+                  }}
+                >
+                  <span>Change ▾</span>
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Service Keyword Field */}

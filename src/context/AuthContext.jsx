@@ -211,6 +211,39 @@ export function AuthProvider({ children }) {
     return data;
   }
 
+  async function updateUserLocation(newLocation, newCoords = null) {
+    if (!currentUser) return null;
+    const cleanLocation = String(newLocation || '').trim();
+    if (!cleanLocation) return currentUser;
+
+    const updated = {
+      ...currentUser,
+      location: cleanLocation,
+      ...(newCoords ? { coords: newCoords } : {})
+    };
+    persistUser(updated);
+
+    if (currentUser?.token) {
+      try {
+        await fetch(`${API_BASE}/users/location`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${currentUser.token}`
+          },
+          body: JSON.stringify({
+            location: cleanLocation,
+            lat: newCoords?.lat,
+            lng: newCoords?.lng
+          })
+        });
+      } catch (err) {
+        console.warn('Could not sync user location to server:', err);
+      }
+    }
+    return updated;
+  }
+
   const value = {
     currentUser,
     token: currentUser?.token,
@@ -232,6 +265,7 @@ export function AuthProvider({ children }) {
     sendOtp,
     verifyOtpAndLogin,
     persistUser,
+    updateUserLocation,
     logout
   };
 

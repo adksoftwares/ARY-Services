@@ -113,3 +113,32 @@ export async function fetchCurrentLocationAddress() {
     );
   });
 }
+
+export const SRI_LANKA_PRESET_LOCATIONS = [
+  { city: 'Colombo', name: 'Colombo 03 (Kollupitiya)', query: 'kollupitiya', coords: { lat: 6.9030, lng: 79.8510 } },
+  { city: 'Colombo', name: 'Colombo 04 (Bambalapitiya)', query: 'bambalapitiya', coords: { lat: 6.8920, lng: 79.8560 } },
+  { city: 'Colombo', name: 'Colombo 06 (Wellawatte)', query: 'wellawatte', coords: { lat: 6.8741, lng: 79.8606 } },
+  { city: 'Colombo', name: 'Colombo 07 (Cinnamon Gardens)', query: 'cinnamon gardens', coords: { lat: 6.9110, lng: 79.8650 } },
+  { city: 'Colombo', name: 'Dehiwala / Mount Lavinia', query: 'dehiwala', coords: { lat: 6.8520, lng: 79.8650 } },
+  { city: 'Colombo', name: 'Nugegoda / Kotte', query: 'nugegoda', coords: { lat: 6.8650, lng: 79.8990 } },
+  { city: 'Kandy', name: 'Kandy City Center', query: 'kandy', coords: { lat: 7.2906, lng: 80.6337 } },
+  { city: 'Kandy', name: 'Peradeniya / Katugastota', query: 'peradeniya', coords: { lat: 7.2612, lng: 80.5966 } },
+  { city: 'Galle', name: 'Galle Fort & Town', query: 'galle', coords: { lat: 6.0535, lng: 80.2210 } },
+  { city: 'Jaffna', name: 'Jaffna Town / Nallur', query: 'jaffna', coords: { lat: 9.6615, lng: 80.0255 } },
+  { city: 'Negombo', name: 'Negombo Beach & Town', query: 'negombo', coords: { lat: 7.2008, lng: 79.8736 } },
+  { city: 'Batticaloa', name: 'Batticaloa Town', query: 'batticaloa', coords: { lat: 7.7102, lng: 81.6924 } },
+  { city: 'Trincomalee', name: 'Trincomalee Town', query: 'trincomalee', coords: { lat: 8.5874, lng: 81.2152 } },
+  { city: 'Matara', name: 'Matara City', query: 'matara', coords: { lat: 5.9549, lng: 80.5550 } },
+  { city: 'Kurunegala', name: 'Kurunegala Town', query: 'kurunegala', coords: { lat: 7.4818, lng: 80.3609 } }
+];
+
+export function resolveCoordinates(locationString) {
+  if (!locationString) return { lat: 6.9271, lng: 79.8612 };
+  const lower = String(locationString).toLowerCase();
+  for (const preset of SRI_LANKA_PRESET_LOCATIONS) {
+    if (lower.includes(preset.query) || lower.includes(preset.city.toLowerCase())) {
+      return preset.coords;
+    }
+  }
+  return { lat: 6.9271, lng: 79.8612 };
+}
