@@ -1734,25 +1734,30 @@ table{font-variant-numeric:tabular-nums}
    Option 1: With ADK Software Solutions Signature (https://adksoftwares.com)
    ========================================================================== */
 
+footer.site-footer-modern,
 .site-footer-modern {
-  margin-top: auto;
-  width: 100%;
-  border-top: 1px solid var(--border-subtle, #e2e8f0);
-  background: var(--surface-primary, #ffffff);
-  padding: 48px 24px 28px;
-  color: var(--text-secondary, #475569);
-  font-family: inherit;
-  transition: background-color 0.2s ease, border-color 0.2s ease;
+  display: block !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  margin-top: auto !important;
+  border-top: 1px solid var(--border-subtle, #e2e8f0) !important;
+  background: var(--surface-primary, #ffffff) !important;
+  padding: 44px 32px 28px !important;
+  color: var(--text-secondary, #475569) !important;
+  font-family: inherit !important;
+  clear: both !important;
 }
 
 .footer-main-grid {
-  max-width: 1320px;
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1.4fr;
-  gap: 40px;
-  padding-bottom: 36px;
-  border-bottom: 1px solid var(--border-subtle, #f1f5f9);
+  display: grid !important;
+  grid-template-columns: 2.2fr 1.2fr 1.2fr 1.6fr !important;
+  gap: 36px !important;
+  max-width: 1280px !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+  padding-bottom: 32px !important;
+  border-bottom: 1px solid var(--border-subtle, #f1f5f9) !important;
+  box-sizing: border-box !important;
 }
 
 .footer-col-brand .footer-brand {
@@ -1762,20 +1767,20 @@ table{font-variant-numeric:tabular-nums}
   text-decoration: none;
   font-size: 1.25rem;
   color: var(--text-primary, #0f172a);
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
 .footer-brand-desc {
-  font-size: 0.84rem;
+  font-size: 0.85rem;
   line-height: 1.65;
   color: var(--text-secondary, #64748b);
   max-width: 380px;
-  margin: 0 0 18px;
+  margin: 0 0 16px;
 }
 
 .footer-trust-pills {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
@@ -1787,18 +1792,19 @@ table{font-variant-numeric:tabular-nums}
   border-radius: 20px;
   background: var(--surface-muted, #f8fafc);
   border: 1px solid var(--border-subtle, #e2e8f0);
-  font-size: 0.72rem;
+  font-size: 0.74rem;
   font-weight: 600;
   color: var(--brand-primary, #15803d);
+  white-space: nowrap;
 }
 
 .footer-col-title {
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 800;
   color: var(--text-primary, #0f172a);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin: 0 0 16px;
+  letter-spacing: 0.08em;
+  margin: 0 0 14px;
 }
 
 .footer-links-list {
@@ -1815,6 +1821,7 @@ table{font-variant-numeric:tabular-nums}
   text-decoration: none;
   font-size: 0.84rem;
   transition: color 0.15s ease;
+  white-space: nowrap;
 }
 
 .footer-links-list li a:hover {
@@ -1825,15 +1832,17 @@ table{font-variant-numeric:tabular-nums}
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.82rem;
+  font-size: 0.84rem;
   color: var(--text-secondary, #64748b);
+  white-space: nowrap !important;
 }
 
 .hub-dot {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: var(--brand-primary, #15803d);
+  flex-shrink: 0;
 }
 
 .footer-hotline-card {
@@ -1848,8 +1857,8 @@ table{font-variant-numeric:tabular-nums}
 }
 
 .hotline-icon-box {
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   border-radius: 10px;
   background: #15803d;
   color: white;
@@ -1865,10 +1874,11 @@ table{font-variant-numeric:tabular-nums}
   color: var(--text-muted, #64748b);
   text-transform: uppercase;
   font-weight: 700;
+  letter-spacing: 0.04em;
 }
 
 .hotline-number {
-  font-size: 1.05rem;
+  font-size: 1.1rem;
   font-weight: 800;
   color: #15803d;
   text-decoration: none;
@@ -1879,7 +1889,7 @@ table{font-variant-numeric:tabular-nums}
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   color: var(--text-secondary, #64748b);
 }
 
@@ -1892,18 +1902,20 @@ table{font-variant-numeric:tabular-nums}
   color: var(--brand-primary, #15803d);
 }
 
-/* Lower Bar */
+/* Lower Bar (Spans 100% of the footer width below the grid) */
 .footer-bottom-bar {
-  max-width: 1320px;
-  margin: 0 auto;
-  padding-top: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  font-size: 0.82rem;
-  color: var(--text-muted, #64748b);
-  flex-wrap: wrap;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  max-width: 1280px !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+  padding-top: 24px !important;
+  font-size: 0.82rem !important;
+  color: var(--text-muted, #64748b) !important;
+  flex-wrap: wrap !important;
+  gap: 16px !important;
+  box-sizing: border-box !important;
 }
 
 /* Modern ADK Signature Badge */
@@ -1911,13 +1923,13 @@ table{font-variant-numeric:tabular-nums}
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 7px 16px;
+  padding: 8px 18px;
   border-radius: 9999px;
   background: var(--surface-primary, #ffffff);
   border: 1px solid var(--border-subtle, #cbd5e1);
   color: var(--text-secondary, #475569);
   text-decoration: none;
-  font-size: 0.82rem;
+  font-size: 0.84rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -1936,12 +1948,6 @@ table{font-variant-numeric:tabular-nums}
   background: #10b981;
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25);
   animation: pulse-dot 2s infinite;
-}
-
-@keyframes pulse-dot {
-  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5); }
-  70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
-  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
 }
 
 .adk-prefix-text {
@@ -1969,7 +1975,7 @@ table{font-variant-numeric:tabular-nums}
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 0.78rem;
+  font-size: 0.8rem;
 }
 
 .footer-safe-badge {
@@ -2054,23 +2060,24 @@ table{font-variant-numeric:tabular-nums}
 
 @media (max-width: 992px) {
   .footer-main-grid {
-    grid-template-columns: 1fr 1fr;
-    gap: 30px;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 30px !important;
   }
 }
 
 @media (max-width: 640px) {
+  footer.site-footer-modern,
   .site-footer-modern {
-    padding: 36px 16px calc(110px + env(safe-area-inset-bottom, 0px)) !important;
+    padding: 32px 16px calc(110px + env(safe-area-inset-bottom, 0px)) !important;
   }
   .footer-main-grid {
-    grid-template-columns: 1fr;
-    gap: 28px;
+    grid-template-columns: 1fr !important;
+    gap: 24px !important;
   }
   .footer-bottom-bar {
-    flex-direction: column;
-    text-align: center;
-    gap: 16px;
+    flex-direction: column !important;
+    text-align: center !important;
+    gap: 14px !important;
   }
   .adk-signature-badge-modern {
     width: 100%;

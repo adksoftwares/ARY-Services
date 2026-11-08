@@ -801,6 +801,13 @@ footer {
   font-size: var(--text-2xs);
   margin-top: auto;
 }
+
+/* Modern Multi-Row Footer Override */
+footer.site-footer-modern {
+  display: block !important;
+  padding: 44px 32px 28px !important;
+  color: var(--text-secondary, #475569) !important;
+}
 .footer-brand {
   font-size: var(--text-sm);
 }
