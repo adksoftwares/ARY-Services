@@ -34,16 +34,57 @@ export function estimateEtaMinutes(distanceKm) {
   return Math.max(10, travelMinutes + 5);
 }
 
-// Default Coordinates for Sri Lankan Hubs (Colombo / Western Province)
+// Comprehensive Regional Coordinates for Sri Lankan Cities, Hubs & Suburbs
 export const SRI_LANKA_REGIONAL_COORDINATES = {
+  // Central Province (Kandy, Peradeniya, Katugastota, Katukele)
+  'peradeniya': { lat: 7.2612, lng: 80.5966 },
+  'katukele': { lat: 7.2920, lng: 80.6330 },
+  'katugastota': { lat: 7.3245, lng: 80.6212 },
+  'kandy': { lat: 7.2906, lng: 80.6337 },
+  'central province': { lat: 7.2906, lng: 80.6337 },
+  'nuwara eliya': { lat: 6.9497, lng: 80.7891 },
+  'matale': { lat: 7.4675, lng: 80.6234 },
+
+  // Western Province (Colombo, Gampaha, Kalutara)
   'bambalapitiya': { lat: 6.8920, lng: 79.8560 },
   'colombo 03': { lat: 6.8970, lng: 79.8550 },
   'colombo 04': { lat: 6.8850, lng: 79.8600 },
-  'colombo': { lat: 6.9271, lng: 79.8612 },
+  'colombo 06': { lat: 6.8741, lng: 79.8606 },
+  'colombo 07': { lat: 6.9110, lng: 79.8650 },
+  'wellawatte': { lat: 6.8741, lng: 79.8606 },
+  'kollupitiya': { lat: 6.9030, lng: 79.8510 },
   'nugegoda': { lat: 6.8650, lng: 79.8990 },
   'dehiwala': { lat: 6.8520, lng: 79.8650 },
   'mount lavinia': { lat: 6.8350, lng: 79.8650 },
-  'kollupitiya': { lat: 6.9030, lng: 79.8510 }
+  'moratuwa': { lat: 6.7730, lng: 79.8816 },
+  'negombo': { lat: 7.2008, lng: 79.8736 },
+  'gampaha': { lat: 7.0840, lng: 79.9939 },
+  'kalutara': { lat: 6.5854, lng: 79.9607 },
+  'colombo': { lat: 6.9271, lng: 79.8612 },
+  'western province': { lat: 6.9271, lng: 79.8612 },
+
+  // Southern Province (Galle, Matara, Hambantota)
+  'galle': { lat: 6.0535, lng: 80.2210 },
+  'unawatuna': { lat: 6.0104, lng: 80.2497 },
+  'matara': { lat: 5.9549, lng: 80.5550 },
+  'southern province': { lat: 6.0535, lng: 80.2210 },
+
+  // Northern Province (Jaffna, Nallur, Kilinochchi)
+  'nallur': { lat: 9.6740, lng: 80.0290 },
+  'jaffna': { lat: 9.6615, lng: 80.0255 },
+  'chavakachcheri': { lat: 9.6582, lng: 80.1584 },
+  'northern province': { lat: 9.6615, lng: 80.0255 },
+
+  // Eastern Province (Batticaloa, Trincomalee, Ampara)
+  'batticaloa': { lat: 7.7102, lng: 81.6924 },
+  'trincomalee': { lat: 8.5874, lng: 81.2152 },
+  'eastern province': { lat: 7.7102, lng: 81.6924 },
+
+  // North Western & North Central
+  'kurunegala': { lat: 7.4818, lng: 80.3609 },
+  'anuradhapura': { lat: 8.3114, lng: 80.4037 },
+  'badulla': { lat: 6.9934, lng: 81.0550 },
+  'ratnapura': { lat: 6.6828, lng: 80.4036 }
 };
 
 export function resolveCoordinatesFromLocation(locationString) {
