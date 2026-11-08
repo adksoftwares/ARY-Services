@@ -142,3 +142,143 @@ export async function getRoadRoute(origin, destination) {
     clearTimeout(timeout);
   }
 }
+
+
+// In-memory caches for fast autocomplete & reverse geocoding
+const geoSearchCache = new Map();
+const geoReverseCache = new Map();
+
+export async function searchSriLankaLocations(query, limit = 8) {
+  const clean = String(query || '').trim();
+  if (!clean || clean.length < 2) return [];
+
+  const cacheKey = clean.toLowerCase();
+  if (geoSearchCache.has(cacheKey)) {
+    return geoSearchCache.get(cacheKey);
+  }
+
+  // 1. Search OpenStreetMap Nominatim with Sri Lanka boundary & country filter
+  try {
+    const url = 'https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(clean) + '&countrycodes=lk&limit=' + limit + '&addressdetails=1';
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3500);
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: { 'User-Agent': 'ARY-Services-Platform/2.0' }
+    });
+    clearTimeout(timeout);
+
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        const results = data.map(item => {
+          const addr = item.address || {};
+          const name = item.display_name.split(',')[0].trim();
+          const suburb = addr.suburb || addr.neighbourhood || addr.village || addr.quarter || '';
+          const city = addr.city || addr.town || addr.municipality || '';
+          const district = addr.state_district || addr.county || '';
+          const province = addr.state || '';
+          const postcode = addr.postcode || '';
+
+          const displayParts = [name, suburb, city, district, province].filter(Boolean);
+          const cleanDisplayName = [...new Set(displayParts)].join(', ');
+
+          return {
+            id: String(item.place_id || Math.random()),
+            name: name || item.display_name,
+            displayName: cleanDisplayName || item.display_name,
+            suburb,
+            city: city || district,
+            district,
+            province,
+            postcode,
+            lat: parseFloat(item.lat),
+            lng: parseFloat(item.lon),
+            type: item.type || 'place'
+          };
+        });
+
+        geoSearchCache.set(cacheKey, results);
+        return results;
+      }
+    }
+  } catch (err) {
+    console.warn('Nominatim search warning:', err.message);
+  }
+
+  // 2. Fallback to regional coordinates database
+  const fallback = [];
+  const lowerQuery = clean.toLowerCase();
+  for (const [name, coords] of Object.entries(SRI_LANKA_REGIONAL_COORDINATES)) {
+    if (name.includes(lowerQuery) || lowerQuery.includes(name)) {
+      const titleCase = name.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+      fallback.push({
+        id: 'preset-' + name,
+        name: titleCase,
+        displayName: titleCase + ', Sri Lanka',
+        suburb: '',
+        city: titleCase,
+        district: '',
+        province: '',
+        lat: coords.lat,
+        lng: coords.lng,
+        type: 'preset'
+      });
+      if (fallback.length >= limit) break;
+    }
+  }
+
+  return fallback;
+}
+
+export async function reverseGeocodeLocation(lat, lng) {
+  const latitude = Number(lat);
+  const longitude = Number(lng);
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+    return { address: 'Colombo, Western Province, Sri Lanka', coords: { lat: 6.9271, lng: 79.8612 } };
+  }
+
+  const cacheKey = latitude.toFixed(4) + ',' + longitude.toFixed(4);
+  if (geoReverseCache.has(cacheKey)) {
+    return geoReverseCache.get(cacheKey);
+  }
+
+  try {
+    const url = 'https://nominatim.openstreetmap.org/reverse?format=json&lat=' + latitude + '&lon=' + longitude + '&zoom=16&addressdetails=1';
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3500);
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: { 'User-Agent': 'ARY-Services-Platform/2.0' }
+    });
+    clearTimeout(timeout);
+
+    if (res.ok) {
+      const data = await res.json();
+      const addr = data.address || {};
+      const parts = [
+        addr.road || addr.pedestrian,
+        addr.suburb || addr.neighbourhood || addr.village || addr.quarter,
+        addr.city || addr.town || addr.county || addr.state_district,
+        addr.state
+      ].filter(Boolean);
+
+      const address = parts.length > 0 ? parts.join(', ') : (data.display_name?.split(',').slice(0, 3).join(',') || 'Sri Lanka');
+      const result = {
+        address,
+        fullAddress: data.display_name,
+        coords: { lat: latitude, lng: longitude },
+        details: addr
+      };
+      geoReverseCache.set(cacheKey, result);
+      return result;
+    }
+  } catch (err) {
+    console.warn('Reverse geocode warning:', err.message);
+  }
+
+  return {
+    address: latitude.toFixed(4) + ', ' + longitude.toFixed(4) + ', Sri Lanka',
+    coords: { lat: latitude, lng: longitude }
+  };
+}

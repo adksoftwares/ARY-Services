@@ -35,7 +35,7 @@ import {
 
 import { sendOtp, verifyOtp, normalizePhone } from './otpService.js';
 import { subscribeToEvents, broadcastEvent } from './eventHub.js';
-import { calculateDistanceKm, estimateEtaMinutes, resolveCoordinatesFromLocation } from './geoService.js';
+import { calculateDistanceKm, estimateEtaMinutes, resolveCoordinatesFromLocation, searchSriLankaLocations, reverseGeocodeLocation } from './geoService.js';
 import { issueSecurityChallenge, verifySecurityChallenge } from './securityShield.js';
 import { registerDriverServiceRoutes, createGroceryOrderDeliveryJob, cancelGroceryOrderDeliveryJob } from './driverServiceRoutes.js';
 import { registerGroceryRoutes } from './groceryRoutes.js';
@@ -864,6 +864,31 @@ app.get('/api/providers', async (req, res) => {
 });
 
 // User: Update active location (Customer / Provider / Driver)
+
+// Geocoding & Sri Lanka Location Search APIs
+app.get('/api/geo/search', async (req, res) => {
+  try {
+    const q = String(req.query.q || '').trim();
+    const results = await searchSriLankaLocations(q);
+    res.json({ results });
+  } catch (err) {
+    console.error('Geo search error:', err);
+    res.status(500).json({ error: 'Search failed', results: [] });
+  }
+});
+
+app.get('/api/geo/reverse', async (req, res) => {
+  try {
+    const lat = Number(req.query.lat);
+    const lng = Number(req.query.lng);
+    const result = await reverseGeocodeLocation(lat, lng);
+    res.json(result);
+  } catch (err) {
+    console.error('Reverse geo error:', err);
+    res.status(500).json({ error: 'Reverse geocode failed' });
+  }
+});
+
 app.patch('/api/users/location', requireAuth, async (req, res) => {
   try {
     const { location, lat, lng } = req.body || {};

@@ -142,3 +142,100 @@ export function resolveCoordinates(locationString) {
   }
   return { lat: 6.9271, lng: 79.8612 };
 }
+
+export async function searchSriLankaLocationsApi(query) {
+  const clean = String(query || '').trim();
+  if (!clean || clean.length < 2) return [];
+
+  // 1. Try our backend API first
+  try {
+    const res = await fetch(`/api/geo/search?q=${encodeURIComponent(clean)}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data.results) && data.results.length > 0) {
+        return data.results;
+      }
+    }
+  } catch (e) {
+    // Backend API unavailable or network issue, fallback to direct OSM
+  }
+
+  // 2. Direct OpenStreetMap Nominatim fallback
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(clean)}&countrycodes=lk&limit=8&addressdetails=1`,
+      { headers: { 'Accept-Language': 'en' } }
+    );
+    if (res.ok) {
+      const items = await res.json();
+      return items.map(item => {
+        const addr = item.address || {};
+        const name = item.display_name.split(',')[0].trim();
+        const suburb = addr.suburb || addr.neighbourhood || addr.village || '';
+        const city = addr.city || addr.town || addr.county || '';
+        const district = addr.state_district || addr.county || '';
+        const province = addr.state || '';
+        return {
+          id: String(item.place_id),
+          name: name || item.display_name,
+          displayName: item.display_name,
+          suburb,
+          city: city || district,
+          district,
+          province,
+          lat: parseFloat(item.lat),
+          lng: parseFloat(item.lon)
+        };
+      });
+    }
+  } catch (e) {
+    console.warn('Direct Nominatim search fallback failed:', e);
+  }
+
+  // 3. Fallback to local preset matches
+  const lower = clean.toLowerCase();
+  return SRI_LANKA_PRESET_LOCATIONS
+    .filter(p => p.name.toLowerCase().includes(lower) || p.city.toLowerCase().includes(lower))
+    .map(p => ({
+      id: p.name,
+      name: p.name,
+      displayName: `${p.name}, Sri Lanka`,
+      suburb: '',
+      city: p.city,
+      district: '',
+      province: '',
+      lat: p.coords.lat,
+      lng: p.coords.lng
+    }));
+}
+
+export async function reverseGeocodeCoordsApi(lat, lng) {
+  try {
+    const res = await fetch(`/api/geo/reverse?lat=${lat}&lng=${lng}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.address) return data;
+    }
+  } catch (e) {}
+
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=16&addressdetails=1`,
+      { headers: { 'Accept-Language': 'en' } }
+    );
+    if (res.ok) {
+      const data = await res.json();
+      const addr = data.address || {};
+      const parts = [
+        addr.road || addr.pedestrian,
+        addr.suburb || addr.neighbourhood || addr.village || addr.quarter,
+        addr.city || addr.town || addr.county || addr.state_district,
+        addr.state
+      ].filter(Boolean);
+      const address = parts.length > 0 ? parts.join(', ') : (data.display_name?.split(',').slice(0, 3).join(',') || 'Sri Lanka');
+      return { address, fullAddress: data.display_name, coords: { lat, lng } };
+    }
+  } catch (e) {}
+
+  return { address: `Pinned Location (${lat.toFixed(4)}, ${lng.toFixed(4)})`, coords: { lat, lng } };
+}

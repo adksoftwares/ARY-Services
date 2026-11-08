@@ -2656,3 +2656,29 @@
   background: var(--surface-secondary) !important;
   border-color: var(--border-subtle) !important;
 }
+
+
+/* Interactive Location Picker & Map Styling */
+.location-change-btn {
+  background: var(--brand-subtle, rgba(21, 128, 61, 0.1));
+  color: var(--brand-primary, #15803d) !important;
+  font-weight: 700;
+  border: 1px solid rgba(21, 128, 61, 0.25);
+  transition: all 0.2s ease;
+}
+.location-change-btn:hover {
+  background: rgba(21, 128, 61, 0.18) !important;
+  border-color: var(--brand-primary, #15803d);
+}
+
+.leaflet-container {
+  font-family: inherit;
+  z-index: 1;
+  border-radius: 12px;
+}
+
+@keyframes mapPulse {
+  0% { transform: scale(0.9); opacity: 0.8; }
+  50% { transform: scale(1.4); opacity: 0.3; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
