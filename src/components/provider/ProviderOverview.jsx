@@ -135,7 +135,7 @@ export default function ProviderOverview({
                       {b.baseCharge || 'LKR 1,500'}
                     </Badge>
                   </div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--color-neutral-600, #475569)', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                  <div className="provider-urgent-meta" style={{ fontSize: '0.82rem', color: 'var(--color-neutral-600, #475569)', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                     <span><Calendar size={12} style={{ verticalAlign: 'middle', marginRight: 4 }} />{b.bookingDate} ({b.bookingTime})</span>
                     <span><MapPin size={12} style={{ verticalAlign: 'middle', marginRight: 4 }} />{b.serviceAddress}</span>
                   </div>
@@ -249,7 +249,7 @@ export default function ProviderOverview({
                     </span>
                     <StatusPill status={b.status} />
                   </div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--color-neutral-600, #475569)', display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+                  <div className="provider-urgent-meta" style={{ fontSize: '0.82rem', color: 'var(--color-neutral-600, #475569)', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                     <span><Calendar size={13} style={{ verticalAlign: 'middle', marginRight: 4 }} />{b.bookingDate} at {b.bookingTime}</span>
                     <span><MapPin size={13} style={{ verticalAlign: 'middle', marginRight: 4 }} />{b.serviceAddress}</span>
                   </div>
