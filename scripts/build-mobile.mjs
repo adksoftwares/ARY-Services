@@ -11,7 +11,7 @@ export async function buildMobileApp(appName) {
     throw new Error(`Unknown app "${appName}". Available apps: ${APPS.join(', ')}`);
   }
 
-  const rawApiBase = String(process.env.ARY_API_BASE || process.env.VITE_API_BASE || 'http://localhost:4000/api').trim();
+  const rawApiBase = String(process.env.ARY_API_BASE || process.env.VITE_API_BASE || 'https://status-which-essentially-pas.trycloudflare.com/api').trim();
   const apiBase = rawApiBase.endsWith('/') ? rawApiBase.slice(0, -1) : rawApiBase;
   let parsedApiBase;
   try { parsedApiBase = new URL(apiBase); } catch { throw new Error('ARY_API_BASE must be a valid absolute URL.'); }
