@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState, useMemo } from 'react';
+import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
 import { Bell, CheckCheck, ExternalLink, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE } from '../../config';
@@ -40,6 +40,34 @@ export default function NotificationCenter() {
   const [permission, setPermission] = useState(
     typeof window !== 'undefined' && 'Notification' in window ? window.Notification.permission : 'unsupported'
   );
+  const containerRef = useRef(null);
+
+  // Close notifications dropdown when clicking outside ("side la click pannuna") or pressing Escape
+  useEffect(() => {
+    if (!open) return;
+
+    function handlePointerDownOutside(event) {
+      if (containerRef.current && !containerRef.current.contains(event.target)) {
+        setOpen(false);
+      }
+    }
+
+    function handleKeyDown(event) {
+      if (event.key === 'Escape') {
+        setOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handlePointerDownOutside);
+    document.addEventListener('touchstart', handlePointerDownOutside);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDownOutside);
+      document.removeEventListener('touchstart', handlePointerDownOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [open]);
 
   const refresh = useCallback(async () => {
     if (!currentUser?.token) {
@@ -125,7 +153,7 @@ export default function NotificationCenter() {
   const unread = items.filter(item => !item.readAt).length;
 
   return (
-    <div style={{ position: 'relative' }}>
+    <div ref={containerRef} style={{ position: 'relative' }}>
       <button
         type="button"
         onClick={() => {
