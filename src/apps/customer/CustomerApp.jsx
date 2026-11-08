@@ -267,19 +267,60 @@ function CustomerWorkspace() {
   const [address, setAddress] = useState(currentUser?.location || '');
   const [coords, setCoords] = useState(currentUser?.coords || null);
   const [locationModalOpen, setLocationModalOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [providers, setProviders] = useState([]);
+  const [loadingProviders, setLoadingProviders] = useState(false);
+  const [bookings, setBookings] = useState([]);
+  const [loadingBookings, setLoadingBookings] = useState(false);
+  const [notice, setNotice] = useState('');
+  const [bookingProvider, setBookingProvider] = useState(null);
+  const [bookingOpen, setBookingOpen] = useState(false);
+  const [reviewBooking, setReviewBooking] = useState(null);
+  const [disputeBookingItem, setDisputeBookingItem] = useState(null);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
   const autoDetectDoneRef = React.useRef(false);
 
-  // Auto-detect current location on Customer Sign In / initial mount
+  // Hardware Back Button Handling for Capacitor WebView
   useEffect(() => {
-    if (currentUser?.accountType === 'customer') {
-      if (!autoDetectDoneRef.current) {
-        autoDetectDoneRef.current = true;
-        handleAutoDetectLocation();
-      }
-    } else {
-      autoDetectDoneRef.current = false;
+    if (typeof window !== 'undefined' && window.Capacitor?.Plugins?.App) {
+      const handleBack = window.Capacitor.Plugins.App.addListener('backButton', ({ canGoBack }) => {
+        if (profileModalOpen) {
+          setProfileModalOpen(false);
+        } else if (bookingOpen) {
+          setBookingOpen(false);
+        } else if (reviewBooking) {
+          setReviewBooking(null);
+        } else if (disputeBookingItem) {
+          setDisputeBookingItem(null);
+        } else if (canGoBack) {
+          window.history.back();
+        } else {
+          window.Capacitor.Plugins.App.exitApp();
+        }
+      });
+      return () => {
+        handleBack.then(h => h?.remove?.());
+      };
     }
-  }, [currentUser?.id, currentUser?.accountType]);
+  }, [profileModalOpen, bookingOpen, reviewBooking, disputeBookingItem]);
+
+  const fetchProviders = useCallback(async (category = selectedCategory?.slug, search = query, location = coords) => {
+    setLoadingProviders(true);
+    try {
+      const params = new URLSearchParams();
+      if (category && category !== 'all') params.set('category', category);
+      if (search) params.set('query', search);
+      if (location?.lat && location?.lng) { params.set('lat', location.lat); params.set('lng', location.lng); }
+      const response = await fetch(`${API_BASE}/providers?${params.toString()}`);
+      if (!response.ok) throw new Error('Could not load service providers.');
+      const data = await response.json();
+      setProviders(data.providers || []);
+    } catch (err) {
+      setNotice(err.message || 'Error loading providers.');
+    } finally {
+      setLoadingProviders(false);
+    }
+  }, [selectedCategory?.slug, query, coords]);
 
   const handleAutoDetectLocation = useCallback(async () => {
     try {
@@ -314,59 +355,18 @@ function CustomerWorkspace() {
     }
     fetchProviders(selectedCategory?.slug, query, newCoords);
   }, [updateUserLocation, fetchProviders, selectedCategory?.slug, query]);
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  const [providers, setProviders] = useState([]);
-  const [loadingProviders, setLoadingProviders] = useState(false);
-  const [bookings, setBookings] = useState([]);
-  const [loadingBookings, setLoadingBookings] = useState(false);
-  const [notice, setNotice] = useState('');
-  const [bookingProvider, setBookingProvider] = useState(null);
-  const [bookingOpen, setBookingOpen] = useState(false);
-  const [reviewBooking, setReviewBooking] = useState(null);
-  const [disputeBookingItem, setDisputeBookingItem] = useState(null);
-  const [profileModalOpen, setProfileModalOpen] = useState(false);
 
-  // Hardware Back Button Handling for Capacitor WebView
+  // Auto-detect current location on Customer Sign In / initial mount
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.Capacitor?.Plugins?.App) {
-      const handleBack = window.Capacitor.Plugins.App.addListener('backButton', ({ canGoBack }) => {
-        if (profileModalOpen) {
-          setProfileModalOpen(false);
-        } else if (bookingOpen) {
-          setBookingOpen(false);
-        } else if (reviewBooking) {
-          setReviewBooking(null);
-        } else if (disputeBookingItem) {
-          setDisputeBookingItem(null);
-        } else if (canGoBack) {
-          window.history.back();
-        } else {
-          window.Capacitor.Plugins.App.exitApp();
-        }
-      });
-      return () => {
-        handleBack.then(h => h?.remove?.());
-      };
+    if (currentUser?.accountType === 'customer') {
+      if (!autoDetectDoneRef.current) {
+        autoDetectDoneRef.current = true;
+        handleAutoDetectLocation();
+      }
+    } else {
+      autoDetectDoneRef.current = false;
     }
-  }, [profileModalOpen, bookingOpen, reviewBooking, disputeBookingItem]);
-
-  const fetchProviders = useCallback(async (category = selectedCategory?.slug, search = query, location = coords) => {
-    setLoadingProviders(true);
-    try {
-      const params = new URLSearchParams();
-      if (category && category !== 'all') params.set('category', category);
-      if (search) params.set('query', search);
-      if (location?.lat && location?.lng) { params.set('lat', location.lat); params.set('lng', location.lng); }
-      const response = await fetch(`${API_BASE}/providers?${params.toString()}`);
-      if (!response.ok) throw new Error('Could not load providers.');
-      const data = await response.json();
-      setProviders(data.providers || []);
-    } catch (error) {
-      setNotice(error.message || 'Could not load providers right now.');
-    } finally {
-      setLoadingProviders(false);
-    }
-  }, [selectedCategory?.slug, query, coords]);
+  }, [currentUser?.id, currentUser?.accountType, handleAutoDetectLocation]);
 
   const fetchBookings = useCallback(async () => {
     if (!currentUser?.token || currentUser.accountType !== 'customer') { setBookings([]); return; }
