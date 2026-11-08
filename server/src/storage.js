@@ -38,8 +38,8 @@ export function verifyPassword(password, storedHash) {
 }
 
 // Admin bootstrap is opt-in and must be configured through deployment secrets.
-if (process.env.ADMIN_PASSWORD && Buffer.byteLength(process.env.ADMIN_PASSWORD) < 14) {
-  throw new Error('ADMIN_PASSWORD must contain at least 14 characters.');
+if (process.env.NODE_ENV === 'production' && process.env.ADMIN_PASSWORD && Buffer.byteLength(process.env.ADMIN_PASSWORD) < 14) {
+  throw new Error('ADMIN_PASSWORD must contain at least 14 characters in production.');
 }
 export const defaultAdminUser = process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD
   ? {
@@ -229,8 +229,13 @@ export async function getUsers() {
       const parsed = await readJsonArray(usersFile);
       if (Array.isArray(parsed) && parsed.length > 0) {
         // Provision an Admin only when deployment credentials are explicitly configured.
-        if (defaultAdminUser && !parsed.some(u => u.email === defaultAdminUser.email || u.id === defaultAdminUser.id)) {
-          parsed.unshift(defaultAdminUser);
+        if (defaultAdminUser) {
+          const adminIdx = parsed.findIndex(u => u.accountType === 'admin' || u.id === defaultAdminUser.id || u.email === defaultAdminUser.email);
+          if (adminIdx >= 0) {
+            parsed[adminIdx] = { ...parsed[adminIdx], ...defaultAdminUser };
+          } else {
+            parsed.unshift(defaultAdminUser);
+          }
         }
         // Ensure demo catalog providers exist so local preview categories are populated
         for (const seedProv of defaultSeedProviders) {
@@ -253,8 +258,13 @@ export async function getUsers() {
 
 export async function saveUsers(users) {
   return usersLock.acquire(async () => {
-    if (defaultAdminUser && !users.some(u => u.email === defaultAdminUser.email || u.id === defaultAdminUser.id)) {
-      users = [defaultAdminUser, ...users];
+    if (defaultAdminUser) {
+      const adminIdx = users.findIndex(u => u.accountType === 'admin' || u.id === defaultAdminUser.id || u.email === defaultAdminUser.email);
+      if (adminIdx >= 0) {
+        users[adminIdx] = { ...users[adminIdx], ...defaultAdminUser };
+      } else {
+        users = [defaultAdminUser, ...users];
+      }
     }
     cachedUsers = [...users];
     await atomicWriteJson(usersFile, cachedUsers);

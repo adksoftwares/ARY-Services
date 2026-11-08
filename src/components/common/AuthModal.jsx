@@ -578,7 +578,7 @@ export default function AuthModal({ onNotice }) {
                       required
                       type="text"
                       value={regNicNumber}
-                      onChange={e => setRegNicNumber(e.target.value)}
+                      onChange={e => setRegNicNumber(e.target.value.replace(/[\s-]/g, '').toUpperCase())}
                       placeholder="e.g. 951234567V or 199512345678"
                     />
                   </label>
@@ -653,6 +653,8 @@ export default function AuthModal({ onNotice }) {
                 <div className="provider-helper-note">
                   ℹ️ {regAccountType === 'driver' ? 'Driver accounts require Super Admin approval before activation.' : 'Provider accounts require Super Admin approval before activation.'}
                 </div>
+
+                {authError && <div className="auth-error-msg" style={{ marginBottom: 12 }}>{authError}</div>}
 
                 <button
                   type="submit"

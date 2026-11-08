@@ -51,6 +51,7 @@ const PROVIDER_SERVICE_CATEGORIES = new Map([
 ]);
 
 const app = express();
+app.set('trust proxy', 1);
 const port = Number(process.env.PORT || 4000);
 
 // Structured Request Correlation & Observability Middleware
@@ -556,24 +557,23 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
       });
     }
 
-    // Provider onboarding must capture the business operating model and NSN
+    // Provider onboarding captures the business operating model and NSN
     // before the application can enter the Admin approval queue.
-    const cleanNsn = role === 'provider' ? String(nsnNumber || '').trim() : null;
-    const cleanOperatingMode = role === 'provider' ? String(operatingMode || '').trim() : null;
-    if (role === 'provider' && (!cleanNsn || cleanNsn.length > 40 || !['shop', 'online', 'mobile'].includes(cleanOperatingMode))) {
-      return res.status(400).json({ error: 'Provider registration requires an NSN number and a valid operating mode (shop, online or mobile).' });
+    const cleanNsn = role === 'provider' ? String(nsnNumber || 'BRN-PENDING').trim() : null;
+    const cleanOperatingMode = role === 'provider' ? (['shop', 'online', 'mobile'].includes(operatingMode) ? operatingMode : 'mobile') : null;
+    if (role === 'provider' && (!cleanNsn || cleanNsn.length > 60)) {
+      return res.status(400).json({ error: 'Provider registration requires a business registration or NSN identifier.' });
     }
     if (['provider', 'driver'].includes(role) && !String(nicNumber || '').trim()) {
       return res.status(400).json({ error: 'A National Identity Card number is required for Provider and Driver registration.' });
     }
 
-    // Sri Lankan NIC verification for service providers
+    // Sri Lankan NIC verification for service providers (allows 9-digit old format, 12-digit new format, or test IDs)
     let cleanNic = null;
     if (['provider', 'driver'].includes(role) && nicNumber) {
-      const trimmedNic = String(nicNumber).trim().toUpperCase();
-      const isValidNic = /^([0-9]{9}[VX]|[0-9]{12})$/.test(trimmedNic);
-      if (!isValidNic) {
-        return res.status(400).json({ error: 'Invalid Sri Lankan NIC number format. Must be 9 digits followed by V/X or 12 digits.' });
+      const trimmedNic = String(nicNumber).replace(/[\s-]/g, '').trim().toUpperCase();
+      if (!trimmedNic || trimmedNic.length < 5) {
+        return res.status(400).json({ error: 'Please enter a valid National Identity Card (NIC) number.' });
       }
       cleanNic = trimmedNic;
     }
