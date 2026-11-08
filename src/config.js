@@ -1,7 +1,7 @@
-// Dedicated VPS Endpoints & Custom Domain for ARY Services
-export const VPS_API_BASE = 'http://173.212.223.108:4000/api';
+// Dedicated Production Domain & VPS Endpoints for ARY Services
 export const DOMAIN_API_BASE = 'https://aryservices.adksoftwares.com/api';
-export const PUBLIC_CLOUD_API_BASE = 'http://173.212.223.108:4000/api';
+export const VPS_IP_API_BASE = 'http://173.212.223.108:4000/api';
+export const PUBLIC_CLOUD_API_BASE = DOMAIN_API_BASE;
 
 const getApiBase = () => {
   if (import.meta.env.VITE_API_BASE) {
