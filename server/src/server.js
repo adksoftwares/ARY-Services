@@ -1088,7 +1088,7 @@ app.get('/api/bookings', requireAuth, async (req, res) => {
 app.post('/api/bookings', requireAuth, async (req, res) => {
   try {
     const customer = req.user;
-    if (customer.accountType !== 'customer') return res.status(403).json({ error: 'Customer account required to create a service booking.' });
+    if (!['customer', 'provider', 'admin'].includes(customer.accountType)) return res.status(403).json({ error: 'An active account is required to create a service booking.' });
     const {
       providerId, categorySlug, serviceAddress, bookingDate, bookingTime, problemDescription
     } = req.body || {};
@@ -1106,7 +1106,7 @@ app.post('/api/bookings', requireAuth, async (req, res) => {
     }
 
     const users = await getUsers();
-    const provider = users.find(u => u.id === providerId && (u.accountType === 'provider' || (Array.isArray(u.roles) && u.roles.includes('provider'))) && (u.accountType === 'provider' ? u.status === 'active' : u.providerStatus === 'active') && (u.category === categorySlug || (Array.isArray(u.approvedServices) && u.approvedServices.some(service => service.categorySlug === categorySlug))));
+    const provider = users.find(u => u.id === providerId && (u.accountType === 'provider' || (Array.isArray(u.roles) && u.roles.includes('provider'))) && (u.accountType === 'provider' ? u.status === 'active' : u.providerStatus === 'active'));
     if (!provider) return res.status(404).json({ error: 'Selected approved service provider was not found.' });
     const selectedService = (provider.approvedServices || []).find(service => service.categorySlug === categorySlug);
     const selectedCharge = selectedService?.baseCharge ?? provider.baseCharge ?? '1500';

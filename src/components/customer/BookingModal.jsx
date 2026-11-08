@@ -29,7 +29,7 @@ export default function BookingModal({
   initialAddress,
   onBookingSuccess
 }) {
-  const { currentUser } = useAuth();
+  const { currentUser, openAuthModal } = useAuth();
   const navigate = useNavigate();
 
   const [step, setStep] = useState(1); // 1: Service/Problem -> 2: Date/Time -> 3: Address -> 4: Review -> 5: Success
@@ -99,8 +99,18 @@ export default function BookingModal({
     setStep(s => s + 1);
   }
 
+  function handleClose() {
+    setStep(1);
+    setError('');
+    if (onClose) onClose();
+  }
+
   async function handleSubmitBooking() {
-    if (!currentUser?.token) return;
+    if (!currentUser?.token) {
+      if (onClose) onClose();
+      if (openAuthModal) openAuthModal('login');
+      return;
+    }
     setIsSubmitting(true);
     setError('');
 
@@ -130,17 +140,19 @@ export default function BookingModal({
       }
 
       setCreatedBooking(data.booking);
-      setStep(5); // Success step
       if (onBookingSuccess) {
         onBookingSuccess(data.booking, provider);
       }
+      if (onClose) {
+        onClose();
+      }
+      setStep(1);
     } catch (err) {
       setError(err.message || 'Could not submit booking.');
     } finally {
       setIsSubmitting(false);
     }
   }
-
   const TIME_SLOTS = [
     'Morning (9 AM - 12 PM)',
     'Afternoon (1 PM - 5 PM)',
@@ -190,7 +202,7 @@ export default function BookingModal({
   return (
     <Modal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={handleClose}
       title={step === 5 ? 'Booking Confirmed!' : `Book ${provider.fullName}`}
       isBottomSheet={true}
       size="md"
