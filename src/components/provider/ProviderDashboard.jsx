@@ -20,7 +20,8 @@ import {
   VolumeX,
   Vibrate,
   ShieldCheck,
-  ArrowRight
+  ArrowRight,
+  PhoneCall
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE } from '../../config';
@@ -334,18 +335,19 @@ export default function ProviderDashboard({
           })}
         </ul>
 
-        {/* Quick Help & Hotline in Sidebar */}
-        <div style={{
-          marginTop: 'auto',
-          padding: '12px 14px',
-          background: 'var(--color-brand-50, #edf7f2)',
-          borderRadius: 'var(--radius-md, 8px)',
-          border: '1px solid var(--color-brand-200, #b7decb)',
-          fontSize: '0.75rem',
-          color: 'var(--color-brand-800, #154636)'
-        }}>
-          <b>ARY Partner Hotline:</b>
-          <div style={{ marginTop: 2 }}>011 234 5678 (24/7 Dispatch)</div>
+        {/* Modern Interactive Partner Hotline Card */}
+        <div className="provider-sidebar-hotline-card">
+          <div className="sidebar-hotline-header">
+            <span className="sidebar-pulse-dot" />
+            <span className="sidebar-hotline-tag">24/7 Dispatch Desk</span>
+          </div>
+          <div className="sidebar-hotline-body">
+            <span className="sidebar-hotline-title">ARY Partner Hotline</span>
+            <a href="tel:0112345678" className="sidebar-hotline-phone" title="Click to call dispatch">
+              <PhoneCall size={14} /> 011 234 5678
+            </a>
+          </div>
+          <span className="sidebar-hotline-sub">Emergency & Job Reassignment</span>
         </div>
       </aside>
 

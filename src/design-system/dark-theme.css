@@ -773,3 +773,74 @@
   color: #ffffff !important;
   border-color: rgba(255, 255, 255, 0.18) !important;
 }
+
+
+/* Modern Footer & ADK Signature Dark Theme */
+[data-theme="dark"] .site-footer-modern {
+  background: #091310 !important;
+  border-top-color: rgba(255, 255, 255, 0.08) !important;
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .footer-main-grid {
+  border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+[data-theme="dark"] .footer-col-brand .footer-brand,
+[data-theme="dark"] .footer-col-title {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .footer-brand-desc,
+[data-theme="dark"] .footer-links-list li a,
+[data-theme="dark"] .footer-hubs-list li {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .footer-links-list li a:hover {
+  color: #34d399 !important;
+}
+
+[data-theme="dark"] .trust-pill {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  color: #34d399 !important;
+}
+
+[data-theme="dark"] .footer-hotline-card {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-theme="dark"] .hotline-number {
+  color: #34d399 !important;
+}
+
+[data-theme="dark"] .adk-signature-badge-modern {
+  background: #0f231c !important;
+  border-color: rgba(52, 211, 153, 0.3) !important;
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .adk-signature-badge-modern:hover {
+  background: #143127 !important;
+  border-color: #34d399 !important;
+  box-shadow: 0 6px 16px rgba(52, 211, 153, 0.2) !important;
+}
+
+[data-theme="dark"] .adk-prefix-text {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .adk-brand-text {
+  color: #34d399 !important;
+}
+
+[data-theme="dark"] .provider-sidebar-hotline-card {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-theme="dark"] .sidebar-hotline-phone {
+  color: #34d399 !important;
+}

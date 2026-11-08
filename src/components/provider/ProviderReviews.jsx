@@ -106,11 +106,56 @@ export default function ProviderReviews({
           ))}
         </div>
       ) : (
-        <EmptyState
-          icon={MessageSquare}
-          title="No customer reviews yet"
-          description="Once clients complete and rate your jobs, their feedback and star ratings will be published here."
-        />
+        <div style={{ display: 'grid', gap: '20px' }}>
+          <EmptyState
+            icon={MessageSquare}
+            title="No customer reviews yet"
+            description="Once clients complete and rate your jobs, their feedback and star ratings will be published here."
+          />
+
+          {/* Pro-Tips for Getting 5-Star Reviews */}
+          <Card style={{ padding: '24px', background: 'var(--surface-muted, #f8fafc)', border: '1px solid var(--border-subtle, #e2e8f0)', borderRadius: '14px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+              <span style={{ fontSize: '18px' }}>✨</span>
+              <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary, #0f172a)' }}>
+                How to Build a 5-Star Reputation on ARY Services
+              </h4>
+            </div>
+
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+              gap: 16
+            }}>
+              <div style={{ padding: '14px', borderRadius: 10, background: 'var(--surface-primary, #fff)', border: '1px solid var(--border-subtle, #e2e8f0)' }}>
+                <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#15803d', marginBottom: 4 }}>
+                  1. Punctual Arrival
+                </div>
+                <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-secondary, #64748b)', lineHeight: 1.5 }}>
+                  Arrive on time for scheduled bookings. Prompt communication with clients significantly improves ratings.
+                </p>
+              </div>
+
+              <div style={{ padding: '14px', borderRadius: 10, background: 'var(--surface-primary, #fff)', border: '1px solid var(--border-subtle, #e2e8f0)' }}>
+                <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#15803d', marginBottom: 4 }}>
+                  2. Transparent Upfront Quoting
+                </div>
+                <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-secondary, #64748b)', lineHeight: 1.5 }}>
+                  Discuss parts and labor before commencing work. Transparent pricing prevents disputes and builds trust.
+                </p>
+              </div>
+
+              <div style={{ padding: '14px', borderRadius: 10, background: 'var(--surface-primary, #fff)', border: '1px solid var(--border-subtle, #e2e8f0)' }}>
+                <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#15803d', marginBottom: 4 }}>
+                  3. Clean & Professional Finish
+                </div>
+                <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-secondary, #64748b)', lineHeight: 1.5 }}>
+                  Walk through the finished work with the customer and ensure the workspace is tidy before marking complete.
+                </p>
+              </div>
+            </div>
+          </Card>
+        </div>
       )}
     </div>
   );

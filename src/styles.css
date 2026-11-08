@@ -1727,3 +1727,353 @@ table{font-variant-numeric:tabular-nums}
   background: var(--surface-secondary, #161920) !important;
   color: var(--text-primary, #f8fafc) !important;
 }
+
+
+/* ==========================================================================
+   Modern Lower Portion & Premium Footer Design
+   Option 1: With ADK Software Solutions Signature (https://adksoftwares.com)
+   ========================================================================== */
+
+.site-footer-modern {
+  margin-top: auto;
+  width: 100%;
+  border-top: 1px solid var(--border-subtle, #e2e8f0);
+  background: var(--surface-primary, #ffffff);
+  padding: 48px 24px 28px;
+  color: var(--text-secondary, #475569);
+  font-family: inherit;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.footer-main-grid {
+  max-width: 1320px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1.4fr;
+  gap: 40px;
+  padding-bottom: 36px;
+  border-bottom: 1px solid var(--border-subtle, #f1f5f9);
+}
+
+.footer-col-brand .footer-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  font-size: 1.25rem;
+  color: var(--text-primary, #0f172a);
+  margin-bottom: 14px;
+}
+
+.footer-brand-desc {
+  font-size: 0.84rem;
+  line-height: 1.65;
+  color: var(--text-secondary, #64748b);
+  max-width: 380px;
+  margin: 0 0 18px;
+}
+
+.footer-trust-pills {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.trust-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  background: var(--surface-muted, #f8fafc);
+  border: 1px solid var(--border-subtle, #e2e8f0);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--brand-primary, #15803d);
+}
+
+.footer-col-title {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--text-primary, #0f172a);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0 0 16px;
+}
+
+.footer-links-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.footer-links-list li a {
+  color: var(--text-secondary, #64748b);
+  text-decoration: none;
+  font-size: 0.84rem;
+  transition: color 0.15s ease;
+}
+
+.footer-links-list li a:hover {
+  color: var(--brand-primary, #15803d);
+}
+
+.footer-hubs-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: var(--text-secondary, #64748b);
+}
+
+.hub-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--brand-primary, #15803d);
+}
+
+.footer-hotline-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--surface-muted, #f0fdf4);
+  border: 1px solid var(--border-subtle, #bbf7d0);
+  margin-bottom: 12px;
+}
+
+.hotline-icon-box {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #15803d;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.hotline-sub {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--text-muted, #64748b);
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.hotline-number {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #15803d;
+  text-decoration: none;
+  letter-spacing: 0.02em;
+}
+
+.footer-email-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: var(--text-secondary, #64748b);
+}
+
+.footer-email-row a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.footer-email-row a:hover {
+  color: var(--brand-primary, #15803d);
+}
+
+/* Lower Bar */
+.footer-bottom-bar {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding-top: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  font-size: 0.82rem;
+  color: var(--text-muted, #64748b);
+  flex-wrap: wrap;
+}
+
+/* Modern ADK Signature Badge */
+.adk-signature-badge-modern {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 16px;
+  border-radius: 9999px;
+  background: var(--surface-primary, #ffffff);
+  border: 1px solid var(--border-subtle, #cbd5e1);
+  color: var(--text-secondary, #475569);
+  text-decoration: none;
+  font-size: 0.82rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.adk-signature-badge-modern:hover {
+  transform: translateY(-2px);
+  border-color: #15803d;
+  box-shadow: 0 6px 16px rgba(21, 128, 61, 0.15);
+  background: var(--surface-muted, #f8fafc);
+}
+
+.adk-live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25);
+  animation: pulse-dot 2s infinite;
+}
+
+@keyframes pulse-dot {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5); }
+  70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+.adk-prefix-text {
+  color: var(--text-muted, #64748b);
+  font-weight: 500;
+}
+
+.adk-brand-text {
+  color: var(--brand-primary, #15803d);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.adk-external-arrow {
+  color: var(--text-muted, #94a3b8);
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.adk-signature-badge-modern:hover .adk-external-arrow {
+  transform: translate(2px, -2px);
+  color: #15803d;
+}
+
+.footer-legal-links {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.78rem;
+}
+
+.footer-safe-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--brand-primary, #15803d);
+  font-weight: 600;
+}
+
+/* Provider Sidebar Hotline Card */
+.provider-sidebar-hotline-card {
+  margin-top: auto;
+  padding: 14px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(21, 128, 61, 0.08), rgba(21, 128, 61, 0.03));
+  border: 1px solid rgba(21, 128, 61, 0.2);
+  transition: all 0.2s ease;
+}
+
+.provider-sidebar-hotline-card:hover {
+  border-color: rgba(21, 128, 61, 0.4);
+  box-shadow: 0 4px 12px rgba(21, 128, 61, 0.08);
+}
+
+.sidebar-hotline-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.sidebar-pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25);
+}
+
+.sidebar-hotline-tag {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #15803d;
+}
+
+.sidebar-hotline-body {
+  margin-bottom: 4px;
+}
+
+.sidebar-hotline-title {
+  display: block;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--text-primary, #0f172a);
+}
+
+.sidebar-hotline-phone {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #15803d;
+  text-decoration: none;
+  margin-top: 2px;
+  transition: color 0.15s ease;
+}
+
+.sidebar-hotline-phone:hover {
+  color: #166534;
+  text-decoration: underline;
+}
+
+.sidebar-hotline-sub {
+  display: block;
+  font-size: 0.68rem;
+  color: var(--text-muted, #64748b);
+}
+
+@media (max-width: 992px) {
+  .footer-main-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+  }
+}
+
+@media (max-width: 640px) {
+  .site-footer-modern {
+    padding: 36px 16px calc(110px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  .footer-main-grid {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+  .footer-bottom-bar {
+    flex-direction: column;
+    text-align: center;
+    gap: 16px;
+  }
+  .adk-signature-badge-modern {
+    width: 100%;
+    justify-content: center;
+  }
+}
