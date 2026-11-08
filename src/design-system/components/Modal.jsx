@@ -13,13 +13,19 @@ export function Modal({
   className = ''
 }) {
   const dialogRef = useRef(null);
+  const wasOpenRef = useRef(false);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      wasOpenRef.current = false;
+      return;
+    }
 
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
-        onClose && onClose();
+        onCloseRef.current && onCloseRef.current();
       }
     };
 
@@ -27,16 +33,19 @@ export function Modal({
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
 
-    // Focus initial dialog
-    if (dialogRef.current) {
-      dialogRef.current.focus();
+    // Focus initial dialog ONLY on initial opening, NOT on subsequent renders/re-renders
+    if (!wasOpenRef.current && dialogRef.current) {
+      if (!dialogRef.current.contains(document.activeElement)) {
+        dialogRef.current.focus();
+      }
+      wasOpenRef.current = true;
     }
 
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = originalOverflow;
     };
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 

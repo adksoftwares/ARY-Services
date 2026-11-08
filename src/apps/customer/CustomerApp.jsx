@@ -389,7 +389,13 @@ function CustomerWorkspace() {
                 query={query}
                 setQuery={setQuery}
                 onNotice={setNotice}
-                onSearch={() => fetchProviders(selectedCategory?.slug, query, coords)}
+                onSearch={() => {
+                  fetchProviders(selectedCategory?.slug, query, coords);
+                  const catalogEl = document.getElementById('providers-catalog') || document.querySelector('.providers-section');
+                  if (catalogEl) {
+                    catalogEl.scrollIntoView({ behavior: 'smooth' });
+                  }
+                }}
                 onSelectCategory={handleCategorySelect}
                 onLocationDetected={(newCoords) => {
                   setCoords(newCoords);

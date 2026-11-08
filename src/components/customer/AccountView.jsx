@@ -416,11 +416,12 @@ export default function AccountView({ onNotice, onClose }) {
                         ]}
                       />
                       <Input
-                        label="Business / Trade NSN Registration Number *"
+                        label="Business Reg (BRN) / National Skills / Trade License (NSN) *"
                         required={true}
                         value={nsnNumber}
                         onChange={e => setNsnNumber(e.target.value)}
-                        placeholder="Enter official NSN or trade registration"
+                        placeholder="e.g. BRN-12345 or NVQ-Level-4 or Trade Reg No"
+                        helperText="Business Registration Number, NVQ Trade Certificate, or Vocational License."
                       />
                       <Input
                         label="Standard Base Inspection Charge *"

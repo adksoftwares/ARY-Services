@@ -236,7 +236,6 @@ export default function AuthModal({ onNotice }) {
                   placeholder="e.g. 077 123 4567 or user@example.com"
                   autoComplete="username"
                   inputMode="email"
-                  autoFocus
                 />
               </label>
               <label>
@@ -339,7 +338,6 @@ export default function AuthModal({ onNotice }) {
                     onChange={e => setRegFullName(e.target.value)}
                     placeholder="e.g. Kannan Kumar"
                     autoComplete="name"
-                    autoFocus
                   />
                 </label>
 
@@ -447,7 +445,6 @@ export default function AuthModal({ onNotice }) {
                     value={regFullName}
                     onChange={e => setRegFullName(e.target.value)}
                     placeholder="e.g. Ramesh Kumar"
-                    autoFocus
                   />
                 </label>
 
@@ -533,8 +530,17 @@ export default function AuthModal({ onNotice }) {
                     </select>
                   </label>
                   <label>
-                    <span>NSN Number *</span>
-                    <input required type="text" value={regNsnNumber} onChange={e => setRegNsnNumber(e.target.value)} placeholder="Enter your NSN number"/>
+                    <span>Business Reg (BRN) / National Skills / Trade License (NSN) *</span>
+                    <input
+                      required
+                      type="text"
+                      value={regNsnNumber}
+                      onChange={e => setRegNsnNumber(e.target.value)}
+                      placeholder="e.g. BRN-12345 or NVQ-Level-4 or Trade Reg No"
+                    />
+                    <small style={{ fontSize: '11px', color: 'var(--color-neutral-500, #64748b)', marginTop: 2, display: 'block' }}>
+                      Enter your Business Registration Number, NVQ Trade Certification, or Vocational License.
+                    </small>
                   </label>
                 </>}
 

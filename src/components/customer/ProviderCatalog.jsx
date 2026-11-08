@@ -63,7 +63,12 @@ export default function ProviderCatalog({
 
     // Distance filter
     if (providers.some(p => p.distanceKm != null)) {
-      list = list.filter(p => p.distanceKm == null || p.distanceKm <= maxDistance);
+      const withinRadius = list.filter(p => p.distanceKm == null || p.distanceKm <= maxDistance);
+      // If there are providers within the chosen radius, show them.
+      // Otherwise, keep the island-wide list sorted by distance so the customer is never left empty!
+      if (withinRadius.length > 0) {
+        list = withinRadius;
+      }
     }
 
     // Sorting

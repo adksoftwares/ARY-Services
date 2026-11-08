@@ -754,7 +754,7 @@
     align-items: center;
     text-align: center;
     gap: 14px;
-    padding: 20px 0 24px;
+    padding: 20px 0 calc(100px + env(safe-area-inset-bottom, 0px)) !important;
   }
   .footer-left {
     flex-direction: column;
@@ -1306,7 +1306,10 @@ table{font-variant-numeric:tabular-nums}
     display: flex;
   }
   .app-shell {
-    padding-bottom: 84px !important;
+    padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  .site-footer {
+    padding-bottom: calc(110px + env(safe-area-inset-bottom, 0px)) !important;
   }
 }
 
