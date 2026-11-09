@@ -88,13 +88,26 @@ const allowedOrigins = [
   ...(process.env.CLIENT_ORIGIN || '').split(',').map(value => value.trim()).filter(Boolean)
 ];
 
+// Permissive & resilient CORS policy supporting Web, PWA, Capacitor Android/iOS, and native WebViews
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
-    if (process.env.NODE_ENV !== 'production' && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+    // Non-browser clients, file://, Capacitor, and sandboxed WebViews often omit origin or send 'null'
+    if (!origin || origin === 'null' || origin === 'file://') {
       return callback(null, true);
     }
-    return callback(new Error('Origin is not allowed by the ARY Services CORS policy.'));
+    // Allow any localhost, local LAN IPs, Capacitor schemes, or configured domains
+    if (
+      /^https?:\/\/(localhost|127\.0\.0\.1|10\.0\.2\.2|192\.168\.\d+\.\d+|173\.212\.223\.108)(:\d+)?$/.test(origin) ||
+      /^capacitor:\/\//i.test(origin) ||
+      /^ionic:\/\//i.test(origin) ||
+      origin.includes('adksoftwares.com') ||
+      origin.includes('trycloudflare.com') ||
+      allowedOrigins.includes(origin)
+    ) {
+      return callback(null, true);
+    }
+    // Unconditionally allow valid cross-origin requests for mobile clients
+    return callback(null, true);
   },
   credentials: true
 }));

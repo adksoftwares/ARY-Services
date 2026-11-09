@@ -31,6 +31,9 @@ export async function buildMobileApp(appName) {
   await build({
     plugins: [react()],
     base: './',
+    define: {
+      'import.meta.env.VITE_API_BASE': JSON.stringify(apiBase)
+    },
     build: {
       outDir,
       emptyOutDir: true,

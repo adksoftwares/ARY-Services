@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { fetchCurrentLocationAddress } from '../../utils/location';
+import { getFriendlyErrorMessage } from '../../utils/errorMessage';
 
 export default function AuthModal({ onNotice }) {
   const navigate = useNavigate();
@@ -90,7 +91,7 @@ export default function AuthModal({ onNotice }) {
         navigate('/admin');
       }
     } catch (err) {
-      setAuthError(err.message || 'Login failed. Please check your credentials.');
+      setAuthError(getFriendlyErrorMessage(err, 'Login failed. Please check your credentials.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -144,7 +145,7 @@ export default function AuthModal({ onNotice }) {
         }
       }
     } catch (err) {
-      setAuthError(err.message || 'Registration failed.');
+      setAuthError(getFriendlyErrorMessage(err, 'Registration failed.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -157,7 +158,7 @@ export default function AuthModal({ onNotice }) {
       const loc = await fetchCurrentLocationAddress();
       setRegLocation(loc);
     } catch (err) {
-      setAuthError(err.message || 'Could not retrieve your current location.');
+      setAuthError(getFriendlyErrorMessage(err, 'Could not retrieve your current location.'));
     } finally {
       setIsLocatingReg(false);
     }

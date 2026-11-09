@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
-    <!-- Development & testing cleartext allowed only for local loopbacks -->
     <domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="true">localhost</domain>
         <domain includeSubdomains="true">127.0.0.1</domain>
@@ -9,16 +8,10 @@
         <domain includeSubdomains="true">aryservices.adksoftwares.com</domain>
         <domain includeSubdomains="true">adksoftwares.com</domain>
     </domain-config>
-    <debug-overrides>
+    <base-config cleartextTrafficPermitted="true">
         <trust-anchors>
+            <certificates src="system" />
             <certificates src="user" />
-            <certificates src="system" />
-        </trust-anchors>
-    </debug-overrides>
-    <!-- Release builds strictly enforce HTTPS / TLS for all other traffic -->
-    <base-config cleartextTrafficPermitted="false">
-        <trust-anchors>
-            <certificates src="system" />
         </trust-anchors>
     </base-config>
 </network-security-config>

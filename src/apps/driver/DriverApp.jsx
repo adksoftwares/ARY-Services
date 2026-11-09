@@ -3,6 +3,7 @@ import { BrowserRouter, Link, useNavigate } from 'react-router-dom';
 import { Bike, LogIn, LogOut, ShieldCheck, UserRound, ArrowLeftRight, Sun, Wifi, WifiOff } from 'lucide-react';
 import { AuthProvider, useAuth } from '../../context/AuthContext';
 import { API_BASE } from '../../config';
+import { getFriendlyErrorMessage } from '../../utils/errorMessage';
 import { subscribeToAppEvents } from '../../utils/events';
 import DriverWorkspace from '../../components/driver/DriverWorkspace';
 import AuthModal from '../../components/common/AuthModal';
@@ -94,7 +95,7 @@ function DriverPortal() {
                       await switchRole('customer');
                       window.location.href = '/';
                     } catch (error) {
-                      setNotice(error.message);
+                      setNotice(getFriendlyErrorMessage(error));
                     }
                   }}
                   title="Switch to Customer Mode"

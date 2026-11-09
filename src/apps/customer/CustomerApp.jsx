@@ -27,6 +27,7 @@ import CustomerLocationModal from '../../components/customer/CustomerLocationMod
 import { fetchCurrentLocationAddress, fetchCurrentLocationCoords, getLastDetectedCoordinates, resolveCoordinates } from '../../utils/location';
 import { AuthProvider, useAuth } from '../../context/AuthContext';
 import { API_BASE } from '../../config';
+import { getFriendlyErrorMessage } from '../../utils/errorMessage';
 import { subscribeToAppEvents } from '../../utils/events';
 import HeroSection from '../../components/customer/HeroSection';
 import CategoryGrid from '../../components/customer/CategoryGrid';
@@ -316,7 +317,7 @@ function CustomerWorkspace() {
       const data = await response.json();
       setProviders(data.providers || []);
     } catch (err) {
-      setNotice(err.message || 'Error loading providers.');
+      setNotice(getFriendlyErrorMessage(err, 'Error loading providers.'));
     } finally {
       setLoadingProviders(false);
     }
@@ -377,7 +378,7 @@ function CustomerWorkspace() {
       const data = await response.json();
       setBookings(data.bookings || []);
     } catch (error) {
-      setNotice(error.message || 'Could not load your bookings.');
+      setNotice(getFriendlyErrorMessage(error, 'Could not load your bookings.'));
     } finally {
       setLoadingBookings(false);
     }
@@ -430,7 +431,7 @@ function CustomerWorkspace() {
       setNotice(data.message || `Quote ${normalizedDecision === 'accept' ? 'accepted' : 'declined'}.`);
       fetchBookings();
     } catch (error) {
-      setNotice(error.message || 'Failed to update quote.');
+      setNotice(getFriendlyErrorMessage(error, 'Failed to update quote.'));
     }
   };
 
@@ -447,7 +448,7 @@ function CustomerWorkspace() {
       setNotice(data.message || 'Reschedule request submitted.');
       fetchBookings();
     } catch (error) {
-      setNotice(error.message || 'Failed to reschedule.');
+      setNotice(getFriendlyErrorMessage(error, 'Failed to reschedule.'));
     }
   };
 
@@ -464,7 +465,7 @@ function CustomerWorkspace() {
       setNotice(data.message || 'Booking cancelled successfully.');
       fetchBookings();
     } catch (error) {
-      setNotice(error.message || 'Failed to cancel booking.');
+      setNotice(getFriendlyErrorMessage(error, 'Failed to cancel booking.'));
     }
   };
 

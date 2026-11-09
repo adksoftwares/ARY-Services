@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE } from '../../config';
+import { getFriendlyErrorMessage } from '../../utils/errorMessage';
 import { subscribeToAppEvents } from '../../utils/events';
 import { getGpsFreshness } from '../../utils/location';
 import { Card, Badge, Button, StatusPill, EmptyState, Stepper, Skeleton, ConfirmDialog } from '../../design-system';
@@ -108,7 +109,7 @@ export default function DriverWorkspace({ onNotice }) {
       setJobs(data.jobs || []);
       if (data.presence) setPresence(data.presence);
     } catch (err) {
-      setError(err.message || 'Could not load driver jobs.');
+      setError(getFriendlyErrorMessage(err, 'Could not load driver jobs.'));
     } finally {
       setLoading(false);
     }
@@ -594,9 +595,29 @@ export default function DriverWorkspace({ onNotice }) {
           padding: '12px 16px',
           marginBottom: 16,
           color: 'var(--color-danger-700, #b91c1c)',
-          fontSize: '0.85rem'
+          fontSize: '0.85rem',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 12
         }}>
-          {error}
+          <span>{error}</span>
+          <button
+            type="button"
+            onClick={refresh}
+            style={{
+              background: '#dc2626',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '6px',
+              padding: '4px 10px',
+              fontSize: '0.78rem',
+              fontWeight: 600,
+              cursor: 'pointer'
+            }}
+          >
+            Retry
+          </button>
         </div>
       )}
 

@@ -3,6 +3,7 @@ import { BrowserRouter, Link, useNavigate } from 'react-router-dom';
 import { BriefcaseBusiness, LogIn, LogOut, RefreshCw, ShieldCheck, UserRound, ArrowLeftRight, Wifi, WifiOff } from 'lucide-react';
 import { AuthProvider, useAuth } from '../../context/AuthContext';
 import { API_BASE } from '../../config';
+import { getFriendlyErrorMessage } from '../../utils/errorMessage';
 import { subscribeToAppEvents } from '../../utils/events';
 import ProviderDashboard from '../../components/provider/ProviderDashboard';
 import AuthModal from '../../components/common/AuthModal';
@@ -70,7 +71,7 @@ function ProviderWorkspace() {
       if (!response.ok) throw new Error(data.error || 'Could not load provider bookings.');
       setBookings(data.bookings || []);
     } catch (error) {
-      setNotice(error.message || 'Could not load bookings.');
+      setNotice(getFriendlyErrorMessage(error, 'Could not load bookings.'));
     } finally {
       setLoading(false);
     }
@@ -110,7 +111,7 @@ function ProviderWorkspace() {
       setNotice(`Booking status updated to ${status.replaceAll('_', ' ')}.`);
       await fetchBookings();
     } catch (error) {
-      setNotice(error.message || 'Could not update booking status.');
+      setNotice(getFriendlyErrorMessage(error, 'Could not update booking status.'));
     }
   }
 
@@ -126,7 +127,7 @@ function ProviderWorkspace() {
       if (!response.ok) throw new Error(data.error || 'Could not update reschedule request.');
       setNotice(data.message || 'Reschedule request updated.');
       await fetchBookings();
-    } catch (error) { setNotice(error.message || 'Could not update reschedule request.'); }
+    } catch (error) { setNotice(getFriendlyErrorMessage(error, 'Could not update reschedule request.')); }
   }
 
   const isProvider = currentUser?.accountType === 'provider';
@@ -160,7 +161,7 @@ function ProviderWorkspace() {
                       await switchRole('customer');
                       window.location.href = '/';
                     } catch (error) {
-                      setNotice(error.message);
+                      setNotice(getFriendlyErrorMessage(error));
                     }
                   }}
                   title="Switch to Customer Mode"

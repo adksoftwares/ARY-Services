@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { API_BASE } from '../config.js';
+import { getFriendlyErrorMessage } from '../utils/errorMessage.js';
 
 const AuthContext = createContext(null);
 
@@ -158,8 +159,8 @@ export function AuthProvider({ children }) {
       persistUser(data.user);
       return data.user;
     } catch (err) {
-      // Authentication must always be verified by the API. Never create a local fallback session.
-      throw err;
+      const friendlyMsg = getFriendlyErrorMessage(err, 'Login failed. Please check your credentials.');
+      throw new Error(friendlyMsg);
     }
   }
 
