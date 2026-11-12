@@ -1299,6 +1299,10 @@ app.patch('/api/bookings/:id/status', requireAuth, async (req, res) => {
       return res.status(409).json({ error: `Cannot move a ${booking.status} booking to ${status}.` });
     }
 
+    if (status === 'completed' && booking.paymentStatus === 'escrow_held' && (!Number.isSafeInteger(Number(booking.baseAmount)) || Number(booking.baseAmount) <= 0)) {
+      return res.status(409).json({ error: 'Cannot release escrow because the booking has no valid recorded payment amount.' });
+    }
+
     const previousProviderId = booking.providerId;
     let releasedTx = null;
     const updated = await updateBooking(id, b => {
@@ -1323,9 +1327,9 @@ app.patch('/api/bookings/:id/status', requireAuth, async (req, res) => {
         releasedTx = {
           bookingId: id,
           providerId: b.providerId,
-          amount: b.baseAmount || 1500,
-          platformFee: b.platformFee || 150,
-          providerPayout: b.providerPayout || 1350
+          amount: Number(b.baseAmount),
+          platformFee: Number(b.platformFee ?? Math.round(Number(b.baseAmount) * 0.10)),
+          providerPayout: Number(b.providerPayout ?? (Number(b.baseAmount) - Math.round(Number(b.baseAmount) * 0.10)))
         };
       }
       return b;
