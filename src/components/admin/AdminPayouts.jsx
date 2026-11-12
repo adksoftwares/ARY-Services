@@ -84,7 +84,7 @@ export default function AdminPayouts({
       csvCell(new Date().toISOString().split('T')[0])
     ]);
 
-    const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\\r\\n');
+    const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\r\n');
     const encodedUri = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
