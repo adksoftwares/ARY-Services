@@ -137,7 +137,25 @@ export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadc
     if(!['approved','rejected'].includes(status))return res.status(400).json({error:'Status must be approved or rejected.'});
     const a=await mutateJobs(d=>{const item=d.applications.find(x=>x.id===req.params.id);if(!item)return null;item.status=status;item.reviewedAt=new Date().toISOString();item.reviewedBy=req.user.id;return item;});
     if(!a)return res.status(404).json({error:'Application not found.'});
-    broadcastEvent?.('driver:application_reviewed',{userId:a.userId,application:a});res.json({application:a});
+    // Driver account activation is tied to Super Admin's service approval,
+    // not merely to self-registration. Keep account pending until one network is approved.
+    const users=await getUsers();
+    const driver=users.find(user=>user.id===a.userId);
+    if(driver){
+      const state=await readJobs();
+      const applications=state.applications.filter(item=>item.userId===a.userId);
+      const hasApproved=applications.some(item=>item.status==='approved');
+      const hasPending=applications.some(item=>item.status==='pending');
+      await updateUser(driver.id,user=>{
+        user.status=hasApproved?'active':(hasPending?'pending':'rejected');
+        user.driverApprovedServices=applications.filter(item=>item.status==='approved').map(item=>item.driverType);
+        user.driverApplicationStatus=hasApproved?'approved':(hasPending?'pending':'rejected');
+        user.driverReviewedAt=new Date().toISOString();
+        return user;
+      });
+    }
+    broadcastEvent?.('driver:application_reviewed',{userId:a.userId,application:a});
+    res.json({application:a,accountStatus:driver?(driver.status==='active'?'active':status):null});
   });
   app.post('/api/food-deliveries',requireAuth,async(req,res)=>{
     if(req.user.accountType!=='customer')return res.status(403).json({error:'Customer account required.'});
