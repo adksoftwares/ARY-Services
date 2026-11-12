@@ -12,7 +12,7 @@ export default function AccountRoleRequest({ onNotice }) {
   const [nicNumber, setNicNumber] = useState('');
   const [operatingMode, setOperatingMode] = useState('mobile');
   const [nsnNumber, setNsnNumber] = useState('');
-  const [baseCharge, setBaseCharge] = useState('LKR 1,500');
+  const [baseCharge, setBaseCharge] = useState('');
   const [driverServices, setDriverServices] = useState(['ride']);
   const [busy, setBusy] = useState(false);
 

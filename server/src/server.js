@@ -570,7 +570,7 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
       location = '',
       category = 'other-services',
       categoryName = 'General Services',
-      baseCharge = 'LKR 1,500',
+      baseCharge = '',
       nicNumber,
       nsnNumber,
       operatingMode,
@@ -598,10 +598,15 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
 
     // Provider onboarding captures the business operating model and NSN
     // before the application can enter the Admin approval queue.
-    const cleanNsn = role === 'provider' ? String(nsnNumber || 'BRN-PENDING').trim() : null;
-    const cleanOperatingMode = role === 'provider' ? (['shop', 'online', 'mobile'].includes(operatingMode) ? operatingMode : 'mobile') : null;
-    if (role === 'provider' && (!cleanNsn || cleanNsn.length > 60)) {
-      return res.status(400).json({ error: 'Provider registration requires a business registration or NSN identifier.' });
+    const cleanNsn = role === 'provider' ? String(nsnNumber || '').trim() : null;
+    const cleanOperatingMode = role === 'provider' && ['shop', 'online', 'mobile'].includes(operatingMode) ? operatingMode : null;
+    const cleanBaseChargeDigits = role === 'provider' ? String(baseCharge || '').replace(/[^0-9]/g, '') : '';
+    const cleanBaseChargeAmount = cleanBaseChargeDigits ? Number.parseInt(cleanBaseChargeDigits, 10) : null;
+    if (role === 'provider' && (!cleanNsn || cleanNsn.length > 60 || !cleanOperatingMode || !cleanLocation)) {
+      return res.status(400).json({ error: 'Provider registration requires a business/service address, operating mode and business registration or NSN identifier.' });
+    }
+    if (role === 'provider' && String(baseCharge || '').trim() && (!Number.isSafeInteger(cleanBaseChargeAmount) || cleanBaseChargeAmount < 1 || cleanBaseChargeAmount > 10000000)) {
+      return res.status(400).json({ error: 'Enter a valid starting charge or leave it blank to receive quote requests.' });
     }
     if (['provider', 'driver'].includes(role) && !String(nicNumber || '').trim()) {
       return res.status(400).json({ error: 'A National Identity Card number is required for Provider and Driver registration.' });
@@ -653,17 +658,17 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
       fullName: fullName.trim(),
       phone: cleanPhone,
       email: cleanEmail,
-      location: cleanLocation || 'Colombo',
+      location: cleanLocation || null,
       passwordHash: hashPassword(effectivePassword),
       accountType: role,
       status: initialStatus,
       driverServices: selectedDriverServices,
       category: role === 'provider' ? category : null,
       categoryName: role === 'provider' ? categoryName : null,
-      baseCharge: role === 'provider' ? baseCharge : null,
-      rating: role === 'provider' ? 4.9 : null,
-      reviewCount: role === 'provider' ? 0 : null,
-      experienceYears: role === 'provider' ? 3 : null,
+      baseCharge: role === 'provider' && cleanBaseChargeAmount ? 'LKR ' + cleanBaseChargeAmount.toLocaleString('en-LK') : null,
+      rating: null,
+      reviewCount: 0,
+      experienceYears: null,
       nicNumber: cleanNic,
       nsnNumber: cleanNsn,
       operatingMode: cleanOperatingMode,
@@ -1294,6 +1299,10 @@ app.patch('/api/bookings/:id/status', requireAuth, async (req, res) => {
       return res.status(409).json({ error: `Cannot move a ${booking.status} booking to ${status}.` });
     }
 
+    if (status === 'completed' && booking.paymentStatus === 'escrow_held' && (!Number.isSafeInteger(Number(booking.baseAmount)) || Number(booking.baseAmount) <= 0)) {
+      return res.status(409).json({ error: 'Cannot release escrow because the booking has no valid recorded payment amount.' });
+    }
+
     const previousProviderId = booking.providerId;
     let releasedTx = null;
     const updated = await updateBooking(id, b => {
@@ -1318,9 +1327,9 @@ app.patch('/api/bookings/:id/status', requireAuth, async (req, res) => {
         releasedTx = {
           bookingId: id,
           providerId: b.providerId,
-          amount: b.baseAmount || 1500,
-          platformFee: b.platformFee || 150,
-          providerPayout: b.providerPayout || 1350
+          amount: Number(b.baseAmount),
+          platformFee: Number(b.platformFee ?? Math.round(Number(b.baseAmount) * 0.10)),
+          providerPayout: Number(b.providerPayout ?? (Number(b.baseAmount) - Math.round(Number(b.baseAmount) * 0.10)))
         };
       }
       return b;
@@ -1512,13 +1521,17 @@ app.patch('/api/bookings/:id/cancel', requireAuth, async (req, res) => {
       return res.status(400).json({ error: `Cannot cancel a booking that is already ${booking.status}.` });
     }
 
+    if (booking.paymentStatus === 'escrow_held' && (!Number.isSafeInteger(Number(booking.baseAmount)) || Number(booking.baseAmount) <= 0)) {
+      return res.status(409).json({ error: 'Cannot settle or refund escrow because the booking has no valid recorded payment amount.' });
+    }
+
     let cancelMessage = 'Booking successfully cancelled.';
     let newPaymentStatus = 'cancelled';
 
     // If technician was already in progress (en route / on site) and payment was held in escrow:
     // Deduct LKR 500 technician call-out travel compensation fee and refund remainder to customer
     if (booking.status === 'in_progress' && booking.paymentStatus === 'escrow_held') {
-      const totalAmount = booking.baseAmount || 1500;
+      const totalAmount = Number(booking.baseAmount);
       const callOutFee = Math.min(500, totalAmount);
       const customerRefund = totalAmount - callOutFee;
 
@@ -1535,7 +1548,7 @@ app.patch('/api/bookings/:id/cancel', requireAuth, async (req, res) => {
       cancelMessage = `Booking cancelled. LKR ${callOutFee} call-out fee credited to provider for travel, LKR ${customerRefund} refunded to customer.`;
     } else if (booking.paymentStatus === 'escrow_held') {
       // 100% full refund if cancelled before technician started work
-      const totalAmount = booking.baseAmount || 1500;
+      const totalAmount = Number(booking.baseAmount);
       await recordDisputeRefund({
         bookingId: id,
         customerId: booking.customerId,
@@ -1609,7 +1622,7 @@ app.post('/api/bookings/:id/dispute', requireAuth, async (req, res) => {
 
     const updated = await updateBooking(id, b => {
       b.status = 'disputed';
-      b.paymentStatus = 'disputed_frozen';
+      b.paymentStatus = b.paymentStatus === 'escrow_held' ? 'disputed_frozen' : b.paymentStatus;
       b.disputeReason = reasonText;
       b.disputeEvidence = evidenceText;
       b.disputedAt = new Date().toISOString();
@@ -1625,7 +1638,9 @@ app.post('/api/bookings/:id/dispute', requireAuth, async (req, res) => {
 
     res.json({
       status: 'ok',
-      message: 'Dispute submitted successfully. Escrow funds have been frozen pending administrative review.',
+      message: updated.paymentStatus === 'disputed_frozen'
+        ? 'Dispute submitted successfully. Confirmed escrow funds have been frozen pending administrative review.'
+        : 'Dispute submitted successfully. This booking has no confirmed escrow funds; an administrator will coordinate an offline resolution.',
       booking: updated
     });
   } catch (err) {
@@ -1651,7 +1666,13 @@ app.post('/api/admin/bookings/:id/arbitrate', requireAdmin, async (req, res) => 
       return res.status(404).json({ error: 'Booking not found.' });
     }
 
-    const totalAmount = booking.baseAmount || 1500;
+    if (booking.paymentStatus !== 'escrow_held') {
+      return res.status(409).json({ error: 'Financial arbitration is available only for bookings with confirmed escrow funds. Cash-settled bookings require an offline resolution record.' });
+    }
+    if (!Number.isSafeInteger(Number(booking.baseAmount)) || Number(booking.baseAmount) <= 0) {
+      return res.status(409).json({ error: 'Cannot arbitrate escrow without a valid recorded payment amount.' });
+    }
+    const totalAmount = Number(booking.baseAmount);
     let newStatus = 'completed';
     let newPaymentStatus = 'released_to_provider';
 
@@ -1671,8 +1692,8 @@ app.post('/api/admin/bookings/:id/arbitrate', requireAdmin, async (req, res) => 
         bookingId: id,
         providerId: booking.providerId,
         amount: totalAmount,
-        platformFee: booking.platformFee || 150,
-        providerPayout: booking.providerPayout || 1350
+        platformFee: Number(booking.platformFee ?? Math.round(totalAmount * 0.10)),
+        providerPayout: Number(booking.providerPayout ?? (totalAmount - Math.round(totalAmount * 0.10)))
       });
     } else if (action === 'split_50_50') {
       newStatus = 'settled_split';

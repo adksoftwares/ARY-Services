@@ -4,10 +4,10 @@ import { Card, Badge, RatingStars, EmptyState, Skeleton } from '../../design-sys
 
 export default function ProviderReviews({
   reviews = [],
-  averageRating = '5.0',
+  averageRating = '—',
   isLoading = false
 }) {
-  const roundedRating = Number(averageRating) || 5.0;
+  const roundedRating = reviews.length > 0 && Number.isFinite(Number(averageRating)) ? Number(averageRating) : null;
 
   if (isLoading) {
     return (
@@ -36,13 +36,13 @@ export default function ProviderReviews({
           minWidth: 140
         }}>
           <div style={{ fontSize: '3rem', fontWeight: 800, color: 'var(--color-neutral-900, #0f172a)', lineHeight: 1 }}>
-            {roundedRating.toFixed(1)}
+            {roundedRating != null ? roundedRating.toFixed(1) : '—'}
           </div>
-          <div style={{ margin: '8px 0 4px', display: 'flex', justifyContent: 'center' }}>
+          {roundedRating != null && <div style={{ margin: '8px 0 4px', display: 'flex', justifyContent: 'center' }}>
             <RatingStars value={Math.round(roundedRating)} readOnly size={18} />
-          </div>
+          </div>}
           <div style={{ fontSize: '0.8rem', color: 'var(--color-neutral-500, #64748b)' }}>
-            Based on {reviews.length} client review{reviews.length === 1 ? '' : 's'}
+            {reviews.length > 0 ? `Based on ${reviews.length} client review${reviews.length === 1 ? '' : 's'}` : 'No ratings yet'}
           </div>
         </div>
 

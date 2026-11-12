@@ -32,7 +32,7 @@ export default function ProviderServicesManager() {
   const [categorySlug, setCategorySlug] = useState('');
   const [serviceName, setServiceName] = useState('');
   const [description, setDescription] = useState('');
-  const [baseCharge, setBaseCharge] = useState('1500');
+  const [baseCharge, setBaseCharge] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
@@ -170,7 +170,7 @@ export default function ProviderServicesManager() {
               </Badge>
             </div>
             <p style={{ margin: '6px 0 0', fontSize: '0.82rem', color: 'var(--text-secondary, #475569)' }}>
-              Base charge: <b>LKR {(typeof currentUser?.baseCharge === 'number' ? currentUser.baseCharge : (parseFloat(String(currentUser?.baseCharge || '1500').replace(/[^0-9.]/g, '')) || 1500)).toLocaleString('en-LK')}</b>
+              Base charge: <b>{currentUser?.baseCharge || 'Quote-based pricing'}</b>
             </p>
             <div style={{ marginTop: 8, fontSize: '0.75rem', color: 'var(--brand-primary, #16a34a)', display: 'flex', alignItems: 'center', gap: 4 }}>
               <ShieldCheck size={14} /> Active in public customer search
