@@ -165,7 +165,7 @@ export default function AdminKycModal({
 
             {documents.map((doc) => {
               const Icon = doc.icon;
-              const isSelected = selectedDoc === doc.id;
+              const isSelected = currentDoc?.id === doc.id;
 
               return (
                 <button
