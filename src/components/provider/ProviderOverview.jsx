@@ -129,7 +129,7 @@ export default function ProviderOverview({
                       {b.categoryName || 'Service Request'}
                     </b>
                     <Badge variant="brand" dot={false}>
-                      {b.baseCharge || 'LKR 1,500'}
+                      {b.baseCharge || 'Quote required'}
                     </Badge>
                   </div>
                   <div className="provider-urgent-meta" style={{ fontSize: '0.82rem', color: 'var(--color-neutral-600, #475569)', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
