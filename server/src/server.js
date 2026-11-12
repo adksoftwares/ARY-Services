@@ -2068,7 +2068,7 @@ app.get('/api/ledger/booking/:bookingId', requireAuth, async (req, res) => {
     const { bookingId } = req.params;
     const booking = (await getBookings()).find(item => item.id === bookingId);
     if (!booking) return res.status(404).json({ error: 'Booking not found.' });
-    if (req.user.accountType !== 'admin' && booking.customerId !== req.user.id && booking.providerId !== req.user.id) {
+    if (!isDesignatedSuperAdmin(req.user) && booking.customerId !== req.user.id && booking.providerId !== req.user.id) {
       return res.status(403).json({ error: 'You are not allowed to view this booking ledger.' });
     }
     const entries = await getLedgerByBooking(bookingId);
