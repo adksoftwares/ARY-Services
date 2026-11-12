@@ -26,7 +26,7 @@ export default function AdminKycModal({
   onClose,
   onUpdateStatus
 }) {
-  const [selectedDoc, setSelectedDoc] = useState('nic_front');
+  const [selectedDoc, setSelectedDoc] = useState('');
   const [rejectReasonOpen, setRejectReasonOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -38,59 +38,22 @@ export default function AdminKycModal({
   const isRejected = user.status === 'rejected';
 
   const documents = [
-    {
-      id: 'nic_front',
-      title: 'NIC Front (National ID)',
+    ...(user.nicDocument ? [{
+      id: 'nic_document',
+      title: 'NIC Document',
       category: 'Identity',
       icon: CreditCard,
-      status: 'verified',
-      issuedDate: '2018-04-12',
-      details: {
-        number: user.nicNumber || '199214502831',
-        holder: user.fullName,
-        dob: '1992-05-24',
-        type: 'Sri Lankan Smart NIC'
-      }
-    },
-    {
-      id: 'nic_back',
-      title: 'NIC Back & Address',
-      category: 'Identity',
-      icon: CreditCard,
-      status: 'verified',
-      details: {
-        address: user.location || 'Colombo 03, Western Province',
-        division: 'Thimbirigasyaya DS Division',
-        barcode: 'SL-NIC-88291048'
-      }
-    },
-    {
-      id: 'license',
-      title: user.accountType === 'driver' ? 'Driving License (Class B/C1)' : 'Trade Qualification / NVQ',
-      category: user.accountType === 'driver' ? 'Permit' : 'Vocational',
+      data: user.nicDocument
+    }] : []),
+    ...(user.tradeCertificate ? [{
+      id: 'trade_certificate',
+      title: user.accountType === 'driver' ? 'Driving / Professional Licence' : 'Trade Certificate / Qualification',
+      category: user.accountType === 'driver' ? 'Driver Credential' : 'Professional Credential',
       icon: user.accountType === 'driver' ? Truck : Award,
-      status: 'verified',
-      details: {
-        regNumber: user.accountType === 'driver' ? 'B9482103' : 'NVQ-L4-EL-2021',
-        validTill: '2028-11-30',
-        issuer: user.accountType === 'driver' ? 'Dept of Motor Traffic Sri Lanka' : 'TVEC Sri Lanka'
-      }
-    },
-    {
-      id: 'proof_of_address',
-      title: 'Utility Bill / Grama Certificate',
-      category: 'Residence',
-      icon: Building,
-      status: 'verified',
-      details: {
-        provider: 'Ceylon Electricity Board (CEB)',
-        billingDate: 'Within 60 Days',
-        verifiedArea: user.location || 'Western Province, Sri Lanka'
-      }
-    }
+      data: user.tradeCertificate
+    }] : [])
   ];
-
-  const currentDoc = documents.find(d => d.id === selectedDoc) || documents[0];
+  const currentDoc = documents.find(document => document.id === selectedDoc) || documents[0] || null;
 
   async function handleApprove() {
     setIsSubmitting(true);
@@ -197,7 +160,7 @@ export default function AdminKycModal({
           {/* Document Selector List */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--color-neutral-500, #64748b)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Submitted Verification Files ({documents.length})
+              Submitted Documents ({documents.length})
             </span>
 
             {documents.map((doc) => {
@@ -240,84 +203,53 @@ export default function AdminKycModal({
                       <span style={{ fontSize: '0.72rem', color: 'var(--color-neutral-400, #94a3b8)' }}>{doc.category}</span>
                     </div>
                   </div>
-                  <CheckCircle2 size={14} color="#059669" />
+                  <FileText size={14} color="#64748b" />
                 </button>
               );
             })}
           </div>
 
-          {/* Document Preview Canvas */}
+          {/* Submitted Document Preview */}
           <div style={{
             background: 'var(--color-surface, #ffffff)',
             border: '1px solid var(--color-border-subtle, #e2e8f0)',
             borderRadius: 'var(--radius-lg, 12px)',
             padding: '18px',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between'
+            minHeight: 260
           }}>
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-                <div>
-                  <h4 style={{ margin: 0, fontSize: '0.98rem', color: 'var(--color-text, #0f172a)' }}>
-                    {currentDoc.title}
-                  </h4>
-                  <p style={{ margin: '2px 0 0', fontSize: '0.76rem', color: 'var(--color-neutral-500, #64748b)' }}>
-                    High-resolution encrypted capture · Held in ephemeral runtime memory
-                  </p>
-                </div>
-                <Badge variant="success" dot={true}>
-                  Tamper-Check Passed
-                </Badge>
-              </div>
-
-              {/* Document Visual Render Card */}
-              <div style={{
-                background: 'linear-gradient(135deg, #174d3d 0%, #0d2e24 100%)',
-                color: '#ffffff',
-                borderRadius: 'var(--radius-md, 10px)',
-                padding: '22px',
-                boxShadow: '0 8px 24px rgba(23,77,61,0.18)',
-                position: 'relative',
-                overflow: 'hidden',
-                minHeight: '180px'
-              }}>
-                <div style={{
-                  position: 'absolute',
-                  top: -20,
-                  right: -20,
-                  width: 120,
-                  height: 120,
-                  borderRadius: '50%',
-                  background: 'rgba(255,255,255,0.06)'
-                }} />
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+            {currentDoc ? (
+              <>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, marginBottom: 14 }}>
                   <div>
-                    <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#a3d1ba', fontWeight: 700 }}>
-                      Democratic Socialist Republic of Sri Lanka
-                    </span>
-                    <h3 style={{ margin: '4px 0 0', fontSize: '1.05rem', color: '#ffffff' }}>
-                      {currentDoc.title}
-                    </h3>
+                    <h4 style={{ margin: 0, fontSize: '0.98rem', color: 'var(--color-text, #0f172a)' }}>{currentDoc.title}</h4>
+                    <p style={{ margin: '3px 0 0', fontSize: '0.76rem', color: 'var(--color-neutral-500, #64748b)' }}>
+                      Uploaded by applicant · {currentDoc.category}
+                    </p>
                   </div>
-                  <ShieldCheck size={28} color="#d18b54" />
+                  <Badge variant="info" dot={false}>SUBMITTED</Badge>
                 </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12, fontSize: '0.82rem', marginTop: 14 }}>
-                  {Object.entries(currentDoc.details).map(([key, value]) => (
-                    <div key={key}>
-                      <span style={{ fontSize: '0.7rem', color: '#a3d1ba', textTransform: 'capitalize', display: 'block' }}>
-                        {key.replace(/([A-Z])/g, ' $1')}
-                      </span>
-                      <b style={{ color: '#ffffff' }}>{String(value)}</b>
-                    </div>
-                  ))}
-                </div>
+                {typeof currentDoc.data === 'string' && currentDoc.data.startsWith('data:image/') ? (
+                  <img src={currentDoc.data} alt={currentDoc.title} style={{ display: 'block', maxWidth: '100%', maxHeight: 460, objectFit: 'contain', margin: '0 auto', borderRadius: 8 }} />
+                ) : typeof currentDoc.data === 'string' && currentDoc.data.startsWith('data:application/pdf') ? (
+                  <iframe title={currentDoc.title} src={currentDoc.data} style={{ width: '100%', height: 460, border: '1px solid var(--color-border-subtle, #e2e8f0)', borderRadius: 8 }} />
+                ) : (
+                  <div style={{ padding: 24, textAlign: 'center', color: 'var(--color-neutral-600, #475569)' }}>
+                    <FileText size={28} />
+                    <p>Document data is present but cannot be previewed in this format.</p>
+                    <a href={currentDoc.data} target="_blank" rel="noreferrer">Open submitted document</a>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div style={{ minHeight: 220, display: 'grid', placeContent: 'center', textAlign: 'center', color: 'var(--color-neutral-600, #475569)', gap: 8 }}>
+                <AlertTriangle size={28} color="#d97706" />
+                <b>No verification files uploaded</b>
+                <span style={{ fontSize: '0.82rem' }}>The applicant has not submitted an NIC or trade / driving credential file. Review the available profile details and request the missing documents before approval.</span>
               </div>
-            </div>
+            )}
+          </div>
 
-            {/* Bottom Security Note */}
+            {/* Review integrity note */}
             <div style={{
               marginTop: 16,
               padding: '10px 14px',
@@ -331,7 +263,7 @@ export default function AdminKycModal({
             }}>
               <AlertTriangle size={14} color="#d97706" style={{ flexShrink: 0 }} />
               <span>
-                Personal Data Protection Act (PDPA No. 9 of 2022) compliant: Sensitive identity documents are reviewed in-session and never persisted into browser localStorage.
+                Only the files submitted by this applicant are shown here. The platform does not independently verify document authenticity; administrators must review the originals before approving.
               </span>
             </div>
           </div>
