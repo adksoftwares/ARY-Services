@@ -2065,6 +2065,8 @@ app.get('/api/admin/users', requireAdmin, async (_req, res) => {
       categoryName: u.categoryName || null,
       baseCharge: u.baseCharge || null,
       nicNumber: u.nicNumber || null,
+      nsnNumber: u.nsnNumber || null,
+      operatingMode: u.operatingMode || null,
       nicDocument: u.nicDocument || null,
       tradeCertificate: u.tradeCertificate || null,
       kycStatus: u.kycStatus || (u.accountType === 'provider' ? 'unverified' : 'verified'),
