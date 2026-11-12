@@ -252,17 +252,23 @@ async function requireAuth(req, res, next) {
   }
 }
 
+function isDesignatedSuperAdmin(user) {
+  if (!user || user.accountType !== 'admin') return false;
+  const configuredSuperAdminId = String(process.env.SUPER_ADMIN_USER_ID || '').trim();
+  const configuredSuperAdminEmail = String(process.env.SUPER_ADMIN_EMAIL || (process.env.NODE_ENV === 'production' ? process.env.ADMIN_EMAIL : '') || '').trim().toLowerCase();
+  if (configuredSuperAdminId) return user.id === configuredSuperAdminId;
+  if (configuredSuperAdminEmail) return String(user.email || '').toLowerCase() === configuredSuperAdminEmail;
+  return process.env.NODE_ENV !== 'production';
+}
+
 async function requireAdmin(req, res, next) {
   await requireAuth(req, res, () => {
     const configuredSuperAdminId = String(process.env.SUPER_ADMIN_USER_ID || '').trim();
     const configuredSuperAdminEmail = String(process.env.SUPER_ADMIN_EMAIL || (process.env.NODE_ENV === 'production' ? process.env.ADMIN_EMAIL : '') || '').trim().toLowerCase();
-    const isConfiguredSuperAdmin = configuredSuperAdminId
-      ? req.user.id === configuredSuperAdminId
-      : configuredSuperAdminEmail && String(req.user.email || '').toLowerCase() === configuredSuperAdminEmail;
     if (process.env.NODE_ENV === 'production' && !configuredSuperAdminId && !configuredSuperAdminEmail) {
       return res.status(503).json({ error: 'Super Admin is not configured. Set SUPER_ADMIN_USER_ID or SUPER_ADMIN_EMAIL (or the bootstrap ADMIN_EMAIL) before enabling Admin access.' });
     }
-    if (req.user.accountType !== 'admin' || ((configuredSuperAdminId || configuredSuperAdminEmail) && !isConfiguredSuperAdmin)) {
+    if (!isDesignatedSuperAdmin(req.user)) {
       return res.status(403).json({ error: 'Access denied. Super Admin privileges required.' });
     }
     next();
@@ -1138,7 +1144,7 @@ app.get('/api/bookings', requireAuth, async (req, res) => {
     const allBookings = await getBookings();
 
     let userBookings = [];
-    if (accountType === 'admin') {
+    if (isDesignatedSuperAdmin(req.user)) {
       userBookings = allBookings;
     } else if (accountType === 'provider') {
       // Only immutable account IDs grant access to assigned or broadcast jobs.
@@ -1292,7 +1298,8 @@ app.patch('/api/bookings/:id/status', requireAuth, async (req, res) => {
 
     // Role-based authorization for booking changes
     const isProviderMatch = booking.providerId === userId;
-    if (accountType !== 'admin' && (accountType !== 'provider' || !isProviderMatch)) {
+    const isAdmin = isDesignatedSuperAdmin(req.user);
+    if (!isAdmin && (accountType !== 'provider' || !isProviderMatch)) {
       return res.status(403).json({ error: 'Only the assigned provider or Admin can update service booking progress.' });
     }
     const allowedTransitions = {
@@ -1301,7 +1308,7 @@ app.patch('/api/bookings/:id/status', requireAuth, async (req, res) => {
       accepted: ['in_progress', 'rejected'],
       in_progress: ['completed']
     };
-    if (accountType !== 'admin' && !allowedTransitions[booking.status]?.includes(status)) {
+    if (!isAdmin && !allowedTransitions[booking.status]?.includes(status)) {
       return res.status(409).json({ error: `Cannot move a ${booking.status} booking to ${status}.` });
     }
 
@@ -1477,7 +1484,7 @@ app.patch('/api/bookings/:id/reschedule', requireAuth, async (req, res) => {
     const bookings = await getBookings();
     const booking = bookings.find(item => item.id === req.params.id);
     if (!booking) return res.status(404).json({ error: 'Booking not found.' });
-    const isAdmin = req.user.accountType === 'admin';
+    const isAdmin = isDesignatedSuperAdmin(req.user);
     if (!isAdmin && (req.user.accountType !== 'provider' || booking.providerId !== req.user.id)) {
       return res.status(403).json({ error: 'Only the assigned provider or Admin can decide this request.' });
     }
@@ -1519,7 +1526,8 @@ app.patch('/api/bookings/:id/cancel', requireAuth, async (req, res) => {
     const isProviderMatch = booking.providerId === userId;
     const isCustomerMatch = booking.customerId === userId;
 
-    if (accountType !== 'admin' && !isCustomerMatch && !isProviderMatch) {
+    const isAdmin = isDesignatedSuperAdmin(req.user);
+    if (!isAdmin && !isCustomerMatch && !isProviderMatch) {
       return res.status(403).json({ error: 'You are not authorized to cancel this booking.' });
     }
 
@@ -1613,7 +1621,8 @@ app.post('/api/bookings/:id/dispute', requireAuth, async (req, res) => {
 
     const isCustomerMatch = booking.customerId === userId;
 
-    if (accountType !== 'admin' && !isCustomerMatch) {
+    const isAdmin = isDesignatedSuperAdmin(req.user);
+    if (!isAdmin && !isCustomerMatch) {
       return res.status(403).json({ error: 'You are only authorized to dispute bookings under your own account.' });
     }
 
@@ -2019,7 +2028,7 @@ app.get('/api/reviews/booking/:bookingId', requireAuth, async (req, res) => {
     const { bookingId } = req.params;
     const booking = (await getBookings()).find(item => item.id === bookingId);
     if (!booking) return res.status(404).json({ error: 'Booking not found.' });
-    if (req.user.accountType !== 'admin' && booking.customerId !== req.user.id && booking.providerId !== req.user.id) {
+    if (!isDesignatedSuperAdmin(req.user) && booking.customerId !== req.user.id && booking.providerId !== req.user.id) {
       return res.status(403).json({ error: 'You are not allowed to view this booking review.' });
     }
     const review = await getReviewByBooking(bookingId);
@@ -2039,7 +2048,7 @@ app.get('/api/ledger/wallet', requireAuth, async (req, res) => {
     const providerAccount = `provider:${userId}:wallet`;
     const walletBalance = await getWalletBalance(providerAccount);
     const allEntries = await getLedgerEntries();
-    const myEntries = allEntries.filter(e => e.account.includes(userId) || (req.user.accountType === 'admin'));
+    const myEntries = allEntries.filter(e => e.account.includes(userId) || isDesignatedSuperAdmin(req.user));
 
     res.json({
       status: 'ok',
