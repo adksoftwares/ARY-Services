@@ -141,13 +141,15 @@ export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadc
     // not merely to self-registration. Keep account pending until one network is approved.
     const users=await getUsers();
     const driver=users.find(user=>user.id===a.userId);
+    let updatedDriverStatus = null;
     if(driver){
       const state=await readJobs();
       const applications=state.applications.filter(item=>item.userId===a.userId);
       const hasApproved=applications.some(item=>item.status==='approved');
       const hasPending=applications.some(item=>item.status==='pending');
+      updatedDriverStatus=hasApproved?'active':(hasPending?'pending':'rejected');
       await updateUser(driver.id,user=>{
-        user.status=hasApproved?'active':(hasPending?'pending':'rejected');
+        user.status=updatedDriverStatus;
         user.driverApprovedServices=applications.filter(item=>item.status==='approved').map(item=>item.driverType);
         user.driverApplicationStatus=hasApproved?'approved':(hasPending?'pending':'rejected');
         user.driverReviewedAt=new Date().toISOString();
@@ -155,7 +157,7 @@ export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadc
       });
     }
     broadcastEvent?.('driver:application_reviewed',{userId:a.userId,application:a});
-    res.json({application:a,accountStatus:driver?(driver.status==='active'?'active':status):null});
+    res.json({application:a,accountStatus:updatedDriverStatus});
   });
   app.post('/api/food-deliveries',requireAuth,async(req,res)=>{
     if(req.user.accountType!=='customer')return res.status(403).json({error:'Customer account required.'});
