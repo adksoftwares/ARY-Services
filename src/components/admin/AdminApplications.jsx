@@ -90,7 +90,7 @@ export default function AdminApplications({
         status: d.status || 'pending',
         appliedAt: d.createdAt || d.requestedAt || new Date().toISOString(),
         details: d,
-        nicNumber: d.nicNumber || '199104829103'
+        nicNumber: d.nicNumber || 'Not provided'
       });
     }
 
@@ -108,7 +108,7 @@ export default function AdminApplications({
         status: r.status || 'pending',
         appliedAt: r.requestedAt || r.application?.requestedAt || new Date().toISOString(),
         details: r.application?.details || {},
-        nicNumber: r.application?.details?.nicNumber || '199214502831'
+        nicNumber: r.application?.details?.nicNumber || 'Not provided'
       });
     }
 
@@ -131,7 +131,7 @@ export default function AdminApplications({
               location: u.location,
               categoryName: u.categoryName || u.category
             },
-            nicNumber: u.nicNumber || '199014829012'
+            nicNumber: u.nicNumber || 'Not provided'
           });
         }
       }
@@ -144,7 +144,9 @@ export default function AdminApplications({
         !q ||
         item.applicantName?.toLowerCase().includes(q) ||
         item.phone?.toLowerCase().includes(q) ||
-        item.serviceNetwork?.toLowerCase().includes(q);
+        item.serviceNetwork?.toLowerCase().includes(q) ||
+        item.email?.toLowerCase().includes(q) ||
+        item.nicNumber?.toLowerCase().includes(q);
 
       const matchType =
         typeFilter === 'all' ||
