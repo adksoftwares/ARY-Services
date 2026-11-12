@@ -702,32 +702,54 @@ export async function recordCallOutFeeCompensation({ bookingId, customerId, prov
 }
 
 export async function recordPayoutSettlement({ batchId, providerId, amount, bankReference = '' }) {
-  const timestamp = new Date().toISOString();
-  const txId = `tx-payout-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-  const entries = [
-    {
-      id: `entry-${Date.now()}-po1`,
-      transactionId: txId,
-      account: `provider:${providerId}:wallet`,
-      type: 'debit',
-      amount: Number(amount),
-      currency: 'LKR',
-      description: `Confirmed bank transfer batch #${batchId.slice(-8)}${bankReference ? ` | Bank reference ${bankReference}` : ''}`,
-      timestamp
-    },
-    {
-      id: `entry-${Date.now()}-po2`,
-      transactionId: txId,
-      account: 'bank:external_provider_settlement',
-      type: 'credit',
-      amount: Number(amount),
-      currency: 'LKR',
-      description: `External bank transfer recorded for provider #${providerId}${bankReference ? ` | Bank reference ${bankReference}` : ''}`,
-      timestamp
+  return ledgerLock.acquire(async () => {
+    const current = activePostgresPool
+      ? await readJsonArray(ledgerFile)
+      : cachedLedger !== null
+        ? cachedLedger
+        : await (async () => {
+            try { return await readJsonArray(ledgerFile); } catch { return []; }
+          })();
+    const account = `provider:${providerId}:wallet`;
+    if (bankReference && current.some(entry => entry.account === account && String(entry.description || '').includes(`Bank reference ${bankReference}`))) {
+      throw new Error('This bank transfer reference has already been recorded.');
     }
-  ];
-  await addLedgerEntries(entries);
-  return { transactionId: txId, entries };
+    const balance = current
+      .filter(entry => entry.account === account)
+      .reduce((total, entry) => total + (entry.type === 'credit' ? Number(entry.amount) : -Number(entry.amount)), 0);
+    const payoutAmount = Number(amount);
+    if (!Number.isFinite(payoutAmount) || payoutAmount <= 0 || payoutAmount > balance) {
+      throw new Error('The payout amount is invalid or exceeds the current wallet balance.');
+    }
+    const timestamp = new Date().toISOString();
+    const txId = `tx-payout-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    const entries = [
+      {
+        id: `entry-${Date.now()}-po1`,
+        transactionId: txId,
+        account,
+        type: 'debit',
+        amount: payoutAmount,
+        currency: 'LKR',
+        description: `Confirmed bank transfer batch #${batchId.slice(-8)}${bankReference ? ` | Bank reference ${bankReference}` : ''}`,
+        timestamp
+      },
+      {
+        id: `entry-${Date.now()}-po2`,
+        transactionId: txId,
+        account: 'bank:external_provider_settlement',
+        type: 'credit',
+        amount: payoutAmount,
+        currency: 'LKR',
+        description: `External bank transfer recorded for provider #${providerId}${bankReference ? ` | Bank reference ${bankReference}` : ''}`,
+        timestamp
+      }
+    ];
+    const next = [...entries, ...current];
+    cachedLedger = next;
+    await atomicWriteJson(ledgerFile, next);
+    return { transactionId: txId, entries };
+  });
 }
 
 let activePostgresPool = null;
