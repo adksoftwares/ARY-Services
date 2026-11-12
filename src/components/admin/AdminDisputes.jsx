@@ -35,7 +35,7 @@ export default function AdminDisputes({
   }
 
   function calculateLedgerPreview(amount, action) {
-    const total = Number(amount) || 1500;
+    const total = Number.isFinite(Number(amount)) && Number(amount) > 0 ? Number(amount) : 0;
     if (action === 'refund_customer') {
       return {
         customerRefund: total,
@@ -112,7 +112,7 @@ export default function AdminDisputes({
       ) : (
         <div style={{ display: 'grid', gap: '16px' }}>
           {disputedBookings.map(b => {
-            const rawCharge = b.baseAmount || parseInt(String(b.baseCharge || '1500').replace(/\D/g, ''), 10) || 1500;
+            const rawCharge = Number(b.baseAmount ?? String(b.baseCharge || '').replace(/[^0-9]/g, '')) || 0;
 
             return (
               <Card
