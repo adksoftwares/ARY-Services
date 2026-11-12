@@ -1194,20 +1194,20 @@ app.post('/api/bookings', requireAuth, async (req, res) => {
     const provider = users.find(u => u.id === providerId && (u.accountType === 'provider' || (Array.isArray(u.roles) && u.roles.includes('provider'))) && (u.accountType === 'provider' ? u.status === 'active' : u.providerStatus === 'active'));
     if (!provider) return res.status(404).json({ error: 'Selected approved service provider was not found.' });
     const selectedService = (provider.approvedServices || []).find(service => service.categorySlug === categorySlug);
-    const selectedCharge = selectedService?.baseCharge ?? provider.baseCharge ?? '1500';
+    const selectedCharge = selectedService?.baseCharge ?? provider.baseCharge ?? null;
 
-    // Escrow & Financial Commission Calculations (10% platform commission, 90% provider payout)
-    const rawDigits = String(selectedCharge).replace(/[^0-9]/g, '');
-    const baseAmount = parseInt(rawDigits, 10) || 1500;
-    const platformFee = Math.round(baseAmount * 0.10);
-    const providerPayout = baseAmount - platformFee;
+    // Use a quote-required booking when the provider has not published a starting charge.
+    const rawDigits = String(selectedCharge ?? '').replace(/[^0-9]/g, '');
+    const baseAmount = Number.parseInt(rawDigits, 10) || 0;
+    const platformFee = baseAmount > 0 ? Math.round(baseAmount * 0.10) : 0;
+    const providerPayout = baseAmount > 0 ? baseAmount - platformFee : 0;
     const paymentMethod = req.body.paymentMethod === 'escrow_online' ? 'escrow_online' : 'cash';
     if (paymentMethod === 'escrow_online') {
       return res.status(503).json({
         error: 'Online escrow is temporarily unavailable until the ARY PayHere merchant account and verified payment callback are configured. Please choose Direct Cash.'
       });
     }
-    const paymentStatus = 'pending_cash';
+    const paymentStatus = baseAmount > 0 ? 'pending_cash' : 'pending_quote';
 
     const newBooking = {
       id: 'book-' + crypto.randomUUID(),
@@ -1224,7 +1224,8 @@ app.post('/api/bookings', requireAuth, async (req, res) => {
       bookingDate: chosenDate,
       bookingTime: bookingTime || 'Morning (9 AM - 12 PM)',
       problemDescription: cleanProblem,
-      baseCharge: 'LKR ' + baseAmount.toLocaleString('en-LK'),
+      baseCharge: baseAmount > 0 ? 'LKR ' + baseAmount.toLocaleString('en-LK') : 'Quote required',
+      quoteRequired: baseAmount <= 0,
       baseAmount,
       platformFee,
       providerPayout,
