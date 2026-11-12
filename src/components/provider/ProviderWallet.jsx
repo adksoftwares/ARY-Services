@@ -145,10 +145,10 @@ export default function ProviderWallet({
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <Landmark size={20} color="#f6ad55" />
-            <b style={{ fontSize: '1.05rem', color: '#ffffff', letterSpacing: '0.02em' }}>CEFT Direct Bank Payout</b>
+            <b style={{ fontSize: '1.05rem', color: '#ffffff', letterSpacing: '0.02em' }}>Bank Transfer Information</b>
           </div>
           <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: '#e2e8f0', opacity: 0.9 }}>
-            View your available earnings. Bank transfers are prepared by ARY administrators after your bank details are verified.
+            View your available earnings. Bank transfers are prepared by ARY administrators after your bank details are recorded.
           </p>
         </div>
         <Button
