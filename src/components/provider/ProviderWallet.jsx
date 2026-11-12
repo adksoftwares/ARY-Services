@@ -26,19 +26,14 @@ export default function ProviderWallet({
 
   const completedBookings = useMemo(() => bookings.filter(b => b.status === 'completed'), [bookings]);
 
-  const totalEarnedPayout = useMemo(() => {
-    const walletAccount = `provider:${currentUser?.id}:wallet`;
-    return ledgerEntries
-      .filter(entry => entry.account === walletAccount && entry.type === 'credit')
-      .reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
-  }, [ledgerEntries, currentUser?.id]);
+
 
   const pendingEscrowPayout = useMemo(() => {
     return bookings
       .filter(b => b.paymentStatus === 'escrow_held' && b.status !== 'completed')
       .reduce((sum, b) => {
         const charge = Number(b.baseAmount ?? String(b.baseCharge || '').replace(/[^0-9.]/g, ''));
-      return sum + Number(b.providerPayout ?? (Number.isFinite(charge) ? Math.round(charge * 0.9) : 0));
+        return sum + Number(b.providerPayout ?? (Number.isFinite(charge) ? Math.round(charge * 0.9) : 0));
       }, 0);
   }, [bookings]);
 
@@ -218,9 +213,9 @@ export default function ProviderWallet({
               </thead>
               <tbody>
                 {bookings.map(b => {
-                  const base = b.baseAmount || parseInt(String(b.baseCharge).replace(/\D/g, '')) || 1500;
-                  const fee = b.platformFee || Math.round(base * 0.1);
-                  const net = b.providerPayout || (base - fee);
+                  const base = Number(b.baseAmount ?? String(b.baseCharge || '').replace(/[^0-9.]/g, '')) || 0;
+                  const fee = Number(b.platformFee ?? Math.round(base * 0.1));
+                  const net = Number(b.providerPayout ?? Math.max(0, base - fee));
 
                   return (
                     <tr key={b.id} style={{ borderBottom: '1px solid var(--color-border-subtle, #f8fafc)' }}>
