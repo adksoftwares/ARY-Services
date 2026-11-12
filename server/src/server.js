@@ -1548,7 +1548,7 @@ app.patch('/api/bookings/:id/cancel', requireAuth, async (req, res) => {
       cancelMessage = `Booking cancelled. LKR ${callOutFee} call-out fee credited to provider for travel, LKR ${customerRefund} refunded to customer.`;
     } else if (booking.paymentStatus === 'escrow_held') {
       // 100% full refund if cancelled before technician started work
-      const totalAmount = booking.baseAmount || 1500;
+      const totalAmount = Number(booking.baseAmount);
       await recordDisputeRefund({
         bookingId: id,
         customerId: booking.customerId,
