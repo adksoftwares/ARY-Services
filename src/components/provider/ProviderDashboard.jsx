@@ -271,7 +271,7 @@ export default function ProviderDashboard({
 
   const averageRating = providerReviews.length > 0
     ? (providerReviews.reduce((sum, r) => sum + Number(r.rating || 0), 0) / providerReviews.length).toFixed(1)
-    : (currentUser?.rating ? Number(currentUser.rating).toFixed(1) : '5.0');
+    : (currentUser?.reviewCount > 0 && currentUser?.rating != null ? Number(currentUser.rating).toFixed(1) : '—');
 
   // Navigation Items Definition
   const navItems = [
