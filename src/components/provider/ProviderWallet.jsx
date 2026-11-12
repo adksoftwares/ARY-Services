@@ -70,10 +70,10 @@ export default function ProviderWallet({
             <CheckCircle2 size={16} color="var(--color-brand-600, #174d3d)" /> Net Earnings (Released)
           </span>
           <div style={{ fontSize: '1.9rem', fontWeight: 800, color: 'var(--color-brand-700, #174d3d)', marginTop: 6, letterSpacing: '-0.02em' }}>
-            LKR {totalEarnedPayout.toLocaleString()}
+            LKR {Number(walletBalance || 0).toLocaleString()}
           </div>
           <small style={{ fontSize: '0.75rem', color: 'var(--color-brand-700, #1b5e4b)' }}>
-            From {completedBookings.length} completed job{completedBookings.length === 1 ? '' : 's'} (90% payout)
+            Available balance from your wallet ledger
           </small>
         </Card>
 
