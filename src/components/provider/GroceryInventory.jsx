@@ -145,6 +145,7 @@ export default function GroceryInventory() {
 
   function handleFieldChange(field, value) {
     if (field === 'packSize' && value === 'custom') {
+      setCatalogChoice('');
       setForm(prev => ({ ...prev, packSize: '' }));
       return;
     }
