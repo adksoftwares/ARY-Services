@@ -718,7 +718,7 @@ export async function recordPayoutSettlement({ batchId, providerId, amount, bank
     {
       id: `entry-${Date.now()}-po2`,
       transactionId: txId,
-      account: 'bank:commercial_bank_settlement',
+      account: 'bank:external_provider_settlement',
       type: 'credit',
       amount: Number(amount),
       currency: 'LKR',
