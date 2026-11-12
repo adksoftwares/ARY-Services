@@ -23,7 +23,7 @@ export default function DriverEarningsSummary({
 
   const totalEarnings = useMemo(() => {
     return completedJobs.reduce((sum, j) => {
-      return sum + (Number(j.fare) || Number(j.baseCharge) || 650);
+      return sum + (Number(j.fare ?? j.baseCharge) || 0);
     }, 0);
   }, [completedJobs]);
 
@@ -58,7 +58,7 @@ export default function DriverEarningsSummary({
               <CheckCircle2 size={16} />
             </div>
             <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-neutral-600, #475569)' }}>
-              Completed Trips
+              Completed Jobs
             </span>
           </div>
           <div style={{ fontSize: '1.7rem', fontWeight: 800, color: 'var(--text-primary, #f8fafc)', letterSpacing: '-0.02em' }}>
@@ -87,14 +87,14 @@ export default function DriverEarningsSummary({
               <DollarSign size={16} />
             </div>
             <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-brand-800, #154636)' }}>
-              Earned Payout
+              Recorded Fares
             </span>
           </div>
           <div style={{ fontSize: '1.7rem', fontWeight: 800, color: 'var(--color-brand-700, #174d3d)', letterSpacing: '-0.02em' }}>
             LKR {totalEarnings.toLocaleString()}
           </div>
           <small style={{ fontSize: '0.72rem', color: 'var(--color-brand-700, #1b5e4b)' }}>
-            Settled via wallet & cash on delivery
+            Completed-job fare records; this is not a bank payout confirmation.
           </small>
         </Card>
 
@@ -141,7 +141,7 @@ export default function DriverEarningsSummary({
                 options={[
                   { value: 'all', label: 'All' },
                   { value: 'ride', label: 'Rides' },
-                  { value: 'food_delivery', label: 'Food' },
+                  { value: 'food_delivery', label: 'Shop & Grocery' },
                   { value: 'parcel_delivery', label: 'Parcels' }
                 ]}
                 value={historyFilter}
@@ -153,7 +153,7 @@ export default function DriverEarningsSummary({
           {filteredHistory.length > 0 ? (
             <div style={{ display: 'grid', gap: 10 }}>
               {filteredHistory.map(job => {
-                const fare = Number(job.fare) || Number(job.baseCharge) || 650;
+                const fare = Number(job.fare ?? job.baseCharge) || null;
                 const Icon = job.serviceType === 'food_delivery' ? PackageCheck : job.serviceType === 'parcel_delivery' ? Package : Bike;
 
                 return (
@@ -196,7 +196,7 @@ export default function DriverEarningsSummary({
 
                     <div style={{ textAlign: 'right' }}>
                       <b style={{ fontSize: '0.95rem', color: 'var(--color-success-700, #047857)' }}>
-                        LKR {fare.toLocaleString()}
+                        {fare != null ? `LKR ${fare.toLocaleString()}` : 'Fare not recorded'}
                       </b>
                       <div style={{ fontSize: '0.72rem', color: 'var(--color-neutral-400, #94a3b8)' }}>
                         {new Date(job.updatedAt || job.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
