@@ -55,7 +55,7 @@ export default function AuthModal({ onNotice }) {
   const [regNicNumber, setRegNicNumber] = useState('');
   const [regNicDoc, setRegNicDoc] = useState('');
   const [regTradeCert, setRegTradeCert] = useState('');
-  const [regDriverServices, setRegDriverServices] = useState(['food_delivery']);
+  const [regDriverServices, setRegDriverServices] = useState([]);
 
   function handleFileUpload(e, setter) {
     const file = e.target.files?.[0];
@@ -105,6 +105,11 @@ export default function AuthModal({ onNotice }) {
     const cleanPhoneDigits = regPhone.trim().replace(/[\s-]/g, '');
     if (!cleanPhoneDigits) {
       setAuthError('Mobile number is required.');
+      setIsSubmitting(false);
+      return;
+    }
+    if (regAccountType === 'driver' && regDriverServices.length === 0) {
+      setAuthError('Choose Passenger Ride, Shop & Grocery Delivery, or both.');
       setIsSubmitting(false);
       return;
     }
