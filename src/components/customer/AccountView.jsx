@@ -35,7 +35,7 @@ export default function AccountView({ onNotice, onClose }) {
   const [operatingMode, setOperatingMode] = useState('mobile');
   const [nsnNumber, setNsnNumber] = useState('');
   const [baseCharge, setBaseCharge] = useState('');
-  const [driverServices, setDriverServices] = useState(['ride']);
+  const [driverServices, setDriverServices] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [upgradeError, setUpgradeError] = useState('');
 
@@ -54,8 +54,12 @@ export default function AccountView({ onNotice, onClose }) {
 
   async function handleRoleSubmit(e) {
     e.preventDefault();
-    setIsSubmitting(true);
     setUpgradeError('');
+    if (roleToApply === 'driver' && driverServices.length === 0) {
+      setUpgradeError('Choose at least one driver service network.');
+      return;
+    }
+    setIsSubmitting(true);
 
     try {
       const details = roleToApply === 'provider'
