@@ -117,8 +117,9 @@ export default function BookingModal({
     try {
       const payload = {
         providerId: provider.id,
-        categorySlug: selectedCategory?.slug || provider.category || 'general',
-        categoryName: selectedCategory?.name || provider.categoryName || 'General Service',
+        categorySlug: provider.selectedService?.categorySlug || selectedCategory?.slug || provider.category || 'general',
+        categoryName: provider.selectedService?.categoryName || selectedCategory?.name || provider.categoryName || 'General Service',
+        serviceId: provider.selectedService?.id && provider.selectedService.id !== 'primary' ? provider.selectedService.id : undefined,
         serviceAddress: bookingAddress.trim() || currentUser.location || 'Local Area',
         bookingDate,
         bookingTime: bookingTimeSlot,
@@ -232,7 +233,7 @@ export default function BookingModal({
           <div className="wizard-step-pane">
             <div className="provider-quick-card">
               <b>{provider.fullName}</b>
-              <span>{selectedCategory?.name || provider.categoryName || 'Trades Specialist'} • Starting at {provider.baseCharge || 'Quote required'}</span>
+              <span>{provider.selectedService?.serviceName || selectedCategory?.name || provider.categoryName || 'Trades Specialist'} • Starting at {provider.selectedService?.baseCharge ? `LKR ${Number(provider.selectedService.baseCharge).toLocaleString('en-LK')}` : provider.baseCharge || 'Quote required'}</span>
             </div>
 
             <label className="wizard-form-label">
