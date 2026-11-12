@@ -1179,7 +1179,7 @@ app.post('/api/bookings', requireAuth, async (req, res) => {
     const customer = req.user;
     if (!['customer', 'provider', 'admin'].includes(customer.accountType)) return res.status(403).json({ error: 'An active account is required to create a service booking.' });
     const {
-      providerId, categorySlug, serviceAddress, bookingDate, bookingTime, problemDescription
+      providerId, categorySlug, serviceId, serviceAddress, bookingDate, bookingTime, problemDescription
     } = req.body || {};
     const cleanAddress = String(serviceAddress || '').trim().slice(0, 500);
     const cleanProblem = String(problemDescription || '').trim().slice(0, 2000);
@@ -1197,8 +1197,14 @@ app.post('/api/bookings', requireAuth, async (req, res) => {
     const users = await getUsers();
     const provider = users.find(u => u.id === providerId && (u.accountType === 'provider' || (Array.isArray(u.roles) && u.roles.includes('provider'))) && (u.accountType === 'provider' ? u.status === 'active' : u.providerStatus === 'active'));
     if (!provider) return res.status(404).json({ error: 'Selected approved service provider was not found.' });
-    const selectedService = (provider.approvedServices || []).find(service => service.categorySlug === categorySlug);
-    const selectedCharge = selectedService?.baseCharge ?? provider.baseCharge ?? null;
+    const selectedService = serviceId
+      ? (provider.approvedServices || []).find(service => service.id === serviceId)
+      : null;
+    if (serviceId && !selectedService) {
+      return res.status(404).json({ error: 'The selected service offering is not approved or is no longer available.' });
+    }
+    const resolvedCategorySlug = selectedService?.categorySlug || categorySlug || provider.category || 'general';
+    const selectedCharge = selectedService ? selectedService.baseCharge : provider.baseCharge;
 
     // Use a quote-required booking when the provider has not published a starting charge.
     const rawDigits = String(selectedCharge ?? '').replace(/[^0-9]/g, '');
@@ -1221,8 +1227,9 @@ app.post('/api/bookings', requireAuth, async (req, res) => {
       providerId: provider.id,
       providerName: provider.fullName,
       providerPhone: provider.phone,
-      categorySlug: categorySlug || provider.category || 'general',
-      categoryName: selectedService?.categoryName || (provider.category === categorySlug ? provider.categoryName : PROVIDER_SERVICE_CATEGORIES.get(categorySlug)) || 'General Services',
+      categorySlug: resolvedCategorySlug,
+      categoryName: selectedService?.categoryName || (provider.category === resolvedCategorySlug ? provider.categoryName : PROVIDER_SERVICE_CATEGORIES.get(resolvedCategorySlug)) || 'General Services',
+      serviceId: selectedService?.id || null,
       serviceName: selectedService?.serviceName || provider.categoryName || 'General Service',
       serviceAddress: cleanAddress,
       bookingDate: chosenDate,
