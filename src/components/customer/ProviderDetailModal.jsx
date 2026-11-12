@@ -24,18 +24,13 @@ export default function ProviderDetailModal({
 }) {
   if (!isOpen || !provider) return null;
 
-  const services = provider.approvedServices || [
-    {
-      id: 'default',
-      serviceName: provider.categoryName || selectedCategory?.name || 'Standard Service',
-      baseCharge: provider.baseCharge || 'LKR 1,500',
-      description: 'Standard on-site inspection, diagnostics, and workmanship.'
-    }
-  ];
-
-  const rating = Number(provider.rating) || 5.0;
-  const reviewCount = provider.reviewCount ?? 14;
-  const experienceYears = provider.experienceYears || 3;
+  const services = Array.isArray(provider.approvedServices) && provider.approvedServices.length > 0
+    ? provider.approvedServices
+    : [{ id: 'primary', serviceName: provider.categoryName || selectedCategory?.name || 'Primary Service', baseCharge: provider.baseCharge || null, description: '' }];
+  const reviewCount = Number(provider.reviewCount) || 0;
+  const rating = reviewCount > 0 && provider.rating != null ? Number(provider.rating) : null;
+  const experienceYears = provider.experienceYears != null ? Number(provider.experienceYears) : null;
+  const operatingMode = provider.operatingMode === 'shop' ? 'Shop-based' : provider.operatingMode === 'online' ? 'Online service' : provider.operatingMode === 'mobile' ? 'Mobile / on-location' : 'Not specified';
 
   return (
     <Modal
@@ -59,15 +54,15 @@ export default function ProviderDetailModal({
             <div className="provider-subtitle">
               <span>{provider.categoryName || selectedCategory?.name || 'Trade Specialist'}</span>
               <span>•</span>
+              <span>{operatingMode}</span>
+              <span>•</span>
               <span className="location-text">
                 <MapPin size={13} /> {provider.location || 'Local Area'}
               </span>
             </div>
 
             <div className="provider-ratings-row">
-              <RatingStars rating={Math.round(rating)} readonly={true} size="sm" />
-              <b>{rating.toFixed(1)}</b>
-              <span className="reviews-subtext">({reviewCount} verified reviews)</span>
+              {rating != null ? <><RatingStars rating={Math.round(rating)} readonly={true} size="sm" /><b>{rating.toFixed(1)}</b><span className="reviews-subtext">({reviewCount} reviews)</span></> : <span className="reviews-subtext">No customer reviews yet</span>}
             </div>
           </div>
         </div>
@@ -76,11 +71,11 @@ export default function ProviderDetailModal({
         <div className="provider-highlights-grid">
           <div className="highlight-pill">
             <span className="highlight-label">Experience</span>
-            <b>{experienceYears} Years</b>
+            <b>{experienceYears != null ? `${experienceYears} Years` : 'Not provided'}</b>
           </div>
           <div className="highlight-pill">
             <span className="highlight-label">Starting Rate</span>
-            <b>{provider.baseCharge || 'LKR 1,500'}</b>
+            <b>{provider.baseCharge || 'Contact for rate'}</b>
           </div>
           <div className="highlight-pill">
             <span className="highlight-label">Warranty</span>
@@ -110,7 +105,7 @@ export default function ProviderDetailModal({
                 </div>
                 <div className="service-item-price">
                   <span>Starting at</span>
-                  <b>{srv.baseCharge ? `LKR ${Number(srv.baseCharge).toLocaleString('en-LK')}` : provider.baseCharge || 'LKR 1,500'}</b>
+                  <b>{srv.baseCharge ? `LKR ${Number(srv.baseCharge).toLocaleString('en-LK')}` : provider.baseCharge || 'Contact for rate'}</b>
                 </div>
               </div>
             ))}
@@ -132,28 +127,17 @@ export default function ProviderDetailModal({
             <Star size={16} /> Customer Feedback Summary
           </h4>
           <div className="reviews-summary-card">
-            <div className="score-box">
-              <span className="big-score">{rating.toFixed(1)}</span>
-              <RatingStars rating={Math.round(rating)} readonly={true} size="sm" />
-              <span className="total-reviews">{reviewCount} reviews</span>
-            </div>
-            <div className="score-bars">
-              <div className="score-bar-row">
-                <span>Punctuality</span>
-                <div className="bar-track"><div className="bar-fill" style={{ width: '96%' }} /></div>
-                <span>4.9</span>
+            {rating != null ? (
+              <div className="score-box">
+                <span className="big-score">{rating.toFixed(1)}</span>
+                <RatingStars rating={Math.round(rating)} readonly={true} size="sm" />
+                <span className="total-reviews">{reviewCount} customer reviews</span>
               </div>
-              <div className="score-bar-row">
-                <span>Work Quality</span>
-                <div className="bar-track"><div className="bar-fill" style={{ width: '98%' }} /></div>
-                <span>5.0</span>
-              </div>
-              <div className="score-bar-row">
-                <span>Communication</span>
-                <div className="bar-track"><div className="bar-fill" style={{ width: '92%' }} /></div>
-                <span>4.8</span>
-              </div>
-            </div>
+            ) : (
+              <p style={{ margin: 0, padding: 16, color: 'var(--color-neutral-600, #475569)' }}>
+                This provider has not received a customer review yet. A rating will appear after completed bookings are reviewed.
+              </p>
+            )}
           </div>
         </div>
 
@@ -161,7 +145,7 @@ export default function ProviderDetailModal({
         <div className="provider-sticky-book-bar">
           <div className="book-bar-price">
             <span>Starting rate</span>
-            <b>{provider.baseCharge || 'LKR 1,500'}</b>
+            <b>{provider.baseCharge || 'Contact for rate'}</b>
           </div>
           <Button
             variant="primary"
