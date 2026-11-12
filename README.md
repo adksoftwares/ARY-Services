@@ -88,7 +88,7 @@ To enforce one designated Super Admin while retaining the existing `admin` accou
 
 ## Provider Wallet & Manual Bank Payouts
 
-Provider wallet balances are calculated from the double-entry ledger. The Admin payout workspace reads actual wallet balances and only includes providers whose registered bank name and account number are present. It does not generate sample balances or substitute placeholder bank-account numbers.
+Provider wallet balances are calculated from the double-entry ledger. The Admin payout workspace reads actual wallet balances and only includes providers whose account holder name, bank name, branch and account number are present. It does not generate sample balances or substitute placeholder bank-account numbers.
 
 The payout workflow prepares a CSV transfer instruction file only; ARY Services does not execute LankaPay/CEFT bank transfers. After an administrator completes a transfer through the bank's own channel, the administrator records the exact transferred amount and bank reference against that provider's wallet. The API rejects amounts above the current wallet balance and bank references already recorded for that provider. Wallet debits are therefore recorded only after external transfer confirmation.
 
