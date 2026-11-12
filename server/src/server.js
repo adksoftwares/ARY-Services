@@ -2069,7 +2069,7 @@ app.get('/api/admin/users', requireAdmin, async (_req, res) => {
       operatingMode: u.operatingMode || null,
       nicDocument: u.nicDocument || null,
       tradeCertificate: u.tradeCertificate || null,
-      kycStatus: u.kycStatus || (u.accountType === 'provider' ? 'unverified' : 'verified'),
+      kycStatus: u.kycStatus || (['provider', 'driver'].includes(u.accountType) ? 'unverified' : 'verified'),
       createdAt: u.createdAt || new Date().toISOString()
     }));
 
