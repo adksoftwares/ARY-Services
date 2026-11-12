@@ -215,7 +215,7 @@ export default function AdminDisputes({
           maxWidth="640px"
         >
           {(() => {
-            const rawCharge = selectedBooking.baseAmount || parseInt(String(selectedBooking.baseCharge || '1500').replace(/\D/g, ''), 10) || 1500;
+            const rawCharge = Number(selectedBooking.baseAmount ?? String(selectedBooking.baseCharge || '').replace(/[^0-9]/g, '')) || 0;
             const preview = calculateLedgerPreview(rawCharge, selectedAction);
 
             return (
