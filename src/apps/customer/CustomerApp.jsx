@@ -64,7 +64,7 @@ const SERVICES = [
   { id: 5, name: 'Other Services', slug: 'other-services', description: 'Discover more services near you', icon: Sparkles, color: 'lilac' }
 ];
 
-function CustomerHeader({ address, onOpenLocationModal, onOpenProfile }) {
+function CustomerHeader({ address, launchCity, onOpenLocationModal, onOpenProfile }) {
   const { currentUser, openAuthModal, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -75,6 +75,8 @@ function CustomerHeader({ address, onOpenLocationModal, onOpenProfile }) {
           <span className="brand-mark">A</span>
           <span>ARY <b>Services</b></span>
         </Link>
+
+        {launchCity && !address && <span style={{fontSize:11,fontWeight:600,color:'var(--text-secondary)',whiteSpace:'nowrap'}}>{launchCity}</span>}
 
         {/* Dynamic Location Switcher Button */}
         <button
@@ -266,6 +268,15 @@ function CustomerWorkspace() {
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [address, setAddress] = useState(currentUser?.location || '');
+  const [platformConfig, setPlatformConfig] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`${API_BASE}/api/platform/config`).then((response) => response.ok ? response.json() : null)
+      .then((config) => { if (!cancelled && config) setPlatformConfig(config); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
   const [coords, setCoords] = useState(currentUser?.coords || null);
   const [locationModalOpen, setLocationModalOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -476,6 +487,7 @@ function CustomerWorkspace() {
       <OfflineBanner />
       <CustomerHeader
         address={address}
+        launchCity={platformConfig?.primaryCity || platformConfig?.launchCities?.[0] || ''}
         onOpenLocationModal={() => setLocationModalOpen(true)}
         onOpenProfile={() => setProfileModalOpen(true)}
       />
