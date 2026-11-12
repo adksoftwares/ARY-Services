@@ -184,7 +184,7 @@ export default function ProviderJobs({
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                     <b style={{ color: 'var(--text-primary, #f8fafc)', fontSize: '0.95rem' }}>{b.categoryName || 'Service Job'}</b>
                     <span style={{ fontSize: '0.75rem', color: 'var(--color-neutral-500, #64748b)' }}>#{b.id.slice(-6)}</span>
-                    <Badge variant="success" dot={false}>{b.baseCharge || 'LKR 1,500'}</Badge>
+                    <Badge variant="success" dot={false}>{b.baseCharge || 'Quote required'}</Badge>
                   </div>
                   <div style={{ fontSize: '0.82rem', color: 'var(--color-neutral-600, #475569)', display: 'flex', gap: 14, flexWrap: 'wrap' }}>
                     <span><MapPin size={13} style={{ verticalAlign: 'middle', marginRight: 4 }} />{b.serviceAddress}</span>
@@ -222,7 +222,7 @@ export default function ProviderJobs({
             const isBroadcast = b.status === 'broadcast_pool';
             const sla = b.status === 'requested' ? getSlaStatus(b.createdAt) : null;
             const stepIndex = getStepIndex(b.status);
-            const currentAmount = quoteDrafts[b.id] ?? b.quote?.amount ?? b.baseAmount ?? 1500;
+            const currentAmount = quoteDrafts[b.id] ?? b.quote?.amount ?? b.baseAmount ?? 0;
             const feePreview = Math.round(Number(currentAmount) * 0.1);
             const netPreview = Number(currentAmount) - feePreview;
 
