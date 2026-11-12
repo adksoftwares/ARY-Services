@@ -208,6 +208,7 @@ export default function ProviderCatalog({
                   service => service.categorySlug === selectedCategory?.slug
                 );
                 const serviceTitle = selectedService?.serviceName || provider.categoryName || selectedCategory?.name || 'General Services';
+                const operatingModeLabel = provider.operatingMode === 'shop' ? 'Shop-based' : provider.operatingMode === 'online' ? 'Online service' : provider.operatingMode === 'mobile' ? 'Mobile / on-location' : '';
                 const startingPrice = selectedService?.baseCharge
                   ? `LKR ${Number(selectedService.baseCharge).toLocaleString('en-LK')}`
                   : provider.baseCharge || 'LKR 1,500';
@@ -239,6 +240,8 @@ export default function ProviderCatalog({
                           <MapPin size={14} className="meta-icon" />
                           <span>{provider.location || 'Local Area'}</span>
                         </div>
+
+                        {operatingModeLabel && <div className="provider-meta-item"><Briefcase size={14} className="meta-icon" /><span>{operatingModeLabel}</span></div>}
 
                         {provider.distanceKm != null && (
                           <div className="provider-meta-item distance-badge">
