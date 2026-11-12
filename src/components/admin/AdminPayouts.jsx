@@ -173,7 +173,7 @@ export default function AdminPayouts({
               Missing Bank Details
             </span>
             <b style={{ fontSize: '1.2rem', color: 'var(--color-neutral-700, #334155)' }}>
-              LKR {preview.missingBankDetailsCount || 0}
+              {preview.missingBankDetailsCount || 0}
             </b>
           </div>
           <div>
