@@ -875,6 +875,7 @@ app.get('/api/providers', async (req, res) => {
         etaMinutes,
         category: p.category || 'general',
         categoryName: p.categoryName || 'General Services',
+        operatingMode: p.operatingMode || null,
         approvedServices: (Array.isArray(p.approvedServices) ? p.approvedServices : []).map(service => ({ categorySlug: service.categorySlug, categoryName: service.categoryName, serviceName: service.serviceName, description: service.description, baseCharge: service.baseCharge })),
         baseCharge: p.baseCharge || 'LKR 1,500',
         rating: p.rating !== undefined ? Number(p.rating) : 5.0,
