@@ -1060,7 +1060,6 @@ app.post('/api/providers/services', requireAuth, async (req, res) => {
       !Number.isSafeInteger(amount) || amount < 1 || amount > 10000000) {
       return res.status(400).json({ error: 'Choose a valid category and provide a service name, at least 10 characters of description and a whole-number LKR price.' });
     }
-    if (categorySlug === req.user.category) return res.status(409).json({ error: 'This is already your primary provider category.' });
     const requestId = crypto.randomUUID();
     const updated = await updateUser(req.user.id, user => {
       user.serviceRequests = Array.isArray(user.serviceRequests) ? user.serviceRequests : [];
