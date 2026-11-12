@@ -20,61 +20,7 @@ export default function AdminNotifications({
 }) {
   const [filter, setFilter] = useState('all');
 
-  // Sample seed events if empty
-  const defaultEvents = [
-    {
-      id: 1,
-      type: 'payout',
-      title: 'LankaPay CEFT Batch Payout Executed',
-      description: 'Disbursed LKR 48,500 across 6 service partners. Cryptographic checksum recorded.',
-      timestamp: '10 mins ago',
-      icon: Banknote,
-      color: 'brand',
-      targetTab: 'payouts'
-    },
-    {
-      id: 2,
-      type: 'dispute',
-      title: 'Dispute Arbitration Completed: Job #bk-8291',
-      description: '50/50 Mediated Split ruling executed by Super Admin. LKR 2,500 refunded to customer.',
-      timestamp: '35 mins ago',
-      icon: Scale,
-      color: 'danger',
-      targetTab: 'disputes'
-    },
-    {
-      id: 3,
-      type: 'kyc',
-      title: 'New Driver Application: Kamal Perera',
-      description: 'Submitted National ID and Driving License (Class B) for Ride and Food Delivery networks.',
-      timestamp: '1 hour ago',
-      icon: Bike,
-      color: 'accent',
-      targetTab: 'applications'
-    },
-    {
-      id: 4,
-      type: 'account',
-      title: 'Provider Account Approved: Nuwan Silva',
-      description: 'Status updated to active under Electrical Repairs category in Western Province.',
-      timestamp: '2 hours ago',
-      icon: Users,
-      color: 'brand',
-      targetTab: 'users'
-    },
-    {
-      id: 5,
-      type: 'service',
-      title: 'New Service Addition Request: Solar Panel Cleaning',
-      description: 'Provider SunPower Solutions requested category listing with LKR 3,500 base charge.',
-      timestamp: '4 hours ago',
-      icon: BriefcaseBusiness,
-      color: 'neutral',
-      targetTab: 'services'
-    }
-  ];
-
-  const displayEvents = events.length > 0 ? events : defaultEvents;
+  const displayEvents = events;
   const filteredEvents = filter === 'all' ? displayEvents : displayEvents.filter(e => e.type === filter);
 
   return (
