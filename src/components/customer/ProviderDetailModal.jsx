@@ -26,9 +26,17 @@ export default function ProviderDetailModal({
   useEffect(() => { setSelectedServiceId(''); }, [provider?.id]);
   if (!isOpen || !provider) return null;
 
-  const services = Array.isArray(provider.approvedServices) && provider.approvedServices.length > 0
-    ? provider.approvedServices
-    : [{ id: 'primary', serviceName: provider.categoryName || selectedCategory?.name || 'Primary Service', baseCharge: provider.baseCharge || null, description: '' }];
+  const services = [
+    {
+      id: 'primary',
+      categorySlug: provider.category,
+      categoryName: provider.categoryName || selectedCategory?.name || 'Primary Service',
+      serviceName: provider.categoryName || selectedCategory?.name || 'Primary Service',
+      baseCharge: provider.baseCharge || null,
+      description: ''
+    },
+    ...(Array.isArray(provider.approvedServices) ? provider.approvedServices : [])
+  ];
   const selectedService = services.find((service, index) => (service.id || `service-${index}`) === selectedServiceId) || services[0];
   const selectedServiceKey = selectedService ? (selectedService.id || `service-${services.indexOf(selectedService)}`) : '';
   const reviewCount = Number(provider.reviewCount) || 0;
