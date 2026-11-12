@@ -1521,13 +1521,17 @@ app.patch('/api/bookings/:id/cancel', requireAuth, async (req, res) => {
       return res.status(400).json({ error: `Cannot cancel a booking that is already ${booking.status}.` });
     }
 
+    if (booking.paymentStatus === 'escrow_held' && (!Number.isSafeInteger(Number(booking.baseAmount)) || Number(booking.baseAmount) <= 0)) {
+      return res.status(409).json({ error: 'Cannot settle or refund escrow because the booking has no valid recorded payment amount.' });
+    }
+
     let cancelMessage = 'Booking successfully cancelled.';
     let newPaymentStatus = 'cancelled';
 
     // If technician was already in progress (en route / on site) and payment was held in escrow:
     // Deduct LKR 500 technician call-out travel compensation fee and refund remainder to customer
     if (booking.status === 'in_progress' && booking.paymentStatus === 'escrow_held') {
-      const totalAmount = booking.baseAmount || 1500;
+      const totalAmount = Number(booking.baseAmount);
       const callOutFee = Math.min(500, totalAmount);
       const customerRefund = totalAmount - callOutFee;
 
