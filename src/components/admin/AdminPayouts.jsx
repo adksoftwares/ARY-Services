@@ -49,13 +49,15 @@ export default function AdminPayouts({
   const eligibleSettlements = pendingSettlements.filter(item => item.balance >= minThreshold && item.bankDetailsComplete);
   const totalEligibleAmount = eligibleSettlements.reduce((sum, item) => sum + item.balance, 0);
 
-  // Client-side CSV Export for LankaPay CEFT
+  // Client-side CSV Export for manual bank transfer instructions
   function handleExportCsv() {
     const records = payoutResult?.disbursements?.length > 0 ? payoutResult.disbursements : eligibleSettlements;
 
     const headers = [
       'BeneficiaryName',
+      'AccountHolderName',
       'BankName',
+      'BranchNameOrCode',
       'AccountNumber',
       'AmountLKR',
       'Currency',
@@ -66,7 +68,9 @@ export default function AdminPayouts({
 
     const rows = records.map(r => [
       `"${r.fullName || r.providerName || 'Contractor'}"`,
-      `"${r.bankName || 'Commercial Bank'}"`,
+      `"${r.accountHolderName || ''}"`,
+      `"${r.bankName || ''}"`,
+      `"${r.bankBranch || ''}"`,
       `"${r.accountNumber || ''}"`,
       r.amount || r.balance || 0,
       'LKR',
@@ -79,7 +83,7 @@ export default function AdminPayouts({
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `ary_ceft_batch_${Date.now()}.csv`);
+    link.setAttribute('download', `ary_bank_transfer_instructions_${Date.now()}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -272,7 +276,10 @@ export default function AdminPayouts({
                       <b style={{ color: 'var(--color-text, #0f172a)', display: 'block' }}>{item.fullName}</b>
                       <span style={{ fontSize: '0.74rem', color: 'var(--color-neutral-500, #64748b)' }}>{item.phone}</span>
                     </td>
-                    <td>{item.bankName}</td>
+                    <td>
+                      <b style={{ display: 'block' }}>{item.bankName || 'Not provided'}</b>
+                      <small style={{ color: 'var(--color-neutral-500, #64748b)' }}>{item.accountHolderName || 'No account holder'} · {item.bankBranch || 'No branch'}</small>
+                    </td>
                     <td>
                       <code style={{ fontSize: '0.78rem', background: 'var(--color-neutral-100, #f1f5f9)', padding: '2px 6px', borderRadius: 4 }}>
                         {item.accountNumber}
