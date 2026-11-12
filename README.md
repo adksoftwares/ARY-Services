@@ -72,6 +72,16 @@ python scripts/e2e_smoke_and_a11y.py
 
 ---
 
+## City Rollout Configuration
+
+The API exposes `GET /api/platform/config` for city-aware clients. Set these deployment environment variables to configure the initial launch and future expansion without changing code:
+
+- `ARY_LAUNCH_CITY=Colombo` (single city) or `ARY_LAUNCH_CITIES=Colombo,Kandy,Galle` (multi-city list)
+- `ARY_SERVICE_RADIUS_KM=25` (service coverage radius; default 25 km)
+- `ARY_CURRENCY=LKR` and `ARY_TIMEZONE=Asia/Colombo`
+
+The config endpoint returns country, timezone, launch cities, primary city, radius and rollout mode. City-aware UI/filtering must consume this endpoint; it does not itself geofence or block requests.
+
 ## Super Admin Configuration
 
 To enforce one designated Super Admin while retaining the existing `admin` account role, configure either `SUPER_ADMIN_USER_ID` or `SUPER_ADMIN_EMAIL` in the server environment. When either variable is set, all admin API routes are restricted to that matching account. Keep these values private and configure them in the hosting provider's environment settings (never commit credentials).
