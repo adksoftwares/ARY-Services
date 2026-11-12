@@ -316,6 +316,24 @@ app.get('/api/events', (req, res) => {
   subscribeToEvents(req, res, { id: identity.id, role: identity.accountType, exp: identity.exp });
 });
 
+// Public launch configuration keeps city rollout settings out of hard-coded UI logic.
+app.get('/api/platform/config', (_req, res) => {
+  const launchCities = String(process.env.ARY_LAUNCH_CITIES || process.env.ARY_LAUNCH_CITY || 'Colombo')
+    .split(',').map(city => city.trim()).filter(Boolean);
+  const radius = Number(process.env.ARY_SERVICE_RADIUS_KM || 25);
+  res.setHeader('Cache-Control', 'public, max-age=300');
+  return res.json({
+    platformName: 'ARY Services',
+    currency: process.env.ARY_CURRENCY || 'LKR',
+    country: 'Sri Lanka',
+    timezone: process.env.ARY_TIMEZONE || 'Asia/Colombo',
+    launchCities,
+    primaryLaunchCity: launchCities[0] || 'Colombo',
+    serviceRadiusKm: Number.isFinite(radius) && radius > 0 ? Math.min(radius, 500) : 25,
+    rolloutMode: launchCities.length > 1 ? 'multi-city' : 'single-city'
+  });
+});
+
 // Comprehensive Health & Kubernetes Readiness Probes
 app.get('/api/health', async (_req, res) => {
   let database = 'not-configured';
