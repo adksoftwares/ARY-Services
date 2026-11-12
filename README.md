@@ -80,7 +80,7 @@ The API exposes `GET /api/platform/config` for city-aware clients. Set these dep
 - `ARY_SERVICE_RADIUS_KM=25` (service coverage radius; default 25 km)
 - `ARY_CURRENCY=LKR` and `ARY_TIMEZONE=Asia/Colombo`
 
-The config endpoint returns country, timezone, launch cities, primary city, radius and rollout mode. City-aware UI/filtering must consume this endpoint; it does not itself geofence or block requests.
+The config endpoint returns country, timezone, launch cities, primary city, radius and rollout mode. The provider discovery API enforces `ARY_SERVICE_RADIUS_KM` by default whenever the customer supplies coordinates; a request may explicitly pass `radiusKm=all` to disable distance filtering. City names are rollout metadata and are not a separate city-boundary geofence.
 
 ## Super Admin Configuration
 
