@@ -29,7 +29,7 @@ export default function ProviderProfile({
   onSwitchRole,
   onLogout
 }) {
-  const [bankDetails, setBankDetails] = useState({ bankName: '', bankAccount: '', accountLast4: '', hasBankAccount: false });
+  const [bankDetails, setBankDetails] = useState({ bankName: '', bankAccountName: '', bankBranch: '', bankAccount: '', accountLast4: '', hasBankAccount: false });
   const [bankLoading, setBankLoading] = useState(false);
   const [bankSaving, setBankSaving] = useState(false);
   const [bankNotice, setBankNotice] = useState('');
@@ -43,7 +43,7 @@ export default function ProviderProfile({
       .then(async response => {
         const data = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(data.error || 'Could not load bank details.');
-        if (!cancelled) setBankDetails(prev => ({ ...prev, bankName: data.bankName || '', accountLast4: data.accountLast4 || '', hasBankAccount: Boolean(data.hasBankAccount) }));
+        if (!cancelled) setBankDetails(prev => ({ ...prev, bankName: data.bankName || '', bankAccountName: data.bankAccountName || '', bankBranch: data.bankBranch || '', accountLast4: data.accountLast4 || '', hasBankAccount: Boolean(data.hasBankAccount) }));
       })
       .catch(error => { if (!cancelled) setBankError(error.message); })
       .finally(() => { if (!cancelled) setBankLoading(false); });
@@ -57,8 +57,10 @@ export default function ProviderProfile({
     setBankError('');
     try {
       if (!bankDetails.bankName.trim()) throw new Error('Please enter your bank name.');
+      if (!bankDetails.bankAccountName.trim()) throw new Error('Please enter the account holder name.');
+      if (!bankDetails.bankBranch.trim()) throw new Error('Please enter the bank branch name or code.');
       if (!bankDetails.hasBankAccount && !bankDetails.bankAccount.trim()) throw new Error('Please enter your bank account number.');
-      const payload = { bankName: bankDetails.bankName.trim() };
+      const payload = { bankName: bankDetails.bankName.trim(), bankAccountName: bankDetails.bankAccountName.trim(), bankBranch: bankDetails.bankBranch.trim() };
       if (bankDetails.bankAccount.trim()) payload.bankAccount = bankDetails.bankAccount.trim();
       const response = await fetch(`${API_BASE}/providers/profile`, {
         method: 'PATCH',
@@ -149,7 +151,7 @@ export default function ProviderProfile({
           Bank Details for Wallet Payouts
         </h3>
         <p style={{ margin: '0 0 16px', fontSize: '0.8rem', color: 'var(--color-neutral-500, #64748b)' }}>
-          Add the bank account that should receive your earnings. ARY administrators prepare transfers manually; saving these details does not initiate a payment.
+          Add the beneficiary name, bank, branch and account that should receive your earnings. ARY administrators prepare transfers manually; saving these details does not initiate a payment.
         </p>
         <form onSubmit={saveBankDetails} style={{ display: 'grid', gap: 12, maxWidth: 620 }}>
           <label style={{ display: 'grid', gap: 6, fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary, #0f172a)' }}>
@@ -160,6 +162,28 @@ export default function ProviderProfile({
               onChange={event => setBankDetails(prev => ({ ...prev, bankName: event.target.value }))}
               placeholder="e.g. Bank of Ceylon"
               autoComplete="organization"
+              style={{ padding: '11px 12px', border: '1px solid var(--color-border-subtle, #cbd5e1)', borderRadius: 8, background: 'var(--color-surface, #fff)', color: 'var(--text-primary, #0f172a)' }}
+            />
+          </label>
+          <label style={{ display: 'grid', gap: 6, fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary, #0f172a)' }}>
+            Account Holder Name *
+            <input
+              required
+              value={bankDetails.bankAccountName}
+              onChange={event => setBankDetails(prev => ({ ...prev, bankAccountName: event.target.value }))}
+              placeholder="Name exactly as shown on bank account"
+              autoComplete="name"
+              style={{ padding: '11px 12px', border: '1px solid var(--color-border-subtle, #cbd5e1)', borderRadius: 8, background: 'var(--color-surface, #fff)', color: 'var(--text-primary, #0f172a)' }}
+            />
+          </label>
+          <label style={{ display: 'grid', gap: 6, fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary, #0f172a)' }}>
+            Bank Branch / Branch Code *
+            <input
+              required
+              value={bankDetails.bankBranch}
+              onChange={event => setBankDetails(prev => ({ ...prev, bankBranch: event.target.value }))}
+              placeholder="e.g. Colombo 03 / 7010"
+              autoComplete="off"
               style={{ padding: '11px 12px', border: '1px solid var(--color-border-subtle, #cbd5e1)', borderRadius: 8, background: 'var(--color-surface, #fff)', color: 'var(--text-primary, #0f172a)' }}
             />
           </label>
