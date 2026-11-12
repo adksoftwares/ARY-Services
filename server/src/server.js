@@ -1765,7 +1765,7 @@ app.post('/api/admin/payouts/confirm', requireAdmin, async (req, res) => {
     }
     const provider = (await getUsers()).find(user => user.id === providerId);
     if (!provider || provider.status !== 'active' || !provider.bankName || !provider.bankAccount) {
-      return res.status(400).json({ error: 'Provider must be active and have verified bank details.' });
+      return res.status(400).json({ error: 'Provider must be active and have registered bank name and account number.' });
     }
     const account = `provider:${providerId}:wallet`;
     const ledger = await getLedgerEntries();
