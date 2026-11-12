@@ -570,7 +570,7 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
       location = '',
       category = 'other-services',
       categoryName = 'General Services',
-      baseCharge = 'LKR 1,500',
+      baseCharge = '',
       nicNumber,
       nsnNumber,
       operatingMode,
@@ -598,10 +598,15 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
 
     // Provider onboarding captures the business operating model and NSN
     // before the application can enter the Admin approval queue.
-    const cleanNsn = role === 'provider' ? String(nsnNumber || 'BRN-PENDING').trim() : null;
-    const cleanOperatingMode = role === 'provider' ? (['shop', 'online', 'mobile'].includes(operatingMode) ? operatingMode : 'mobile') : null;
-    if (role === 'provider' && (!cleanNsn || cleanNsn.length > 60)) {
-      return res.status(400).json({ error: 'Provider registration requires a business registration or NSN identifier.' });
+    const cleanNsn = role === 'provider' ? String(nsnNumber || '').trim() : null;
+    const cleanOperatingMode = role === 'provider' && ['shop', 'online', 'mobile'].includes(operatingMode) ? operatingMode : null;
+    const cleanBaseChargeDigits = role === 'provider' ? String(baseCharge || '').replace(/[^0-9]/g, '') : '';
+    const cleanBaseChargeAmount = cleanBaseChargeDigits ? Number.parseInt(cleanBaseChargeDigits, 10) : null;
+    if (role === 'provider' && (!cleanNsn || cleanNsn.length > 60 || !cleanOperatingMode || !cleanLocation)) {
+      return res.status(400).json({ error: 'Provider registration requires a business/service address, operating mode and business registration or NSN identifier.' });
+    }
+    if (role === 'provider' && String(baseCharge || '').trim() && (!Number.isSafeInteger(cleanBaseChargeAmount) || cleanBaseChargeAmount < 1 || cleanBaseChargeAmount > 10000000)) {
+      return res.status(400).json({ error: 'Enter a valid starting charge or leave it blank to receive quote requests.' });
     }
     if (['provider', 'driver'].includes(role) && !String(nicNumber || '').trim()) {
       return res.status(400).json({ error: 'A National Identity Card number is required for Provider and Driver registration.' });
@@ -653,17 +658,17 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
       fullName: fullName.trim(),
       phone: cleanPhone,
       email: cleanEmail,
-      location: cleanLocation || 'Colombo',
+      location: cleanLocation || null,
       passwordHash: hashPassword(effectivePassword),
       accountType: role,
       status: initialStatus,
       driverServices: selectedDriverServices,
       category: role === 'provider' ? category : null,
       categoryName: role === 'provider' ? categoryName : null,
-      baseCharge: role === 'provider' ? baseCharge : null,
-      rating: role === 'provider' ? 4.9 : null,
-      reviewCount: role === 'provider' ? 0 : null,
-      experienceYears: role === 'provider' ? 3 : null,
+      baseCharge: role === 'provider' && cleanBaseChargeAmount ? 'LKR ' + cleanBaseChargeAmount.toLocaleString('en-LK') : null,
+      rating: null,
+      reviewCount: 0,
+      experienceYears: null,
       nicNumber: cleanNic,
       nsnNumber: cleanNsn,
       operatingMode: cleanOperatingMode,
