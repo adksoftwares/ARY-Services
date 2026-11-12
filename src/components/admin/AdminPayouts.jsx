@@ -91,7 +91,7 @@ export default function AdminPayouts({
 
   return (
     <div style={{ display: 'grid', gap: '16px' }}>
-      {/* 1. LankaPay CEFT Control Card */}
+      {/* 1. Manual Bank Transfer Control */}
       <Card style={{ padding: '22px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
           <div>
@@ -178,7 +178,7 @@ export default function AdminPayouts({
           </div>
           <div>
             <span style={{ color: 'var(--color-neutral-500, #64748b)', fontSize: '0.74rem', display: 'block', textTransform: 'uppercase' }}>
-              Minimum Threshold
+              Minimum Wallet Balance
             </span>
             <b style={{ fontSize: '1.2rem', color: '#64748b' }}>
               LKR {minThreshold.toLocaleString()}
@@ -239,7 +239,7 @@ export default function AdminPayouts({
       <Card style={{ padding: '0', overflow: 'hidden' }}>
         <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--color-border-subtle, #f1f5f9)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <b style={{ fontSize: '0.95rem', color: 'var(--color-text, #0f172a)' }}>
-            Contractor Settlement Ledger ({pendingSettlements.length} partners)
+            Provider Wallet Balances ({pendingSettlements.length} partners)
           </b>
           <span style={{ fontSize: '0.78rem', color: 'var(--color-neutral-500, #64748b)' }}>
             LankaPay CEFT Clearing Queue
@@ -301,9 +301,9 @@ export default function AdminPayouts({
           setConfirmModalOpen(false);
           await onRunPayout();
         }}
-        title="Execute LankaPay CEFT Batch Disbursal?"
-        message={`Are you sure you want to execute settlement of LKR ${totalEligibleAmount.toLocaleString()} across ${eligibleSettlements.length} active service partners? This will generate the signed LankaPay batch file and debit the platform clearing account.`}
-        confirmLabel="Confirm & Disburse Funds"
+        title="Prepare Manual Bank Transfer Instructions?"
+        message={`Prepare a transfer instruction file for LKR ${totalEligibleAmount.toLocaleString()} across ${eligibleSettlements.length} providers? This does not transfer funds or debit provider wallets. After completing each bank transfer externally, an administrator must record its bank reference to settle the wallet ledger.`}
+        confirmLabel="Prepare Transfer File"
         isDanger={false}
       />
     </div>
