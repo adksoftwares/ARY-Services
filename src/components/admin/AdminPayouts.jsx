@@ -53,6 +53,11 @@ export default function AdminPayouts({
   function handleExportCsv() {
     const records = payoutResult?.disbursements?.length > 0 ? payoutResult.disbursements : eligibleSettlements;
 
+    const csvCell = value => {
+      const textValue = String(value ?? '');
+      const safeValue = /^[=+@-]/.test(textValue) ? "'" + textValue : textValue;
+      return '"' + safeValue.replace(/"/g, '""') + '"';
+    };
     const headers = [
       'BeneficiaryName',
       'AccountHolderName',
@@ -67,20 +72,20 @@ export default function AdminPayouts({
     ];
 
     const rows = records.map(r => [
-      `"${r.fullName || r.providerName || 'Contractor'}"`,
-      `"${r.accountHolderName || ''}"`,
-      `"${r.bankName || ''}"`,
-      `"${r.bankBranch || ''}"`,
-      `"${r.accountNumber || ''}"`,
-      r.amount || r.balance || 0,
+      csvCell(r.fullName || r.providerName || 'Contractor'),
+      csvCell(r.accountHolderName || ''),
+      csvCell(r.bankName || ''),
+      csvCell(r.bankBranch || ''),
+      csvCell(r.accountNumber || ''),
+      Number(r.amount ?? r.balance ?? 0),
       'LKR',
-      '"ARY Services Partner Disbursal"',
-      `"${payoutResult?.batchId || 'CEFT-DIRECT'}"`,
-      `"${new Date().toISOString().split('T')[0]}"`
+      csvCell('ARY Services Partner Disbursal'),
+      csvCell(payoutResult?.batchId || ''),
+      csvCell(new Date().toISOString().split('T')[0])
     ]);
 
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
+    const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\r\n');
+    const encodedUri = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
     link.setAttribute('download', `ary_bank_transfer_instructions_${Date.now()}.csv`);
