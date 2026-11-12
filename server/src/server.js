@@ -1622,7 +1622,7 @@ app.post('/api/bookings/:id/dispute', requireAuth, async (req, res) => {
 
     const updated = await updateBooking(id, b => {
       b.status = 'disputed';
-      b.paymentStatus = 'disputed_frozen';
+      b.paymentStatus = b.paymentStatus === 'escrow_held' ? 'disputed_frozen' : b.paymentStatus;
       b.disputeReason = reasonText;
       b.disputeEvidence = evidenceText;
       b.disputedAt = new Date().toISOString();
@@ -1638,7 +1638,9 @@ app.post('/api/bookings/:id/dispute', requireAuth, async (req, res) => {
 
     res.json({
       status: 'ok',
-      message: 'Dispute submitted successfully. Escrow funds have been frozen pending administrative review.',
+      message: updated.paymentStatus === 'disputed_frozen'
+        ? 'Dispute submitted successfully. Confirmed escrow funds have been frozen pending administrative review.'
+        : 'Dispute submitted successfully. This booking has no confirmed escrow funds; an administrator will coordinate an offline resolution.',
       booking: updated
     });
   } catch (err) {
