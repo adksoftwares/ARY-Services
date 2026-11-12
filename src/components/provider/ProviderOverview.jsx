@@ -22,7 +22,7 @@ export default function ProviderOverview({
   currentUser,
   bookings = [],
   walletBalance = 0,
-  averageRating = '5.0',
+  averageRating = '—',
   reviewCount = 0,
   onNavigateTab,
   onUpdateStatus,
@@ -33,10 +33,7 @@ export default function ProviderOverview({
   const activeJobs = bookings.filter(b => ['accepted', 'in_progress'].includes(b.status));
   const completedBookings = bookings.filter(b => b.status === 'completed');
 
-  // Calculate earnings for this month / week
-  const totalEarned = completedBookings.reduce((sum, b) => {
-    return sum + (b.providerPayout || Math.round((parseInt(String(b.baseCharge).replace(/\D/g, '')) || 1500) * 0.9));
-  }, 0);
+
 
   // Filter today's / upcoming jobs
   const todayStr = new Date().toISOString().split('T')[0];
@@ -190,8 +187,8 @@ export default function ProviderOverview({
             <Wallet size={20} />
           </div>
           <div className="kpi-data">
-            <span className="kpi-val">LKR {Number(walletBalance || totalEarned).toLocaleString('en-LK')}</span>
-            <span className="kpi-label">Earned Payout</span>
+            <span className="kpi-val">LKR {Number(walletBalance || 0).toLocaleString('en-LK')}</span>
+            <span className="kpi-label">Available Wallet Balance</span>
           </div>
         </Card>
 
