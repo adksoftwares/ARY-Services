@@ -91,6 +91,8 @@ const BLANK_FORM = {
 export default function GroceryInventory() {
   const { currentUser } = useAuth();
   const [items, setItems] = useState([]);
+  const [catalog, setCatalog] = useState([]);
+  const [catalogChoice, setCatalogChoice] = useState('');
   const [form, setForm] = useState(BLANK_FORM);
   const [editingId, setEditingId] = useState(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -123,7 +125,18 @@ export default function GroceryInventory() {
 
   useEffect(() => {
     load();
+    fetch(`${API_BASE}/grocery/catalog`).then(res => res.json()).then(data => setCatalog(Array.isArray(data.catalog) ? data.catalog : [])).catch(() => setCatalog([]));
   }, [load]);
+
+  function applyCatalogTemplate(value) {
+    setCatalogChoice(value);
+    const [catalogIndex, productIndex] = value.split(':').map(Number);
+    const template = catalog[catalogIndex];
+    const productName = template?.products?.[productIndex];
+    if (!template || !productName) return;
+    const defaultSize = template.sizes?.[0] ?? 1;
+    setForm(prev => ({ ...prev, name: productName, category: template.category, unitGroup: template.unitGroup, unit: template.unit, packSize: String(defaultSize) }));
+  }
 
   function handleFieldChange(field, value) {
     setForm(prev => ({
@@ -493,6 +506,16 @@ export default function GroceryInventory() {
       >
         <form onSubmit={handleSave} style={{ display: 'grid', gap: 14 }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
+            {!editingId && catalog.length > 0 && <div className="provider-form-group" style={{ gridColumn: '1 / -1' }}>
+              <label className="provider-form-label">Quick Product Catalogue (Sri Lanka)</label>
+              <select value={catalogChoice} onChange={e => applyCatalogTemplate(e.target.value)} className="provider-form-select">
+                <option value="">Choose a product template…</option>
+                {catalog.map((group, gi) => <optgroup key={group.category} label={group.category}>
+                  {(group.products || []).map((product, pi) => <option key={`${gi}:${pi}`} value={`${gi}:${pi}`}>{product}</option>)}
+                </optgroup>)}
+              </select>
+              <small style={{ color: 'var(--color-neutral-500, #64748b)' }}>Selecting a template fills product name, category, unit and pack size. Set your own price and stock.</small>
+            </div>}
             <div className="provider-form-group">
               <label className="provider-form-label">Product Name *</label>
               <input
