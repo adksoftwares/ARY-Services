@@ -39,7 +39,7 @@ import DriverGpsPermissionModal from './DriverGpsPermissionModal';
 
 const DRIVER_OPTIONS = [
   { value: 'ride', label: 'Passenger Rides', description: 'Accept city trips and airport transfers', icon: Bike },
-  { value: 'food_delivery', label: 'Food Delivery', description: 'Collect orders from restaurants and deliver to clients', icon: PackageCheck },
+  { value: 'food_delivery', label: 'Shop & Grocery Delivery', description: 'Collect grocery and shop orders and deliver them to customers', icon: PackageCheck },
   { value: 'parcel_delivery', label: 'Parcel Courier', description: 'Transport packages with 2-point secure PIN handoffs', icon: Package }
 ];
 
