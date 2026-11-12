@@ -883,19 +883,26 @@ app.get('/api/providers', async (req, res) => {
       };
     });
 
-    // If customer coordinates provided, sort closest distance first and apply geofence radius
+    // If customer coordinates are available, sort by distance and enforce the configured service radius by default.
     let result = sanitized;
-    if (customerLat !== null && customerLng !== null && !isNaN(customerLat) && !isNaN(customerLng)) {
+    const hasCustomerCoordinates = customerLat !== null && customerLng !== null && !isNaN(customerLat) && !isNaN(customerLng);
+    const bypassRadius = String(radiusKm || '').toLowerCase() === 'all';
+    const configuredRadius = Number(process.env.ARY_SERVICE_RADIUS_KM || 25);
+    const requestedRadius = radiusKm && !bypassRadius ? Number(radiusKm) : configuredRadius;
+    const effectiveRadius = Number.isFinite(requestedRadius) && requestedRadius > 0
+      ? Math.min(requestedRadius, 500)
+      : 25;
+    if (hasCustomerCoordinates) {
       result.sort((a, b) => (a.distanceKm ?? 999) - (b.distanceKm ?? 999));
-      if (radiusKm && radiusKm !== 'all') {
-        const maxRadius = Number(radiusKm) || 25;
-        result = result.filter(p => p.distanceKm !== null && p.distanceKm <= maxRadius);
+      if (!bypassRadius) {
+        result = result.filter(provider => provider.distanceKm !== null && provider.distanceKm <= effectiveRadius);
       }
     }
 
     res.json({
       status: 'ok',
       total: result.length,
+      serviceRadiusKm: hasCustomerCoordinates && !bypassRadius ? effectiveRadius : null,
       providers: result
     });
   } catch (err) {
