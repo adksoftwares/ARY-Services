@@ -27,22 +27,25 @@ export default function ProviderWallet({
   const completedBookings = useMemo(() => bookings.filter(b => b.status === 'completed'), [bookings]);
 
   const totalEarnedPayout = useMemo(() => {
-    return completedBookings.reduce((sum, b) => {
-      return sum + (b.providerPayout || Math.round((parseInt(String(b.baseCharge).replace(/\D/g, '')) || 1500) * 0.9));
-    }, 0);
-  }, [completedBookings]);
+    const walletAccount = `provider:${currentUser?.id}:wallet`;
+    return ledgerEntries
+      .filter(entry => entry.account === walletAccount && entry.type === 'credit')
+      .reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
+  }, [ledgerEntries, currentUser?.id]);
 
   const pendingEscrowPayout = useMemo(() => {
     return bookings
       .filter(b => b.paymentStatus === 'escrow_held' && b.status !== 'completed')
       .reduce((sum, b) => {
-        return sum + (b.providerPayout || Math.round((parseInt(String(b.baseCharge).replace(/\D/g, '')) || 1500) * 0.9));
+        const charge = Number(b.baseAmount ?? String(b.baseCharge || '').replace(/[^0-9.]/g, ''));
+      return sum + Number(b.providerPayout ?? (Number.isFinite(charge) ? Math.round(charge * 0.9) : 0));
       }, 0);
   }, [bookings]);
 
   const totalPlatformFees = useMemo(() => {
     return completedBookings.reduce((sum, b) => {
-      return sum + (b.platformFee || Math.round((parseInt(String(b.baseCharge).replace(/\D/g, '')) || 1500) * 0.1));
+      const charge = Number(b.baseAmount ?? String(b.baseCharge || '').replace(/[^0-9.]/g, ''));
+      return sum + Number(b.platformFee ?? (Number.isFinite(charge) ? Math.round(charge * 0.1) : 0));
     }, 0);
   }, [completedBookings]);
 
@@ -99,7 +102,7 @@ export default function ProviderWallet({
           padding: '18px 20px'
         }}>
           <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-neutral-600, #475569)', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Banknote size={16} color="#64748b" /> Platform Fee (10%)
+            <Banknote size={16} color="#64748b" /> Platform Fee (estimated where charge data exists)
           </span>
           <div style={{ fontSize: '1.9rem', fontWeight: 800, color: 'var(--color-neutral-800, #1e293b)', marginTop: 6, letterSpacing: '-0.02em' }}>
             LKR {totalPlatformFees.toLocaleString()}
@@ -155,9 +158,9 @@ export default function ProviderWallet({
           variant="accent"
           size="md"
           onClick={() => setRequestPayoutOpen(true)}
-          disabled={totalEarnedPayout <= 0}
+          disabled={Number(walletBalance || 0) <= 0}
         >
-          <ArrowUpRight size={16} /> Request CEFT Payout
+          <ArrowUpRight size={16} /> Payout Information
         </Button>
       </Card>
 
@@ -169,7 +172,7 @@ export default function ProviderWallet({
           background: 'var(--color-surface, #fff)'
         }}>
           <h4 style={{ margin: '0 0 10px', color: 'var(--text-primary, #0f172a)' }}>
-            Confirm CEFT Bank Settlement
+            Bank Transfer Information
           </h4>
           <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary, #64748b)', marginBottom: 14 }}>
             Your available wallet balance is <b>LKR {Number(walletBalance || 0).toLocaleString()}</b>. A payout request here does not trigger a bank transfer.
