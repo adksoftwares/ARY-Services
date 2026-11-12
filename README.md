@@ -72,6 +72,10 @@ python scripts/e2e_smoke_and_a11y.py
 
 ---
 
+## Super Admin Configuration
+
+To enforce one designated Super Admin while retaining the existing `admin` account role, configure either `SUPER_ADMIN_USER_ID` or `SUPER_ADMIN_EMAIL` in the server environment. When either variable is set, all admin API routes are restricted to that matching account. Keep these values private and configure them in the hosting provider's environment settings (never commit credentials).
+
 ## Security & Storage Constraints
 
 1. **Authentication & Session**: Only `ary_user` session state is stored in localStorage.
