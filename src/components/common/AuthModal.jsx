@@ -108,6 +108,11 @@ export default function AuthModal({ onNotice }) {
       setIsSubmitting(false);
       return;
     }
+    if (regAccountType === 'driver' && regDriverServices.length === 0) {
+      setAuthError('Choose Passenger Ride, Shop & Grocery Delivery, or both.');
+      setIsSubmitting(false);
+      return;
+    }
 
     try {
       const payload = {
