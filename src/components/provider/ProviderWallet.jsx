@@ -65,7 +65,7 @@ export default function ProviderWallet({
           padding: '18px 20px'
         }}>
           <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-brand-800, #154636)', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <CheckCircle2 size={16} color="var(--color-brand-600, #174d3d)" /> Net Earnings (Released)
+            <CheckCircle2 size={16} color="var(--color-brand-600, #174d3d)" /> Available Wallet Balance
           </span>
           <div style={{ fontSize: '1.9rem', fontWeight: 800, color: 'var(--color-brand-700, #174d3d)', marginTop: 6, letterSpacing: '-0.02em' }}>
             LKR {Number(walletBalance || 0).toLocaleString()}
