@@ -254,7 +254,11 @@ async function requireAuth(req, res, next) {
 
 async function requireAdmin(req, res, next) {
   await requireAuth(req, res, () => {
-    if (req.user.accountType !== 'admin') {
+    const configuredSuperAdminId = String(process.env.SUPER_ADMIN_USER_ID || '').trim();
+    const configuredSuperAdminEmail = String(process.env.SUPER_ADMIN_EMAIL || '').trim().toLowerCase();
+    const isConfiguredSuperAdmin = (configuredSuperAdminId && req.user.id === configuredSuperAdminId) ||
+      (configuredSuperAdminEmail && String(req.user.email || '').toLowerCase() === configuredSuperAdminEmail);
+    if (req.user.accountType !== 'admin' || ((configuredSuperAdminId || configuredSuperAdminEmail) && !isConfiguredSuperAdmin)) {
       return res.status(403).json({ error: 'Access denied. Super Admin privileges required.' });
     }
     next();
