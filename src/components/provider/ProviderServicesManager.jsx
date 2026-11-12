@@ -47,11 +47,8 @@ export default function ProviderServicesManager() {
       if (!response.ok) throw new Error(result.error || 'Could not load your service approvals.');
       setData(result);
       if (!categorySlug) {
-        const firstAvail = categories.find(
-          item => item.slug !== result.primaryCategory?.categorySlug &&
-                  !result.approvedServices?.some(s => s.categorySlug === item.slug)
-        );
-        if (firstAvail) setCategorySlug(firstAvail.slug);
+        const primary = categories.find(item => item.slug === result.primaryCategory?.categorySlug);
+        setCategorySlug((primary || categories[0])?.slug || 'other-services');
       }
     } catch (err) {
       setError(err.message || 'Could not load service approvals.');
@@ -90,10 +87,7 @@ export default function ProviderServicesManager() {
     }
   }
 
-  const available = categories.filter(
-    item => item.slug !== data.primaryCategory?.categorySlug &&
-            !data.approvedServices?.some(s => s.categorySlug === item.slug)
-  );
+  const available = categories;
 
   return (
     <div className="provider-services-manager-view" style={{ display: 'grid', gap: '20px' }}>
@@ -104,7 +98,7 @@ export default function ProviderServicesManager() {
             Services & Trade Offerings
           </h2>
           <p style={{ margin: '2px 0 0', fontSize: '0.82rem', color: 'var(--text-secondary, #64748b)' }}>
-            Expand your contractor portfolio across multiple trade categories
+            Add individual services within any trade category. Each offering is reviewed by Admin before customers can book it.
           </p>
         </div>
 
@@ -112,9 +106,8 @@ export default function ProviderServicesManager() {
           <Button
             variant="primary"
             onClick={() => setIsAddModalOpen(true)}
-            disabled={available.length === 0}
           >
-            <Plus size={16} /> Add Trade Skill
+            <Plus size={16} /> Add Service Offering
           </Button>
           <Button variant="ghost" onClick={load}>
             <RefreshCw size={14} /> Refresh
@@ -177,7 +170,7 @@ export default function ProviderServicesManager() {
             </div>
           </Card>
 
-          {/* Approved secondary categories */}
+          {/* Approved individual service offerings */}
           {data.approvedServices.map(service => (
             <Card key={service.id} style={{ padding: '16px 18px', borderLeft: '4px solid var(--color-brand-500, #174d3d)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
