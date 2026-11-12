@@ -23,9 +23,10 @@ export default function AdminOverview({
   onNavigateTab
 }) {
   const totalUsers = adminUsers.length;
-  const customers = adminUsers.filter(u => u.accountType === 'customer').length;
-  const providers = adminUsers.filter(u => u.accountType === 'provider').length;
-  const drivers = adminUsers.filter(u => u.accountType === 'driver').length;
+  const hasRole = (user, role) => user.accountType === role || (Array.isArray(user.roles) && user.roles.includes(role));
+  const customers = adminUsers.filter(u => hasRole(u, 'customer')).length;
+  const providers = adminUsers.filter(u => hasRole(u, 'provider')).length;
+  const drivers = adminUsers.filter(u => hasRole(u, 'driver')).length;
   const pendingApprovals = adminUsers.filter(u => u.status === 'pending').length;
 
   const totalBookings = bookings.length;

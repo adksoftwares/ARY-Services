@@ -63,7 +63,7 @@ export default function AdminUsers({
         u.location?.toLowerCase().includes(q) ||
         String(u.id).includes(q);
 
-      const matchRole = roleFilter === 'all' || u.accountType === roleFilter;
+      const matchRole = roleFilter === 'all' || u.accountType === roleFilter || (Array.isArray(u.roles) && u.roles.includes(roleFilter));
       const matchStatus = statusFilter === 'all' || u.status === statusFilter;
 
       return matchQuery && matchRole && matchStatus;
@@ -286,7 +286,7 @@ export default function AdminUsers({
                           variant={user.accountType === 'admin' ? 'warning' : user.accountType === 'provider' ? 'brand' : user.accountType === 'driver' ? 'accent' : 'neutral'}
                           dot={false}
                         >
-                          {user.accountType?.toUpperCase()}
+                          {[...new Set([user.accountType, ...(Array.isArray(user.roles) ? user.roles : [])])].filter(Boolean).map(role => role.toUpperCase()).join(' / ')}
                         </Badge>
                       </td>
 
