@@ -55,7 +55,7 @@ export default function AuthModal({ onNotice }) {
   const [regNicNumber, setRegNicNumber] = useState('');
   const [regNicDoc, setRegNicDoc] = useState('');
   const [regTradeCert, setRegTradeCert] = useState('');
-  const [regDriverServices, setRegDriverServices] = useState(['food_delivery']);
+  const [regDriverServices, setRegDriverServices] = useState([]);
 
   function handleFileUpload(e, setter) {
     const file = e.target.files?.[0];
