@@ -648,7 +648,7 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
     }
 
     const selectedDriverServices = role === 'driver' && Array.isArray(driverServices) ? [...new Set(driverServices.filter(type => ['food_delivery', 'ride'].includes(type)))] : [];
-    if (role === 'driver' && selectedDriverServices.length === 0) return res.status(400).json({ error: 'Select Ride Service, Food Delivery Service, or both.' });
+    if (role === 'driver' && selectedDriverServices.length === 0) return res.status(400).json({ error: 'Select Passenger Ride, Shop & Grocery Delivery, or both.' });
 
     // Provider and driver accounts require Admin approval before activation
     const initialStatus = ['provider', 'driver'].includes(role) ? 'pending' : 'active';
