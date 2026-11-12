@@ -34,7 +34,7 @@ export default function AccountView({ onNotice, onClose }) {
   const [nicNumber, setNicNumber] = useState('');
   const [operatingMode, setOperatingMode] = useState('mobile');
   const [nsnNumber, setNsnNumber] = useState('');
-  const [baseCharge, setBaseCharge] = useState('LKR 1,500');
+  const [baseCharge, setBaseCharge] = useState('');
   const [driverServices, setDriverServices] = useState(['ride']);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [upgradeError, setUpgradeError] = useState('');
