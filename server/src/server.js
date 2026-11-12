@@ -1759,17 +1759,23 @@ app.post('/api/admin/payouts/confirm', requireAdmin, async (req, res) => {
     const providerId = String(req.body.providerId || '').trim();
     const batchId = String(req.body.batchId || '').trim();
     const bankReference = String(req.body.bankReference || '').trim();
-    if (!providerId || !/^ary-transfer-instructions-[a-zA-Z0-9-]+$/.test(batchId) || bankReference.length < 4 || bankReference.length > 100) {
+    const amount = Number(req.body.amount);
+    if (!providerId || !/^ary-transfer-instructions-[a-zA-Z0-9-]+$/.test(batchId) || bankReference.length < 4 || bankReference.length > 100 || !Number.isFinite(amount) || amount <= 0) {
       return res.status(400).json({ error: 'Provider, valid transfer batch, and bank transfer reference are required.' });
     }
     const provider = (await getUsers()).find(user => user.id === providerId);
     if (!provider || provider.status !== 'active' || !provider.bankName || !provider.bankAccount) {
       return res.status(400).json({ error: 'Provider must be active and have verified bank details.' });
     }
-    const balance = await getWalletBalance(`provider:${providerId}:wallet`);
-    if (!(balance > 0)) return res.status(409).json({ error: 'No payable wallet balance remains. This payout may already have been recorded.' });
-    await recordPayoutSettlement({ batchId: `${batchId}-${bankReference}`, providerId, amount: balance });
-    return res.json({ status: 'ok', providerId, amount: balance, bankReference, message: 'External bank transfer recorded in the wallet ledger.' });
+    const account = `provider:${providerId}:wallet`;
+    const ledger = await getLedgerEntries();
+    if (ledger.some(entry => entry.account === account && String(entry.description || '').includes(`Bank reference ${bankReference}`))) {
+      return res.status(409).json({ error: 'This bank transfer reference has already been recorded.' });
+    }
+    const balance = await getWalletBalance(account);
+    if (amount > balance) return res.status(409).json({ error: 'The confirmed transfer amount exceeds the current available wallet balance.' });
+    await recordPayoutSettlement({ batchId, providerId, amount, bankReference });
+    return res.json({ status: 'ok', providerId, amount, bankReference, message: 'External bank transfer recorded in the wallet ledger.' });
   } catch (err) {
     console.error('Confirm payout error:', err);
     return res.status(500).json({ error: 'Could not record the confirmed payout.' });
