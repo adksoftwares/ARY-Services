@@ -268,7 +268,6 @@ export default function AdminKycModal({
               </span>
             </div>
           </div>
-        </div>
 
         {/* Rejection Reason Submodal */}
         {rejectReasonOpen && (
