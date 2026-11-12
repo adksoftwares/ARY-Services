@@ -284,6 +284,7 @@ async function publishEvent(eventType, payload = {}) {
 
 app.get('/api/notifications', requireAuth, async (req, res) => {
   try {
+    if (req.user.accountType === 'admin' && !isDesignatedSuperAdmin(req.user)) return res.status(403).json({ error: 'Super Admin privileges required.' });
     const notifications = await listNotifications(req.user, req.query.limit);
     return res.json({ notifications, unreadCount: notifications.filter(item => !item.readAt).length });
   } catch {
@@ -292,12 +293,16 @@ app.get('/api/notifications', requireAuth, async (req, res) => {
 });
 
 app.patch('/api/notifications/read-all', requireAuth, async (req, res) => {
-  try { return res.json(await markAllNotificationsRead(req.user)); }
+  try {
+    if (req.user.accountType === 'admin' && !isDesignatedSuperAdmin(req.user)) return res.status(403).json({ error: 'Super Admin privileges required.' });
+    return res.json(await markAllNotificationsRead(req.user));
+  }
   catch { return res.status(500).json({ error: 'Could not update notifications.' }); }
 });
 
 app.patch('/api/notifications/:id/read', requireAuth, async (req, res) => {
   try {
+    if (req.user.accountType === 'admin' && !isDesignatedSuperAdmin(req.user)) return res.status(403).json({ error: 'Super Admin privileges required.' });
     const notification = await markNotificationRead(req.user, req.params.id);
     if (!notification) return res.status(404).json({ error: 'Notification not found.' });
     return res.json({ notification });
@@ -315,6 +320,7 @@ await initStorage();
 
 // Real-time Server-Sent Events (SSE) Dispatch Hub
 app.post('/api/events-ticket', requireAuth, (req, res) => {
+  if (req.user.accountType === 'admin' && !isDesignatedSuperAdmin(req.user)) return res.status(403).json({ error: 'Super Admin privileges required.' });
   const ticket = generateToken({ id: req.user.id, accountType: req.user.accountType, purpose: 'sse', exp: Date.now() + 5 * 60 * 1000 });
   res.setHeader('Cache-Control', 'no-store');
   return res.json({ ticket, expiresInSeconds: 300 });
