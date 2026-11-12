@@ -105,7 +105,7 @@ export function registerRoleAccessRoutes(app, { requireAuth, requireAdmin, getUs
       };
     } else {
       const driverServices = [...new Set((Array.isArray(details.driverServices) ? details.driverServices : []).map(String).filter(value => DRIVER_TYPES.has(value)))];
-      if (!driverServices.length) return res.status(400).json({ error: 'Select Ride, Food Delivery, or both.' });
+      if (!driverServices.length) return res.status(400).json({ error: 'Select Passenger Ride, Shop & Grocery Delivery, or both.' });
       application.details = { driverServices };
     }
 
