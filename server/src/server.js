@@ -948,13 +948,36 @@ app.patch('/api/users/location', requireAuth, async (req, res) => {
 });
 
 // Provider: Update own business profile
+app.get('/api/providers/profile/bank-details', requireAuth, async (req, res) => {
+  try {
+    const provider = req.user;
+    if (provider.accountType !== 'provider' || (provider.status !== 'active' && provider.providerStatus !== 'active')) {
+      return res.status(403).json({ error: 'An active provider account is required.' });
+    }
+    const stored = (await getUsers()).find(user => user.id === provider.id);
+    if (!stored) return res.status(404).json({ error: 'Provider account not found.' });
+    const account = String(stored.bankAccount || '');
+    return res.json({
+      status: 'ok',
+      bankName: stored.bankName || '',
+      hasBankAccount: Boolean(account),
+      accountLast4: account ? account.slice(-4) : ''
+    });
+  } catch (err) {
+    console.error('Fetch provider bank details error:', err);
+    return res.status(500).json({ error: 'Could not load bank details.' });
+  }
+});
+
 app.patch('/api/providers/profile', requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
     if (req.user.accountType !== 'provider' || (req.user.status !== 'active' && req.user.providerStatus !== 'active')) {
       return res.status(403).json({ error: 'An active provider account is required.' });
     }
-    const { baseCharge, location, experienceYears } = req.body || {};
+    const { baseCharge, location, experienceYears, bankName, bankAccount } = req.body || {};
+    const cleanBankName = bankName === undefined ? undefined : String(bankName).trim().slice(0, 80);
+    const cleanBankAccount = bankAccount === undefined ? undefined : String(bankAccount).replace(/[\\s-]/g, '').trim();
     const cleanLocation = location === undefined ? undefined : String(location).trim().slice(0, 500);
     const years = experienceYears === undefined ? undefined : Number(experienceYears);
     const chargeText = baseCharge === undefined ? undefined : String(baseCharge).replace(/[^0-9.]/g, '');
@@ -965,11 +988,22 @@ app.patch('/api/providers/profile', requireAuth, async (req, res) => {
     if (charge !== undefined && (!Number.isFinite(charge) || charge < 0 || charge > 10000000)) {
       return res.status(400).json({ error: 'Enter a valid service base charge.' });
     }
+    if (cleanBankName !== undefined && (cleanBankName.length < 2 || !/^[a-zA-Z0-9 .&'()-]+$/.test(cleanBankName))) {
+      return res.status(400).json({ error: 'Enter a valid bank name.' });
+    }
+    if (cleanBankAccount !== undefined && cleanBankAccount !== '' && !/^[a-zA-Z0-9]{6,34}$/.test(cleanBankAccount)) {
+      return res.status(400).json({ error: 'Bank account number must contain 6–34 letters or numbers.' });
+    }
+    if (cleanBankAccount && !cleanBankName && !req.user.bankName) {
+      return res.status(400).json({ error: 'Select a bank name before saving the account number.' });
+    }
     const updated = await updateUser(userId, provider => {
       if (!provider || (provider.accountType !== 'provider' && !provider.roles?.includes('provider'))) return provider;
       if (baseCharge !== undefined) provider.baseCharge = 'LKR ' + charge.toLocaleString('en-LK');
       if (cleanLocation !== undefined) provider.location = cleanLocation;
       if (years !== undefined) provider.experienceYears = years;
+      if (cleanBankName !== undefined) provider.bankName = cleanBankName;
+      if (cleanBankAccount !== undefined && cleanBankAccount !== '') provider.bankAccount = cleanBankAccount;
       return provider;
     });
 
@@ -986,7 +1020,9 @@ app.patch('/api/providers/profile', requireAuth, async (req, res) => {
         category: updated.category,
         categoryName: updated.categoryName,
         baseCharge: updated.baseCharge,
-        location: updated.location
+        location: updated.location,
+        bankName: updated.bankName || '',
+        bankAccountLast4: updated.bankAccount ? String(updated.bankAccount).slice(-4) : ''
       }
     });
   } catch (err) {
