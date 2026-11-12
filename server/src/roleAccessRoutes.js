@@ -101,7 +101,7 @@ export function registerRoleAccessRoutes(app, { requireAuth, requireAdmin, getUs
         location: location.slice(0, 300), nicNumber,
         operatingMode,
         nsnNumber,
-        baseCharge: String(details.baseCharge || 'LKR 1,500').slice(0, 40)
+        baseCharge: String(details.baseCharge || '').trim().slice(0, 40) || null
       };
     } else {
       const driverServices = [...new Set((Array.isArray(details.driverServices) ? details.driverServices : []).map(String).filter(value => DRIVER_TYPES.has(value)))];
