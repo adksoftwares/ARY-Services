@@ -252,6 +252,7 @@ export default function AdminKycModal({
             {/* Review integrity note */}
             <div style={{
               marginTop: 16,
+              gridColumn: '1 / -1',
               padding: '10px 14px',
               background: 'var(--color-neutral-50, #f8fafc)',
               borderRadius: 'var(--radius-sm, 6px)',
