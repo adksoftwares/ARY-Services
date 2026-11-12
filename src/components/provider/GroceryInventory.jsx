@@ -157,6 +157,7 @@ export default function GroceryInventory() {
   }
 
   function openAddSheet() {
+    setCatalogChoice('');
     setEditingId(null);
     setForm(BLANK_FORM);
     setError('');
@@ -164,6 +165,7 @@ export default function GroceryInventory() {
   }
 
   function openEditSheet(item) {
+    setCatalogChoice('');
     setEditingId(item.id);
     setForm({
       ...BLANK_FORM,
