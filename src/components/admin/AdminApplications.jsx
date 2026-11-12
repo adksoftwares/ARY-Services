@@ -86,7 +86,7 @@ export default function AdminApplications({
         kind: 'driver',
         applicantName: d.driverName || d.userId,
         phone: d.phone || 'Phone on file',
-        serviceNetwork: d.driverType === 'food_delivery' ? 'Food Delivery Driver' : 'Ride Driver',
+        serviceNetwork: d.driverType === 'food_delivery' ? 'Shop & Grocery Delivery Driver' : d.driverType === 'parcel_delivery' ? 'Parcel Courier Driver' : 'Passenger Ride Driver',
         status: d.status || 'pending',
         appliedAt: d.createdAt || d.requestedAt || new Date().toISOString(),
         details: d,
