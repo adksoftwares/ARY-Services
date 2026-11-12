@@ -977,7 +977,7 @@ app.patch('/api/providers/profile', requireAuth, async (req, res) => {
     }
     const { baseCharge, location, experienceYears, bankName, bankAccount } = req.body || {};
     const cleanBankName = bankName === undefined ? undefined : String(bankName).trim().slice(0, 80);
-    const cleanBankAccount = bankAccount === undefined ? undefined : String(bankAccount).replace(/[\\s-]/g, '').trim();
+    const cleanBankAccount = bankAccount === undefined ? undefined : String(bankAccount).replace(/[\s-]/g, '').trim();
     const cleanLocation = location === undefined ? undefined : String(location).trim().slice(0, 500);
     const years = experienceYears === undefined ? undefined : Number(experienceYears);
     const chargeText = baseCharge === undefined ? undefined : String(baseCharge).replace(/[^0-9.]/g, '');
