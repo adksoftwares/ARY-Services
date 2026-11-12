@@ -362,6 +362,7 @@ export default function AuthModal({ onNotice }) {
                   <div className="password-input-wrapper">
                     <input
                       required
+                      minLength={6}
                       type={showRegPassword ? 'text' : 'password'}
                       value={regPassword}
                       onChange={e => setRegPassword(e.target.value)}
