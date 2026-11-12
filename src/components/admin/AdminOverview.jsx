@@ -33,7 +33,7 @@ export default function AdminOverview({
   const disputedBookings = bookings.filter(b => b.status === 'disputed' || b.paymentStatus === 'disputed_frozen' || b.dispute).length;
 
   const settledPayouts = bookings.filter(b => b.paymentStatus === 'released_to_provider').reduce((sum, b) => {
-    return sum + (b.providerPayout || Math.round((parseInt(String(b.baseCharge || '1500').replace(/\D/g, ''), 10) || 1500) * 0.9));
+    return sum + Number(b.providerPayout ?? 0);
   }, 0);
 
   // Sparkline data for 7-day bookings volume
