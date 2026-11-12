@@ -516,13 +516,13 @@ function CustomerWorkspace() {
                   fetchProviders(selectedCategory?.slug, query, newCoords);
                 }}
                 popularProviders={providers}
-                onBookProvider={(provider) => {
+                onBookProvider={(provider, service) => {
                   if (!currentUser) {
                     setNotice('Please sign in or create an account to book a service.');
                     openAuthModal('login');
                     return;
                   }
-                  setBookingProvider(provider);
+                  setBookingProvider({ ...provider, selectedService: service || null });
                   setBookingOpen(true);
                 }}
               />

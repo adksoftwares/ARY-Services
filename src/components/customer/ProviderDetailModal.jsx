@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   MapPin,
   Star,
@@ -22,11 +22,23 @@ export default function ProviderDetailModal({
   selectedCategory,
   onBook
 }) {
+  const [selectedServiceId, setSelectedServiceId] = useState('');
+  useEffect(() => { setSelectedServiceId(''); }, [provider?.id]);
   if (!isOpen || !provider) return null;
 
-  const services = Array.isArray(provider.approvedServices) && provider.approvedServices.length > 0
-    ? provider.approvedServices
-    : [{ id: 'primary', serviceName: provider.categoryName || selectedCategory?.name || 'Primary Service', baseCharge: provider.baseCharge || null, description: '' }];
+  const services = [
+    {
+      id: 'primary',
+      categorySlug: provider.category,
+      categoryName: provider.categoryName || selectedCategory?.name || 'Primary Service',
+      serviceName: provider.categoryName || selectedCategory?.name || 'Primary Service',
+      baseCharge: provider.baseCharge || null,
+      description: ''
+    },
+    ...(Array.isArray(provider.approvedServices) ? provider.approvedServices : [])
+  ];
+  const selectedService = services.find((service, index) => (service.id || `service-${index}`) === selectedServiceId) || services[0];
+  const selectedServiceKey = selectedService ? (selectedService.id || `service-${services.indexOf(selectedService)}`) : '';
   const reviewCount = Number(provider.reviewCount) || 0;
   const rating = reviewCount > 0 && provider.rating != null ? Number(provider.rating) : null;
   const experienceYears = provider.experienceYears != null ? Number(provider.experienceYears) : null;
@@ -75,7 +87,7 @@ export default function ProviderDetailModal({
           </div>
           <div className="highlight-pill">
             <span className="highlight-label">Starting Rate</span>
-            <b>{provider.baseCharge || 'Contact for rate'}</b>
+            <b>{selectedService?.baseCharge ? `LKR ${Number(selectedService.baseCharge).toLocaleString('en-LK')}` : provider.baseCharge || 'Contact for rate'}</b>
           </div>
           <div className="highlight-pill">
             <span className="highlight-label">Warranty</span>
@@ -95,20 +107,31 @@ export default function ProviderDetailModal({
             <Wrench size={16} /> Services Offered & Base Rates
           </h4>
           <div className="detail-services-list">
-            {services.map((srv, idx) => (
-              <div key={srv.id || idx} className="detail-service-card">
-                <div className="service-info-left">
-                  <b className="service-item-name">{srv.serviceName}</b>
-                  {srv.description && (
-                    <p className="service-item-desc">{srv.description}</p>
-                  )}
+            {services.map((srv, idx) => {
+              const serviceKey = srv.id || `service-${idx}`;
+              const isSelected = selectedServiceKey === serviceKey;
+              return (
+                <div
+                  key={serviceKey}
+                  className="detail-service-card"
+                  style={{ border: isSelected ? '2px solid var(--color-brand-600, #174d3d)' : '1px solid var(--color-border-subtle, #e2e8f0)', background: isSelected ? 'var(--color-brand-50, #edf7f2)' : 'var(--color-surface, #fff)', cursor: 'pointer' }}
+                  onClick={() => setSelectedServiceId(serviceKey)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') setSelectedServiceId(serviceKey); }}
+                >
+                  <div className="service-info-left">
+                    <b className="service-item-name">{srv.serviceName}</b>
+                    {srv.description && <p className="service-item-desc">{srv.description}</p>}
+                    <small style={{ color: 'var(--color-brand-700, #174d3d)', fontWeight: 700 }}>{isSelected ? 'Selected service' : 'Select this service'}</small>
+                  </div>
+                  <div className="service-item-price">
+                    <span>Starting at</span>
+                    <b>{srv.baseCharge ? `LKR ${Number(srv.baseCharge).toLocaleString('en-LK')}` : provider.baseCharge || 'Contact for rate'}</b>
+                  </div>
                 </div>
-                <div className="service-item-price">
-                  <span>Starting at</span>
-                  <b>{srv.baseCharge ? `LKR ${Number(srv.baseCharge).toLocaleString('en-LK')}` : provider.baseCharge || 'Contact for rate'}</b>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -154,7 +177,7 @@ export default function ProviderDetailModal({
             className="book-now-cta"
             onClick={() => {
               onClose();
-              if (onBook) onBook(provider);
+              if (onBook) onBook(provider, selectedService);
             }}
           >
             Book Now / Request Quote
