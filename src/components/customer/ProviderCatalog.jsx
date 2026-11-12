@@ -211,7 +211,7 @@ export default function ProviderCatalog({
                 const operatingModeLabel = provider.operatingMode === 'shop' ? 'Shop-based' : provider.operatingMode === 'online' ? 'Online service' : provider.operatingMode === 'mobile' ? 'Mobile / on-location' : '';
                 const startingPrice = selectedService?.baseCharge
                   ? `LKR ${Number(selectedService.baseCharge).toLocaleString('en-LK')}`
-                  : provider.baseCharge || 'LKR 1,500';
+                  : provider.baseCharge || 'Contact for rate';
 
                 return (
                   <div key={provider.id} className="provider-card-item">
@@ -251,9 +251,12 @@ export default function ProviderCatalog({
                         )}
 
                         <div className="provider-meta-item">
-                          <Star size={14} className="meta-star" fill="currentColor" />
+                          <Star size={14} className="meta-star" fill={provider.reviewCount > 0 ? 'currentColor' : 'none'} />
                           <span>
-                            <b>{provider.rating ? Number(provider.rating).toFixed(1) : '5.0'}</b> ({provider.reviewCount ?? 14} reviews) · {provider.experienceYears || 3} yrs exp
+                            {provider.reviewCount > 0 && provider.rating != null
+                              ? <><b>{Number(provider.rating).toFixed(1)}</b> ({provider.reviewCount} reviews)</>
+                              : 'No customer reviews yet'}
+                            {provider.experienceYears != null ? ` · ${provider.experienceYears} yrs experience` : ''}
                           </span>
                         </div>
 

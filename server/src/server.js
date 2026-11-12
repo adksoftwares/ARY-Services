@@ -877,10 +877,10 @@ app.get('/api/providers', async (req, res) => {
         categoryName: p.categoryName || 'General Services',
         operatingMode: p.operatingMode || null,
         approvedServices: (Array.isArray(p.approvedServices) ? p.approvedServices : []).map(service => ({ categorySlug: service.categorySlug, categoryName: service.categoryName, serviceName: service.serviceName, description: service.description, baseCharge: service.baseCharge })),
-        baseCharge: p.baseCharge || 'LKR 1,500',
-        rating: p.rating !== undefined ? Number(p.rating) : 5.0,
-        reviewCount: p.reviewCount !== undefined ? Number(p.reviewCount) : 0,
-        experienceYears: p.experienceYears !== undefined ? Number(p.experienceYears) : 3
+        baseCharge: p.baseCharge || null,
+        rating: p.rating !== undefined && p.rating !== null ? Number(p.rating) : null,
+        reviewCount: p.reviewCount !== undefined && p.reviewCount !== null ? Number(p.reviewCount) : 0,
+        experienceYears: p.experienceYears !== undefined && p.experienceYears !== null ? Number(p.experienceYears) : null
       };
     });
 
