@@ -49,7 +49,7 @@ export default function AuthModal({ onNotice }) {
   const [showRegPassword, setShowRegPassword] = useState(false);
   const [regAccountType, setRegAccountType] = useState('customer');
   const [regCategory, setRegCategory] = useState('electrical-repair');
-  const [regBaseCharge, setRegBaseCharge] = useState('LKR 1,500');
+  const [regBaseCharge, setRegBaseCharge] = useState('');
   const [regNsnNumber, setRegNsnNumber] = useState('');
   const [regOperatingMode, setRegOperatingMode] = useState('mobile');
   const [regNicNumber, setRegNicNumber] = useState('');
