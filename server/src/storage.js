@@ -701,7 +701,7 @@ export async function recordCallOutFeeCompensation({ bookingId, customerId, prov
   return { transactionId: txId, entries };
 }
 
-export async function recordPayoutSettlement({ batchId, providerId, amount }) {
+export async function recordPayoutSettlement({ batchId, providerId, amount, bankReference = '' }) {
   const timestamp = new Date().toISOString();
   const txId = `tx-payout-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
   const entries = [
@@ -712,7 +712,7 @@ export async function recordPayoutSettlement({ batchId, providerId, amount }) {
       type: 'debit',
       amount: Number(amount),
       currency: 'LKR',
-      description: `Bank CEFT payout disbursement batch #${batchId.slice(-8)}`,
+      description: `Confirmed bank transfer batch #${batchId.slice(-8)}${bankReference ? ` | Bank reference ${bankReference}` : ''}`,
       timestamp
     },
     {
@@ -722,7 +722,7 @@ export async function recordPayoutSettlement({ batchId, providerId, amount }) {
       type: 'credit',
       amount: Number(amount),
       currency: 'LKR',
-      description: `Commercial Bank of Ceylon automated electronic funds transfer for provider #${providerId}`,
+      description: `External bank transfer recorded for provider #${providerId}${bankReference ? ` | Bank reference ${bankReference}` : ''}`,
       timestamp
     }
   ];
