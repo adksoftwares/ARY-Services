@@ -17,7 +17,7 @@ import { Badge, Card } from '../../design-system';
 export default function ProviderStatsHeader({
   currentUser,
   bookings = [],
-  averageRating = '5.0',
+  averageRating = '—',
   reviewCount = 0,
   walletBalance = 0,
   isOnline = true,
@@ -111,7 +111,7 @@ export default function ProviderStatsHeader({
             <Star size={20} fill="currentColor" />
           </div>
           <div className="kpi-data">
-            <span className="kpi-val">{averageRating}</span>
+            <span className="kpi-val">{reviewCount > 0 ? averageRating : '—'}</span>
             <span className="kpi-label">Rating ({reviewCount} reviews)</span>
           </div>
         </Card>
