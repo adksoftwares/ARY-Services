@@ -992,6 +992,8 @@ app.get('/api/providers/profile/bank-details', requireAuth, async (req, res) => 
     return res.json({
       status: 'ok',
       bankName: stored.bankName || '',
+      bankAccountName: stored.bankAccountName || '',
+      bankBranch: stored.bankBranch || '',
       hasBankAccount: Boolean(account),
       accountLast4: account ? account.slice(-4) : ''
     });
@@ -1007,8 +1009,10 @@ app.patch('/api/providers/profile', requireAuth, async (req, res) => {
     if (req.user.accountType !== 'provider' || (req.user.status !== 'active' && req.user.providerStatus !== 'active')) {
       return res.status(403).json({ error: 'An active provider account is required.' });
     }
-    const { baseCharge, location, experienceYears, bankName, bankAccount } = req.body || {};
+    const { baseCharge, location, experienceYears, bankName, bankAccount, bankAccountName, bankBranch } = req.body || {};
     const cleanBankName = bankName === undefined ? undefined : String(bankName).trim().slice(0, 80);
+    const cleanBankAccountName = bankAccountName === undefined ? undefined : String(bankAccountName).trim().slice(0, 100);
+    const cleanBankBranch = bankBranch === undefined ? undefined : String(bankBranch).trim().slice(0, 100);
     const cleanBankAccount = bankAccount === undefined ? undefined : String(bankAccount).replace(/[\s-]/g, '').trim();
     const cleanLocation = location === undefined ? undefined : String(location).trim().slice(0, 500);
     const years = experienceYears === undefined ? undefined : Number(experienceYears);
@@ -1023,6 +1027,8 @@ app.patch('/api/providers/profile', requireAuth, async (req, res) => {
     if (cleanBankName !== undefined && (cleanBankName.length < 2 || !/^[a-zA-Z0-9 .&'()-]+$/.test(cleanBankName))) {
       return res.status(400).json({ error: 'Enter a valid bank name.' });
     }
+    if (cleanBankAccountName !== undefined && cleanBankAccountName.length < 2) return res.status(400).json({ error: 'Enter the bank account holder name.' });
+    if (cleanBankBranch !== undefined && cleanBankBranch.length < 2) return res.status(400).json({ error: 'Enter the bank branch name or code.' });
     if (cleanBankAccount !== undefined && cleanBankAccount !== '' && !/^[a-zA-Z0-9]{6,34}$/.test(cleanBankAccount)) {
       return res.status(400).json({ error: 'Bank account number must contain 6–34 letters or numbers.' });
     }
@@ -1035,6 +1041,8 @@ app.patch('/api/providers/profile', requireAuth, async (req, res) => {
       if (cleanLocation !== undefined) provider.location = cleanLocation;
       if (years !== undefined) provider.experienceYears = years;
       if (cleanBankName !== undefined) provider.bankName = cleanBankName;
+      if (cleanBankAccountName !== undefined) provider.bankAccountName = cleanBankAccountName;
+      if (cleanBankBranch !== undefined) provider.bankBranch = cleanBankBranch;
       if (cleanBankAccount !== undefined && cleanBankAccount !== '') provider.bankAccount = cleanBankAccount;
       return provider;
     });
@@ -1054,6 +1062,8 @@ app.patch('/api/providers/profile', requireAuth, async (req, res) => {
         baseCharge: updated.baseCharge,
         location: updated.location,
         bankName: updated.bankName || '',
+        bankAccountName: updated.bankAccountName || '',
+        bankBranch: updated.bankBranch || '',
         bankAccountLast4: updated.bankAccount ? String(updated.bankAccount).slice(-4) : ''
       }
     });
@@ -1782,10 +1792,12 @@ app.get('/api/admin/payouts/preview', requireAdmin, async (_req, res) => {
         fullName: provider.fullName,
         phone: provider.phone,
         bankName: provider.bankName || '',
+        accountHolderName: provider.bankAccountName || '',
+        bankBranch: provider.bankBranch || '',
         accountNumber: provider.bankAccount || '',
         balance,
         status: balance >= minThreshold ? 'ready' : 'below_threshold',
-        bankDetailsComplete: Boolean(provider.bankName && provider.bankAccount)
+        bankDetailsComplete: Boolean(provider.bankName && provider.bankAccountName && provider.bankBranch && provider.bankAccount)
       });
     }
     return res.json({
@@ -1815,7 +1827,7 @@ app.post('/api/admin/payouts/settle', requireAdmin, async (req, res) => {
     for (const provider of providers) {
       const balance = await getWalletBalance(`provider:${provider.id}:wallet`);
       if (balance < minThreshold) continue;
-      if (!provider.bankName || !provider.bankAccount) {
+      if (!provider.bankName || !provider.bankAccountName || !provider.bankBranch || !provider.bankAccount) {
         missingBankDetails.push({ providerId: provider.id, fullName: provider.fullName, balance });
         continue;
       }
@@ -1825,6 +1837,8 @@ app.post('/api/admin/payouts/settle', requireAdmin, async (req, res) => {
         phone: provider.phone,
         accountNumber: provider.bankAccount,
         bankName: provider.bankName,
+        accountHolderName: provider.bankAccountName,
+        bankBranch: provider.bankBranch,
         amount: balance,
         currency: 'LKR',
         status: 'awaiting_manual_transfer'
@@ -1860,7 +1874,7 @@ app.post('/api/admin/payouts/confirm', requireAdmin, async (req, res) => {
       return res.status(400).json({ error: 'Provider, valid transfer batch, and bank transfer reference are required.' });
     }
     const provider = (await getUsers()).find(user => user.id === providerId);
-    if (!provider || provider.status !== 'active' || !provider.bankName || !provider.bankAccount) {
+    if (!provider || provider.status !== 'active' || !provider.bankName || !provider.bankAccountName || !provider.bankBranch || !provider.bankAccount) {
       return res.status(400).json({ error: 'Provider must be active and have registered bank name and account number.' });
     }
     const account = `provider:${providerId}:wallet`;
