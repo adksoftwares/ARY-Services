@@ -105,6 +105,11 @@ export default function GroceryInventory() {
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
   const units = UNIT_GROUPS[form.unitGroup] || UNIT_GROUPS.count;
+  const selectedCatalogSizes = useMemo(() => {
+    if (!catalogChoice) return [];
+    const [catalogIndex] = catalogChoice.split(':').map(Number);
+    return Array.isArray(catalog[catalogIndex]?.sizes) ? catalog[catalogIndex].sizes : [];
+  }, [catalog, catalogChoice]);
 
   const load = useCallback(async () => {
     if (!currentUser?.token) return;
@@ -139,6 +144,11 @@ export default function GroceryInventory() {
   }
 
   function handleFieldChange(field, value) {
+    if (field === 'packSize' && value === 'custom') {
+      setCatalogChoice('');
+      setForm(prev => ({ ...prev, packSize: '' }));
+      return;
+    }
     setForm(prev => ({
       ...prev,
       [field]: value,
@@ -147,6 +157,7 @@ export default function GroceryInventory() {
   }
 
   function openAddSheet() {
+    setCatalogChoice('');
     setEditingId(null);
     setForm(BLANK_FORM);
     setError('');
@@ -154,6 +165,7 @@ export default function GroceryInventory() {
   }
 
   function openEditSheet(item) {
+    setCatalogChoice('');
     setEditingId(item.id);
     setForm({
       ...BLANK_FORM,
@@ -577,15 +589,27 @@ export default function GroceryInventory() {
 
             <div className="provider-form-group">
               <label className="provider-form-label">Pack / Item Size *</label>
-              <input
-                required
-                type="number"
-                min="0.001"
-                step="0.001"
-                value={form.packSize}
-                onChange={e => handleFieldChange('packSize', e.target.value)}
-                className="provider-form-input"
-              />
+              {selectedCatalogSizes.length > 0 ? (
+                <select
+                  required
+                  value={form.packSize}
+                  onChange={e => handleFieldChange('packSize', e.target.value)}
+                  className="provider-form-select"
+                >
+                  {selectedCatalogSizes.map(size => <option key={size} value={String(size)}>{size} {form.unit}</option>)}
+                  <option value="custom">Custom size…</option>
+                </select>
+              ) : (
+                <input
+                  required
+                  type="number"
+                  min="0.001"
+                  step="0.001"
+                  value={form.packSize}
+                  onChange={e => handleFieldChange('packSize', e.target.value)}
+                  className="provider-form-input"
+                />
+              )}
             </div>
 
             <div className="provider-form-group">

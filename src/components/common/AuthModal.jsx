@@ -558,7 +558,7 @@ export default function AuthModal({ onNotice }) {
                 {regAccountType === 'driver' && <section style={{background:'#f0f7f3',border:'1px solid #cfe3d6',borderRadius:10,padding:12,margin:'8px 0 12px'}}>
                   <b style={{fontSize:13,color: 'var(--brand-primary, #ffffff)'}}>Choose your driver services *</b>
                   <p style={{fontSize:12,color:'#647268',margin:'5px 0 10px'}}>Register for one service or both using a single Driver Account.</p>
-                  {[["ride","Passenger Ride Service"],["food_delivery","Food Delivery Service"]].map(([value,label]) => <label key={value} style={{display:'flex',alignItems:'center',gap:8,margin:'8px 0',fontSize:13}}><input type="checkbox" checked={regDriverServices.includes(value)} onChange={e=>setRegDriverServices(prev=>e.target.checked?[...prev,value]:prev.filter(x=>x!==value))}/>{label}</label>)}
+                  {[["ride","Passenger Ride Service"],["food_delivery","Shop & Grocery Delivery Service"]].map(([value,label]) => <label key={value} style={{display:'flex',alignItems:'center',gap:8,margin:'8px 0',fontSize:13}}><input type="checkbox" checked={regDriverServices.includes(value)} onChange={e=>setRegDriverServices(prev=>e.target.checked?[...prev,value]:prev.filter(x=>x!==value))}/>{label}</label>)}
                 </section>}
 
                 {/* Sri Lankan KYC Verification */}
