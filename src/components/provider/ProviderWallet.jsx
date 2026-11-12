@@ -22,7 +22,6 @@ export default function ProviderWallet({
   currentUser
 }) {
   const [requestPayoutOpen, setRequestPayoutOpen] = useState(false);
-  const [payoutRequested, setPayoutRequested] = useState(false);
   const [ledgerFilter, setLedgerFilter] = useState('all'); // 'all' | 'credit' | 'debit'
 
   const completedBookings = useMemo(() => bookings.filter(b => b.status === 'completed'), [bookings]);
@@ -53,12 +52,6 @@ export default function ProviderWallet({
     return ledgerEntries;
   }, [ledgerEntries, ledgerFilter]);
 
-  function handleRequestPayout() {
-    setPayoutRequested(true);
-    setTimeout(() => {
-      setRequestPayoutOpen(false);
-    }, 2200);
-  }
 
   return (
     <div className="provider-wallet-container" style={{ display: 'grid', gap: '20px' }}>
@@ -77,10 +70,10 @@ export default function ProviderWallet({
             <CheckCircle2 size={16} color="var(--color-brand-600, #174d3d)" /> Net Earnings (Released)
           </span>
           <div style={{ fontSize: '1.9rem', fontWeight: 800, color: 'var(--color-brand-700, #174d3d)', marginTop: 6, letterSpacing: '-0.02em' }}>
-            LKR {totalEarnedPayout.toLocaleString()}
+            LKR {Number(walletBalance || 0).toLocaleString()}
           </div>
           <small style={{ fontSize: '0.75rem', color: 'var(--color-brand-700, #1b5e4b)' }}>
-            From {completedBookings.length} completed job{completedBookings.length === 1 ? '' : 's'} (90% payout)
+            Available balance from your wallet ledger
           </small>
         </Card>
 
@@ -152,10 +145,10 @@ export default function ProviderWallet({
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <Landmark size={20} color="#f6ad55" />
-            <b style={{ fontSize: '1.05rem', color: '#ffffff', letterSpacing: '0.02em' }}>CEFT Direct Bank Payout</b>
+            <b style={{ fontSize: '1.05rem', color: '#ffffff', letterSpacing: '0.02em' }}>Bank Transfer Information</b>
           </div>
           <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: '#e2e8f0', opacity: 0.9 }}>
-            Request instant settlement to your registered Sri Lankan bank account (BOC, Commercial Bank, Sampath, HNB).
+            View your available earnings. Bank transfers are prepared by ARY administrators after your bank details are recorded.
           </p>
         </div>
         <Button
@@ -179,7 +172,7 @@ export default function ProviderWallet({
             Confirm CEFT Bank Settlement
           </h4>
           <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary, #64748b)', marginBottom: 14 }}>
-            Net payable amount: <b>LKR {totalEarnedPayout.toLocaleString()}</b> will be transferred to:
+            Your available wallet balance is <b>LKR {Number(walletBalance || 0).toLocaleString()}</b>. A payout request here does not trigger a bank transfer.
           </p>
           <div style={{
             background: 'var(--surface-secondary, #f8fafc)',
@@ -190,23 +183,12 @@ export default function ProviderWallet({
             color: 'var(--text-primary, #0f172a)'
           }}>
             <div><b>Beneficiary Name:</b> {currentUser?.fullName}</div>
-            <div><b>Registered Bank:</b> Commercial Bank of Ceylon PLC</div>
-            <div><b>Transfer Network:</b> LankaPay CEFT (Real-time 24/7)</div>
+            <div><b>Bank Details:</b> Contact ARY support to add or update verified bank details.</div>
+            <div><b>Transfer Status:</b> No transfer has been initiated from this screen.</div>
           </div>
-          {payoutRequested ? (
-            <Badge variant="success" dot={false}>
-              ✓ Settlement request logged! Our treasury officer will release batch transfer within 2 hours.
-            </Badge>
-          ) : (
-            <div style={{ display: 'flex', gap: 10 }}>
-              <Button variant="primary" onClick={handleRequestPayout}>
-                Confirm Payout Transfer
-              </Button>
-              <Button variant="ghost" onClick={() => setRequestPayoutOpen(false)}>
-                Cancel
-              </Button>
-            </div>
-          )}
+          <div style={{ display: 'flex', gap: 10 }}>
+            <Button variant="primary" onClick={() => setRequestPayoutOpen(false)}>Close</Button>
+          </div>
         </Card>
       )}
 

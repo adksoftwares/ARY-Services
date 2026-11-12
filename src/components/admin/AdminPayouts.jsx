@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Banknote,
   CheckCircle2,
@@ -13,6 +13,8 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { Card, Badge, Button, EmptyState, Modal, ConfirmDialog } from '../../design-system';
+import { API_BASE } from '../../config';
+import { useAuth } from '../../context/AuthContext';
 
 export default function AdminPayouts({
   bookings = [],
@@ -21,40 +23,31 @@ export default function AdminPayouts({
   onRunPayout,
   isSettling = false
 }) {
+  const { currentUser } = useAuth();
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [preview, setPreview] = useState({ candidates: [], eligibleCount: 0, missingBankDetailsCount: 0 });
+  const [previewLoading, setPreviewLoading] = useState(false);
   const minThreshold = 1000;
 
-  // Derive providers with completed jobs awaiting CEFT payout
-  const completedBookings = bookings.filter(b => b.status === 'completed');
-  const totalCompletedGross = completedBookings.reduce((sum, b) => {
-    return sum + (b.baseAmount || parseInt(String(b.baseCharge || '1500').replace(/\D/g, ''), 10) || 1500);
-  }, 0);
-  const totalNetPayable = Math.round(totalCompletedGross * 0.9);
-  const platformFeeTotal = Math.round(totalCompletedGross * 0.1);
+  async function loadPayoutPreview() {
+    if (!currentUser?.token) return;
+    setPreviewLoading(true);
+    try {
+      const response = await fetch(`${API_BASE}/admin/payouts/preview`, { headers: { Authorization: `Bearer ${currentUser.token}` } });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Could not load wallet balances');
+      setPreview(data);
+    } catch (error) {
+      console.warn('Payout preview unavailable:', error);
+    } finally {
+      setPreviewLoading(false);
+    }
+  }
 
-  // Derive pending provider settlement candidates
-  const activeProviders = adminUsers.filter(u => u.accountType === 'provider' && u.status === 'active');
-  const pendingSettlements = activeProviders.map(p => {
-    // Estimate pending balance from completed bookings for this provider
-    const providerCompleted = completedBookings.filter(b => b.providerId === p.id);
-    const balance = providerCompleted.reduce((acc, b) => {
-      const charge = b.baseAmount || parseInt(String(b.baseCharge || '1500').replace(/\D/g, ''), 10) || 1500;
-      return acc + Math.round(charge * 0.9);
-    }, 0);
-
-    return {
-      providerId: p.id,
-      fullName: p.fullName,
-      phone: p.phone,
-      bankName: p.bankName || 'Commercial Bank of Ceylon',
-      accountNumber: p.bankAccount || `CEFT-${p.phone}`,
-      balance: balance > 0 ? balance : 4500, // sample balance if fresh
-      status: balance >= minThreshold ? 'ready' : 'below_threshold'
-    };
-  });
-
-  const eligibleSettlements = pendingSettlements.filter(s => s.balance >= minThreshold);
-  const totalEligibleAmount = eligibleSettlements.reduce((sum, s) => sum + s.balance, 0);
+  useEffect(() => { loadPayoutPreview(); }, [currentUser?.token]);
+  const pendingSettlements = preview.candidates || [];
+  const eligibleSettlements = pendingSettlements.filter(item => item.balance >= minThreshold && item.bankDetailsComplete);
+  const totalEligibleAmount = eligibleSettlements.reduce((sum, item) => sum + item.balance, 0);
 
   // Client-side CSV Export for LankaPay CEFT
   function handleExportCsv() {
@@ -74,7 +67,7 @@ export default function AdminPayouts({
     const rows = records.map(r => [
       `"${r.fullName || r.providerName || 'Contractor'}"`,
       `"${r.bankName || 'Commercial Bank'}"`,
-      `"${r.accountNumber || '1000928371'}"`,
+      `"${r.accountNumber || ''}"`,
       r.amount || r.balance || 0,
       'LKR',
       '"ARY Services Partner Disbursal"',
@@ -98,7 +91,7 @@ export default function AdminPayouts({
 
   return (
     <div style={{ display: 'grid', gap: '16px' }}>
-      {/* 1. LankaPay CEFT Control Card */}
+      {/* 1. Manual Bank Transfer Control */}
       <Card style={{ padding: '22px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
           <div>
@@ -116,10 +109,10 @@ export default function AdminPayouts({
               </div>
               <div>
                 <h3 style={{ margin: 0, fontSize: '1.15rem', color: 'var(--color-brand-900, #173b2f)' }}>
-                  LankaPay CEFT Automated Payout Settlement
+                  Bank Transfer Preparation
                 </h3>
                 <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: 'var(--color-neutral-600, #475569)' }}>
-                  Disburse contractor earnings directly to Sri Lankan commercial banks via Central Bank real-time CEFT rails.
+                  Prepare a bank-transfer instruction file from actual wallet ledger balances. Transfers are completed outside ARY and confirmed by an administrator.
                 </p>
               </div>
             </div>
@@ -142,7 +135,7 @@ export default function AdminPayouts({
               loading={isSettling}
               disabled={isSettling}
             >
-              <Zap size={15} /> Settle CEFT Batch
+              <Zap size={15} /> Prepare Transfer File
             </Button>
           </div>
         </div>
@@ -161,15 +154,15 @@ export default function AdminPayouts({
         }}>
           <div>
             <span style={{ color: 'var(--color-neutral-500, #64748b)', fontSize: '0.74rem', display: 'block', textTransform: 'uppercase' }}>
-              Pending Settlements
+              Eligible Wallets
             </span>
             <b style={{ fontSize: '1.2rem', color: 'var(--color-brand-900, #0c2d23)' }}>
-              {eligibleSettlements.length} partners
+              {previewLoading ? 'Loading…' : `${eligibleSettlements.length} partners`}
             </b>
           </div>
           <div>
             <span style={{ color: 'var(--color-neutral-500, #64748b)', fontSize: '0.74rem', display: 'block', textTransform: 'uppercase' }}>
-              Net Contractor Payout (90%)
+              Available Wallet Balance
             </span>
             <b style={{ fontSize: '1.2rem', color: 'var(--color-brand-700, #174d3d)' }}>
               LKR {totalEligibleAmount.toLocaleString()}
@@ -177,15 +170,15 @@ export default function AdminPayouts({
           </div>
           <div>
             <span style={{ color: 'var(--color-neutral-500, #64748b)', fontSize: '0.74rem', display: 'block', textTransform: 'uppercase' }}>
-              Platform Fee Realized (10%)
+              Missing Bank Details
             </span>
             <b style={{ fontSize: '1.2rem', color: 'var(--color-neutral-700, #334155)' }}>
-              LKR {Math.round(totalEligibleAmount * 0.1).toLocaleString()}
+              {preview.missingBankDetailsCount || 0}
             </b>
           </div>
           <div>
             <span style={{ color: 'var(--color-neutral-500, #64748b)', fontSize: '0.74rem', display: 'block', textTransform: 'uppercase' }}>
-              Minimum Threshold
+              Minimum Wallet Balance
             </span>
             <b style={{ fontSize: '1.2rem', color: '#64748b' }}>
               LKR {minThreshold.toLocaleString()}
@@ -202,7 +195,7 @@ export default function AdminPayouts({
               <CheckCircle2 size={24} color="var(--color-brand-600, #174d3d)" />
               <div>
                 <b style={{ color: 'var(--color-brand-900, #0c2d23)', fontSize: '1.1rem' }}>
-                  LankaPay CEFT Batch Dispatched Successfully
+                  Transfer Instructions Prepared — Not Paid
                 </b>
                 <p style={{ margin: '2px 0 0', fontSize: '0.78rem', color: 'var(--color-brand-700, #174d3d)' }}>
                   Batch Reference: <code>{payoutResult.batchId}</code>
@@ -228,10 +221,10 @@ export default function AdminPayouts({
             marginBottom: 16
           }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10, fontSize: '0.85rem' }}>
-              <div><b>Total Disbursed:</b> <span style={{ color: 'var(--color-brand-700, #174d3d)', fontWeight: 800 }}>LKR {payoutResult.totalPayoutAmount?.toLocaleString()}</span></div>
-              <div><b>Contractors Settled:</b> {payoutResult.providerCount || eligibleSettlements.length} partners</div>
-              <div><b>Settlement Rail:</b> LankaPay CEFT Real-Time</div>
-              <div><b>Audit Status:</b> Double-Entry Balanced</div>
+              <div><b>Total to Transfer:</b> <span style={{ color: 'var(--color-brand-700, #174d3d)', fontWeight: 800 }}>LKR {payoutResult.totalPayoutAmount?.toLocaleString()}</span></div>
+              <div><b>Providers Listed:</b> {payoutResult.providerCount || eligibleSettlements.length} partners</div>
+              <div><b>Settlement Method:</b> Manual bank transfer</div>
+              <div><b>Wallet Status:</b> No debit recorded yet</div>
             </div>
             {payoutResult.checksum && (
               <div style={{ marginTop: 10, paddingTop: 8, borderTop: '1px solid var(--color-brand-200, #b7decb)', fontSize: '0.74rem', color: 'var(--color-brand-800, #154636)' }}>
@@ -246,7 +239,7 @@ export default function AdminPayouts({
       <Card style={{ padding: '0', overflow: 'hidden' }}>
         <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--color-border-subtle, #f1f5f9)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <b style={{ fontSize: '0.95rem', color: 'var(--color-text, #0f172a)' }}>
-            Contractor Settlement Ledger ({pendingSettlements.length} partners)
+            Provider Wallet Balances ({pendingSettlements.length} partners)
           </b>
           <span style={{ fontSize: '0.78rem', color: 'var(--color-neutral-500, #64748b)' }}>
             LankaPay CEFT Clearing Queue
@@ -261,13 +254,14 @@ export default function AdminPayouts({
                 <th style={{ width: '22%' }}>Bank Institution</th>
                 <th style={{ width: '20%' }}>Account Reference</th>
                 <th style={{ width: '18%', textAlign: 'right' }}>Net Balance (LKR)</th>
-                <th style={{ width: '15%', textAlign: 'right' }}>CEFT Eligibility</th>
+                <th style={{ width: '15%', textAlign: 'right' }}>Payout Status</th>
+                <th style={{ width: '15%', textAlign: 'right' }}>Action</th>
               </tr>
             </thead>
             <tbody>
               {pendingSettlements.length === 0 ? (
                 <tr>
-                  <td colSpan={5} style={{ padding: '36px', textAlign: 'center', color: '#64748b' }}>
+                  <td colSpan={6} style={{ padding: '36px', textAlign: 'center', color: '#64748b' }}>
                     No contractor balances currently eligible for payout.
                   </td>
                 </tr>
@@ -288,9 +282,35 @@ export default function AdminPayouts({
                       LKR {item.balance.toLocaleString()}
                     </td>
                     <td style={{ textAlign: 'right' }}>
-                      <Badge variant={item.status === 'ready' ? 'success' : 'neutral'} dot={false}>
-                        {item.status === 'ready' ? 'READY' : '< MIN THRESHOLD'}
+                      <Badge variant={item.status === 'ready' && item.bankDetailsComplete ? 'success' : 'neutral'} dot={false}>
+                        {!item.bankDetailsComplete ? 'BANK DETAILS NEEDED' : item.status === 'ready' ? 'READY' : 'BELOW THRESHOLD'}
                       </Badge>
+                    </td>
+                    <td style={{ textAlign: 'right' }}>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={!payoutResult?.batchId || !payoutResult?.disbursements?.some(record => record.providerId === item.providerId)}
+                        onClick={async () => {
+                          const prepared = payoutResult?.disbursements?.find(record => record.providerId === item.providerId);
+                          if (!prepared) return;
+                          const bankReference = window.prompt('Enter the bank reference after you have completed this transfer externally:');
+                          if (!bankReference) return;
+                          try {
+                            const response = await fetch(API_BASE + '/admin/payouts/confirm', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + currentUser.token },
+                              body: JSON.stringify({ providerId: item.providerId, batchId: payoutResult.batchId, amount: prepared.amount, bankReference: bankReference.trim() })
+                            });
+                            const result = await response.json();
+                            if (!response.ok) throw new Error(result.error || 'Could not record bank transfer');
+                            window.alert('Recorded LKR ' + Number(result.amount).toLocaleString() + ' against bank reference ' + result.bankReference + '.');
+                            await loadPayoutPreview();
+                          } catch (error) {
+                            window.alert(error.message || 'Could not record the bank transfer.');
+                          }
+                        }}
+                      >Record Paid</Button>
                     </td>
                   </tr>
                 ))
@@ -308,9 +328,9 @@ export default function AdminPayouts({
           setConfirmModalOpen(false);
           await onRunPayout();
         }}
-        title="Execute LankaPay CEFT Batch Disbursal?"
-        message={`Are you sure you want to execute settlement of LKR ${totalEligibleAmount.toLocaleString()} across ${eligibleSettlements.length} active service partners? This will generate the signed LankaPay batch file and debit the platform clearing account.`}
-        confirmLabel="Confirm & Disburse Funds"
+        title="Prepare Manual Bank Transfer Instructions?"
+        message={`Prepare a transfer instruction file for LKR ${totalEligibleAmount.toLocaleString()} across ${eligibleSettlements.length} providers? This does not transfer funds or debit provider wallets. After completing each bank transfer externally, an administrator must record its bank reference to settle the wallet ledger.`}
+        confirmLabel="Prepare Transfer File"
         isDanger={false}
       />
     </div>

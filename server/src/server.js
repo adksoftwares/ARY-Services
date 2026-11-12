@@ -1668,65 +1668,117 @@ app.post('/api/admin/bookings/:id/arbitrate', requireAdmin, async (req, res) => 
   }
 });
 
-// Admin: Trigger automated CEFT banking payout run
+// Admin: preview real provider wallet balances for manual bank-transfer preparation.
+app.get('/api/admin/payouts/preview', requireAdmin, async (_req, res) => {
+  try {
+    const minThreshold = 1000;
+    const users = await getUsers();
+    const providers = users.filter(u =>
+      ((u.accountType === 'provider' && u.status === 'active') ||
+      (Array.isArray(u.roles) && u.roles.includes('provider') && u.providerStatus === 'active' && !['rejected', 'suspended'].includes(u.status)))
+    );
+    const candidates = [];
+    for (const provider of providers) {
+      const balance = await getWalletBalance(`provider:${provider.id}:wallet`);
+      if (balance <= 0) continue;
+      candidates.push({
+        providerId: provider.id,
+        fullName: provider.fullName,
+        phone: provider.phone,
+        bankName: provider.bankName || '',
+        accountNumber: provider.bankAccount || '',
+        balance,
+        status: balance >= minThreshold ? 'ready' : 'below_threshold',
+        bankDetailsComplete: Boolean(provider.bankName && provider.bankAccount)
+      });
+    }
+    return res.json({
+      status: 'ok',
+      minThreshold,
+      candidates,
+      eligibleCount: candidates.filter(item => item.balance >= minThreshold && item.bankDetailsComplete).length,
+      missingBankDetailsCount: candidates.filter(item => item.balance >= minThreshold && !item.bankDetailsComplete).length
+    });
+  } catch (err) {
+    console.error('Payout preview error:', err);
+    return res.status(500).json({ error: 'Could not prepare wallet payout preview.' });
+  }
+});
+
+// Admin: prepare a CEFT-compatible CSV manifest. This does NOT transfer money or debit wallets.
 app.post('/api/admin/payouts/settle', requireAdmin, async (req, res) => {
   try {
-    const minThreshold = Number(req.body.minThreshold) || 1000;
+    const minThreshold = Math.max(0, Number(req.body.minThreshold) || 1000);
     const users = await getUsers();
-    const providers = users.filter(u => (u.accountType === 'provider' && u.status === 'active') || (Array.isArray(u.roles) && u.roles.includes('provider') && u.providerStatus === 'active' && !['rejected','suspended'].includes(u.status)));
-
+    const providers = users.filter(u =>
+      ((u.accountType === 'provider' && u.status === 'active') ||
+      (Array.isArray(u.roles) && u.roles.includes('provider') && u.providerStatus === 'active' && !['rejected', 'suspended'].includes(u.status)))
+    );
     const disbursements = [];
-    for (const p of providers) {
-      const balance = await getWalletBalance(`provider:${p.id}:wallet`);
-      if (balance >= minThreshold) {
-        disbursements.push({
-          providerId: p.id,
-          fullName: p.fullName,
-          phone: p.phone,
-          accountNumber: p.bankAccount || `CEFT-${p.phone}`,
-          bankName: p.bankName || 'Commercial Bank of Ceylon',
-          amount: balance,
-          currency: 'LKR'
-        });
+    const missingBankDetails = [];
+    for (const provider of providers) {
+      const balance = await getWalletBalance(`provider:${provider.id}:wallet`);
+      if (balance < minThreshold) continue;
+      if (!provider.bankName || !provider.bankAccount) {
+        missingBankDetails.push({ providerId: provider.id, fullName: provider.fullName, balance });
+        continue;
       }
-    }
-
-    if (disbursements.length === 0) {
-      return res.json({
-        status: 'ok',
-        message: `No active providers have an unsettled wallet balance exceeding LKR ${minThreshold.toLocaleString()}.`,
-        providerCount: 0,
-        totalPayoutAmount: 0,
-        disbursements: []
+      disbursements.push({
+        providerId: provider.id,
+        fullName: provider.fullName,
+        phone: provider.phone,
+        accountNumber: provider.bankAccount,
+        bankName: provider.bankName,
+        amount: balance,
+        currency: 'LKR',
+        status: 'awaiting_manual_transfer'
       });
     }
-
-    const batchId = `ceft-batch-${Date.now()}-${crypto.randomBytes(3).toString('hex')}`;
-    const totalPayoutAmount = disbursements.reduce((sum, d) => sum + d.amount, 0);
-    const checksum = crypto.createHash('sha256')
-      .update(batchId + JSON.stringify(disbursements))
-      .digest('hex');
-
-    for (const item of disbursements) {
-      await recordPayoutSettlement({
-        batchId,
-        providerId: item.providerId,
-        amount: item.amount
-      });
-    }
-
-    res.json({
+    const batchId = `ary-transfer-instructions-${Date.now()}-${crypto.randomBytes(3).toString('hex')}`;
+    const totalPayoutAmount = disbursements.reduce((sum, item) => sum + item.amount, 0);
+    const checksum = crypto.createHash('sha256').update(batchId + JSON.stringify(disbursements)).digest('hex');
+    return res.json({
       status: 'ok',
-      message: `Successfully generated CEFT bank settlement batch #${batchId}.`,
+      message: 'Transfer instructions prepared. No bank transfer has been executed and no wallet has been debited.',
       batchId,
       checksum,
       providerCount: disbursements.length,
       totalPayoutAmount,
-      disbursements
+      disbursements,
+      missingBankDetails
     });
   } catch (err) {
-    console.error('Settle payouts error:', err);
-    res.status(500).json({ error: 'Could not process payout settlement.' });
+    console.error('Prepare payout instructions error:', err);
+    return res.status(500).json({ error: 'Could not prepare bank transfer instructions.' });
+  }
+});
+
+// Admin: record a provider payout only after an external bank transfer is confirmed.
+app.post('/api/admin/payouts/confirm', requireAdmin, async (req, res) => {
+  try {
+    const providerId = String(req.body.providerId || '').trim();
+    const batchId = String(req.body.batchId || '').trim();
+    const bankReference = String(req.body.bankReference || '').trim();
+    const amount = Number(req.body.amount);
+    if (!providerId || !/^ary-transfer-instructions-[a-zA-Z0-9-]+$/.test(batchId) || bankReference.length < 4 || bankReference.length > 100 || !Number.isFinite(amount) || amount <= 0) {
+      return res.status(400).json({ error: 'Provider, valid transfer batch, and bank transfer reference are required.' });
+    }
+    const provider = (await getUsers()).find(user => user.id === providerId);
+    if (!provider || provider.status !== 'active' || !provider.bankName || !provider.bankAccount) {
+      return res.status(400).json({ error: 'Provider must be active and have registered bank name and account number.' });
+    }
+    const account = `provider:${providerId}:wallet`;
+    const ledger = await getLedgerEntries();
+    if (ledger.some(entry => entry.account === account && String(entry.description || '').includes(`Bank reference ${bankReference}`))) {
+      return res.status(409).json({ error: 'This bank transfer reference has already been recorded.' });
+    }
+    const balance = await getWalletBalance(account);
+    if (amount > balance) return res.status(409).json({ error: 'The confirmed transfer amount exceeds the current available wallet balance.' });
+    await recordPayoutSettlement({ batchId, providerId, amount, bankReference });
+    return res.json({ status: 'ok', providerId, amount, bankReference, message: 'External bank transfer recorded in the wallet ledger.' });
+  } catch (err) {
+    console.error('Confirm payout error:', err);
+    return res.status(500).json({ error: 'Could not record the confirmed payout.' });
   }
 });
 

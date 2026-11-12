@@ -257,7 +257,7 @@ export default function AdminWorkspace({
     }
   }
 
-  // Action: Run CEFT Payout Run
+  // Action: Prepare manual bank-transfer instructions
   async function handleRunPayoutSettlement() {
     if (!currentUser?.token) return;
     setIsSettling(true);
@@ -271,10 +271,10 @@ export default function AdminWorkspace({
         body: JSON.stringify({ minThreshold: 1000 })
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || 'Payout settlement failed.');
+      if (!res.ok) throw new Error(data.error || 'Could not prepare bank transfer instructions.');
 
       setPayoutResult(data);
-      onNotice?.(`CEFT Batch Dispatched! Total: LKR ${data.totalPayoutAmount?.toLocaleString() || 0}`);
+      onNotice?.(`Transfer instructions prepared (not paid). Total to transfer: LKR ${data.totalPayoutAmount?.toLocaleString() || 0}`);
       await fetchBookings();
     } catch (e) {
       onNotice?.(`Error: ${e.message}`);

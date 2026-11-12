@@ -86,6 +86,17 @@ The config endpoint returns country, timezone, launch cities, primary city, radi
 
 To enforce one designated Super Admin while retaining the existing `admin` account role, configure either `SUPER_ADMIN_USER_ID` or `SUPER_ADMIN_EMAIL` in the server environment. When either variable is set, all admin API routes are restricted to that matching account. Keep these values private and configure them in the hosting provider's environment settings (never commit credentials).
 
+## Provider Wallet & Manual Bank Payouts
+
+Provider wallet balances are calculated from the double-entry ledger. The Admin payout workspace reads actual wallet balances and only includes providers whose registered bank name and account number are present. It does not generate sample balances or substitute placeholder bank-account numbers.
+
+The payout workflow prepares a CSV transfer instruction file only; ARY Services does not execute LankaPay/CEFT bank transfers. After an administrator completes a transfer through the bank's own channel, the administrator records the exact transferred amount and bank reference against that provider's wallet. The API rejects amounts above the current wallet balance and bank references already recorded for that provider. Wallet debits are therefore recorded only after external transfer confirmation.
+
+Relevant endpoints (Admin only):
+- `GET /api/admin/payouts/preview` — real wallet balances and bank-detail readiness.
+- `POST /api/admin/payouts/settle` — prepares transfer instructions; no ledger debit occurs.
+- `POST /api/admin/payouts/confirm` — records an externally completed transfer using `providerId`, `batchId`, `amount`, and `bankReference`.
+
 ## Security & Storage Constraints
 
 1. **Authentication & Session**: Only `ary_user` session state is stored in localStorage.
