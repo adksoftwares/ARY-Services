@@ -1405,8 +1405,10 @@ app.patch('/api/bookings/:id/quote', requireAuth, async (req, res) => {
       if (decision === 'accept') {
         current.baseAmount = current.quote.amount;
         current.baseCharge = 'LKR ' + current.quote.amount.toLocaleString('en-LK');
+        current.quoteRequired = false;
         current.platformFee = Math.round(current.baseAmount * 0.10);
         current.providerPayout = current.baseAmount - current.platformFee;
+        current.paymentStatus = 'pending_cash';
       }
       current.updatedAt = new Date().toISOString();
       return current;
