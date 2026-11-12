@@ -84,7 +84,7 @@ The config endpoint returns country, timezone, launch cities, primary city, radi
 
 ## Super Admin Configuration
 
-To enforce one designated Super Admin while retaining the existing `admin` account role, configure either `SUPER_ADMIN_USER_ID` or `SUPER_ADMIN_EMAIL` in the server environment. When either variable is set, all admin API routes are restricted to that matching account. Keep these values private and configure them in the hosting provider's environment settings (never commit credentials).
+To enforce one designated Super Admin while retaining the existing `admin` account role, configure either `SUPER_ADMIN_USER_ID` or `SUPER_ADMIN_EMAIL` in the server environment. In production, `ADMIN_EMAIL` is accepted as a fallback for the bootstrap administrator; if no designated administrator is configured, Admin API access is denied with a configuration error rather than allowing every admin account. When a designated identity is configured, all Admin API routes are restricted to that matching account. Keep these values private and configure them in the hosting provider's environment settings (never commit credentials).
 
 ## Provider Wallet & Manual Bank Payouts
 
