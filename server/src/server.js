@@ -875,6 +875,7 @@ app.get('/api/providers', async (req, res) => {
         etaMinutes,
         category: p.category || 'general',
         categoryName: p.categoryName || 'General Services',
+        operatingMode: p.operatingMode || null,
         approvedServices: (Array.isArray(p.approvedServices) ? p.approvedServices : []).map(service => ({ categorySlug: service.categorySlug, categoryName: service.categoryName, serviceName: service.serviceName, description: service.description, baseCharge: service.baseCharge })),
         baseCharge: p.baseCharge || 'LKR 1,500',
         rating: p.rating !== undefined ? Number(p.rating) : 5.0,
@@ -2064,9 +2065,11 @@ app.get('/api/admin/users', requireAdmin, async (_req, res) => {
       categoryName: u.categoryName || null,
       baseCharge: u.baseCharge || null,
       nicNumber: u.nicNumber || null,
+      nsnNumber: u.nsnNumber || null,
+      operatingMode: u.operatingMode || null,
       nicDocument: u.nicDocument || null,
       tradeCertificate: u.tradeCertificate || null,
-      kycStatus: u.kycStatus || (u.accountType === 'provider' ? 'unverified' : 'verified'),
+      kycStatus: u.kycStatus || (['provider', 'driver'].includes(u.accountType) ? 'unverified' : 'verified'),
       createdAt: u.createdAt || new Date().toISOString()
     }));
 
