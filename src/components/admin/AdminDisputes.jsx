@@ -217,6 +217,7 @@ export default function AdminDisputes({
           {(() => {
             const rawCharge = Number(selectedBooking.baseAmount ?? String(selectedBooking.baseCharge || '').replace(/[^0-9]/g, '')) || 0;
             const preview = calculateLedgerPreview(rawCharge, selectedAction);
+            const hasFundedEscrow = selectedBooking.paymentStatus === 'escrow_held' && rawCharge > 0;
 
             return (
               <div style={{ padding: '4px 0', display: 'grid', gap: 16 }}>
@@ -237,13 +238,15 @@ export default function AdminDisputes({
                     </div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <span style={{ fontSize: '0.72rem', color: 'var(--color-neutral-500, #64748b)', display: 'block' }}>Frozen Escrow</span>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--color-neutral-500, #64748b)', display: 'block' }}>Recorded Escrow</span>
                     <b style={{ fontSize: '1.25rem', color: '#b91c1c' }}>LKR {rawCharge.toLocaleString()}</b>
                   </div>
                 </div>
 
+                {!hasFundedEscrow && <div role="alert" style={{ padding: 12, borderRadius: 8, background: 'var(--color-warning-50, #fffbeb)', border: '1px solid var(--color-warning-200, #fde68a)', color: 'var(--color-warning-900, #78350f)', fontSize: '0.82rem' }}>This booking has no confirmed escrow funds. Financial arbitration is disabled; resolve cash payments outside the escrow ledger and record the outcome separately.</div>}
+
                 {/* Arbitration Decision Options */}
-                <div>
+                <div style={{ opacity: hasFundedEscrow ? 1 : 0.45, pointerEvents: hasFundedEscrow ? 'auto' : 'none' }}>
                   <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: 'var(--color-neutral-700, #334155)', marginBottom: 8 }}>
                     Select Administrative Ruling:
                   </label>
@@ -352,6 +355,7 @@ export default function AdminDisputes({
                     variant="primary"
                     onClick={handleConfirmArbitration}
                     loading={arbitratingId === selectedBooking.id}
+                    disabled={!hasFundedEscrow}
                   >
                     <CheckCircle2 size={15} /> Execute Binding Settlement
                   </Button>
