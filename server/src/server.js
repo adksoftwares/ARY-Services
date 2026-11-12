@@ -620,7 +620,7 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
     if (role === 'driver' && selectedDriverServices.length === 0) return res.status(400).json({ error: 'Select Ride Service, Food Delivery Service, or both.' });
 
     // Provider and driver accounts require Admin approval before activation
-    const initialStatus = role === 'provider' ? 'pending' : 'active';
+    const initialStatus = ['provider', 'driver'].includes(role) ? 'pending' : 'active';
 
     const newUser = {
       id: 'user-' + Date.now(),
@@ -725,7 +725,9 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
       if (isValid) {
         if (user.status === 'pending') {
           return res.status(403).json({
-            error: 'Your service provider account is pending Admin approval. You will receive access once approved by the Super Admin.',
+            error: user.accountType === 'driver'
+              ? 'Your Driver account is pending Super Admin approval. Access will be enabled after your driver application is approved.'
+              : 'Your service provider account is pending Super Admin approval. You will receive access once approved.',
             accountStatus: 'pending'
           });
         }
