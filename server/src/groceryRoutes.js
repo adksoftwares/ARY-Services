@@ -85,7 +85,24 @@ function hasDuplicateSku(products, providerId, sku, exceptId = null) {
   );
 }
 
+
+const PRODUCT_CATALOG = [
+  { category:'Rice', unitGroup:'weight', unit:'kg', products:['Samba Rice','Keeri Samba Rice','Nadu Rice','Red Nadu Rice','White Nadu Rice','Red Raw Rice','White Raw Rice','Basmati Rice','Ponni Rice','Brown Rice'], sizes:[0.25,0.5,1,2,5,10,25] },
+  { category:'Flour & Grains', unitGroup:'weight', unit:'kg', products:['Wheat Flour','Rice Flour','Kurakkan Flour','Ragi Flour','Corn Flour','Semolina','Oats'], sizes:[0.1,0.25,0.5,1,2,5] },
+  { category:'Pulses & Legumes', unitGroup:'weight', unit:'kg', products:['Red Dhal','Green Gram','Chickpeas','Cowpea','Black Gram','Soy Beans','Peanuts'], sizes:[0.1,0.25,0.5,1,2,5] },
+  { category:'Oil', unitGroup:'volume', unit:'L', products:['Coconut Oil','Vegetable Oil','Palm Oil','Olive Oil','Sesame Oil'], sizes:[0.1,0.25,0.5,1,2,5] },
+  { category:'Sugar & Salt', unitGroup:'weight', unit:'kg', products:['White Sugar','Brown Sugar','Icing Sugar','Table Salt','Rock Salt'], sizes:[0.1,0.25,0.5,1,2,5] },
+  { category:'Spices', unitGroup:'weight', unit:'g', products:['Chilli Powder','Turmeric Powder','Curry Powder','Pepper','Cumin','Cardamom','Cinnamon','Cloves','Mustard Seeds','Fenugreek'], sizes:[25,50,100,250,500] },
+  { category:'Dairy', unitGroup:'volume', unit:'ml', products:['Fresh Milk','UHT Milk','Yoghurt Drink'], sizes:[100,180,200,500,1000] },
+  { category:'Eggs', unitGroup:'count', unit:'piece', products:['Chicken Egg','Duck Egg'], sizes:[1,6,10,12,30] },
+  { category:'Beverages', unitGroup:'volume', unit:'ml', products:['Bottled Water','Soft Drink','Fruit Juice','Tea','Coffee'], sizes:[200,250,330,500,1000,1500,2000] },
+  { category:'Canned & Packaged', unitGroup:'count', unit:'can', products:['Canned Fish','Canned Beans','Canned Fruit'], sizes:[1,2,6] },
+  { category:'Household', unitGroup:'count', unit:'piece', products:['Matchbox','Candles','Batteries','Soap','Toothpaste','Detergent','Dishwash Liquid','Tissue Pack'], sizes:[1,2,3,6,10,12] },
+  { category:'Gas Cylinders', unitGroup:'gas', unit:'kg_cylinder', products:['Litro Gas Cylinder','Laugfs Gas Cylinder'], sizes:[2.3,5,12.5,37.5] }
+];
+
 export function registerGroceryRoutes(app, { requireAuth, broadcastEvent, getUsers, createGroceryOrderDeliveryJob, cancelGroceryOrderDeliveryJob }) {
+  app.get('/api/grocery/catalog', (_req,res) => res.json({catalog:PRODUCT_CATALOG, units:{weight:['g','kg'],volume:['ml','L'],count:['piece','pack','box','bottle','can','sachet','dozen','egg_tray'],length:['cm','m'],area:['sqft'],gas:['kg_cylinder']}, currency:'LKR'}));
   app.get('/api/grocery/products', async (req, res) => {
     try {
       const products = await getProducts();
