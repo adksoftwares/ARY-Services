@@ -276,15 +276,15 @@ export default function HeroSection({
                 <div className="popular-card-meta">
                   <div className="popular-meta-row">
                     <span className="rating-pill">
-                      <Star size={12} fill="currentColor" /> {p.rating ? Number(p.rating).toFixed(1) : '5.0'}
+                      <Star size={12} fill="currentColor" /> {p.reviewCount > 0 && p.rating != null ? Number(p.rating).toFixed(1) : 'New'}
                     </span>
-                    <span className="reviews-count">({p.reviewCount ?? 12} reviews)</span>
+                    <span className="reviews-count">({p.reviewCount > 0 ? `${p.reviewCount} reviews` : 'No reviews yet'})</span>
                     {p.distanceKm != null && (
                       <span className="distance-pill">{p.distanceKm} km</span>
                     )}
                   </div>
                   <div className="rate-text">
-                    Starting: <b>{p.baseCharge || 'LKR 1,500'}</b>
+                    Starting: <b>{p.baseCharge || 'Contact for rate'}</b>
                   </div>
                 </div>
 
