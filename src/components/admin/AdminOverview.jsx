@@ -36,9 +36,21 @@ export default function AdminOverview({
     return sum + Number(b.providerPayout ?? 0);
   }, 0);
 
-  // Sparkline data for 7-day bookings volume
-  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  const bookingPoints = [12, 18, 15, 26, 32, 45, 38];
+  // Derive the last-seven-day booking trend from actual booking timestamps.
+  const lastSevenDays = Array.from({ length: 7 }, (_, index) => {
+    const day = new Date();
+    day.setHours(0, 0, 0, 0);
+    day.setDate(day.getDate() - (6 - index));
+    return day;
+  });
+  const days = lastSevenDays.map(day => day.toLocaleDateString('en-LK', { weekday: 'short' }));
+  const bookingPoints = lastSevenDays.map(day => bookings.filter(booking => {
+    const created = new Date(booking.createdAt);
+    return Number.isFinite(created.getTime()) &&
+      created.getFullYear() === day.getFullYear() &&
+      created.getMonth() === day.getMonth() &&
+      created.getDate() === day.getDate();
+  }).length);
   const maxVal = Math.max(...bookingPoints);
   const minVal = Math.min(...bookingPoints);
   const svgWidth = 520;
