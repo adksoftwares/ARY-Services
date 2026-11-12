@@ -129,7 +129,11 @@ export default function AdminApplications({
             appliedAt: u.createdAt || new Date().toISOString(),
             details: {
               location: u.location,
-              categoryName: u.categoryName || u.category
+              categoryName: u.categoryName || u.category,
+              nicDocument: u.nicDocument,
+              tradeCertificate: u.tradeCertificate,
+              nsnNumber: u.nsnNumber,
+              operatingMode: u.operatingMode
             },
             nicNumber: u.nicNumber || 'Not provided'
           });
@@ -348,7 +352,12 @@ export default function AdminApplications({
                         phone: item.phone,
                         accountType: item.kind === 'driver' ? 'driver' : 'provider',
                         status: item.status,
-                        nicNumber: item.nicNumber
+                        nicNumber: item.nicNumber || item.details?.nicNumber,
+                        nicDocument: item.details?.nicDocument,
+                        tradeCertificate: item.details?.tradeCertificate,
+                        nsnNumber: item.details?.nsnNumber,
+                        operatingMode: item.details?.operatingMode,
+                        location: item.details?.location
                       })}
                     >
                       <Eye size={14} /> Inspect KYC Files
