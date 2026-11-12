@@ -232,7 +232,7 @@ export default function BookingModal({
           <div className="wizard-step-pane">
             <div className="provider-quick-card">
               <b>{provider.fullName}</b>
-              <span>{selectedCategory?.name || provider.categoryName || 'Trades Specialist'} • Starting at {provider.baseCharge || 'LKR 1,500'}</span>
+              <span>{selectedCategory?.name || provider.categoryName || 'Trades Specialist'} • Starting at {provider.baseCharge || 'Quote required'}</span>
             </div>
 
             <label className="wizard-form-label">
