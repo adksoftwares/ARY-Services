@@ -254,13 +254,14 @@ export default function AdminPayouts({
                 <th style={{ width: '22%' }}>Bank Institution</th>
                 <th style={{ width: '20%' }}>Account Reference</th>
                 <th style={{ width: '18%', textAlign: 'right' }}>Net Balance (LKR)</th>
-                <th style={{ width: '15%', textAlign: 'right' }}>CEFT Eligibility</th>
+                <th style={{ width: '15%', textAlign: 'right' }}>Payout Status</th>
+                <th style={{ width: '15%', textAlign: 'right' }}>Action</th>
               </tr>
             </thead>
             <tbody>
               {pendingSettlements.length === 0 ? (
                 <tr>
-                  <td colSpan={5} style={{ padding: '36px', textAlign: 'center', color: '#64748b' }}>
+                  <td colSpan={6} style={{ padding: '36px', textAlign: 'center', color: '#64748b' }}>
                     No contractor balances currently eligible for payout.
                   </td>
                 </tr>
@@ -281,9 +282,35 @@ export default function AdminPayouts({
                       LKR {item.balance.toLocaleString()}
                     </td>
                     <td style={{ textAlign: 'right' }}>
-                      <Badge variant={item.status === 'ready' ? 'success' : 'neutral'} dot={false}>
-                        {item.status === 'ready' ? 'READY' : '< MIN THRESHOLD'}
+                      <Badge variant={item.status === 'ready' && item.bankDetailsComplete ? 'success' : 'neutral'} dot={false}>
+                        {!item.bankDetailsComplete ? 'BANK DETAILS NEEDED' : item.status === 'ready' ? 'READY' : 'BELOW THRESHOLD'}
                       </Badge>
+                    </td>
+                    <td style={{ textAlign: 'right' }}>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={!payoutResult?.batchId || !payoutResult?.disbursements?.some(record => record.providerId === item.providerId)}
+                        onClick={async () => {
+                          const prepared = payoutResult?.disbursements?.find(record => record.providerId === item.providerId);
+                          if (!prepared) return;
+                          const bankReference = window.prompt('Enter the bank reference after you have completed this transfer externally:');
+                          if (!bankReference) return;
+                          try {
+                            const response = await fetch(API_BASE + '/admin/payouts/confirm', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + currentUser.token },
+                              body: JSON.stringify({ providerId: item.providerId, batchId: payoutResult.batchId, amount: prepared.amount, bankReference: bankReference.trim() })
+                            });
+                            const result = await response.json();
+                            if (!response.ok) throw new Error(result.error || 'Could not record bank transfer');
+                            window.alert('Recorded LKR ' + Number(result.amount).toLocaleString() + ' against bank reference ' + result.bankReference + '.');
+                            await loadPayoutPreview();
+                          } catch (error) {
+                            window.alert(error.message || 'Could not record the bank transfer.');
+                          }
+                        }}
+                      >Record Paid</Button>
                     </td>
                   </tr>
                 ))
