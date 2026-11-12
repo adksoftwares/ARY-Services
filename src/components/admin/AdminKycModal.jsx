@@ -124,7 +124,7 @@ export default function AdminKycModal({
                 </Badge>
               </div>
               <div style={{ fontSize: '0.8rem', color: 'var(--color-neutral-500, #64748b)', marginTop: 2 }}>
-                Account: <b>{user.accountType?.toUpperCase()}</b> · ID: #{user.id} · Registered: {user.phone}
+                Account: <b>{user.accountType?.toUpperCase()}</b> · ID: #{user.id} · Registered: {user.phone}<br />NIC: {user.nicNumber || 'Not provided'} · NSN / Trade Reg: {user.nsnNumber || 'Not provided'} · Mode: {user.operatingMode || 'Not provided'}
               </div>
             </div>
           </div>
@@ -226,7 +226,7 @@ export default function AdminKycModal({
                       Uploaded by applicant · {currentDoc.category}
                     </p>
                   </div>
-                  <Badge variant="info" dot={false}>SUBMITTED</Badge>
+                  <Badge variant="neutral" dot={false}>SUBMITTED</Badge>
                 </div>
                 {typeof currentDoc.data === 'string' && currentDoc.data.startsWith('data:image/') ? (
                   <img src={currentDoc.data} alt={currentDoc.title} style={{ display: 'block', maxWidth: '100%', maxHeight: 460, objectFit: 'contain', margin: '0 auto', borderRadius: 8 }} />
