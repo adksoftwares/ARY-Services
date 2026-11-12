@@ -525,7 +525,7 @@ app.post('/api/auth/otp/verify', authLimiter, async (req, res) => {
       fullName: fullName.trim(),
       phone: phone ? phone.trim() : cleanPhone,
       email: null,
-      location: (location || 'Colombo').trim(),
+      location: String(location || '').trim() || null,
       passwordHash: hashPassword(crypto.randomBytes(16).toString('hex')),
       accountType: 'customer',
       status: 'active',
@@ -614,7 +614,10 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
     const cleanOperatingMode = role === 'provider' && ['shop', 'online', 'mobile'].includes(operatingMode) ? operatingMode : null;
     const cleanBaseChargeDigits = role === 'provider' ? String(baseCharge || '').replace(/[^0-9]/g, '') : '';
     const cleanBaseChargeAmount = cleanBaseChargeDigits ? Number.parseInt(cleanBaseChargeDigits, 10) : null;
-    if (role === 'provider' && (!cleanNsn || cleanNsn.length > 60 || !cleanOperatingMode || !cleanLocation)) {
+    if (['provider', 'driver'].includes(role) && !cleanLocation) {
+      return res.status(400).json({ error: 'Provider and Driver registration require a service or operating address.' });
+    }
+    if (role === 'provider' && (!cleanNsn || cleanNsn.length > 60 || !cleanOperatingMode)) {
       return res.status(400).json({ error: 'Provider registration requires a business/service address, operating mode and business registration or NSN identifier.' });
     }
     if (role === 'provider' && String(baseCharge || '').trim() && (!Number.isSafeInteger(cleanBaseChargeAmount) || cleanBaseChargeAmount < 1 || cleanBaseChargeAmount > 10000000)) {
