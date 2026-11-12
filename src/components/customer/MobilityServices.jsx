@@ -206,7 +206,7 @@ export default function MobilityServices({ onNotice }) {
           {mode === 'food' && (
             <>
               <p className="mobility-hint-text">
-                Place an order with your food shop first. Once accepted, enter the booking ID to dispatch a dedicated food delivery driver.
+                Place a grocery or shop order first. Once accepted, enter the booking ID to dispatch a dedicated shop & grocery delivery driver.
               </p>
               <Input
                 label="Food Shop Order Reference"

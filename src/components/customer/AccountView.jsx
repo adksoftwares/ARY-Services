@@ -353,7 +353,7 @@ export default function AccountView({ onNotice, onClose }) {
                       <div className="driver-checkbox-list">
                         {[
                           ['ride', 'Passenger Rides (Car / Tuk Tuk)'],
-                          ['food_delivery', 'Restaurant Meal Delivery'],
+                          ['food_delivery', 'Shop & Grocery Delivery'],
                           ['parcel_delivery', 'Peer-to-Peer Parcel Courier']
                         ].map(([val, label]) => (
                           <label key={val} className="driver-service-check-item">
