@@ -598,13 +598,13 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
     const cleanEmail = email ? email.trim().toLowerCase() : null;
     const cleanPhone = phone ? phone.trim() : (cleanEmail ? cleanEmail.split('@')[0] : '');
     const cleanLocation = (location || '').trim();
-    const effectivePassword = password || (role === 'customer' ? '123456' : null);
+    const effectivePassword = password ? String(password) : null;
 
-    if (!fullName || (role === 'customer' && !cleanPhone) || !effectivePassword) {
+    if (!fullName || (role === 'customer' && !cleanPhone) || !effectivePassword || effectivePassword.length < 6) {
       return res.status(400).json({
         error: role === 'customer'
           ? 'Name and mobile number are required.'
-          : 'Full name, email/phone and password are required.'
+          : 'Full name, email/phone and a password of at least 6 characters are required.'
       });
     }
 
