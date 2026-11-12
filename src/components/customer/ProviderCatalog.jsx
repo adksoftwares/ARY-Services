@@ -407,9 +407,9 @@ export default function ProviderCatalog({
           onClose={() => setSelectedProviderDetail(null)}
           provider={selectedProviderDetail}
           selectedCategory={selectedCategory}
-          onBook={(prov) => {
+          onBook={(prov, service) => {
             setSelectedProviderDetail(null);
-            onBookProvider(prov);
+            onBookProvider(prov, service);
           }}
         />
       )}
