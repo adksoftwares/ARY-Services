@@ -239,7 +239,7 @@ export default function ProviderJobs({
                         #{b.id.slice(-6)}
                       </span>
                       <Badge variant="brand" dot={false}>
-                        {b.baseCharge || 'LKR 1,500'}
+                        {b.baseCharge || 'Quote required'}
                       </Badge>
                     </div>
                     <div style={{ fontSize: '0.8rem', color: 'var(--color-neutral-500, #64748b)', marginTop: 2 }}>
