@@ -603,7 +603,7 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
     if (!fullName || (role === 'customer' && !cleanPhone) || !effectivePassword || effectivePassword.length < 6) {
       return res.status(400).json({
         error: role === 'customer'
-          ? 'Name and mobile number are required.'
+          ? 'Name, mobile number and a password of at least 6 characters are required.'
           : 'Full name, email/phone and a password of at least 6 characters are required.'
       });
     }
