@@ -1664,7 +1664,13 @@ app.post('/api/admin/bookings/:id/arbitrate', requireAdmin, async (req, res) => 
       return res.status(404).json({ error: 'Booking not found.' });
     }
 
-    const totalAmount = booking.baseAmount || 1500;
+    if (booking.paymentStatus !== 'escrow_held') {
+      return res.status(409).json({ error: 'Financial arbitration is available only for bookings with confirmed escrow funds. Cash-settled bookings require an offline resolution record.' });
+    }
+    if (!Number.isSafeInteger(Number(booking.baseAmount)) || Number(booking.baseAmount) <= 0) {
+      return res.status(409).json({ error: 'Cannot arbitrate escrow without a valid recorded payment amount.' });
+    }
+    const totalAmount = Number(booking.baseAmount);
     let newStatus = 'completed';
     let newPaymentStatus = 'released_to_provider';
 
@@ -1684,8 +1690,8 @@ app.post('/api/admin/bookings/:id/arbitrate', requireAdmin, async (req, res) => 
         bookingId: id,
         providerId: booking.providerId,
         amount: totalAmount,
-        platformFee: booking.platformFee || 150,
-        providerPayout: booking.providerPayout || 1350
+        platformFee: Number(booking.platformFee ?? Math.round(totalAmount * 0.10)),
+        providerPayout: Number(booking.providerPayout ?? (totalAmount - Math.round(totalAmount * 0.10)))
       });
     } else if (action === 'split_50_50') {
       newStatus = 'settled_split';
