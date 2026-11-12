@@ -487,7 +487,7 @@ function CustomerWorkspace() {
       <OfflineBanner />
       <CustomerHeader
         address={address}
-        launchCity={platformConfig?.primaryCity || platformConfig?.launchCities?.[0] || ''}
+        launchCity={platformConfig?.primaryLaunchCity || platformConfig?.launchCities?.[0] || ''}
         onOpenLocationModal={() => setLocationModalOpen(true)}
         onOpenProfile={() => setProfileModalOpen(true)}
       />
