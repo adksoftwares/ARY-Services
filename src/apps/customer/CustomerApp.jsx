@@ -26,6 +26,7 @@ import {
   ChevronDown
 } from 'lucide-react';
 import CustomerLocationModal from '../../components/customer/CustomerLocationModal';
+import { App } from '@capacitor/app';
 import { fetchCurrentLocationAddress, fetchCurrentLocationCoords, getLastDetectedCoordinates, resolveCoordinates } from '../../utils/location';
 import { AuthProvider, useAuth } from '../../context/AuthContext';
 import { API_BASE } from '../../config';
@@ -389,6 +390,8 @@ function AdminPortalView({ onNotice }) {
 function CustomerWorkspace() {
   const { currentUser, openAuthModal, updateUserLocation } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const lastBackPressRef = React.useRef(0);
   const [query, setQuery] = useState('');
   const [address, setAddress] = useState(currentUser?.location || '');
   const [platformConfig, setPlatformConfig] = useState(null);
@@ -415,29 +418,78 @@ function CustomerWorkspace() {
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const autoDetectDoneRef = React.useRef(false);
 
-  // Hardware Back Button Handling for Capacitor WebView
+  // Hardware Back Button Handling for Capacitor WebView & Native Android
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.Capacitor?.Plugins?.App) {
-      const handleBack = window.Capacitor.Plugins.App.addListener('backButton', ({ canGoBack }) => {
-        if (profileModalOpen) {
-          setProfileModalOpen(false);
-        } else if (bookingOpen) {
-          setBookingOpen(false);
-        } else if (reviewBooking) {
-          setReviewBooking(null);
-        } else if (disputeBookingItem) {
-          setDisputeBookingItem(null);
-        } else if (canGoBack) {
-          window.history.back();
-        } else {
-          window.Capacitor.Plugins.App.exitApp();
+    const handleBackButtonLogic = () => {
+      // 1. First priority: Close any open modals or bottom sheets
+      if (locationModalOpen) {
+        setLocationModalOpen(false);
+        return true;
+      }
+      if (profileModalOpen) {
+        setProfileModalOpen(false);
+        return true;
+      }
+      if (bookingOpen) {
+        setBookingOpen(false);
+        return true;
+      }
+      if (reviewBooking) {
+        setReviewBooking(null);
+        return true;
+      }
+      if (disputeBookingItem) {
+        setDisputeBookingItem(null);
+        return true;
+      }
+
+      // Check for any open generic modal / backdrop in DOM
+      const activeModal = document.querySelector('.modal-overlay, .modal-backdrop, [role="dialog"]');
+      if (activeModal) {
+        const closeBtn = activeModal.querySelector('.modal-close, button[aria-label="Close"], button[aria-label="Dismiss"], button.close');
+        if (closeBtn) {
+          closeBtn.click();
+          return true;
         }
-      });
-      return () => {
-        handleBack.then(h => h?.remove?.());
-      };
-    }
-  }, [profileModalOpen, bookingOpen, reviewBooking, disputeBookingItem]);
+      }
+
+      // 2. Second priority: If not on home page ("/"), navigate back to home screen
+      if (location.pathname !== '/') {
+        navigate('/');
+        return true;
+      }
+
+      // 3. Third priority: On home screen, double-tap back within 2 seconds to exit
+      const now = Date.now();
+      if (now - lastBackPressRef.current < 2000) {
+        App.exitApp();
+        return false;
+      } else {
+        lastBackPressRef.current = now;
+        setNotice('Press back again to exit ARY Services');
+        return true;
+      }
+    };
+
+    window.__ARY_HANDLE_BACK__ = handleBackButtonLogic;
+
+    const listenerPromise = App.addListener('backButton', () => {
+      handleBackButtonLogic();
+    });
+
+    return () => {
+      delete window.__ARY_HANDLE_BACK__;
+      listenerPromise.then(h => h?.remove?.());
+    };
+  }, [
+    locationModalOpen,
+    profileModalOpen,
+    bookingOpen,
+    reviewBooking,
+    disputeBookingItem,
+    location.pathname,
+    navigate
+  ]);
 
   const fetchProviders = useCallback(async (category = selectedCategory?.slug, search = query, location = coords) => {
     setLoadingProviders(true);

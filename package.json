@@ -24,6 +24,7 @@
     "build:admin": "npm run build --workspace @ary/admin-dashboard"
   },
   "dependencies": {
+    "@capacitor/app": "^8.1.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",

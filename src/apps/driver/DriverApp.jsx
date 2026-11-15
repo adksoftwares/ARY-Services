@@ -12,6 +12,7 @@ import NotificationCenter from '../../components/common/NotificationCenter';
 import OfflineBanner from '../../components/common/OfflineBanner';
 import { ThemeToggle, Button, LanguageSwitcher } from '../../design-system';
 import { LanguageProvider } from '../../utils/i18n';
+import { App } from '@capacitor/app';
 
 function DriverPortal() {
   const { currentUser, openAuthModal, logout, switchRole } = useAuth();
@@ -33,27 +34,34 @@ function DriverPortal() {
   }, []);
 
   // Capacitor hardware back-button listener
+  const lastBackPressRef = React.useRef(0);
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.Capacitor?.Plugins?.App) {
-      const handleBackButton = () => {
-        // If modals or keypads are open, dismiss them first
-        const openBackdrop = document.querySelector('.modal-backdrop');
-        if (openBackdrop) {
-          const closeBtn = openBackdrop.querySelector('button[aria-label="Close"]') ||
-                           openBackdrop.querySelector('button');
-          if (closeBtn) {
-            closeBtn.click();
-            return;
-          }
+    const handleBackButton = () => {
+      // If modals or keypads are open, dismiss them first
+      const openBackdrop = document.querySelector('.modal-backdrop, .modal-overlay, [role="dialog"]');
+      if (openBackdrop) {
+        const closeBtn = openBackdrop.querySelector('button[aria-label="Close"], button[aria-label="Dismiss"], .modal-close');
+        if (closeBtn) {
+          closeBtn.click();
+          return;
         }
-        if (window.history.length > 1) {
-          window.history.back();
-        } else {
-          window.Capacitor.Plugins.App.exitApp();
-        }
-      };
-      window.Capacitor.Plugins.App.addListener('backButton', handleBackButton);
-    }
+      }
+      if (window.history.length > 1 && window.location.pathname !== '/' && window.location.pathname !== '/driver') {
+        window.history.back();
+        return;
+      }
+      const now = Date.now();
+      if (now - lastBackPressRef.current < 2000) {
+        App.exitApp();
+      } else {
+        lastBackPressRef.current = now;
+        setNotice('Press back again to exit ARY Driver');
+      }
+    };
+    const listenerPromise = App.addListener('backButton', handleBackButton);
+    return () => {
+      listenerPromise.then(h => h?.remove?.());
+    };
   }, []);
 
   useEffect(() => {

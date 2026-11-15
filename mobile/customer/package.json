@@ -2,5 +2,10 @@
   "name": "ary-customer-mobile",
   "version": "1.0.0",
   "private": true,
-  "description": "ARY Services Customer Mobile App"
+  "description": "ARY Services Customer Mobile App",
+  "dependencies": {
+    "@capacitor/app": "^8.0.0",
+    "@capacitor/android": "^8.6.0",
+    "@capacitor/core": "^8.6.0"
+  }
 }
