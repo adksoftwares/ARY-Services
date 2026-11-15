@@ -87,18 +87,20 @@ export default function HeroSection({
         <div className="search-panel-elevated" role="search" aria-label="Find services and tradespeople">
           {/* Location Field with GPS & Change Location Button */}
           <div className="search-input-field location-field">
-            <MapPin size={18} className="search-field-icon" aria-hidden="true" />
-            <input
-              type="text"
-              value={address}
-              onChange={e => setAddress(e.target.value)}
-              onClick={() => onOpenLocationModal && onOpenLocationModal()}
-              placeholder="Your area (e.g. Colombo 03 or Kandy)"
-              aria-label="Your location or area"
-              className="search-text-input"
-              style={{ cursor: 'pointer' }}
-            />
-            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+            <div className="location-input-row">
+              <MapPin size={18} className="search-field-icon" aria-hidden="true" />
+              <input
+                type="text"
+                value={address}
+                onChange={e => setAddress(e.target.value)}
+                onClick={() => onOpenLocationModal && onOpenLocationModal()}
+                placeholder="Search city, area or street in Sri Lanka..."
+                aria-label="Your location or area"
+                className="search-text-input"
+                style={{ cursor: 'pointer' }}
+              />
+            </div>
+            <div className="location-actions-wrap">
               <button
                 type="button"
                 className="gps-detect-btn"
@@ -107,7 +109,7 @@ export default function HeroSection({
                 title="Detect current GPS location"
                 aria-label="Use my current GPS location"
               >
-                <Navigation size={14} className={isLocating ? 'spin' : ''} aria-hidden="true" />
+                <Navigation size={13} className={isLocating ? 'spin' : ''} aria-hidden="true" />
                 <span className="gps-btn-label">{isLocating ? 'Locating...' : 'Auto GPS'}</span>
               </button>
               {onOpenLocationModal && (
@@ -117,18 +119,6 @@ export default function HeroSection({
                   onClick={onOpenLocationModal}
                   title="Search any location in Sri Lanka or pick on map"
                   aria-label="Change location"
-                  style={{
-                    background: 'rgba(21, 128, 61, 0.12)',
-                    color: 'var(--brand-primary, #15803d)',
-                    fontWeight: 700,
-                    border: '1px solid rgba(21, 128, 61, 0.25)',
-                    padding: '5px 10px',
-                    borderRadius: '8px',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    cursor: 'pointer'
-                  }}
                 >
                   <MapPin size={13} />
                   <span>Change Location</span>

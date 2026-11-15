@@ -100,8 +100,8 @@
 .modal-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px}
 .modal-header h3{font-size:20px;font-family:Manrope,sans-serif;color:#174d3d;margin:0 0 5px;font-weight:700}
 .modal-header p{font-size:12px;color:#46554b;margin:0}
-.modal-close{background:transparent;border:0;color:#8b918a;cursor:pointer;padding:4px;border-radius:6px;display:grid;place-items:center}
-.modal-close:hover{background:#f3f3ee;color:#20332d}
+.modal-close{background:#f1f5f9;border:1px solid #e2e8f0;color:#475569;cursor:pointer;width:40px;height:40px;min-width:40px;min-height:40px;border-radius:50%;display:grid;place-items:center;transition:all .18s cubic-bezier(0.4,0,0.2,1);box-shadow:0 1px 3px rgba(0,0,0,0.05)}
+.modal-close:hover,.modal-close:active{background:#e2e8f0;color:#0f172a;transform:scale(0.95)}
 .modal-form{display:flex;flex-direction:column;gap:14px;padding-bottom:12px}
 .modal-form label{display:flex;flex-direction:column;gap:5px}
 .modal-form label span{font-size:12px;font-weight:600;color:#3b4e45}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   UserRound,
   ShieldCheck,
@@ -25,6 +26,7 @@ import { Button, Avatar, Badge, StatusPill, Stepper, ThemeToggle, LanguageSwitch
 
 export default function AccountView({ onNotice, onClose }) {
   const { currentUser, applyForRole, switchRole, logout } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('profile'); // 'profile' | 'upgrade' | 'settings'
   const [roleToApply, setRoleToApply] = useState('provider');
   const [upgradeStep, setUpgradeStep] = useState(1); // 1: Role -> 2: Verification Details -> 3: Review & Submit
@@ -114,6 +116,62 @@ export default function AccountView({ onNotice, onClose }) {
           </div>
         </div>
       </div>
+
+      {/* Super Admin Control Center Banner */}
+      {currentUser.accountType === 'admin' && (
+        <div style={{
+          margin: '14px 0 18px',
+          padding: '14px 16px',
+          background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(185, 28, 28, 0.18))',
+          border: '1px solid rgba(239, 68, 68, 0.35)',
+          borderRadius: '12px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '12px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: '8px',
+              background: 'rgba(239, 68, 68, 0.2)',
+              display: 'grid',
+              placeItems: 'center',
+              color: '#ef4444'
+            }}>
+              <ShieldCheck size={20} />
+            </div>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: '13.5px', color: '#f87171' }}>Super Admin Control Center</div>
+              <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Manage KYC, drivers, dispatches & payouts</div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              onClose?.();
+              navigate('/admin');
+            }}
+            style={{
+              background: '#ef4444',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '8px',
+              padding: '7px 14px',
+              fontSize: '12px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            Open Admin <ArrowRight size={13} />
+          </button>
+        </div>
+      )}
 
       {/* Internal Navigation Tabs */}
       <div className="account-sub-nav">

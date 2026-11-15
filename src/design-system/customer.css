@@ -89,6 +89,21 @@
   color: var(--text-muted);
 }
 
+.location-input-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 1;
+  min-width: 0;
+}
+
+.location-actions-wrap {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
 .gps-detect-btn {
   display: inline-flex;
   align-items: center;
@@ -108,6 +123,18 @@
 
 .gps-detect-btn:hover {
   background: var(--brand-subtle);
+}
+
+.location-change-btn {
+  background: rgba(21, 128, 61, 0.1) !important;
+  color: var(--brand-primary, #15803d) !important;
+  font-weight: 700 !important;
+  border: 1px solid rgba(21, 128, 61, 0.25) !important;
+}
+
+.location-change-btn:hover {
+  background: rgba(21, 128, 61, 0.18) !important;
+  border-color: rgba(21, 128, 61, 0.4) !important;
 }
 
 .hero-search-action-btn {
@@ -1569,14 +1596,32 @@
     flex-direction: column;
     align-items: stretch;
     padding: var(--space-3);
+    gap: 10px;
   }
   .location-field {
     border-right: 0;
     border-bottom: 1px solid var(--border-subtle);
-    padding-bottom: var(--space-2);
+    padding: 6px 4px 12px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    min-height: auto;
+  }
+  .location-field .location-input-row {
+    width: 100%;
+  }
+  .location-field .location-actions-wrap {
+    width: 100%;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+  .location-field .search-text-input {
+    width: 100%;
+    font-size: 15px;
   }
   .hero-search-action-btn {
     width: 100%;
+    min-height: 48px;
   }
   .time-slots-grid,
   .payment-options-grid,

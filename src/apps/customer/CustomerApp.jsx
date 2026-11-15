@@ -17,6 +17,8 @@ import {
   Moon,
   Sun,
   Shield,
+  ShieldCheck,
+  ShieldAlert,
   ShoppingBag,
   Bell,
   Home,
@@ -48,6 +50,7 @@ const GroceryMarketplace = lazy(() => import('../../components/customer/GroceryM
 const MobilityServices = lazy(() => import('../../components/customer/MobilityServices'));
 const MyBookingsList = lazy(() => import('../../components/customer/MyBookingsList'));
 const DesignSystemShowcase = lazy(() => import('../../components/design-system-showcase/DesignSystemShowcase'));
+const AdminWorkspace = lazy(() => import('../../components/admin/AdminWorkspace'));
 
 const SectionFallback = () => (
   <div style={{ padding: 'var(--space-6) var(--space-4)', display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
@@ -128,6 +131,20 @@ function CustomerHeader({ address, launchCity, onOpenLocationModal, onOpenProfil
         {currentUser?.accountType === 'customer' && (
           <Link to="/bookings" className="nav-link-btn">
             <ClipboardList size={15} /> My Bookings
+          </Link>
+        )}
+        {currentUser?.accountType === 'admin' && (
+          <Link
+            to="/admin"
+            className="nav-link-btn"
+            style={{
+              background: 'rgba(239, 68, 68, 0.12)',
+              color: '#ef4444',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              fontWeight: 600
+            }}
+          >
+            <ShieldCheck size={15} /> Super Admin Panel
           </Link>
         )}
       </nav>
@@ -239,7 +256,19 @@ function CustomerMobileBottomNav({ bookingsCount = 0, onOpenProfile, onOpenAlert
         <span>Alerts</span>
       </button>
 
-      {/* 5. Account */}
+      {/* 5. Super Admin Control Center tab (visible only for admin) */}
+      {currentUser?.accountType === 'admin' && (
+        <Link
+          to="/admin"
+          className={`mob-nav-item ${location.pathname === '/admin' ? 'active' : ''}`}
+          style={location.pathname === '/admin' ? { color: '#ef4444' } : { color: 'var(--text-secondary)' }}
+        >
+          <ShieldCheck size={20} />
+          <span>Admin</span>
+        </Link>
+      )}
+
+      {/* 6. Account */}
       {currentUser ? (
         <button
           type="button"
@@ -260,6 +289,100 @@ function CustomerMobileBottomNav({ bookingsCount = 0, onOpenProfile, onOpenAlert
         </button>
       )}
     </nav>
+  );
+}
+
+const initialAdminServices = [
+  { id: 1, name: 'Food Shops', slug: 'food-shops', description: 'Explore local shops and place an order', color: 'peach' },
+  { id: 2, name: 'Electrical Repair', slug: 'electrical-repair', description: 'Electricians for home and business', color: 'yellow' },
+  { id: 3, name: 'Plumbing', slug: 'plumbing', description: 'Repairs, fittings and maintenance', color: 'blue' },
+  { id: 4, name: 'Grocery Products', slug: 'grocery-products', description: 'Shop everyday grocery items by weight, volume and pack size', color: 'peach' },
+  { id: 5, name: 'Other Services', slug: 'other-services', description: 'Discover more services near you', color: 'lilac' }
+];
+
+function AdminPortalView({ onNotice }) {
+  const { currentUser, openAuthModal } = useAuth();
+  const [adminUsers, setAdminUsers] = useState([]);
+  const [services, setServices] = useState(initialAdminServices);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+  const isAdmin = currentUser?.accountType === 'admin';
+
+  const fetchAdminUsers = useCallback(async () => {
+    if (!currentUser?.token || currentUser.accountType !== 'admin') {
+      setAdminUsers([]);
+      return;
+    }
+    setIsLoadingUsers(true);
+    try {
+      const response = await fetch(`${API_BASE}/admin/users`, {
+        headers: { Authorization: `Bearer ${currentUser.token}` }
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Could not load registered accounts.');
+      setAdminUsers(data.users || []);
+    } catch (error) {
+      onNotice?.(getFriendlyErrorMessage(error, 'Could not load registered accounts.'));
+    } finally {
+      setIsLoadingUsers(false);
+    }
+  }, [currentUser, onNotice]);
+
+  useEffect(() => { fetchAdminUsers(); }, [fetchAdminUsers]);
+
+  useEffect(() => {
+    if (!isAdmin) return undefined;
+    const refresh = () => fetchAdminUsers();
+    return subscribeToAppEvents(currentUser?.token, {
+      'driver:application_created': refresh,
+      'driver:application_reviewed': refresh,
+      'user:registered': refresh,
+      'user:status_changed': refresh
+    });
+  }, [isAdmin, fetchAdminUsers, currentUser?.token]);
+
+  if (!isAdmin) {
+    return (
+      <div style={{ maxWidth: 560, margin: '60px auto', padding: '32px 20px', textAlign: 'center' }}>
+        <div style={{
+          width: 56,
+          height: 56,
+          borderRadius: '16px',
+          background: 'rgba(239, 68, 68, 0.1)',
+          color: '#ef4444',
+          display: 'grid',
+          placeItems: 'center',
+          margin: '0 auto 16px',
+          border: '1px solid rgba(239, 68, 68, 0.2)'
+        }}>
+          <ShieldAlert size={28} />
+        </div>
+        <h2 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '8px', color: 'var(--text-primary)' }}>
+          Super Admin Access Required
+        </h2>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '24px', lineHeight: 1.6 }}>
+          Sign in with authorized administrator credentials to manage users, verify KYC documents, and monitor platform dispatches.
+        </p>
+        <Button variant="primary" onClick={() => openAuthModal('login')}>
+          <LogIn size={15} /> Sign in as Admin
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ minHeight: '80vh', paddingBottom: '80px' }}>
+      <Suspense fallback={<SectionFallback />}>
+        <AdminWorkspace
+          adminUsers={adminUsers}
+          setAdminUsers={setAdminUsers}
+          services={services}
+          setServices={setServices}
+          isLoadingUsers={isLoadingUsers}
+          fetchAdminUsers={fetchAdminUsers}
+          onNotice={onNotice}
+        />
+      </Suspense>
+    </div>
   );
 }
 
@@ -580,6 +703,7 @@ function CustomerWorkspace() {
             </Suspense>
           } />
 
+          <Route path="/admin" element={<AdminPortalView onNotice={setNotice} />} />
           <Route path="/design-system" element={
             <Suspense fallback={<SectionFallback />}>
               <DesignSystemShowcase />

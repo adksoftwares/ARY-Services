@@ -75,8 +75,12 @@ export const SRI_LANKA_REGIONAL_COORDINATES = {
   'chavakachcheri': { lat: 9.6582, lng: 80.1584 },
   'northern province': { lat: 9.6615, lng: 80.0255 },
 
-  // Eastern Province (Batticaloa, Trincomalee, Ampara)
+  // Eastern Province (Batticaloa, Arayampathy, Kattankudy, Kalmunai, Trincomalee, Ampara)
+  'arayampathy': { lat: 7.6789, lng: 81.7345 },
+  'kattankudy': { lat: 7.6890, lng: 81.7220 },
+  'kalmunai': { lat: 7.4116, lng: 81.8315 },
   'batticaloa': { lat: 7.7102, lng: 81.6924 },
+  'eastern province': { lat: 7.6789, lng: 81.7345 },
   'trincomalee': { lat: 8.5874, lng: 81.2152 },
   'eastern province': { lat: 7.7102, lng: 81.6924 },
 

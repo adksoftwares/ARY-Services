@@ -916,7 +916,13 @@ app.get('/api/providers', async (req, res) => {
     if (hasCustomerCoordinates) {
       result.sort((a, b) => (a.distanceKm ?? 999) - (b.distanceKm ?? 999));
       if (!bypassRadius) {
-        result = result.filter(provider => provider.distanceKm !== null && provider.distanceKm <= effectiveRadius);
+        const localMatches = result.filter(provider => provider.distanceKm !== null && provider.distanceKm <= effectiveRadius);
+        if (localMatches.length > 0) {
+          result = localMatches;
+        } else {
+          // Fallback gracefully to nearest verified island-wide providers so user is never stranded
+          result = result.map(p => ({ ...p, isIslandWideFallback: true }));
+        }
       }
     }
 
