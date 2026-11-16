@@ -141,13 +141,7 @@ export default function BookingModal({
       }
 
       setCreatedBooking(data.booking);
-      if (onBookingSuccess) {
-        onBookingSuccess(data.booking, provider);
-      }
-      if (onClose) {
-        onClose();
-      }
-      setStep(1);
+      setStep(5);
     } catch (err) {
       setError(err.message || 'Could not submit booking.');
     } finally {
@@ -414,8 +408,12 @@ export default function BookingModal({
                 size="lg"
                 fullWidth={true}
                 onClick={() => {
-                  onClose();
-                  navigate('/bookings');
+                  if (onBookingSuccess && createdBooking) {
+                    onBookingSuccess(createdBooking, provider);
+                  } else {
+                    if (onClose) onClose();
+                    navigate('/bookings');
+                  }
                 }}
               >
                 Go to My Bookings <ArrowRight size={16} />
@@ -424,7 +422,9 @@ export default function BookingModal({
                 variant="ghost"
                 size="md"
                 fullWidth={true}
-                onClick={onClose}
+                onClick={() => {
+                  if (onClose) onClose();
+                }}
               >
                 Done / Keep Exploring
               </Button>
