@@ -175,7 +175,24 @@ function CustomerHeader({ address, launchCity, onOpenLocationModal, onOpenProfil
             </button>
           </div>
         ) : (
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => openAuthModal('admin')}
+              style={{
+                border: '1px solid rgba(239, 68, 68, 0.4)',
+                color: '#ef4444',
+                background: 'rgba(239, 68, 68, 0.08)',
+                fontWeight: 600,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px'
+              }}
+              title="Super Admin Control Center Sign In"
+            >
+              <ShieldCheck size={14} /> Admin
+            </Button>
             <Button variant="primary" size="sm" onClick={() => openAuthModal('login')}>
               <LogIn size={14} /> Sign in
             </Button>
@@ -204,6 +221,7 @@ function CustomerMobileBottomNav({ bookingsCount = 0, onOpenProfile, onOpenAlert
 
   const isHome = location.pathname === '/';
   const isBookings = location.pathname === '/bookings';
+  const isAdminPath = location.pathname === '/admin';
 
   return (
     <nav className="mobile-bottom-nav" aria-label="Mobile Bottom Navigation">
@@ -241,7 +259,24 @@ function CustomerMobileBottomNav({ bookingsCount = 0, onOpenProfile, onOpenAlert
         <span>Orders</span>
       </button>
 
-      {/* 4. Alerts / Notifications */}
+      {/* 4. Super Admin (Always accessible for easy administrator login & access) */}
+      <button
+        type="button"
+        className={`mob-nav-item ${isAdminPath ? 'active' : ''}`}
+        style={isAdminPath || currentUser?.accountType === 'admin' ? { color: '#ef4444' } : {}}
+        onClick={() => {
+          if (currentUser?.accountType === 'admin') {
+            navigate('/admin');
+          } else {
+            openAuthModal('admin');
+          }
+        }}
+      >
+        <ShieldCheck size={20} color={isAdminPath || currentUser?.accountType === 'admin' ? '#ef4444' : 'currentColor'} />
+        <span style={currentUser?.accountType === 'admin' ? { color: '#ef4444', fontWeight: 700 } : {}}>Admin</span>
+      </button>
+
+      {/* 5. Alerts / Notifications */}
       <button
         type="button"
         className="mob-nav-item"
@@ -257,18 +292,6 @@ function CustomerMobileBottomNav({ bookingsCount = 0, onOpenProfile, onOpenAlert
         <span>Alerts</span>
       </button>
 
-      {/* 5. Super Admin Control Center tab (visible only for admin) */}
-      {currentUser?.accountType === 'admin' && (
-        <Link
-          to="/admin"
-          className={`mob-nav-item ${location.pathname === '/admin' ? 'active' : ''}`}
-          style={location.pathname === '/admin' ? { color: '#ef4444' } : { color: 'var(--text-secondary)' }}
-        >
-          <ShieldCheck size={20} />
-          <span>Admin</span>
-        </Link>
-      )}
-
       {/* 6. Account */}
       {currentUser ? (
         <button
@@ -282,7 +305,7 @@ function CustomerMobileBottomNav({ bookingsCount = 0, onOpenProfile, onOpenAlert
       ) : (
         <button
           type="button"
-          className="mob-nav-item highlight"
+          className="mob-nav-item"
           onClick={() => openAuthModal('login')}
         >
           <LogIn size={20} />
@@ -363,8 +386,20 @@ function AdminPortalView({ onNotice }) {
         <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '24px', lineHeight: 1.6 }}>
           Sign in with authorized administrator credentials to manage users, verify KYC documents, and monitor platform dispatches.
         </p>
-        <Button variant="primary" onClick={() => openAuthModal('login')}>
-          <LogIn size={15} /> Sign in as Admin
+        <Button
+          variant="danger"
+          size="lg"
+          onClick={() => openAuthModal('admin')}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '12px 24px',
+            fontSize: '15px',
+            fontWeight: 700
+          }}
+        >
+          <ShieldCheck size={18} /> Sign In to Super Admin Console
         </Button>
       </div>
     );

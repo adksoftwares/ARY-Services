@@ -45,6 +45,9 @@ export default function AdminApplications({
     if (!currentUser?.token || currentUser.accountType !== 'admin') return;
     setLoading(true);
     try {
+      if (typeof onRefreshUsers === 'function') {
+        onRefreshUsers();
+      }
       const [driverRes, roleRes] = await Promise.all([
         fetch(`${API_BASE}/admin/driver-applications`, {
           headers: { Authorization: `Bearer ${currentUser.token}` }
@@ -104,7 +107,9 @@ export default function AdminApplications({
         applicantName: r.fullName,
         phone: r.phone,
         email: r.email,
-        serviceNetwork: r.role === 'provider' ? 'Additional Provider Role' : 'Additional Driver Role',
+        serviceNetwork: r.role === 'provider'
+          ? `Provider: ${r.application?.details?.categoryName || r.application?.details?.category || 'General Services'}`
+          : 'Driver & Delivery Network',
         status: r.status || 'pending',
         appliedAt: r.requestedAt || r.application?.requestedAt || new Date().toISOString(),
         details: r.application?.details || {},
@@ -116,15 +121,16 @@ export default function AdminApplications({
     for (const u of adminUsers) {
       if (u.accountType === 'provider' && u.status === 'pending') {
         // Only if not already present in role applications
-        if (!list.some(item => item.kind === 'role' && item.rawId === u.id)) {
+        if (!list.some(item => (item.kind === 'role' && item.rawId === u.id) || (item.kind === 'provider' && item.rawId === u.id))) {
           list.push({
             id: `user-${u.id}`,
             rawId: u.id,
             kind: 'provider',
+            role: 'provider',
             applicantName: u.fullName,
             phone: u.phone,
             email: u.email,
-            serviceNetwork: `New Provider Registration (${u.category || 'General'})`,
+            serviceNetwork: `Provider Registration (${u.categoryName || u.category || 'General'})`,
             status: 'pending',
             appliedAt: u.createdAt || new Date().toISOString(),
             details: {
@@ -133,7 +139,9 @@ export default function AdminApplications({
               nicDocument: u.nicDocument,
               tradeCertificate: u.tradeCertificate,
               nsnNumber: u.nsnNumber,
-              operatingMode: u.operatingMode
+              operatingMode: u.operatingMode,
+              nicNumber: u.nicNumber,
+              baseCharge: u.baseCharge
             },
             nicNumber: u.nicNumber || 'Not provided'
           });
@@ -154,8 +162,8 @@ export default function AdminApplications({
 
       const matchType =
         typeFilter === 'all' ||
-        (typeFilter === 'driver' && item.kind === 'driver') ||
-        (typeFilter === 'provider' && item.kind === 'provider') ||
+        (typeFilter === 'driver' && (item.kind === 'driver' || (item.kind === 'role' && item.role === 'driver'))) ||
+        (typeFilter === 'provider' && (item.kind === 'provider' || (item.kind === 'role' && item.role === 'provider'))) ||
         (typeFilter === 'role' && item.kind === 'role');
 
       const matchStatus = statusFilter === 'all' || item.status === statusFilter;

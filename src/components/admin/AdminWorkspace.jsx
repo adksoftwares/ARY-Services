@@ -106,10 +106,11 @@ export default function AdminWorkspace({
   // Initial load
   useEffect(() => {
     if (isAdmin) {
+      fetchAdminUsers?.();
       fetchBookings();
       fetchDispatchSnapshot();
     }
-  }, [isAdmin, fetchBookings, fetchDispatchSnapshot]);
+  }, [isAdmin, fetchAdminUsers, fetchBookings, fetchDispatchSnapshot]);
 
   // Real-time SSE Event Subscription
   useEffect(() => {
@@ -134,6 +135,20 @@ export default function AdminWorkspace({
           targetTab: 'applications'
         }, ...prev]);
       },
+      'user:role_application_created': (data) => {
+        refreshData();
+        setAuditEvents(prev => [{
+          id: Date.now(),
+          type: 'kyc',
+          title: `New ${data?.role === 'provider' ? 'Provider' : 'Role'} Application Received`,
+          description: `Applicant ID: ${data?.userId || 'User'}`,
+          timestamp: 'Just now',
+          color: 'accent',
+          targetTab: 'applications'
+        }, ...prev]);
+      },
+      'user:registered': () => refreshData(),
+      'user:status_changed': () => refreshData(),
       'driver:location_updated': () => fetchDispatchSnapshot(),
       'job:dispatched': (data) => {
         fetchDispatchSnapshot();

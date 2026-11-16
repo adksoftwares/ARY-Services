@@ -122,12 +122,51 @@ export function registerRoleAccessRoutes(app, { requireAuth, requireAdmin, getUs
   app.get('/api/admin/role-applications', requireAdmin, async (_req, res) => {
     const users = await getUsers();
     const applications = [];
+    const seen = new Set();
+
     for (const user of users) {
+      // 1. Direct registrations with status === 'pending'
+      if (['provider', 'driver'].includes(user.accountType) && user.status === 'pending') {
+        const key = `${user.id}:${user.accountType}`;
+        seen.add(key);
+        const existingApp = user.roleApplications?.[user.accountType];
+        applications.push({
+          userId: user.id,
+          fullName: user.fullName,
+          phone: user.phone,
+          email: user.email,
+          role: user.accountType,
+          application: existingApp || {
+            status: 'pending',
+            requestedAt: user.createdAt || new Date().toISOString(),
+            details: {
+              category: user.category,
+              categoryName: user.categoryName || user.category,
+              location: user.location,
+              nicNumber: user.nicNumber,
+              nsnNumber: user.nsnNumber,
+              operatingMode: user.operatingMode,
+              baseCharge: user.baseCharge,
+              nicDocument: user.nicDocument,
+              tradeCertificate: user.tradeCertificate,
+              driverServices: user.driverServices || []
+            }
+          }
+        });
+      }
+
+      // 2. Existing users who applied for an additional role
       for (const [role, application] of Object.entries(user.roleApplications || {})) {
-        if (application?.status === 'pending') {
+        const key = `${user.id}:${role}`;
+        if (!seen.has(key) && application?.status === 'pending') {
+          seen.add(key);
           applications.push({
-            userId: user.id, fullName: user.fullName, phone: user.phone,
-            email: user.email, role, application
+            userId: user.id,
+            fullName: user.fullName,
+            phone: user.phone,
+            email: user.email,
+            role,
+            application
           });
         }
       }
@@ -143,38 +182,70 @@ export function registerRoleAccessRoutes(app, { requireAuth, requireAdmin, getUs
     }
     const users = await getUsers();
     const target = users.find(user => user.id === userId);
-    const application = target?.roleApplications?.[role];
-    if (!target || !application || application.status !== 'pending') {
-      return res.status(404).json({ error: 'Pending role application not found.' });
+    if (!target) {
+      return res.status(404).json({ error: 'User not found.' });
     }
+    const application = target.roleApplications?.[role] || {
+      status: 'pending',
+      requestedAt: target.createdAt || new Date().toISOString(),
+      details: {
+        category: target.category,
+        categoryName: target.categoryName,
+        location: target.location,
+        nicNumber: target.nicNumber,
+        nsnNumber: target.nsnNumber,
+        operatingMode: target.operatingMode,
+        baseCharge: target.baseCharge,
+        nicDocument: target.nicDocument,
+        tradeCertificate: target.tradeCertificate,
+        driverServices: target.driverServices || []
+      }
+    };
 
     const updated = await updateUser(userId, user => {
-      const next = { ...user.roleApplications[role], status: decision, reviewedAt: new Date().toISOString(), reviewedBy: req.user.id };
-      user.roleApplications = { ...user.roleApplications, [role]: next };
+      const next = {
+        ...(user.roleApplications?.[role] || application),
+        status: decision,
+        reviewedAt: new Date().toISOString(),
+        reviewedBy: req.user.id
+      };
+      user.roleApplications = { ...(user.roleApplications || {}), [role]: next };
       if (decision === 'approved') {
         user.roles = [...new Set([...rolesFor(user), role])];
+        user.status = 'active';
+        user.kycStatus = 'verified';
         if (role === 'provider') {
-          Object.assign(user, {
-            providerStatus: 'active',
-            category: application.details.category,
-            categoryName: application.details.categoryName,
-            location: application.details.location,
-            nicNumber: application.details.nicNumber,
-            nsnNumber: application.details.nsnNumber || null,
-            operatingMode: application.details.operatingMode,
-            baseCharge: application.details.baseCharge,
-            kycStatus: 'pending'
-          });
+          user.accountType = 'provider';
+          user.providerStatus = 'active';
+          if (application.details) {
+            if (application.details.category) user.category = application.details.category;
+            if (application.details.categoryName) user.categoryName = application.details.categoryName;
+            if (application.details.location) user.location = application.details.location;
+            if (application.details.nicNumber) user.nicNumber = application.details.nicNumber;
+            if (application.details.nsnNumber) user.nsnNumber = application.details.nsnNumber;
+            if (application.details.operatingMode) user.operatingMode = application.details.operatingMode;
+            if (application.details.baseCharge) user.baseCharge = application.details.baseCharge;
+          }
         } else {
-          user.driverServices = application.details.driverServices || [];
+          user.accountType = 'driver';
+          user.driverServices = application.details?.driverServices || user.driverServices || [];
           user.driverStatus = 'active';
         }
-      } else if (role === 'provider') {
-        user.providerStatus = 'rejected';
+      } else {
+        if (role === 'provider') {
+          user.providerStatus = 'rejected';
+        } else {
+          user.driverStatus = 'rejected';
+        }
+        if (user.accountType === role) {
+          user.status = 'rejected';
+        }
       }
       return user;
     });
+
     broadcastEvent?.('user:role_application_reviewed', { userId, role, status: decision });
+    broadcastEvent?.('user:status_changed', { userId, status: updated.status });
     res.json({ status: 'ok', user: publicUser(updated), application: updated.roleApplications[role] });
   });
 }

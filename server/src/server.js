@@ -668,6 +668,35 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
     // Provider and driver accounts require Admin approval before activation
     const initialStatus = ['provider', 'driver'].includes(role) ? 'pending' : 'active';
 
+    const initialRoleApps = {};
+    if (role === 'provider') {
+      initialRoleApps.provider = {
+        status: 'pending',
+        requestedAt: new Date().toISOString(),
+        details: {
+          category,
+          categoryName,
+          location: cleanLocation,
+          baseCharge: cleanBaseChargeAmount ? 'LKR ' + cleanBaseChargeAmount.toLocaleString('en-LK') : null,
+          nicNumber: cleanNic,
+          nsnNumber: cleanNsn,
+          operatingMode: cleanOperatingMode,
+          nicDocument: nicDocument || null,
+          tradeCertificate: tradeCertificate || null
+        }
+      };
+    } else if (role === 'driver') {
+      initialRoleApps.driver = {
+        status: 'pending',
+        requestedAt: new Date().toISOString(),
+        details: {
+          driverServices: selectedDriverServices,
+          location: cleanLocation,
+          nicNumber: cleanNic
+        }
+      };
+    }
+
     const newUser = {
       id: 'user-' + Date.now(),
       fullName: fullName.trim(),
@@ -690,6 +719,7 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
       nicDocument: nicDocument || null,
       tradeCertificate: tradeCertificate || null,
       kycStatus: ['provider', 'driver'].includes(role) ? (cleanNic ? 'pending' : 'unverified') : 'verified',
+      roleApplications: initialRoleApps,
       createdAt: new Date().toISOString()
     };
 
@@ -701,11 +731,19 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
         fullName: newUser.fullName,
         accountType: newUser.accountType,
         roles: [...new Set([...(newUser.accountType === 'admin' ? [] : ['customer']), newUser.accountType])],
-        roleApplications: {},
+        roleApplications: initialRoleApps,
         status: newUser.status,
         nicNumber: cleanNic
       }
     });
+
+    if (role === 'provider' && initialRoleApps.provider) {
+      publishEvent('user:role_application_created', {
+        userId: newUser.id,
+        role: 'provider',
+        application: initialRoleApps.provider
+      });
+    }
 
     const token = generateToken({
       id: newUser.id,
@@ -731,7 +769,7 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
         location: newUser.location,
         accountType: newUser.accountType,
         roles: [newUser.accountType],
-        roleApplications: {},
+        roleApplications: initialRoleApps,
         status: newUser.status,
         category: newUser.category,
         driverServices: newUser.driverServices || [],
@@ -2166,6 +2204,15 @@ app.patch('/api/admin/users/:id/status', requireAdmin, async (req, res) => {
       u.status = status;
       if (status === 'active' && ['provider', 'driver'].includes(u.accountType)) {
         u.kycStatus = 'verified';
+        if (u.roleApplications?.[u.accountType]) {
+          u.roleApplications[u.accountType].status = 'approved';
+          u.roleApplications[u.accountType].reviewedAt = new Date().toISOString();
+        }
+      } else if (status === 'rejected' && ['provider', 'driver'].includes(u.accountType)) {
+        if (u.roleApplications?.[u.accountType]) {
+          u.roleApplications[u.accountType].status = 'rejected';
+          u.roleApplications[u.accountType].reviewedAt = new Date().toISOString();
+        }
       }
       return u;
     });

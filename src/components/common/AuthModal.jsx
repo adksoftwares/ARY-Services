@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   X,
@@ -14,6 +14,7 @@ import {
   RefreshCw,
   Bike,
   ShieldCheck,
+  ShieldAlert,
   Lock,
   Sparkles
 } from 'lucide-react';
@@ -70,6 +71,12 @@ export default function AuthModal({ onNotice }) {
   // Loading States
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLocatingReg, setIsLocatingReg] = useState(false);
+
+  useEffect(() => {
+    if (authMode === 'admin' && !loginIdentifier) {
+      setLoginIdentifier('arikarran14@gmail.com');
+    }
+  }, [authMode, loginIdentifier]);
 
   if (!isAuthModalOpen) return null;
 
@@ -197,11 +204,17 @@ export default function AuthModal({ onNotice }) {
       >
         <div className="modal-header">
           <div>
-            <h3>{authMode === 'login' ? 'Sign In to ARY Services' : 'Create an Account'}</h3>
+            <h3>
+              {authMode === 'admin'
+                ? 'Super Admin Control Center'
+                : (authMode === 'login' ? 'Sign In to ARY Services' : 'Create an Account')}
+            </h3>
             <p>
-              {authMode === 'login'
-                ? 'Enter your phone number or credentials to continue.'
-                : 'Register as a Customer, Service Provider or Driver.'}
+              {authMode === 'admin'
+                ? 'Master Administrator Access: Manage users, KYC applications, disputes & dispatches.'
+                : (authMode === 'login'
+                  ? 'Enter your mobile number or email credentials to continue.'
+                  : 'Register as a Customer, Service Provider or Driver.')}
             </p>
           </div>
           <button className="modal-close" onClick={closeAuthModal} aria-label="Close modal">
@@ -209,39 +222,96 @@ export default function AuthModal({ onNotice }) {
           </button>
         </div>
 
-        {/* Tabs for Sign In vs Register */}
-        <div className="auth-tabs">
+        {/* 3 Tabs: Customer Sign In vs Super Admin vs Create Account */}
+        <div className="auth-tabs" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '4px' }}>
           <button
             type="button"
             className={`auth-tab ${authMode === 'login' ? 'active' : ''}`}
             onClick={() => { setAuthMode('login'); setAuthError(''); }}
+            style={{ padding: '8px 4px', fontSize: '13px' }}
           >
             Sign In
           </button>
           <button
             type="button"
+            className={`auth-tab ${authMode === 'admin' ? 'active' : ''}`}
+            onClick={() => {
+              setAuthMode('admin');
+              setAuthError('');
+              setLoginIdentifier('arikarran14@gmail.com');
+            }}
+            style={{
+              padding: '8px 4px',
+              fontSize: '13px',
+              color: authMode === 'admin' ? '#ef4444' : 'var(--text-secondary)',
+              borderColor: authMode === 'admin' ? '#ef4444' : 'transparent',
+              fontWeight: 700
+            }}
+          >
+            🛡️ Admin
+          </button>
+          <button
+            type="button"
             className={`auth-tab ${authMode === 'register' ? 'active' : ''}`}
             onClick={() => { setAuthMode('register'); setAuthError(''); }}
+            style={{ padding: '8px 4px', fontSize: '13px' }}
           >
-            Create Account
+            Register
           </button>
         </div>
 
         {authError && <div className="auth-error-msg">{authError}</div>}
 
-        {authMode === 'login' ? (
+        {authMode === 'login' || authMode === 'admin' ? (
           <div>
+            {authMode === 'admin' && (
+              <div style={{
+                background: 'rgba(239, 68, 68, 0.1)',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+                borderRadius: '8px',
+                padding: '10px 14px',
+                marginBottom: '14px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                fontSize: '13px',
+                color: '#ef4444'
+              }}>
+                <ShieldAlert size={18} style={{ flexShrink: 0 }} />
+                <span><b>Super Admin Gate:</b> Authorized access to approvals, KYC and settings.</span>
+              </div>
+            )}
+
             <form className="modal-form" onSubmit={handlePasswordLoginSubmit}>
               <label>
-                <span>Mobile Number or Email</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>{authMode === 'admin' ? 'Super Admin Email' : 'Mobile Number or Email'}</span>
+                  {authMode === 'admin' && (
+                    <button
+                      type="button"
+                      onClick={() => setLoginIdentifier('arikarran14@gmail.com')}
+                      style={{
+                        background: 'none',
+                        border: 0,
+                        color: '#ef4444',
+                        fontSize: '11px',
+                        cursor: 'pointer',
+                        padding: 0,
+                        textDecoration: 'underline'
+                      }}
+                    >
+                      Fill arikarran14@gmail.com
+                    </button>
+                  )}
+                </div>
                 <input
                   required
                   type="text"
                   value={loginIdentifier}
                   onChange={e => setLoginIdentifier(e.target.value)}
-                  placeholder="e.g. 077 123 4567 or user@example.com"
+                  placeholder={authMode === 'admin' ? 'arikarran14@gmail.com' : 'e.g. 077 123 4567 or user@example.com'}
                   autoComplete="username"
-                  inputMode="email"
+                  inputMode={authMode === 'admin' ? 'email' : 'text'}
                 />
               </label>
               <label>
@@ -254,7 +324,7 @@ export default function AuthModal({ onNotice }) {
                     type={showLoginPassword ? 'text' : 'password'}
                     value={loginPassword}
                     onChange={e => setLoginPassword(e.target.value)}
-                    placeholder="Enter your password"
+                    placeholder={authMode === 'admin' ? 'Enter Super Admin Password' : 'Enter your password'}
                     autoComplete="current-password"
                   />
                   <button
@@ -267,36 +337,102 @@ export default function AuthModal({ onNotice }) {
                   </button>
                 </div>
               </label>
-              <button type="submit" className="modal-submit-btn" disabled={isSubmitting}>
-                {isSubmitting ? 'Signing in...' : 'Sign In'} <ArrowRight size={16} />
+              <button
+                type="submit"
+                className="modal-submit-btn"
+                disabled={isSubmitting}
+                style={authMode === 'admin' ? { background: '#dc2626' } : {}}
+              >
+                {isSubmitting
+                  ? (authMode === 'admin' ? 'Signing in Super Admin...' : 'Signing in...')
+                  : (authMode === 'admin' ? 'Sign In as Super Admin' : 'Sign In')} <ArrowRight size={16} />
               </button>
 
-              <div style={{
-                textAlign: 'center',
-                marginTop: '12px',
-                paddingTop: '12px',
-                borderTop: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.1))',
-                fontSize: '12px',
-                color: 'var(--text-muted, #94a3b8)'
-              }}>
-                Don't have an account yet?{' '}
-                <button
-                  type="button"
-                  onClick={() => { setAuthMode('register'); setAuthError(''); }}
-                  style={{
-                    background: 'none',
-                    border: 0,
-                    color: 'var(--brand-primary, #ffffff)',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    textDecoration: 'underline',
-                    fontSize: '12px',
-                    padding: 0
-                  }}
-                >
-                  Create Account / Register
-                </button>
-              </div>
+              {authMode === 'login' ? (
+                <div style={{
+                  textAlign: 'center',
+                  marginTop: '12px',
+                  paddingTop: '12px',
+                  borderTop: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.1))',
+                  fontSize: '12px',
+                  color: 'var(--text-muted, #94a3b8)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '8px',
+                  alignItems: 'center'
+                }}>
+                  <div>
+                    Don't have an account yet?{' '}
+                    <button
+                      type="button"
+                      onClick={() => { setAuthMode('register'); setAuthError(''); }}
+                      style={{
+                        background: 'none',
+                        border: 0,
+                        color: 'var(--brand-primary, #ffffff)',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        textDecoration: 'underline',
+                        fontSize: '12px',
+                        padding: 0
+                      }}
+                    >
+                      Create Account / Register
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuthMode('admin');
+                      setAuthError('');
+                      setLoginIdentifier('arikarran14@gmail.com');
+                    }}
+                    style={{
+                      background: 'rgba(239, 68, 68, 0.08)',
+                      border: '1px solid rgba(239, 68, 68, 0.3)',
+                      color: '#ef4444',
+                      borderRadius: '6px',
+                      padding: '5px 12px',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                      marginTop: '4px'
+                    }}
+                  >
+                    <ShieldCheck size={14} /> Super Admin Portal Login
+                  </button>
+                </div>
+              ) : (
+                <div style={{
+                  textAlign: 'center',
+                  marginTop: '12px',
+                  paddingTop: '12px',
+                  borderTop: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.1))',
+                  fontSize: '12px',
+                  color: 'var(--text-muted, #94a3b8)'
+                }}>
+                  Not an admin?{' '}
+                  <button
+                    type="button"
+                    onClick={() => { setAuthMode('login'); setAuthError(''); }}
+                    style={{
+                      background: 'none',
+                      border: 0,
+                      color: 'var(--brand-primary, #ffffff)',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      textDecoration: 'underline',
+                      fontSize: '12px',
+                      padding: 0
+                    }}
+                  >
+                    Switch to Customer Sign In
+                  </button>
+                </div>
+              )}
             </form>
           </div>
         ) : (
