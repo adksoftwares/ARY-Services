@@ -2,7 +2,7 @@ import crypto from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readPersistentState, mutatePersistentState } from './storage.js';
-import { cleanSriLankaCoordinates, isDriverPresenceFresh, rankJobsForDriver, buildAdminDispatchSnapshot, summarizeDriverReliability } from './mobilityDispatch.js';
+import { cleanSriLankaCoordinates, isDriverPresenceFresh, rankJobsForDriver, buildAdminDispatchSnapshot, summarizeDriverReliability, isDriverEligibleForRequeuedJob } from './mobilityDispatch.js';
 import { MOBILITY_PIN_TTL_MS, isMobilityPinExpired } from './mobilityPinSecurity.js';
 import { calculateDistanceKm, estimateEtaMinutes, getRoadRoute } from './geoService.js';
 
@@ -288,6 +288,7 @@ export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadc
         const presence=d.presence[req.user.id];
         if(!isDriverPresenceFresh(presence))return {status:409,error:'Your GPS location is stale. Refresh your location and go online before accepting a new job.'};
         if(job.status!=='requested'||job.driverId)return {status:409,error:'This job has already been accepted by another driver.'};
+        if(!isDriverEligibleForRequeuedJob(job,req.user.id))return {status:409,error:'You cannot reclaim a job you previously released. It has been reassigned to the dispatch pool.'};
         if(d.jobs.some(j=>j.driverId===req.user.id&&!['completed','delivered','cancelled','failed_attempt','returned'].includes(j.status)))return {status:409,error:'Complete or release your current active job before accepting another.'};
         job.driverId=req.user.id;job.driverName=req.user.fullName;job.status='accepted';job.acceptedAt=new Date().toISOString();return {status:200,job};
       });
