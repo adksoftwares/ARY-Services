@@ -5,6 +5,8 @@ import pg from 'pg';
 import crypto from 'node:crypto';
 import rateLimit from 'express-rate-limit';
 import { findLiveUserForToken } from './sessionIdentity.js';
+import { summarizeProviderTrust } from './providerTrust.js';
+import { summarizeMarketplaceOperations } from './marketplaceOperations.js';
 
 import {
   getUsers,
@@ -1159,6 +1161,42 @@ app.get('/api/providers/services/mine', requireAuth, async (req, res) => {
   });
 });
 
+// Admin provider trust overview: evidence-based quality signals, never automatic penalties.
+// Admin-only aggregate operations dashboard; no customer contact or address data is returned.
+app.get('/api/admin/operations/summary', requireAdmin, async (_req, res) => {
+  try {
+    const bookings = await getBookings();
+    res.setHeader('Cache-Control', 'no-store');
+    return res.json({
+      summary: summarizeMarketplaceOperations(bookings),
+      generatedAt: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Marketplace operations summary failed:', error);
+    return res.status(500).json({ error: 'Could not generate operations summary.' });
+  }
+});
+
+app.get('/api/admin/provider-trust', requireAdmin, async (_req, res) => {
+  try {
+    const [users, bookings, reviews] = await Promise.all([getUsers(), getBookings(), getReviews()]);
+    const providers = users.filter(user => user.accountType === 'provider' || (Array.isArray(user.roles) && user.roles.includes('provider')));
+    const trust = providers.map(provider => ({
+      providerId: provider.id,
+      providerName: provider.fullName || 'Provider',
+      status: provider.status || 'unknown',
+      category: provider.categoryName || provider.category || null,
+      ...summarizeProviderTrust(provider.id, bookings, reviews)
+    }));
+    trust.sort((a, b) => (b.trustScore ?? -1) - (a.trustScore ?? -1));
+    res.setHeader('Cache-Control', 'no-store');
+    return res.json({ providers: trust, generatedAt: new Date().toISOString() });
+  } catch (error) {
+    console.error('Provider trust report failed:', error);
+    return res.status(500).json({ error: 'Could not generate provider trust report.' });
+  }
+});
+
 app.get('/api/admin/provider-service-requests', requireAdmin, async (_req, res) => {
   const users = await getUsers();
   const requests = users.flatMap(user => (Array.isArray(user.serviceRequests) ? user.serviceRequests : [])
@@ -1310,7 +1348,8 @@ app.post('/api/bookings', requireAuth, async (req, res) => {
       workmanshipGuarantee: true,
       status: 'requested', // 'requested' | 'accepted' | 'in_progress' | 'completed' | 'cancelled' | 'rejected'
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
+      lifecycleHistory: [{ event: 'booking_created', from: null, to: 'requested', actorId: customer.id, actorRole: customer.accountType, at: new Date().toISOString() }]
     };
 
     await addBooking(newBooking);
@@ -1376,8 +1415,10 @@ app.patch('/api/bookings/:id/status', requireAuth, async (req, res) => {
     }
 
     const previousProviderId = booking.providerId;
+    const previousStatus = booking.status;
     let releasedTx = null;
     const updated = await updateBooking(id, b => {
+      b.lifecycleHistory = Array.isArray(b.lifecycleHistory) ? b.lifecycleHistory : [];
       // Cascading Dispatch: If contractor declines, cascade to broadcast pool so another contractor can claim it
       if (status === 'rejected') {
         b.status = 'broadcast_pool';
@@ -1391,6 +1432,7 @@ app.patch('/api/bookings/:id/status', requireAuth, async (req, res) => {
       }
 
       b.updatedAt = new Date().toISOString();
+      b.lifecycleHistory.push({ event: status === 'rejected' ? 'provider_declined_rebroadcast' : 'status_changed', from: previousStatus, to: b.status, requestedStatus: status, actorId: userId, actorRole: accountType, at: b.updatedAt });
       if (status === 'completed') b.completedAt = b.updatedAt;
 
       // If service is marked completed and payment was held in escrow, automatically release payout
@@ -1632,8 +1674,11 @@ app.patch('/api/bookings/:id/cancel', requireAuth, async (req, res) => {
       cancelMessage = 'Booking cancelled. 100% full refund processed to customer.';
     }
 
+    const previousStatus = booking.status;
     const updated = await updateBooking(id, b => {
+      b.lifecycleHistory = Array.isArray(b.lifecycleHistory) ? b.lifecycleHistory : [];
       b.status = 'cancelled';
+      b.lifecycleHistory.push({ event: 'booking_cancelled', from: previousStatus, to: 'cancelled', actorId: userId, actorRole: accountType, reason: String(reason || '').slice(0, 300), at: new Date().toISOString() });
       b.paymentStatus = newPaymentStatus;
       b.cancelReason = reason || 'Cancelled by user';
       b.cancelledBy = userId;
@@ -1999,7 +2044,7 @@ app.post('/api/reviews', requireAuth, async (req, res) => {
     const { bookingId, rating, comment } = req.body || {};
     const customer = req.user;
     const parsedRating = Number(rating);
-    const cleanComment = String(comment || '').trim().slice(0, 1000);
+    const cleanComment = String(comment || '').replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 1000);
 
     if (customer.accountType !== 'customer') return res.status(403).json({ error: 'Customer account required to submit a review.' });
     if (!bookingId || !Number.isInteger(parsedRating) || parsedRating < 1 || parsedRating > 5) {
@@ -2038,6 +2083,10 @@ app.post('/api/reviews', requireAuth, async (req, res) => {
       customerName: customer.fullName || 'Verified Customer',
       rating: Math.round(parsedRating),
       comment: cleanComment,
+      verifiedBooking: true,
+      serviceName: booking.serviceName || booking.categoryName || 'Service',
+      categorySlug: booking.categorySlug || null,
+      completedAt: booking.completedAt || booking.updatedAt || booking.createdAt,
       createdAt: new Date().toISOString()
     };
 
