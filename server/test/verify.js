@@ -860,20 +860,20 @@ try {
   assert.equal(cascadeBookRes.status, 200);
   const cascadeBooking = (await cascadeBookRes.json()).booking;
   assert.equal(cascadeBooking.status, 'requested');
-  assert.equal(cascadeBooking.providerId, 'user-provider-kumar');
+  assert.equal(cascadeBooking.providerId, 'user-provider-perera');
 
-  const claimantLogin = await fetch(`${API_URL}/auth/login`, {
+  const pereraLogin = await fetch(`${API_URL}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ identifier: 'secondary.plumb@example.local', password: 'SecondaryPlumbPass@123' })
+    body: JSON.stringify({ identifier: 'perera.plumb@example.local', password: 'PereraPass@123' })
   });
-  const cascadeProviderAuth = await pereraLogin.json();
+  const pereraAuth = await pereraLogin.json();
 
   const declineRes = await fetch(`${API_URL}/bookings/${cascadeBooking.id}/status`, {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${cascadeProviderAuth.token}`
+      Authorization: `Bearer ${pereraAuth.token}`
     },
     body: JSON.stringify({ status: 'rejected' })
   });
@@ -882,18 +882,18 @@ try {
   assert.equal(declinedBooking.status, 'broadcast_pool', 'Declined booking must transition to broadcast_pool');
   console.log('✓ Cascading Dispatch: Declined booking transitioned to status=broadcast_pool');
 
-  const pereraLogin = await fetch(`${API_URL}/auth/login`, {
+  const claimantLogin = await fetch(`${API_URL}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ identifier: 'perera.plumb@example.local', password: 'PereraPass@123' })
+    body: JSON.stringify({ identifier: 'secondary.plumb@example.local', password: 'SecondaryPlumbPass@123' })
   });
   const claimantAuth = await claimantLogin.json();
 
-  const pereraJobsRes = await fetch(`${API_URL}/bookings`, {
+  const claimantJobsRes = await fetch(`${API_URL}/bookings`, {
     headers: { Authorization: `Bearer ${claimantAuth.token}` }
   });
-  const pereraJobs = await pereraJobsRes.json();
-  const foundInPool = pereraJobs.bookings.find(b => b.id === cascadeBooking.id);
+  const claimantJobs = await claimantJobsRes.json();
+  const foundInPool = claimantJobs.bookings.find(b => b.id === cascadeBooking.id);
   assert(foundInPool, 'Broadcast pool job must be visible to verified provider in GET /api/bookings');
   assert.equal(foundInPool.status, 'broadcast_pool');
   console.log('✓ Cascading Dispatch: Broadcast job visible to available contractors');
@@ -902,13 +902,13 @@ try {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${pereraAuth.token}`
+      Authorization: `Bearer ${claimantAuth.token}`
     }
   });
   assert.equal(claimRes.status, 200);
   const claimData = await claimRes.json();
   assert.equal(claimData.booking.status, 'accepted');
-  assert.equal(claimData.booking.providerId, 'user-provider-perera');
+  assert.equal(claimData.booking.providerId, 'user-provider-plumbing-secondary');
   assert(claimData.booking.claimedAt, 'claimedAt timestamp must be recorded');
   console.log('✓ Cascading Dispatch: Job claimed successfully with 1-click (status transitioned to accepted)');
 
@@ -916,7 +916,7 @@ try {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${kumarAuth.token}`
+      Authorization: `Bearer ${pereraAuth.token}`
     }
   });
   assert.equal(secondClaimRes.status, 400, 'Already claimed job must be rejected with HTTP 400');
