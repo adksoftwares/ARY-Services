@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { cleanSriLankaCoordinates, isDriverPresenceFresh, rankJobsForDriver, buildAdminDispatchSnapshot } from '../src/mobilityDispatch.js';
+import { cleanSriLankaCoordinates, isDriverPresenceFresh, rankJobsForDriver, dispatchFairnessScore, buildAdminDispatchSnapshot } from '../src/mobilityDispatch.js';
 
 const now = Date.parse('2026-11-02T12:00:00.000Z');
 assert.deepEqual(cleanSriLankaCoordinates(6.9271,79.8612),{lat:6.9271,lng:79.8612});
@@ -12,17 +12,25 @@ assert.equal(isDriverPresenceFresh({...fresh,updatedAt:new Date(now-120000).toIS
 assert.equal(isDriverPresenceFresh({...fresh,online:false},now),false);
 
 const jobs=[
- {id:'far',serviceType:'ride',pickupLat:6.90,pickupLng:79.90,status:'requested'},
- {id:'near',serviceType:'ride',pickupLat:6.928,pickupLng:79.862,status:'requested'},
- {id:'food',serviceType:'food_delivery',destinationLat:6.9272,destinationLng:79.8613,status:'requested'}
+ {id:'far',serviceType:'ride',pickupLat:6.90,pickupLng:79.90,status:'requested',createdAt:new Date(now-60000).toISOString()},
+ {id:'near',serviceType:'ride',pickupLat:6.928,pickupLng:79.862,status:'requested',createdAt:new Date(now-60000).toISOString()},
+ {id:'food',serviceType:'food_delivery',destinationLat:6.9272,destinationLng:79.8613,status:'requested',createdAt:new Date(now-60000).toISOString()}
 ];
 const ranked=rankJobsForDriver(jobs,fresh,now);
 assert.equal(ranked[0].id,'food');
 assert.equal(ranked[1].id,'near');
+assert.equal(ranked[0].fairnessScore,ranked[0].distanceKm-0.1);
+assert.equal(dispatchFairnessScore(2,new Date(now-600000).toISOString(),now),1);
+assert.equal(dispatchFairnessScore(2,new Date(now-900000).toISOString(),now),-0.5);
 assert(ranked[0].distanceKm<1);
 assert(ranked[0].etaMinutes>=10);
 assert.equal(rankJobsForDriver(jobs,{...fresh,updatedAt:new Date(now-120000).toISOString()},now)[0].distanceKm,null);
-console.log('Mobility dispatch and GPS freshness tests passed.');
+const fairnessOrder=rankJobsForDriver([
+ {id:'new-close',serviceType:'ride',pickupLat:6.9272,pickupLng:79.8613,status:'requested',createdAt:new Date(now).toISOString()},
+ {id:'older-far',serviceType:'ride',pickupLat:6.90,pickupLng:79.90,status:'requested',createdAt:new Date(now-6000000).toISOString()}
+],fresh,now);
+assert.equal(fairnessOrder[0].id,'older-far','Aging boost should help long-waiting jobs avoid starvation');
+console.log('Mobility dispatch, GPS freshness, and fairness ranking tests passed.');
 
 const snapshot=buildAdminDispatchSnapshot(
  [{id:'active',serviceType:'ride',status:'accepted',customerName:'Customer',driverId:'driver-1',driverName:'Driver',pickupAddress:'A',destinationAddress:'B'},
