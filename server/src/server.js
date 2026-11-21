@@ -5,6 +5,7 @@ import pg from 'pg';
 import crypto from 'node:crypto';
 import rateLimit from 'express-rate-limit';
 import { findLiveUserForToken } from './sessionIdentity.js';
+import { summarizeProviderTrust } from './providerTrust.js';
 
 import {
   getUsers,
@@ -1157,6 +1158,27 @@ app.get('/api/providers/services/mine', requireAuth, async (req, res) => {
     approvedServices: Array.isArray(provider.approvedServices) ? provider.approvedServices : [],
     requests: Array.isArray(provider.serviceRequests) ? provider.serviceRequests : []
   });
+});
+
+// Admin provider trust overview: evidence-based quality signals, never automatic penalties.
+app.get('/api/admin/provider-trust', requireAdmin, async (_req, res) => {
+  try {
+    const [users, bookings, reviews] = await Promise.all([getUsers(), getBookings(), getReviews()]);
+    const providers = users.filter(user => user.accountType === 'provider' || (Array.isArray(user.roles) && user.roles.includes('provider')));
+    const trust = providers.map(provider => ({
+      providerId: provider.id,
+      providerName: provider.fullName || 'Provider',
+      status: provider.status || 'unknown',
+      category: provider.categoryName || provider.category || null,
+      ...summarizeProviderTrust(provider.id, bookings, reviews)
+    }));
+    trust.sort((a, b) => (b.trustScore ?? -1) - (a.trustScore ?? -1));
+    res.setHeader('Cache-Control', 'no-store');
+    return res.json({ providers: trust, generatedAt: new Date().toISOString() });
+  } catch (error) {
+    console.error('Provider trust report failed:', error);
+    return res.status(500).json({ error: 'Could not generate provider trust report.' });
+  }
 });
 
 app.get('/api/admin/provider-service-requests', requireAdmin, async (_req, res) => {
