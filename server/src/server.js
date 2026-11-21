@@ -620,12 +620,14 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
       return res.status(400).json({ error: 'A National Identity Card number is required for Provider and Driver registration.' });
     }
 
-    // Sri Lankan NIC verification for service providers (allows 9-digit old format, 12-digit new format, or test IDs)
+    // Sri Lankan NIC format: legacy 9 digits + V/X, or new 12-digit format.
     let cleanNic = null;
     if (['provider', 'driver'].includes(role) && nicNumber) {
       const trimmedNic = String(nicNumber).replace(/[\s-]/g, '').trim().toUpperCase();
-      if (!trimmedNic || trimmedNic.length < 5) {
-        return res.status(400).json({ error: 'Please enter a valid National Identity Card (NIC) number.' });
+      const isLegacyNic = /^\d{9}[VX]$/.test(trimmedNic);
+      const isNewNic = /^\d{12}$/.test(trimmedNic);
+      if (!isLegacyNic && !isNewNic) {
+        return res.status(400).json({ error: 'Please enter a valid Sri Lankan National Identity Card (NIC) number (9 digits plus V/X, or 12 digits).' });
       }
       cleanNic = trimmedNic;
     }
