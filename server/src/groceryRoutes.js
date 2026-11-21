@@ -101,7 +101,7 @@ const PRODUCT_CATALOG = [
   { category:'Gas Cylinders', unitGroup:'gas', unit:'kg_cylinder', products:['Litro Gas Cylinder','Laugfs Gas Cylinder'], sizes:[2.3,5,12.5,37.5] }
 ];
 
-export function registerGroceryRoutes(app, { requireAuth, broadcastEvent, getUsers, createGroceryOrderDeliveryJob, cancelGroceryOrderDeliveryJob }) {
+export function registerGroceryRoutes(app, { requireAuth, broadcastEvent, getUsers, createGroceryOrderDeliveryJob, cancelGroceryOrderDeliveryJob, isAdminAuthorized = () => false }) {
   app.get('/api/grocery/catalog', (_req,res) => res.json({catalog:PRODUCT_CATALOG, units:{weight:['g','kg'],volume:['ml','L'],count:['piece','pack','box','bottle','can','sachet','dozen','egg_tray'],length:['cm','m'],area:['sqft'],gas:['kg_cylinder']}, currency:'LKR'}));
   app.get('/api/grocery/products', async (req, res) => {
     try {
@@ -325,7 +325,7 @@ export function registerGroceryRoutes(app, { requireAuth, broadcastEvent, getUse
     return res.json({ orders: orders.filter(order => order.providerId === req.user.id).map(({ deliveryPickupPin, deliveryPin, ...order }) => order) });
   });
   app.get('/api/grocery/orders/admin', requireAuth, async (req, res) => {
-    if (req.user?.accountType !== 'admin') return res.status(403).json({ error: 'Admin access required.' });
+    if (req.user?.accountType !== 'admin' || !isAdminAuthorized(req.user)) return res.status(403).json({ error: 'Super Admin access required.' });
     const orders = await readPersistentState('grocery_orders', ordersFile, EMPTY_ORDERS);
     return res.json({ orders: orders.map(({ deliveryPickupPin, deliveryPin, ...order }) => order) });
   });
@@ -362,7 +362,8 @@ export function registerGroceryRoutes(app, { requireAuth, broadcastEvent, getUse
   app.patch('/api/grocery/orders/:id/status', requireAuth, async (req, res) => {
     const next = String(req.body?.status || '');
     if (!['accepted', 'preparing', 'ready_for_pickup', 'cancelled'].includes(next)) return res.status(400).json({ error: 'Invalid grocery order status.' });
-    const isAdmin = req.user?.accountType === 'admin', isProvider = isGroceryProvider(req.user);
+    const isAdmin = req.user?.accountType === 'admin' && isAdminAuthorized(req.user), isProvider = isGroceryProvider(req.user);
+    if (req.user?.accountType === 'admin' && !isAdmin) return res.status(403).json({ error: 'Super Admin access required.' });
     if (!isAdmin && !isProvider) return res.status(403).json({ error: 'Shop provider or Admin access required.' });
     if (next === 'cancelled') {
       const existing = await readPersistentState('grocery_orders', ordersFile, EMPTY_ORDERS);
