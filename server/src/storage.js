@@ -850,7 +850,7 @@ export async function recordCallOutFeeCompensation({ bookingId, customerId, prov
 
 export async function recordPayoutSettlement({ batchId, providerId, amount, bankReference = '' }) {
   return ledgerLock.acquire(async () => {
-    if (!batchId || !providerId) {
+    if (typeof batchId !== 'string' || !batchId.trim() || typeof providerId !== 'string' || !providerId.trim()) {
       throw new Error('Payout batch and provider identifiers are required.');
     }
     const payoutAmount = Number(amount);
@@ -870,10 +870,13 @@ export async function recordPayoutSettlement({ batchId, providerId, amount, bank
     const transactionId = `tx-payout-${batchId}`;
     const existing = current.filter(entry => entry.transactionId === transactionId);
     if (existing.length) {
+      const expectedBankReference = bankReference ? `Bank reference ${bankReference}` : '';
       const validReplay = existing.length === 2 &&
-        existing.some(entry => entry.account === account && entry.type === 'debit' && Number(entry.amount) === payoutAmount) &&
-        existing.some(entry => entry.account === 'bank:external_provider_settlement' && entry.type === 'credit' && Number(entry.amount) === payoutAmount) &&
-        existing.every(entry => String(entry.description || '').includes(`batch #${batchId.slice(-8)}`) || String(entry.description || '').includes(`provider #${providerId}`));
+        existing.some(entry => entry.account === account && entry.type === 'debit' && Number(entry.amount) === payoutAmount && String(entry.description || '').includes(`batch #${batchId.slice(-8)}`)) &&
+        existing.some(entry => entry.account === 'bank:external_provider_settlement' && entry.type === 'credit' && Number(entry.amount) === payoutAmount && String(entry.description || '').includes(`provider #${providerId}`)) &&
+        existing.every(entry => expectedBankReference
+          ? String(entry.description || '').includes(expectedBankReference)
+          : !String(entry.description || '').includes('Bank reference '));
       if (!validReplay) {
         throw new Error('Payout idempotency key conflict: batch payload differs from the original.');
       }
