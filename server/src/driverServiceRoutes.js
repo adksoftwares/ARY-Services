@@ -2,7 +2,7 @@ import crypto from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readPersistentState, mutatePersistentState } from './storage.js';
-import { cleanSriLankaCoordinates, isDriverPresenceFresh, rankJobsForDriver, buildAdminDispatchSnapshot } from './mobilityDispatch.js';
+import { cleanSriLankaCoordinates, isDriverPresenceFresh, rankJobsForDriver, buildAdminDispatchSnapshot, summarizeDriverReliability } from './mobilityDispatch.js';
 import { MOBILITY_PIN_TTL_MS, isMobilityPinExpired } from './mobilityPinSecurity.js';
 import { calculateDistanceKm, estimateEtaMinutes, getRoadRoute } from './geoService.js';
 
@@ -323,6 +323,13 @@ export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadc
     broadcastEvent?.('driver:job_updated',{job:safeMobilityJob(result.job),customerId:result.job.customerId,driverId:result.job.driverId});return res.json({job:safeMobilityJob(result.job,req.user.id)});
   });
 
+  // Admin-only reliability summaries aggregate completed jobs and pre-pickup driver releases.
+  app.get('/api/admin/driver-reliability',requireAdmin,async(_req,res)=>{
+    const d=await readJobs();
+    const drivers=[...new Map(d.applications.filter(a=>a.userId).map(a=>[a.userId,{driverId:a.userId,driverName:a.driverName||'Driver'}])).values()];
+    const summaries=drivers.map(driver=>({...driver,...summarizeDriverReliability(d.jobs,driver.driverId)}));
+    return res.json({drivers:summaries});
+  });
   // Admin-only operational view: expose dispatch health without account/KYC/payment data.
   app.get('/api/admin/driver-dispatch',requireAdmin,async(_req,res)=>{
     const d=await readJobs();
