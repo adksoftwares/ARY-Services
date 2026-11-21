@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [main, feature/ary-production-grade-experience]
+    branches: [main, feature/ary-production-grade-experience, upgrade/10-phase-platform-hardening]
   workflow_dispatch:
 
 permissions:
