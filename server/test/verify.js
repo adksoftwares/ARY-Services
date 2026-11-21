@@ -851,10 +851,10 @@ try {
       Authorization: `Bearer ${custAuth.token}`
     },
     body: JSON.stringify({
-      providerId: 'user-provider-kumar',
-      categorySlug: 'electrical-repair',
-      serviceAddress: 'No. 55, Havelock Road, Colombo 05',
-      problemDescription: 'Main circuit breaker tripping intermittently'
+      providerId: 'user-provider-perera',
+      categorySlug: 'plumbing',
+      serviceAddress: 'No. 99, Baseline Road, Colombo',
+      problemDescription: 'Water pipe leaking under kitchen sink'
     })
   });
   assert.equal(cascadeBookRes.status, 200);
@@ -862,18 +862,18 @@ try {
   assert.equal(cascadeBooking.status, 'requested');
   assert.equal(cascadeBooking.providerId, 'user-provider-kumar');
 
-  const kumarLogin = await fetch(`${API_URL}/auth/login`, {
+  const claimantLogin = await fetch(`${API_URL}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ identifier: 'kumar.electric@example.local', password: 'KumarPass@123' })
+    body: JSON.stringify({ identifier: 'secondary.plumb@example.local', password: 'SecondaryPlumbPass@123' })
   });
-  const kumarAuth = await kumarLogin.json();
+  const cascadeProviderAuth = await pereraLogin.json();
 
   const declineRes = await fetch(`${API_URL}/bookings/${cascadeBooking.id}/status`, {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${kumarAuth.token}`
+      Authorization: `Bearer ${cascadeProviderAuth.token}`
     },
     body: JSON.stringify({ status: 'rejected' })
   });
@@ -887,10 +887,10 @@ try {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ identifier: 'perera.plumb@example.local', password: 'PereraPass@123' })
   });
-  const pereraAuth = await pereraLogin.json();
+  const claimantAuth = await claimantLogin.json();
 
   const pereraJobsRes = await fetch(`${API_URL}/bookings`, {
-    headers: { Authorization: `Bearer ${pereraAuth.token}` }
+    headers: { Authorization: `Bearer ${claimantAuth.token}` }
   });
   const pereraJobs = await pereraJobsRes.json();
   const foundInPool = pereraJobs.bookings.find(b => b.id === cascadeBooking.id);
