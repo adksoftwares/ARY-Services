@@ -3,7 +3,7 @@ export const DOMAIN_API_BASE = 'https://aryservices.adksoftwares.com/api';
 export const PUBLIC_CLOUD_API_BASE = DOMAIN_API_BASE;
 
 const normalizeApiBase = (value) => {
-  const candidate = String(value || '').trim().replace(/\\/$/, '');
+  const candidate = String(value || '').trim().replace(/\/$/, '');
   if (!candidate) return '';
   try {
     const parsed = new URL(candidate);
@@ -58,7 +58,7 @@ if (typeof window !== 'undefined' && API_FALLBACK_BASE && !window.__ARY_FETCH_FA
       if (shouldFailover) {
         let fallbackUrl = inputUrl;
         if (isPrimaryApiCall) fallbackUrl = inputUrl.replace(primaryBase, API_FALLBACK_BASE);
-        else if (isRelativeApiCall) fallbackUrl = inputUrl.replace(/^\\/api/, API_FALLBACK_BASE);
+        else if (isRelativeApiCall) fallbackUrl = inputUrl.replace(/^\/api/, API_FALLBACK_BASE);
         else if (isLocalApiCall) fallbackUrl = inputUrl.replace('http://localhost:4000/api', API_FALLBACK_BASE);
         try {
           return await originalFetch(fallbackUrl, init);
