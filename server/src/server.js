@@ -6,6 +6,7 @@ import crypto from 'node:crypto';
 import rateLimit from 'express-rate-limit';
 import { findLiveUserForToken } from './sessionIdentity.js';
 import { summarizeProviderTrust } from './providerTrust.js';
+import { summarizeMarketplaceOperations } from './marketplaceOperations.js';
 
 import {
   getUsers,
@@ -1161,6 +1162,21 @@ app.get('/api/providers/services/mine', requireAuth, async (req, res) => {
 });
 
 // Admin provider trust overview: evidence-based quality signals, never automatic penalties.
+// Admin-only aggregate operations dashboard; no customer contact or address data is returned.
+app.get('/api/admin/operations/summary', requireAdmin, async (_req, res) => {
+  try {
+    const bookings = await getBookings();
+    res.setHeader('Cache-Control', 'no-store');
+    return res.json({
+      summary: summarizeMarketplaceOperations(bookings),
+      generatedAt: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Marketplace operations summary failed:', error);
+    return res.status(500).json({ error: 'Could not generate operations summary.' });
+  }
+});
+
 app.get('/api/admin/provider-trust', requireAdmin, async (_req, res) => {
   try {
     const [users, bookings, reviews] = await Promise.all([getUsers(), getBookings(), getReviews()]);
