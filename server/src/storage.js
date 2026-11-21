@@ -850,30 +850,54 @@ export async function recordCallOutFeeCompensation({ bookingId, customerId, prov
 
 export async function recordPayoutSettlement({ batchId, providerId, amount, bankReference = '' }) {
   return ledgerLock.acquire(async () => {
+    if (!batchId || !providerId) {
+      throw new Error('Payout batch and provider identifiers are required.');
+    }
+    const payoutAmount = Number(amount);
+    if (!Number.isSafeInteger(payoutAmount) || payoutAmount <= 0) {
+      throw new Error('Payout amount must be a positive whole-number LKR amount.');
+    }
+
     const current = activePostgresPool
       ? await readJsonArray(ledgerFile)
       : cachedLedger !== null
         ? cachedLedger
         : await (async () => {
-            try { return await readJsonArray(ledgerFile); } catch { return []; }
+            try { return await readJsonArray(ledgerFile); }
+            catch { return []; }
           })();
     const account = `provider:${providerId}:wallet`;
-    if (bankReference && current.some(entry => entry.account === account && String(entry.description || '').includes(`Bank reference ${bankReference}`))) {
+    const transactionId = `tx-payout-${batchId}`;
+    const existing = current.filter(entry => entry.transactionId === transactionId);
+    if (existing.length) {
+      const validReplay = existing.length === 2 &&
+        existing.some(entry => entry.account === account && entry.type === 'debit' && Number(entry.amount) === payoutAmount) &&
+        existing.some(entry => entry.account === 'bank:external_provider_settlement' && entry.type === 'credit' && Number(entry.amount) === payoutAmount) &&
+        existing.every(entry => String(entry.description || '').includes(`batch #${batchId.slice(-8)}`) || String(entry.description || '').includes(`provider #${providerId}`));
+      if (!validReplay) {
+        throw new Error('Payout idempotency key conflict: batch payload differs from the original.');
+      }
+      return { transactionId, entries: existing, duplicate: true };
+    }
+    if (bankReference && current.some(entry =>
+      entry.account === account &&
+      String(entry.description || '').includes(`Bank reference ${bankReference}`)
+    )) {
       throw new Error('This bank transfer reference has already been recorded.');
     }
+
     const balance = current
       .filter(entry => entry.account === account)
       .reduce((total, entry) => total + (entry.type === 'credit' ? Number(entry.amount) : -Number(entry.amount)), 0);
-    const payoutAmount = Number(amount);
-    if (!Number.isFinite(payoutAmount) || payoutAmount <= 0 || payoutAmount > balance) {
+    if (payoutAmount > balance) {
       throw new Error('The payout amount is invalid or exceeds the current wallet balance.');
     }
+
     const timestamp = new Date().toISOString();
-    const txId = `tx-payout-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
     const entries = [
       {
-        id: `entry-${Date.now()}-po1`,
-        transactionId: txId,
+        id: `entry-payout-${batchId}-debit`,
+        transactionId,
         account,
         type: 'debit',
         amount: payoutAmount,
@@ -882,8 +906,8 @@ export async function recordPayoutSettlement({ batchId, providerId, amount, bank
         timestamp
       },
       {
-        id: `entry-${Date.now()}-po2`,
-        transactionId: txId,
+        id: `entry-payout-${batchId}-credit`,
+        transactionId,
         account: 'bank:external_provider_settlement',
         type: 'credit',
         amount: payoutAmount,
@@ -895,7 +919,7 @@ export async function recordPayoutSettlement({ batchId, providerId, amount, bank
     const next = [...entries, ...current];
     cachedLedger = next;
     await atomicWriteJson(ledgerFile, next);
-    return { transactionId: txId, entries };
+    return { transactionId, entries, duplicate: false };
   });
 }
 
