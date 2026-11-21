@@ -14,6 +14,14 @@ export function isDriverPresenceFresh(presence, now = Date.now(), maxAgeMs = 90_
   return Number.isFinite(updatedAt) && now - updatedAt >= 0 && now - updatedAt <= maxAgeMs;
 }
 
+// Request aging prevents nearby new requests from indefinitely starving older jobs.
+export function dispatchFairnessScore(distanceKm, createdAt, now = Date.now()) {
+  const created = Date.parse(createdAt || '');
+  const ageMinutes = Number.isFinite(created) ? Math.max(0, (now - created) / 60_000) : 0;
+  const agePriorityKm = Math.min(5, ageMinutes / 10); // capped at 5km-equivalent after 50 minutes
+  return distanceKm === null ? -agePriorityKm : distanceKm - agePriorityKm;
+}
+
 export function rankJobsForDriver(jobs, presence, now = Date.now()) {
   const fresh = isDriverPresenceFresh(presence, now);
   return jobs.map(job => {
@@ -21,11 +29,16 @@ export function rankJobsForDriver(jobs, presence, now = Date.now()) {
     const targetLng = job.serviceType === 'food_delivery' ? job.destinationLng : job.pickupLng;
     const target = cleanSriLankaCoordinates(targetLat, targetLng);
     const distanceKm = fresh && target ? calculateDistanceKm(presence.lat, presence.lng, target.lat, target.lng) : null;
-    return { ...job, distanceKm, etaMinutes: distanceKm === null ? null : estimateEtaMinutes(distanceKm) };
+    const fairnessScore = dispatchFairnessScore(distanceKm, job.createdAt, now);
+    return { ...job, distanceKm, etaMinutes: distanceKm === null ? null : estimateEtaMinutes(distanceKm), fairnessScore };
   }).sort((a, b) => {
     const aAssigned = Boolean(a.driverId);
     const bAssigned = Boolean(b.driverId);
     if (aAssigned !== bAssigned) return aAssigned ? -1 : 1;
+    if (a.fairnessScore !== b.fairnessScore) return a.fairnessScore - b.fairnessScore;
+    const aCreated = Date.parse(a.createdAt || '');
+    const bCreated = Date.parse(b.createdAt || '');
+    if (Number.isFinite(aCreated) && Number.isFinite(bCreated) && aCreated !== bCreated) return aCreated - bCreated;
     if (a.distanceKm === null) return 1;
     if (b.distanceKm === null) return -1;
     return a.distanceKm - b.distanceKm;
