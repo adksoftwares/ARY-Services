@@ -2006,7 +2006,7 @@ app.post('/api/reviews', requireAuth, async (req, res) => {
     const { bookingId, rating, comment } = req.body || {};
     const customer = req.user;
     const parsedRating = Number(rating);
-    const cleanComment = String(comment || '').trim().slice(0, 1000);
+    const cleanComment = String(comment || '').replace(/[\\u0000-\\u001f\\u007f]/g, ' ').replace(/\\s+/g, ' ').trim().slice(0, 1000);
 
     if (customer.accountType !== 'customer') return res.status(403).json({ error: 'Customer account required to submit a review.' });
     if (!bookingId || !Number.isInteger(parsedRating) || parsedRating < 1 || parsedRating > 5) {
@@ -2045,6 +2045,10 @@ app.post('/api/reviews', requireAuth, async (req, res) => {
       customerName: customer.fullName || 'Verified Customer',
       rating: Math.round(parsedRating),
       comment: cleanComment,
+      verifiedBooking: true,
+      serviceName: booking.serviceName || booking.categoryName || 'Service',
+      categorySlug: booking.categorySlug || null,
+      completedAt: booking.completedAt || booking.updatedAt || booking.createdAt,
       createdAt: new Date().toISOString()
     };
 
