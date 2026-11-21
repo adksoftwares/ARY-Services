@@ -528,7 +528,7 @@ async function recordBalancedLedgerTransaction(transactionId, entries) {
   if (debits!==credits) throw new Error('Financial transaction is unbalanced.');
   const current=activePostgresPool?await readJsonArray(ledgerFile):cachedLedger!==null?cachedLedger:await(async()=>{try{return await readJsonArray(ledgerFile)}catch{return[]}})();
   const existing=current.filter(e=>e.transactionId===transactionId);
-  if(existing.length){if(existing.length!==entries.length)throw new Error('Incomplete transaction exists; reconciliation required.');return {transactionId,entries:existing,duplicate:true};}
+  if(existing.length){if(existing.length!==entries.length)throw new Error('Incomplete transaction exists; reconciliation required.');const expected=new Map(entries.map(e=>[e.id,JSON.stringify({account:e.account,type:e.type,amount:Number(e.amount),currency:e.currency})]));for(const saved of existing){const value=expected.get(saved.id);if(!value||value!==JSON.stringify({account:saved.account,type:saved.type,amount:Number(saved.amount),currency:saved.currency}))throw new Error('Idempotency key conflict: transaction payload differs from the original.');}return {transactionId,entries:existing,duplicate:true};}
   const next=[...entries,...current];cachedLedger=next;await atomicWriteJson(ledgerFile,next);return {transactionId,entries,duplicate:false};
  });
 }
