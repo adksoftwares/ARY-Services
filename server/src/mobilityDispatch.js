@@ -22,6 +22,20 @@ export function dispatchFairnessScore(distanceKm, createdAt, now = Date.now()) {
   return distanceKm === null ? -agePriorityKm : distanceKm - agePriorityKm;
 }
 
+/** A bounded urgency boost for repeatedly released requests. Lower scores dispatch sooner. */
+export function releasePriorityBoost(job) {
+  const count = Number.isFinite(Number(job?.driverReleaseCount))
+    ? Math.max(0, Number(job.driverReleaseCount))
+    : (Array.isArray(job?.driverReleaseHistory) ? job.driverReleaseHistory.length : 0);
+  return Math.min(2, count * 0.5);
+}
+
+/** Drivers who previously released this request cannot reclaim it after requeue. */
+export function isDriverEligibleForRequeuedJob(job, driverId) {
+  if (!driverId) return false;
+  return !(Array.isArray(job?.driverReleaseHistory) && job.driverReleaseHistory.some(entry => entry?.driverId === driverId));
+}
+
 export function rankJobsForDriver(jobs, presence, now = Date.now()) {
   const fresh = isDriverPresenceFresh(presence, now);
   return jobs.map(job => {
