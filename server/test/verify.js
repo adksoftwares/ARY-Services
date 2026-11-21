@@ -64,6 +64,7 @@ await recordEscrowRelease({ bookingId: ledgerTestBookingId, providerId: 'user-pr
 const afterDuplicateCalls = (await getLedgerEntries()).filter(entry => entry.bookingId === ledgerTestBookingId);
 assert.equal(afterDuplicateCalls.length, firstLedgerCount, 'Repeated escrow hold/release calls must be idempotent');
 await assert.rejects(() => recordEscrowRelease({ bookingId: ledgerTestBookingId, providerId: 'user-provider-kumar', amount: 1000, platformFee: 200, providerPayout: 800 }), /Idempotency key conflict/, 'Replayed financial transactions with different values must be rejected');
+await assert.rejects(() => recordDisputeRefund({ bookingId: ledgerTestBookingId, customerId: 'ledger-customer', amount: 1000 }), /different financial settlement/, 'A booking cannot be settled through a second mutually exclusive settlement path');
 console.log('✓ Escrow ledger unit test: double-entry hold and release journal balances');
 
 // Concurrency Test: 30 concurrent user creations
