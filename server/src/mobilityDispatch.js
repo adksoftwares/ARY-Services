@@ -71,3 +71,12 @@ export function buildAdminDispatchSnapshot(jobs, applications, presence, now = D
     assignedJobs: activeJobs.filter(job => Boolean(job.driverId)).length
   }};
 }
+
+/** Aggregate dispatch outcomes for a driver without exposing customer data. */
+export function summarizeDriverReliability(jobs, driverId) {
+  const records = Array.isArray(jobs) ? jobs : [];
+  const releases = records.reduce((total, job) => total + (Array.isArray(job.driverReleaseHistory) ? job.driverReleaseHistory.filter(entry => entry.driverId === driverId).length : 0), 0);
+  const completed = records.filter(job => job.driverId === driverId && ['completed', 'delivered'].includes(job.status)).length;
+  const engagements = completed + releases;
+  return { completed, prePickupReleases: releases, engagements, reliabilityRate: engagements ? Math.round((completed / engagements) * 100) : null };
+}

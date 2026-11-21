@@ -2,7 +2,7 @@ import crypto from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readPersistentState, mutatePersistentState } from './storage.js';
-import { cleanSriLankaCoordinates, isDriverPresenceFresh, rankJobsForDriver, buildAdminDispatchSnapshot } from './mobilityDispatch.js';
+import { cleanSriLankaCoordinates, isDriverPresenceFresh, rankJobsForDriver, buildAdminDispatchSnapshot, summarizeDriverReliability } from './mobilityDispatch.js';
 import { MOBILITY_PIN_TTL_MS, isMobilityPinExpired } from './mobilityPinSecurity.js';
 import { calculateDistanceKm, estimateEtaMinutes, getRoadRoute } from './geoService.js';
 
@@ -323,12 +323,20 @@ export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadc
     broadcastEvent?.('driver:job_updated',{job:safeMobilityJob(result.job),customerId:result.job.customerId,driverId:result.job.driverId});return res.json({job:safeMobilityJob(result.job,req.user.id)});
   });
 
+  // Admin-only reliability summaries aggregate completed jobs and pre-pickup driver releases.
+  app.get('/api/admin/driver-reliability',requireAdmin,async(_req,res)=>{
+    const d=await readJobs();
+    const drivers=[...new Map(d.applications.filter(a=>a.userId).map(a=>[a.userId,{driverId:a.userId,driverName:a.driverName||'Driver'}])).values()];
+    const summaries=drivers.map(driver=>({...driver,...summarizeDriverReliability(d.jobs,driver.driverId)}));
+    return res.json({drivers:summaries});
+  });
   // Admin-only operational view: expose dispatch health without account/KYC/payment data.
   app.get('/api/admin/driver-dispatch',requireAdmin,async(_req,res)=>{
     const d=await readJobs();
     return res.json(buildAdminDispatchSnapshot(d.jobs,d.applications,d.presence));
   });
-  // An assigned driver may release a job only before pickup; completed/picked-up trips are immutable here.
+  // A driver may release only before pickup. The request returns to the shared dispatch pool,
+  // preserving the customer request and recording the releasing driver's reliability history.
   app.patch('/api/driver-jobs/:id/cancel',requireAuth,async(req,res)=>{
     if(req.user.accountType!=='driver')return res.status(403).json({error:'Driver account required.'});
     const reason=String(req.body?.reason||'').trim().slice(0,240);
@@ -337,10 +345,19 @@ export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadc
       if(!job)return {status:404,error:'Job not found.'};
       if(job.driverId!==req.user.id)return {status:403,error:'Only the assigned driver can release this job.'};
       if(!['accepted','arrived','arrived_pickup'].includes(job.status))return {status:409,error:'A driver can release a job only before pickup.'};
-      job.status='cancelled';job.cancelledAt=new Date().toISOString();job.cancelledBy='driver';job.cancellationReason=reason||'Driver released before pickup';job.driverId=null;job.driverName=null;
-      return {status:200,job};
+      const releasedAt=new Date().toISOString();
+      job.driverReleaseHistory=Array.isArray(job.driverReleaseHistory)?job.driverReleaseHistory:[];
+      job.driverReleaseHistory.push({driverId:req.user.id,driverName:req.user.fullName||job.driverName||'Driver',at:releasedAt,reason:reason||'Driver released before pickup'});
+      job.driverReleaseCount=job.driverReleaseHistory.length;
+      job.lastDriverReleaseAt=releasedAt;
+      job.lastDriverReleaseReason=reason||'Driver released before pickup';
+      job.status='requested';job.requeuedAt=releasedAt;job.updatedAt=releasedAt;job.driverId=null;job.driverName=null;
+      delete job.acceptedAt;
+      return {status:200,job,previousDriverId:req.user.id};
     });
     if(result.error)return res.status(result.status).json({error:result.error});
-    broadcastEvent?.('driver:job_updated',{job:safeMobilityJob(result.job),customerId:result.job.customerId,driverId:result.job.driverId});return res.json({job:safeMobilityJob(result.job,req.user.id)});
+    broadcastEvent?.('driver:job_requeued',{job:safeMobilityJob(result.job),customerId:result.job.customerId,previousDriverId:result.previousDriverId});
+    broadcastEvent?.('driver:job_updated',{job:safeMobilityJob(result.job),customerId:result.job.customerId,driverId:null});
+    return res.json({job:safeMobilityJob(result.job,req.user.id),requeued:true,previousDriverId:result.previousDriverId});
   });
 }

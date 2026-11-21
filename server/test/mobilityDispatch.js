@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { cleanSriLankaCoordinates, isDriverPresenceFresh, rankJobsForDriver, dispatchFairnessScore, buildAdminDispatchSnapshot } from '../src/mobilityDispatch.js';
+import { cleanSriLankaCoordinates, isDriverPresenceFresh, rankJobsForDriver, dispatchFairnessScore, summarizeDriverReliability, buildAdminDispatchSnapshot } from '../src/mobilityDispatch.js';
 
 const now = Date.parse('2026-11-02T12:00:00.000Z');
 assert.deepEqual(cleanSriLankaCoordinates(6.9271,79.8612),{lat:6.9271,lng:79.8612});
@@ -45,3 +45,14 @@ assert.equal(snapshot.summary.onlineDrivers,1);
 assert.equal(snapshot.summary.assignedJobs,1);
 assert.equal('nicNumber' in snapshot.drivers[0],false);
 assert.equal('customerId' in snapshot.activeJobs[0],false);
+
+const reliability=summarizeDriverReliability([
+ {id:'finished',driverId:'driver-a',status:'completed'},
+ {id:'requeued',driverId:null,status:'requested',driverReleaseHistory:[
+   {driverId:'driver-a',reason:'vehicle issue'},
+   {driverId:'driver-b',reason:'personal'}
+ ]},
+ {id:'delivered',driverId:'driver-a',status:'delivered',driverReleaseHistory:[]}
+], 'driver-a');
+assert.deepEqual(reliability,{completed:2,prePickupReleases:1,engagements:3,reliabilityRate:67});
+assert.equal(summarizeDriverReliability([], 'inactive').reliabilityRate,null);
