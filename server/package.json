@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
-    "test": "node test/verify.js && node test/persistentStateFile.js",
+    "test": "node test/verify.js && node test/persistentStateFile.js && node test/mobilityPinSecurity.js",
     "test:grocery-storage": "node test/groceryStorage.js",
     "test:security": "node test/sessionIdentity.js",
     "test:mobility": "node test/mobilityDispatch.js"
