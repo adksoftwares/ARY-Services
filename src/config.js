@@ -49,17 +49,28 @@ if (typeof window !== 'undefined' && API_FALLBACK_BASE && !window.__ARY_FETCH_FA
       return await originalFetch(input, init);
     } catch (err) {
       const primaryBase = DOMAIN_API_BASE;
-      const isPrimaryApiCall = inputUrl.includes(primaryBase);
+      const primaryUrl = new URL(primaryBase);
+      let parsedInputUrl = null;
+      try {
+        parsedInputUrl = new URL(inputUrl, window.location.origin);
+      } catch {
+        parsedInputUrl = null;
+      }
+      const isPrimaryApiCall = Boolean(parsedInputUrl &&
+        parsedInputUrl.origin === primaryUrl.origin &&
+        (parsedInputUrl.pathname === primaryUrl.pathname || parsedInputUrl.pathname.startsWith(primaryUrl.pathname + '/')));
       const isRelativeApiCall = inputUrl.startsWith('/api/') || inputUrl === '/api';
-      const isLocalApiCall = import.meta.env.DEV && inputUrl.includes('localhost:4000/api');
+      const isLocalApiCall = import.meta.env.DEV && /^http:\/\/localhost:4000\/api(?:\/|$)/.test(inputUrl);
       const shouldFailover = API_FALLBACK_BASE &&
         (isPrimaryApiCall || isRelativeApiCall || isLocalApiCall) &&
-        !inputUrl.includes(API_FALLBACK_BASE);
+        !inputUrl.startsWith(API_FALLBACK_BASE);
       if (shouldFailover) {
         let fallbackUrl = inputUrl;
-        if (isPrimaryApiCall) fallbackUrl = inputUrl.replace(primaryBase, API_FALLBACK_BASE);
-        else if (isRelativeApiCall) fallbackUrl = inputUrl.replace(/^\/api/, API_FALLBACK_BASE);
-        else if (isLocalApiCall) fallbackUrl = inputUrl.replace('http://localhost:4000/api', API_FALLBACK_BASE);
+        if (isPrimaryApiCall && parsedInputUrl) {
+          const suffix = parsedInputUrl.pathname.slice(primaryUrl.pathname.length);
+          fallbackUrl = API_FALLBACK_BASE + suffix + parsedInputUrl.search;
+        } else if (isRelativeApiCall) fallbackUrl = inputUrl.replace(/^\/api(?=\/|$)/, API_FALLBACK_BASE);
+        else if (isLocalApiCall) fallbackUrl = inputUrl.replace(/^http:\/\/localhost:4000\/api(?=\/|$)/, API_FALLBACK_BASE);
         try {
           return await originalFetch(fallbackUrl, init);
         } catch {
