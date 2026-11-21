@@ -517,207 +517,80 @@ export async function addLedgerEntries(entries) {
   });
 }
 
+async function recordBalancedLedgerTransaction(transactionId, entries) {
+ return ledgerLock.acquire(async () => {
+  if (!Array.isArray(entries) || entries.length < 2) throw new Error('Financial transactions require at least two entries.');
+  for (const entry of entries) {
+   if (!Number.isSafeInteger(Number(entry.amount)) || Number(entry.amount) <= 0 || !['debit','credit'].includes(entry.type) || !entry.account || !entry.id || entry.transactionId !== transactionId) throw new Error('Invalid ledger entry.');
+  }
+  const debits=entries.filter(e=>e.type==='debit').reduce((sum,e)=>sum+Number(e.amount),0);
+  const credits=entries.filter(e=>e.type==='credit').reduce((sum,e)=>sum+Number(e.amount),0);
+  if (debits!==credits) throw new Error('Financial transaction is unbalanced.');
+  const current=activePostgresPool?await readJsonArray(ledgerFile):cachedLedger!==null?cachedLedger:await(async()=>{try{return await readJsonArray(ledgerFile)}catch{return[]}})();
+  const existing=current.filter(e=>e.transactionId===transactionId);
+  if(existing.length){if(existing.length!==entries.length)throw new Error('Incomplete transaction exists; reconciliation required.');return {transactionId,entries:existing,duplicate:true};}
+  const next=[...entries,...current];cachedLedger=next;await atomicWriteJson(ledgerFile,next);return {transactionId,entries,duplicate:false};
+ });
+}
+
 export async function recordEscrowHold({ bookingId, customerId, amount }) {
-  const timestamp = new Date().toISOString();
-  const txId = `tx-hold-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-  const entries = [
-    {
-      id: `entry-${Date.now()}-1`,
-      transactionId: txId,
-      bookingId,
-      account: `gateway:payhere:customer:${customerId}`,
-      type: 'debit',
-      amount: Number(amount),
-      currency: 'LKR',
-      description: `Escrow hold authorized for booking #${bookingId.slice(-6)}`,
-      timestamp
-    },
-    {
-      id: `entry-${Date.now()}-2`,
-      transactionId: txId,
-      bookingId,
-      account: 'vault:ary_escrow_holding',
-      type: 'credit',
-      amount: Number(amount),
-      currency: 'LKR',
-      description: `Escrow funds held in trust for booking #${bookingId.slice(-6)}`,
-      timestamp
-    }
-  ];
-  await addLedgerEntries(entries);
-  return { transactionId: txId, entries };
+ const value=Number(amount);if(!Number.isSafeInteger(value)||value<=0)throw new Error('Escrow amount must be a positive whole-number LKR amount.');
+ const timestamp=new Date().toISOString(),txId=`tx-hold-${bookingId}`;
+ const entries=[
+ {id:`entry-hold-${bookingId}-debit`,transactionId:txId,bookingId,account:`gateway:payhere:customer:${customerId}`,type:'debit',amount:value,currency:'LKR',description:`Escrow hold authorized for booking #${bookingId.slice(-6)}`,timestamp},
+ {id:`entry-hold-${bookingId}-credit`,transactionId:txId,bookingId,account:'vault:ary_escrow_holding',type:'credit',amount:value,currency:'LKR',description:`Escrow funds held for booking #${bookingId.slice(-6)}`,timestamp}];
+ return recordBalancedLedgerTransaction(txId,entries);
 }
 
 export async function recordEscrowRelease({ bookingId, providerId, amount, platformFee, providerPayout }) {
-  const timestamp = new Date().toISOString();
-  const txId = `tx-rel-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-  const entries = [
-    {
-      id: `entry-${Date.now()}-3`,
-      transactionId: txId,
-      bookingId,
-      account: 'vault:ary_escrow_holding',
-      type: 'debit',
-      amount: Number(amount),
-      currency: 'LKR',
-      description: `Release escrow vault for completed booking #${bookingId.slice(-6)}`,
-      timestamp
-    },
-    {
-      id: `entry-${Date.now()}-4`,
-      transactionId: txId,
-      bookingId,
-      account: `provider:${providerId}:wallet`,
-      type: 'credit',
-      amount: Number(providerPayout),
-      currency: 'LKR',
-      description: `Net earnings credited for booking #${bookingId.slice(-6)} (90%)`,
-      timestamp
-    },
-    {
-      id: `entry-${Date.now()}-5`,
-      transactionId: txId,
-      bookingId,
-      account: 'platform:commission_revenue',
-      type: 'credit',
-      amount: Number(platformFee),
-      currency: 'LKR',
-      description: `Platform 10% commission retained for 14-Day ARY Guarantee (#${bookingId.slice(-6)})`,
-      timestamp
-    }
-  ];
-  await addLedgerEntries(entries);
-  return { transactionId: txId, entries };
+ const total=Number(amount),fee=Number(platformFee),payout=Number(providerPayout);
+ if(!Number.isSafeInteger(total)||total<=0||!Number.isSafeInteger(fee)||fee<0||!Number.isSafeInteger(payout)||payout<0||fee+payout!==total)throw new Error('Escrow release values must be whole-number LKR amounts and balance.');
+ const timestamp=new Date().toISOString(),txId=`tx-release-${bookingId}`;
+ const entries=[
+ {id:`entry-release-${bookingId}-vault`,transactionId:txId,bookingId,account:'vault:ary_escrow_holding',type:'debit',amount:total,currency:'LKR',description:`Escrow release for booking #${bookingId.slice(-6)}`,timestamp},
+ {id:`entry-release-${bookingId}-provider`,transactionId:txId,bookingId,account:`provider:${providerId}:wallet`,type:'credit',amount:payout,currency:'LKR',description:
+ `Provider earnings for booking #${bookingId.slice(-6)}`,timestamp},
+ {id:`entry-release-${bookingId}-fee`,transactionId:txId,bookingId,account:'platform:commission_revenue',type:'credit',amount:fee,currency:'LKR',description:
+ `Platform commission for booking #${bookingId.slice(-6)}`,timestamp}].filter(e=>e.amount>0);
+ return recordBalancedLedgerTransaction(txId,entries);
 }
 
 export async function recordDisputeRefund({ bookingId, customerId, amount, reason = 'Customer dispute approved' }) {
-  const timestamp = new Date().toISOString();
-  const txId = `tx-dispute-ref-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-  const entries = [
-    {
-      id: `entry-${Date.now()}-ref1`,
-      transactionId: txId,
-      bookingId,
-      account: 'vault:ary_escrow_holding',
-      type: 'debit',
-      amount: Number(amount),
-      currency: 'LKR',
-      description: `Escrow refund debited for disputed booking #${bookingId.slice(-6)} (${reason})`,
-      timestamp
-    },
-    {
-      id: `entry-${Date.now()}-ref2`,
-      transactionId: txId,
-      bookingId,
-      account: `customer:${customerId}:wallet_refund`,
-      type: 'credit',
-      amount: Number(amount),
-      currency: 'LKR',
-      description: `Full refund credited to customer for booking #${bookingId.slice(-6)}`,
-      timestamp
-    }
-  ];
-  await addLedgerEntries(entries);
-  return { transactionId: txId, entries };
+ const value=Number(amount);if(!Number.isSafeInteger(value)||value<=0)throw new Error('Refund amount must be a positive whole-number LKR amount.');
+ const timestamp=new Date().toISOString(),txId=`tx-refund-${bookingId}`;
+ const entries=[
+ {id:`entry-refund-${bookingId}-vault`,transactionId:txId,bookingId,account:'vault:ary_escrow_holding',type:'debit',amount:value,currency:'LKR',description:`Escrow refund for booking #${bookingId.slice(-6)}: ${reason}`,timestamp},
+ {id:`entry-refund-${bookingId}-customer`,transactionId:txId,bookingId,account:`customer:${customerId}:wallet_refund`,type:'credit',amount:value,currency:'LKR',description:`Customer refund for booking #${bookingId.slice(-6)}`,timestamp}];
+ return recordBalancedLedgerTransaction(txId,entries);
 }
 
 export async function recordDisputeSplit({ bookingId, customerId, providerId, totalAmount, customerRefund, providerPayout, platformFee = 0 }) {
-  const timestamp = new Date().toISOString();
-  const txId = `tx-dispute-split-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-  const entries = [
-    {
-      id: `entry-${Date.now()}-sp1`,
-      transactionId: txId,
-      bookingId,
-      account: 'vault:ary_escrow_holding',
-      type: 'debit',
-      amount: Number(totalAmount),
-      currency: 'LKR',
-      description: `Dispute arbitration settlement for booking #${bookingId.slice(-6)}`,
-      timestamp
-    },
-    {
-      id: `entry-${Date.now()}-sp2`,
-      transactionId: txId,
-      bookingId,
-      account: `customer:${customerId}:wallet_refund`,
-      type: 'credit',
-      amount: Number(customerRefund),
-      currency: 'LKR',
-      description: `Arbitrated 50% refund credited to customer for booking #${bookingId.slice(-6)}`,
-      timestamp
-    },
-    {
-      id: `entry-${Date.now()}-sp3`,
-      transactionId: txId,
-      bookingId,
-      account: `provider:${providerId}:wallet`,
-      type: 'credit',
-      amount: Number(providerPayout),
-      currency: 'LKR',
-      description: `Arbitrated partial payout credited to provider for booking #${bookingId.slice(-6)}`,
-      timestamp
-    }
-  ];
-
-  if (platformFee > 0) {
-    entries.push({
-      id: `entry-${Date.now()}-sp4`,
-      transactionId: txId,
-      bookingId,
-      account: 'platform:commission_revenue',
-      type: 'credit',
-      amount: Number(platformFee),
-      currency: 'LKR',
-      description: `Platform mediation fee retained for booking #${bookingId.slice(-6)}`,
-      timestamp
-    });
-  }
-
-  await addLedgerEntries(entries);
-  return { transactionId: txId, entries };
+ const total=Number(totalAmount),refund=Number(customerRefund),payout=Number(providerPayout),fee=Number(platformFee);
+ if(![total,refund,payout,fee].every(Number.isSafeInteger)||total<=0||refund<0||payout<0||fee<0||refund+payout+fee!==total)throw new Error('Settlement amounts must be whole-number LKR values and balance.');
+ const timestamp=new Date().toISOString(),txId=`tx-split-${bookingId}`;
+ const entries=[
+ {id:`entry-split-${bookingId}-vault`,transactionId:txId,bookingId,account:'vault:ary_escrow_holding',type:'debit',amount:total,currency:'LKR',description:`Dispute settlement for booking #${bookingId.slice(-6)}`,timestamp},
+ {id:`entry-split-${bookingId}-customer`,transactionId:txId,bookingId,account:`customer:${customerId}:wallet_refund`,type:'credit',amount:refund,currency:'LKR',description:`Dispute refund for booking #${bookingId.slice(-6)}`,timestamp},
+ {id:`entry-split-${bookingId}-provider`,transactionId:txId,bookingId,account:`provider:${providerId}:wallet`,type:'credit',amount:payout,currency:'LKR',description:
+ `Dispute payout for booking #${bookingId.slice(-6)}`,timestamp},
+ ...(fee>0?[{id:`entry-split-${bookingId}-fee`,transactionId:txId,bookingId,account:'platform:commission_revenue',type:'credit',amount:fee,currency:'LKR',description:`Dispute platform fee for booking #${bookingId.slice(-6)}`,timestamp}]:[])].filter(e=>e.amount>0);
+ return recordBalancedLedgerTransaction(txId,entries);
 }
 
 export async function recordCallOutFeeCompensation({ bookingId, customerId, providerId, totalAmount, callOutFee = 500, customerRefund }) {
-  const timestamp = new Date().toISOString();
-  const txId = `tx-callout-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-  const entries = [
-    {
-      id: `entry-${Date.now()}-co1`,
-      transactionId: txId,
-      bookingId,
-      account: 'vault:ary_escrow_holding',
-      type: 'debit',
-      amount: Number(totalAmount),
-      currency: 'LKR',
-      description: `Escrow release for en route cancelled booking #${bookingId.slice(-6)}`,
-      timestamp
-    },
-    {
-      id: `entry-${Date.now()}-co2`,
-      transactionId: txId,
-      bookingId,
-      account: `provider:${providerId}:wallet`,
-      type: 'credit',
-      amount: Number(callOutFee),
-      currency: 'LKR',
-      description: `Technician call-out travel compensation fee for cancelled booking #${bookingId.slice(-6)}`,
-      timestamp
-    },
-    {
-      id: `entry-${Date.now()}-co3`,
-      transactionId: txId,
-      bookingId,
-      account: `customer:${customerId}:wallet_refund`,
-      type: 'credit',
-      amount: Number(customerRefund),
-      currency: 'LKR',
-      description: `Remaining escrow balance refunded to customer for booking #${bookingId.slice(-6)}`,
-      timestamp
-    }
-  ];
-  await addLedgerEntries(entries);
-  return { transactionId: txId, entries };
+ const total=Number(totalAmount),fee=Number(callOutFee),refund=Number(customerRefund);
+ if(![total,fee,refund].every(Number.isSafeInteger)||total<=0||fee<0||refund<0||fee+refund!==total)throw new Error('Call-out fee and refund must be whole-number LKR amounts that balance.');
+ const timestamp=new Date().toISOString(),txId=`tx-callout-${bookingId}`;
+ const entries=[
+ {id:`entry-callout-${bookingId}-vault`,transactionId:txId,bookingId,account:'vault:ary_escrow_holding',type:'debit',amount:total,currency:'LKR',description:
+ `Escrow release for cancelled booking #${bookingId.slice(-6)}`,timestamp},
+ {id:`entry-callout-${bookingId}-provider`,transactionId:txId,bookingId,account:
+ `provider:${providerId}:wallet`,type:'credit',amount:fee,currency:'LKR',description:
+ `Call-out compensation for booking #${bookingId.slice(-6)}`,timestamp},
+ {id:`entry-callout-${bookingId}-customer`,transactionId:txId,bookingId,account:
+ `customer:${customerId}:wallet_refund`,type:'credit',amount:refund,currency:'LKR',description:
+ `Remaining customer refund for booking #${bookingId.slice(-6)}`,timestamp}].filter(e=>e.amount>0);
+ return recordBalancedLedgerTransaction(txId,entries);
 }
 
 export async function recordPayoutSettlement({ batchId, providerId, amount, bankReference = '' }) {
