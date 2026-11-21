@@ -527,8 +527,8 @@ async function recordBalancedLedgerTransaction(transactionId, entries) {
   const credits=entries.filter(e=>e.type==='credit').reduce((sum,e)=>sum+Number(e.amount),0);
   if (debits!==credits) throw new Error('Financial transaction is unbalanced.');
   const current=activePostgresPool?await readJsonArray(ledgerFile):cachedLedger!==null?cachedLedger:await(async()=>{try{return await readJsonArray(ledgerFile)}catch{return[]}})();
-  const settlementIds=new Set(['tx-release-'+entries[0].bookingId,'tx-refund-'+entries[0].bookingId,'tx-split-'+entries[0].bookingId,'tx-callout-'+entries[0].bookingId]);
-  const competing=current.find(e=>settlementIds.has(e.transactionId)&&e.transactionId!==transactionId);
+  const bookingId=entries[0].bookingId;
+  const competing=current.find(e=>e.bookingId===bookingId&&e.account==='vault:ary_escrow_holding'&&e.type==='debit'&&e.transactionId!==transactionId);
   if(competing)throw new Error('Booking already has a different financial settlement recorded.');
   const existing=current.filter(e=>e.transactionId===transactionId);
   if(existing.length){if(existing.length!==entries.length)throw new Error('Incomplete transaction exists; reconciliation required.');const expected=new Map(entries.map(e=>[e.id,JSON.stringify({account:e.account,type:e.type,amount:Number(e.amount),currency:e.currency})]));for(const saved of existing){const value=expected.get(saved.id);if(!value||value!==JSON.stringify({account:saved.account,type:saved.type,amount:Number(saved.amount),currency:saved.currency}))throw new Error('Idempotency key conflict: transaction payload differs from the original.');}return {transactionId,entries:existing,duplicate:true};}
