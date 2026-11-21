@@ -5,6 +5,7 @@ on:
     branches: [main]
   push:
     branches: [main, feature/ary-production-grade-experience]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -14,8 +15,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  frontend-build:
-    name: Frontend production build
+  frontend-quality:
+    name: Frontend tests and builds
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -24,10 +25,21 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run build
+      - name: Run frontend unit tests
+        run: npm test
+      - name: Run security regression checks
+        run: npm run test:security-regression
+      - name: Build web app
+        run: npm run build
+      - name: Build separate customer/provider/driver/admin apps
+        run: |
+          npm run build:customer
+          npm run build:provider
+          npm run build:driver
+          npm run build:admin
 
   backend-integration:
-    name: Backend integration suite
+    name: Backend integration and security tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -38,7 +50,7 @@ jobs:
           cache-dependency-path: server/package-lock.json
       - run: npm ci
         working-directory: server
-      - name: Run backend integration tests
+      - name: Run API integration tests
         run: npm test
         working-directory: server
       - name: Run focused security, grocery and mobility tests
