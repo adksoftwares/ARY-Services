@@ -88,26 +88,19 @@ const allowedOrigins = [
   ...(process.env.CLIENT_ORIGIN || '').split(',').map(value => value.trim()).filter(Boolean)
 ];
 
-// Permissive & resilient CORS policy supporting Web, PWA, Capacitor Android/iOS, and native WebViews
+// Strict CORS: only explicitly configured production origins and local development origins.
+const nativeOrigins = ['capacitor://localhost', 'ionic://localhost'];
 app.use(cors({
   origin: (origin, callback) => {
-    // Non-browser clients, file://, Capacitor, and sandboxed WebViews often omit origin or send 'null'
-    if (!origin || origin === 'null' || origin === 'file://') {
+    // Native clients commonly omit Origin. Sandboxed "null" origins are not trusted.
+    if (!origin) return callback(null, true);
+    if (origin === 'null') return callback(new Error('Origin is not allowed by CORS.'));
+    const isLocalDevelopmentOrigin = process.env.NODE_ENV !== 'production' &&
+      /^https?:\/\/(localhost|127\.0\.0\.1|10\.0\.2\.2|192\.168\.\d+\.\d+)(:\d+)?$/.test(origin);
+    if (nativeOrigins.includes(origin) || allowedOrigins.includes(origin) || isLocalDevelopmentOrigin) {
       return callback(null, true);
     }
-    // Allow any localhost, local LAN IPs, Capacitor schemes, or configured domains
-    if (
-      /^https?:\/\/(localhost|127\.0\.0\.1|10\.0\.2\.2|192\.168\.\d+\.\d+|173\.212\.223\.108)(:\d+)?$/.test(origin) ||
-      /^capacitor:\/\//i.test(origin) ||
-      /^ionic:\/\//i.test(origin) ||
-      origin.includes('adksoftwares.com') ||
-      origin.includes('trycloudflare.com') ||
-      allowedOrigins.includes(origin)
-    ) {
-      return callback(null, true);
-    }
-    // Unconditionally allow valid cross-origin requests for mobile clients
-    return callback(null, true);
+    return callback(new Error('Origin is not allowed by CORS.'));
   },
   credentials: true
 }));
@@ -627,12 +620,14 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
       return res.status(400).json({ error: 'A National Identity Card number is required for Provider and Driver registration.' });
     }
 
-    // Sri Lankan NIC verification for service providers (allows 9-digit old format, 12-digit new format, or test IDs)
+    // Sri Lankan NIC format: legacy 9 digits + V/X, or new 12-digit format.
     let cleanNic = null;
     if (['provider', 'driver'].includes(role) && nicNumber) {
       const trimmedNic = String(nicNumber).replace(/[\s-]/g, '').trim().toUpperCase();
-      if (!trimmedNic || trimmedNic.length < 5) {
-        return res.status(400).json({ error: 'Please enter a valid National Identity Card (NIC) number.' });
+      const isLegacyNic = /^\d{9}[VX]$/.test(trimmedNic);
+      const isNewNic = /^\d{12}$/.test(trimmedNic);
+      if (!isLegacyNic && !isNewNic) {
+        return res.status(400).json({ error: 'Please enter a valid Sri Lankan National Identity Card (NIC) number (9 digits plus V/X, or 12 digits).' });
       }
       cleanNic = trimmedNic;
     }
@@ -804,7 +799,8 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
 
     if (user) {
       const isPassCorrect = Boolean(password && verifyPassword(password, user.passwordHash));
-      const isValid = (user.accountType === 'customer' && password === '123456') ? true : isPassCorrect;
+      // All account types must authenticate against the stored password hash.
+      const isValid = isPassCorrect;
 
       if (isValid) {
         if (user.status === 'pending') {
