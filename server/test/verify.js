@@ -58,6 +58,12 @@ assert.equal(ledgerUnitEntries.length, 5, 'Escrow ledger must write two hold and
 const ledgerDebits = ledgerUnitEntries.filter(entry => entry.type === 'debit').reduce((sum, entry) => sum + entry.amount, 0);
 const ledgerCredits = ledgerUnitEntries.filter(entry => entry.type === 'credit').reduce((sum, entry) => sum + entry.amount, 0);
 assert.equal(ledgerDebits, ledgerCredits, 'Escrow ledger must balance debits and credits');
+const firstLedgerCount = ledgerUnitEntries.length;
+await recordEscrowHold({ bookingId: ledgerTestBookingId, customerId: 'ledger-customer', amount: 1000 });
+await recordEscrowRelease({ bookingId: ledgerTestBookingId, providerId: 'user-provider-kumar', amount: 1000, platformFee: 100, providerPayout: 900 });
+const afterDuplicateCalls = (await getLedgerEntries()).filter(entry => entry.bookingId === ledgerTestBookingId);
+assert.equal(afterDuplicateCalls.length, firstLedgerCount, 'Repeated escrow hold/release calls must be idempotent');
+assert.throws(() => recordEscrowRelease({ bookingId: ledgerTestBookingId, providerId: 'user-provider-kumar', amount: 1000, platformFee: 200, providerPayout: 900 }), /balance/, 'Unbalanced escrow releases must be rejected');
 console.log('✓ Escrow ledger unit test: double-entry hold and release journal balances');
 
 // Concurrency Test: 30 concurrent user creations
