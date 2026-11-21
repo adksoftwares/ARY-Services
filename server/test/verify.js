@@ -604,6 +604,7 @@ try {
       accountType: 'provider',
       nsnNumber: 'NSN-ROGUE-001',
       operatingMode: 'mobile',
+      location: 'Negombo, Sri Lanka',
       nicNumber: '199512345678'
     })
   });
