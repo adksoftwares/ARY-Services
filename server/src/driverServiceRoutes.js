@@ -115,7 +115,7 @@ function safeMobilityJob(job, viewerId = null) {
   if (!viewerId || (viewerId !== job.customerId && viewerId !== job.driverId)) { delete safe.customerId; delete safe.customerName; delete safe.customerPhone; delete safe.pickupContact; delete safe.recipientContact; delete safe.notes; }
   return safe;
 }
-export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadcastEvent,getBookings,getUsers}){
+export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadcastEvent,getBookings,getUsers,updateUser}){
   app.post('/api/driver-applications',requireAuth,async(req,res)=>{
     if(req.user.accountType!=='driver')return res.status(403).json({error:'Only registered Driver accounts can apply to driver networks.'});
     const requested=Array.isArray(req.body?.driverTypes)?req.body.driverTypes:[req.body?.driverType];
