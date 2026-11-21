@@ -797,7 +797,8 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
 
     if (user) {
       const isPassCorrect = Boolean(password && verifyPassword(password, user.passwordHash));
-      // All account types must authenticate against the stored password hash.\n      const isValid = isPassCorrect;
+      // All account types must authenticate against the stored password hash.
+      const isValid = isPassCorrect;
 
       if (isValid) {
         if (user.status === 'pending') {
