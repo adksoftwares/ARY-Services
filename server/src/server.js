@@ -1310,7 +1310,8 @@ app.post('/api/bookings', requireAuth, async (req, res) => {
       workmanshipGuarantee: true,
       status: 'requested', // 'requested' | 'accepted' | 'in_progress' | 'completed' | 'cancelled' | 'rejected'
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
+      lifecycleHistory: [{ event: 'booking_created', from: null, to: 'requested', actorId: customer.id, actorRole: customer.accountType, at: new Date().toISOString() }]
     };
 
     await addBooking(newBooking);
@@ -1376,8 +1377,10 @@ app.patch('/api/bookings/:id/status', requireAuth, async (req, res) => {
     }
 
     const previousProviderId = booking.providerId;
+    const previousStatus = booking.status;
     let releasedTx = null;
     const updated = await updateBooking(id, b => {
+      b.lifecycleHistory = Array.isArray(b.lifecycleHistory) ? b.lifecycleHistory : [];
       // Cascading Dispatch: If contractor declines, cascade to broadcast pool so another contractor can claim it
       if (status === 'rejected') {
         b.status = 'broadcast_pool';
@@ -1391,6 +1394,7 @@ app.patch('/api/bookings/:id/status', requireAuth, async (req, res) => {
       }
 
       b.updatedAt = new Date().toISOString();
+      b.lifecycleHistory.push({ event: status === 'rejected' ? 'provider_declined_rebroadcast' : 'status_changed', from: previousStatus, to: b.status, requestedStatus: status, actorId: userId, actorRole: accountType, at: b.updatedAt });
       if (status === 'completed') b.completedAt = b.updatedAt;
 
       // If service is marked completed and payment was held in escrow, automatically release payout
