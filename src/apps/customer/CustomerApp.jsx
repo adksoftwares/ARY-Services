@@ -175,10 +175,11 @@ function CustomerHeader({ address, launchCity, onOpenLocationModal, onOpenProfil
             </button>
           </div>
         ) : (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className="header-guest-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Button
               variant="ghost"
               size="sm"
+              className="header-admin-btn"
               onClick={() => openAuthModal('admin')}
               style={{
                 border: '1px solid rgba(239, 68, 68, 0.4)',
@@ -193,10 +194,10 @@ function CustomerHeader({ address, launchCity, onOpenLocationModal, onOpenProfil
             >
               <ShieldCheck size={14} /> Admin
             </Button>
-            <Button variant="primary" size="sm" onClick={() => openAuthModal('login')}>
+            <Button variant="primary" size="sm" className="header-signin-btn" onClick={() => openAuthModal('login')}>
               <LogIn size={14} /> Sign in
             </Button>
-            <Button variant="secondary" size="sm" onClick={() => openAuthModal('register')}>
+            <Button variant="secondary" size="sm" className="header-join-btn" onClick={() => openAuthModal('register')}>
               Join ARY <ArrowRight size={14} />
             </Button>
           </div>

@@ -22,3 +22,4 @@ coverage/
 
 # Runtime user, booking, review and ledger data must never be committed.
 /server/data/
+scratch/

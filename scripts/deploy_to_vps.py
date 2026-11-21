@@ -35,10 +35,20 @@ with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
 print(f"Zip created: {os.path.getsize(zip_path)} bytes")
 
 # 2. Upload via SFTP to VPS
+vps_host = os.environ.get('VPS_HOST', '173.212.223.108')
+vps_user = os.environ.get('VPS_USER', 'root')
+vps_pass = os.environ.get('VPS_PASSWORD')
+if not vps_pass and len(sys.argv) > 1:
+    vps_pass = sys.argv[1]
+
+if not vps_pass:
+    print("Error: VPS_PASSWORD environment variable or password argument required.")
+    sys.exit(1)
+
 ssh = paramiko.SSHClient()
 ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-print("Connecting to 173.212.223.108...")
-ssh.connect('173.212.223.108', username='root', password='@Disha21**', timeout=15)
+print(f"Connecting to {vps_host} as {vps_user}...")
+ssh.connect(vps_host, username=vps_user, password=vps_pass, timeout=15)
 sftp = ssh.open_sftp()
 
 print("Uploading deploy_latest.zip to /var/www/ary-services/...")

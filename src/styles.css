@@ -834,6 +834,13 @@ table { min-width: 620px; }
   .hero-visual { max-width: 560px; width: 100%; margin: 0 auto; }
 }
 @media (max-width: 640px) {
+  .header-join-btn,
+  .header-admin-btn {
+    display: none !important;
+  }
+  .header-guest-actions {
+    gap: 4px !important;
+  }
   .app-shell { padding-left: 16px; padding-right: 16px; }
   .topbar { gap: 10px; }
   .brand { font-size: 16px; }
