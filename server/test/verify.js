@@ -694,6 +694,7 @@ try {
       accountType: 'provider',
       nsnNumber: 'NSN-INVALID-001',
       operatingMode: 'shop',
+      location: 'Negombo, Sri Lanka',
       nicNumber: '12345-invalid'
     })
   });
@@ -710,6 +711,7 @@ try {
       accountType: 'provider',
       nsnNumber: 'NSN-VALID-001',
       operatingMode: 'shop',
+      location: 'Negombo, Sri Lanka',
       nicNumber: '951234567V'
     })
   });
