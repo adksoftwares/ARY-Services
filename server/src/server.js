@@ -1636,8 +1636,11 @@ app.patch('/api/bookings/:id/cancel', requireAuth, async (req, res) => {
       cancelMessage = 'Booking cancelled. 100% full refund processed to customer.';
     }
 
+    const previousStatus = booking.status;
     const updated = await updateBooking(id, b => {
+      b.lifecycleHistory = Array.isArray(b.lifecycleHistory) ? b.lifecycleHistory : [];
       b.status = 'cancelled';
+      b.lifecycleHistory.push({ event: 'booking_cancelled', from: previousStatus, to: 'cancelled', actorId: userId, actorRole: accountType, reason: String(reason || '').slice(0, 300), at: new Date().toISOString() });
       b.paymentStatus = newPaymentStatus;
       b.cancelReason = reason || 'Cancelled by user';
       b.cancelledBy = userId;
