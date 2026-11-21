@@ -877,6 +877,18 @@ export async function initPostgresTables(pool) {
 
 let persistentStateQueue = Promise.resolve();
 
+async function atomicWriteText(filePath, content) {
+  await fs.mkdir(path.dirname(filePath), { recursive: true });
+  const tempPath = `${filePath}.tmp.${process.pid}.${crypto.randomUUID()}`;
+  try {
+    await fs.writeFile(tempPath, content, { encoding: 'utf-8', flag: 'wx' });
+    await fs.rename(tempPath, filePath);
+  } catch (error) {
+    await fs.unlink(tempPath).catch(() => {});
+    throw error;
+  }
+}
+
 export async function readPersistentState(collection, fallbackFile, fallbackValue = {}) {
   if (activePostgresPool) {
     const result = await activePostgresPool.query(
@@ -915,8 +927,7 @@ export async function writePersistentState(collection, fallbackFile, value) {
     return value;
   }
   const task = persistentStateQueue.then(async () => {
-    await fs.mkdir(path.dirname(fallbackFile), { recursive: true });
-    await fs.writeFile(fallbackFile, JSON.stringify(value, null, 2), 'utf-8');
+    await atomicWriteText(fallbackFile, JSON.stringify(value, null, 2));
   });
   persistentStateQueue = task.catch(() => {});
   await task;
@@ -956,8 +967,7 @@ export async function mutatePersistentState(collection, fallbackFile, fallbackVa
     try { state = JSON.parse(await fs.readFile(fallbackFile, 'utf-8')); }
     catch { state = structuredClone(fallbackValue); }
     const outcome = await mutator(state);
-    await fs.mkdir(path.dirname(fallbackFile), { recursive: true });
-    await fs.writeFile(fallbackFile, JSON.stringify(state, null, 2), 'utf-8');
+    await atomicWriteText(fallbackFile, JSON.stringify(state, null, 2));
     return outcome;
   });
   persistentStateQueue = task.catch(() => {});
