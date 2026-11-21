@@ -21,7 +21,7 @@ assert.equal(ranked[0].id,'food');
 assert.equal(ranked[1].id,'near');
 assert.equal(ranked[0].fairnessScore,ranked[0].distanceKm-0.1);
 assert.equal(dispatchFairnessScore(2,new Date(now-600000).toISOString(),now),1);
-assert.equal(dispatchFairnessScore(2,new Date(now-900000).toISOString(),now),-0.5);
+assert.equal(dispatchFairnessScore(2,new Date(now-900000).toISOString(),now),0.5,'15 minutes of age subtracts a 1.5 km-equivalent priority from a 2 km distance');
 assert(ranked[0].distanceKm<1);
 assert(ranked[0].etaMinutes>=10);
 assert.equal(rankJobsForDriver(jobs,{...fresh,updatedAt:new Date(now-120000).toISOString()},now)[0].distanceKm,null);
