@@ -22,6 +22,20 @@ export function dispatchFairnessScore(distanceKm, createdAt, now = Date.now()) {
   return distanceKm === null ? -agePriorityKm : distanceKm - agePriorityKm;
 }
 
+/** A bounded urgency boost for repeatedly released requests. Lower scores dispatch sooner. */
+export function releasePriorityBoost(job) {
+  const count = Number.isFinite(Number(job?.driverReleaseCount))
+    ? Math.max(0, Number(job.driverReleaseCount))
+    : (Array.isArray(job?.driverReleaseHistory) ? job.driverReleaseHistory.length : 0);
+  return Math.min(2, count * 0.5);
+}
+
+/** Drivers who previously released this request cannot reclaim it after requeue. */
+export function isDriverEligibleForRequeuedJob(job, driverId) {
+  if (!driverId) return false;
+  return !(Array.isArray(job?.driverReleaseHistory) && job.driverReleaseHistory.some(entry => entry?.driverId === driverId));
+}
+
 export function rankJobsForDriver(jobs, presence, now = Date.now()) {
   const fresh = isDriverPresenceFresh(presence, now);
   return jobs.map(job => {
@@ -29,8 +43,9 @@ export function rankJobsForDriver(jobs, presence, now = Date.now()) {
     const targetLng = job.serviceType === 'food_delivery' ? job.destinationLng : job.pickupLng;
     const target = cleanSriLankaCoordinates(targetLat, targetLng);
     const distanceKm = fresh && target ? calculateDistanceKm(presence.lat, presence.lng, target.lat, target.lng) : null;
-    const fairnessScore = dispatchFairnessScore(distanceKm, job.createdAt, now);
-    return { ...job, distanceKm, etaMinutes: distanceKm === null ? null : estimateEtaMinutes(distanceKm), fairnessScore };
+    const releasePriorityBoost = releasePriorityBoost(job);
+    const fairnessScore = dispatchFairnessScore(distanceKm, job.createdAt, now) - releasePriorityBoost;
+    return { ...job, distanceKm, etaMinutes: distanceKm === null ? null : estimateEtaMinutes(distanceKm), fairnessScore, releasePriorityBoost };
   }).sort((a, b) => {
     const aAssigned = Boolean(a.driverId);
     const bAssigned = Boolean(b.driverId);
