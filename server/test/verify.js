@@ -14,11 +14,14 @@ import {
   getReviewsByProvider,
   getReviewByBooking,
   getLedgerEntries,
+  addLedgerEntries,
+  getWalletBalance,
   verifyPassword,
   hashPassword,
   defaultAdminUser,
   recordEscrowHold,
-  recordEscrowRelease
+  recordEscrowRelease,
+  recordPayoutSettlement
 } from '../src/storage.js';
 import { sendOtp, verifyOtp, normalizePhone } from '../src/otpService.js';
 
@@ -66,6 +69,17 @@ assert.equal(afterDuplicateCalls.length, firstLedgerCount, 'Repeated escrow hold
 await assert.rejects(() => recordEscrowRelease({ bookingId: ledgerTestBookingId, providerId: 'user-provider-kumar', amount: 1000, platformFee: 200, providerPayout: 800 }), /Idempotency key conflict/, 'Replayed financial transactions with different values must be rejected');
 await assert.rejects(() => recordDisputeRefund({ bookingId: ledgerTestBookingId, customerId: 'ledger-customer', amount: 1000 }), /different financial settlement/, 'A booking cannot be settled through a second mutually exclusive settlement path');
 console.log('✓ Escrow ledger unit test: double-entry hold and release journal balances');
+const payoutTestBatch = `payout-unit-${Date.now()}`;
+const payoutTestAccount = `provider:test-payout-${payoutTestBatch}:wallet`;
+await addLedgerEntries([
+  { id: `fund-${payoutTestBatch}-debit`, transactionId: `fund-${payoutTestBatch}`, account: 'test:funding_source', type: 'debit', amount: 1000, currency: 'LKR', description: 'Payout regression funding' },
+  { id: `fund-${payoutTestBatch}-credit`, transactionId: `fund-${payoutTestBatch}`, account: payoutTestAccount, type: 'credit', amount: 1000, currency: 'LKR', description: 'Payout regression funding' }
+]);
+await recordPayoutSettlement({ batchId: payoutTestBatch, providerId: `test-payout-${payoutTestBatch}`, amount: 300 });
+await recordPayoutSettlement({ batchId: payoutTestBatch, providerId: `test-payout-${payoutTestBatch}`, amount: 300 });
+assert.equal(await getWalletBalance(payoutTestAccount), 700, 'Repeated bank payout batch must debit provider wallet only once');
+await assert.rejects(() => recordPayoutSettlement({ batchId: payoutTestBatch, providerId: `test-payout-${payoutTestBatch}`, amount: 200 }), /idempotency key conflict/, 'Changed payout payload for the same batch must be rejected');
+
 
 // Concurrency Test: 30 concurrent user creations
 console.log('Running 30 concurrent atomic writes...');
