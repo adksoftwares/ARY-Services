@@ -997,11 +997,14 @@ try {
   });
   assert.equal(payoutRunRes.status, 200);
   const payoutRunData = await payoutRunRes.json();
-  assert(payoutRunData.batchId && payoutRunData.batchId.startsWith('ceft-batch-'), 'Must generate CEFT batch ID');
+  assert(payoutRunData.batchId && payoutRunData.batchId.startsWith('ary-transfer-instructions-'), 'Must generate a transfer-instructions batch ID');
   assert(payoutRunData.checksum && payoutRunData.checksum.length === 64, 'Must compute SHA256 checksum');
-  assert(payoutRunData.totalPayoutAmount > 0, 'Total payout amount must be greater than 0');
-  assert(payoutRunData.providerCount >= 1, 'At least 1 provider must be settled');
-  console.log(`✓ Automated CEFT Bank Payout verified: Batch #${payoutRunData.batchId} settled LKR ${payoutRunData.totalPayoutAmount.toLocaleString()} across ${payoutRunData.providerCount} providers (SHA256: ${payoutRunData.checksum.slice(0, 16)}...)`);
+  assert(Array.isArray(payoutRunData.disbursements), 'Must return a disbursement manifest');
+  assert(Array.isArray(payoutRunData.missingBankDetails), 'Must report providers missing bank details');
+  assert.equal(payoutRunData.providerCount, payoutRunData.disbursements.length, 'Provider count must match manifest rows');
+  assert.equal(payoutRunData.totalPayoutAmount, payoutRunData.disbursements.reduce((sum, item) => sum + item.amount, 0), 'Total amount must match manifest disbursements');
+  assert(payoutRunData.disbursements.every(item => item.status === 'awaiting_manual_transfer'), 'Manifest must not imply automated bank transfers');
+  console.log(`✓ CEFT-compatible payout manifest verified: Batch #${payoutRunData.batchId}, ${payoutRunData.providerCount} manual transfer instructions, SHA256: ${payoutRunData.checksum.slice(0, 16)}...`);
 
   // Clean up test customer
   await fetch(`${API_URL}/admin/users/${cCustAuth.user.id}`, {
