@@ -21,7 +21,9 @@
     "dev:driver": "npm run dev --workspace @ary/driver",
     "build:driver": "npm run build --workspace @ary/driver",
     "dev:admin": "npm run dev --workspace @ary/admin-dashboard",
-    "build:admin": "npm run build --workspace @ary/admin-dashboard"
+    "build:admin": "npm run build --workspace @ary/admin-dashboard",
+    "test:security-regression": "node scripts/security-regression-check.mjs",
+    "ci:quality": "npm test && npm run test:security-regression && npm run build"
   },
   "dependencies": {
     "@capacitor/app": "^8.1.2",

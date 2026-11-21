@@ -604,6 +604,7 @@ try {
       accountType: 'provider',
       nsnNumber: 'NSN-ROGUE-001',
       operatingMode: 'mobile',
+      location: 'Negombo, Sri Lanka',
       nicNumber: '199512345678'
     })
   });
@@ -693,6 +694,7 @@ try {
       accountType: 'provider',
       nsnNumber: 'NSN-INVALID-001',
       operatingMode: 'shop',
+      location: 'Negombo, Sri Lanka',
       nicNumber: '12345-invalid'
     })
   });
@@ -709,6 +711,7 @@ try {
       accountType: 'provider',
       nsnNumber: 'NSN-VALID-001',
       operatingMode: 'shop',
+      location: 'Negombo, Sri Lanka',
       nicNumber: '951234567V'
     })
   });
@@ -848,36 +851,16 @@ try {
       Authorization: `Bearer ${custAuth.token}`
     },
     body: JSON.stringify({
-      providerId: 'user-provider-kumar',
-      categorySlug: 'electrical-repair',
-      serviceAddress: 'No. 55, Havelock Road, Colombo 05',
-      problemDescription: 'Main circuit breaker tripping intermittently'
+      providerId: 'user-provider-perera',
+      categorySlug: 'plumbing',
+      serviceAddress: 'No. 99, Baseline Road, Colombo',
+      problemDescription: 'Water pipe leaking under kitchen sink'
     })
   });
   assert.equal(cascadeBookRes.status, 200);
   const cascadeBooking = (await cascadeBookRes.json()).booking;
   assert.equal(cascadeBooking.status, 'requested');
-  assert.equal(cascadeBooking.providerId, 'user-provider-kumar');
-
-  const kumarLogin = await fetch(`${API_URL}/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ identifier: 'kumar.electric@example.local', password: 'KumarPass@123' })
-  });
-  const kumarAuth = await kumarLogin.json();
-
-  const declineRes = await fetch(`${API_URL}/bookings/${cascadeBooking.id}/status`, {
-    method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${kumarAuth.token}`
-    },
-    body: JSON.stringify({ status: 'rejected' })
-  });
-  assert.equal(declineRes.status, 200);
-  const declinedBooking = (await declineRes.json()).booking;
-  assert.equal(declinedBooking.status, 'broadcast_pool', 'Declined booking must transition to broadcast_pool');
-  console.log('✓ Cascading Dispatch: Declined booking transitioned to status=broadcast_pool');
+  assert.equal(cascadeBooking.providerId, 'user-provider-perera');
 
   const pereraLogin = await fetch(`${API_URL}/auth/login`, {
     method: 'POST',
@@ -886,11 +869,31 @@ try {
   });
   const pereraAuth = await pereraLogin.json();
 
-  const pereraJobsRes = await fetch(`${API_URL}/bookings`, {
-    headers: { Authorization: `Bearer ${pereraAuth.token}` }
+  const declineRes = await fetch(`${API_URL}/bookings/${cascadeBooking.id}/status`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${pereraAuth.token}`
+    },
+    body: JSON.stringify({ status: 'rejected' })
   });
-  const pereraJobs = await pereraJobsRes.json();
-  const foundInPool = pereraJobs.bookings.find(b => b.id === cascadeBooking.id);
+  assert.equal(declineRes.status, 200);
+  const declinedBooking = (await declineRes.json()).booking;
+  assert.equal(declinedBooking.status, 'broadcast_pool', 'Declined booking must transition to broadcast_pool');
+  console.log('✓ Cascading Dispatch: Declined booking transitioned to status=broadcast_pool');
+
+  const claimantLogin = await fetch(`${API_URL}/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ identifier: 'secondary.plumb@example.local', password: 'SecondaryPlumbPass@123' })
+  });
+  const claimantAuth = await claimantLogin.json();
+
+  const claimantJobsRes = await fetch(`${API_URL}/bookings`, {
+    headers: { Authorization: `Bearer ${claimantAuth.token}` }
+  });
+  const claimantJobs = await claimantJobsRes.json();
+  const foundInPool = claimantJobs.bookings.find(b => b.id === cascadeBooking.id);
   assert(foundInPool, 'Broadcast pool job must be visible to verified provider in GET /api/bookings');
   assert.equal(foundInPool.status, 'broadcast_pool');
   console.log('✓ Cascading Dispatch: Broadcast job visible to available contractors');
@@ -899,13 +902,13 @@ try {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${pereraAuth.token}`
+      Authorization: `Bearer ${claimantAuth.token}`
     }
   });
   assert.equal(claimRes.status, 200);
   const claimData = await claimRes.json();
   assert.equal(claimData.booking.status, 'accepted');
-  assert.equal(claimData.booking.providerId, 'user-provider-perera');
+  assert.equal(claimData.booking.providerId, 'user-provider-plumbing-secondary');
   assert(claimData.booking.claimedAt, 'claimedAt timestamp must be recorded');
   console.log('✓ Cascading Dispatch: Job claimed successfully with 1-click (status transitioned to accepted)');
 
@@ -913,7 +916,7 @@ try {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${kumarAuth.token}`
+      Authorization: `Bearer ${pereraAuth.token}`
     }
   });
   assert.equal(secondClaimRes.status, 400, 'Already claimed job must be rejected with HTTP 400');
@@ -994,11 +997,14 @@ try {
   });
   assert.equal(payoutRunRes.status, 200);
   const payoutRunData = await payoutRunRes.json();
-  assert(payoutRunData.batchId && payoutRunData.batchId.startsWith('ceft-batch-'), 'Must generate CEFT batch ID');
+  assert(payoutRunData.batchId && payoutRunData.batchId.startsWith('ary-transfer-instructions-'), 'Must generate a transfer-instructions batch ID');
   assert(payoutRunData.checksum && payoutRunData.checksum.length === 64, 'Must compute SHA256 checksum');
-  assert(payoutRunData.totalPayoutAmount > 0, 'Total payout amount must be greater than 0');
-  assert(payoutRunData.providerCount >= 1, 'At least 1 provider must be settled');
-  console.log(`✓ Automated CEFT Bank Payout verified: Batch #${payoutRunData.batchId} settled LKR ${payoutRunData.totalPayoutAmount.toLocaleString()} across ${payoutRunData.providerCount} providers (SHA256: ${payoutRunData.checksum.slice(0, 16)}...)`);
+  assert(Array.isArray(payoutRunData.disbursements), 'Must return a disbursement manifest');
+  assert(Array.isArray(payoutRunData.missingBankDetails), 'Must report providers missing bank details');
+  assert.equal(payoutRunData.providerCount, payoutRunData.disbursements.length, 'Provider count must match manifest rows');
+  assert.equal(payoutRunData.totalPayoutAmount, payoutRunData.disbursements.reduce((sum, item) => sum + item.amount, 0), 'Total amount must match manifest disbursements');
+  assert(payoutRunData.disbursements.every(item => item.status === 'awaiting_manual_transfer'), 'Manifest must not imply automated bank transfers');
+  console.log(`✓ CEFT-compatible payout manifest verified: Batch #${payoutRunData.batchId}, ${payoutRunData.providerCount} manual transfer instructions, SHA256: ${payoutRunData.checksum.slice(0, 16)}...`);
 
   // Clean up test customer
   await fetch(`${API_URL}/admin/users/${cCustAuth.user.id}`, {

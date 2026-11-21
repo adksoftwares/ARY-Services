@@ -95,6 +95,25 @@ export const defaultSeedProviders = process.env.NODE_ENV === 'production' ? [] :
     createdAt: '2026-01-03T00:00:00.000Z'
   },
   {
+    id: 'user-provider-plumbing-secondary',
+    passwordHash: process.env.NODE_ENV === 'production' ? undefined : hashPassword('SecondaryPlumbPass@123'),
+    fullName: 'Reliable Plumbing Services',
+    phone: '0775556677',
+    email: 'secondary.plumb@example.local',
+    location: 'Colombo 04',
+    lat: 6.8855,
+    lng: 79.8605,
+    accountType: 'provider',
+    status: 'active',
+    category: 'plumbing',
+    categoryName: 'Plumbing',
+    baseCharge: 'LKR 1,600',
+    rating: 4.7,
+    reviewCount: 9,
+    experienceYears: 3,
+    createdAt: '2026-01-04T00:00:00.000Z'
+  },
+  {
     id: 'user-provider-fresh',
     passwordHash: process.env.NODE_ENV === 'production' ? undefined : hashPassword('FreshPass@123'),
     fullName: 'Lanka Fresh Groceries',
