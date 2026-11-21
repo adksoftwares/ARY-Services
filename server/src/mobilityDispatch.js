@@ -43,9 +43,9 @@ export function rankJobsForDriver(jobs, presence, now = Date.now()) {
     const targetLng = job.serviceType === 'food_delivery' ? job.destinationLng : job.pickupLng;
     const target = cleanSriLankaCoordinates(targetLat, targetLng);
     const distanceKm = fresh && target ? calculateDistanceKm(presence.lat, presence.lng, target.lat, target.lng) : null;
-    const releasePriorityBoost = releasePriorityBoost(job);
-    const fairnessScore = dispatchFairnessScore(distanceKm, job.createdAt, now) - releasePriorityBoost;
-    return { ...job, distanceKm, etaMinutes: distanceKm === null ? null : estimateEtaMinutes(distanceKm), fairnessScore, releasePriorityBoost };
+    const releaseBoost = releasePriorityBoost(job);
+    const fairnessScore = dispatchFairnessScore(distanceKm, job.createdAt, now) - releaseBoost;
+    return { ...job, distanceKm, etaMinutes: distanceKm === null ? null : estimateEtaMinutes(distanceKm), fairnessScore, releasePriorityBoost: releaseBoost };
   }).sort((a, b) => {
     const aAssigned = Boolean(a.driverId);
     const bAssigned = Boolean(b.driverId);
