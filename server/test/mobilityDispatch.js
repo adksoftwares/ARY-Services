@@ -27,7 +27,7 @@ assert(ranked[0].etaMinutes>=10);
 assert.equal(rankJobsForDriver(jobs,{...fresh,updatedAt:new Date(now-120000).toISOString()},now)[0].distanceKm,null);
 const fairnessOrder=rankJobsForDriver([
  {id:'new-close',serviceType:'ride',pickupLat:6.9272,pickupLng:79.8613,status:'requested',createdAt:new Date(now).toISOString()},
- {id:'older-far',serviceType:'ride',pickupLat:6.90,pickupLng:79.90,status:'requested',createdAt:new Date(now-6000000).toISOString()}
+ {id:'older-far',serviceType:'ride',pickupLat:6.91,pickupLng:79.88,status:'requested',createdAt:new Date(now-6000000).toISOString()}
 ],fresh,now);
 assert.equal(fairnessOrder[0].id,'older-far','Aging boost should help long-waiting jobs avoid starvation');
 console.log('Mobility dispatch, GPS freshness, and fairness ranking tests passed.');
