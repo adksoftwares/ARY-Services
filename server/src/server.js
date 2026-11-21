@@ -96,7 +96,7 @@ app.use(cors({
     if (!origin) return callback(null, true);
     if (origin === 'null') return callback(new Error('Origin is not allowed by CORS.'));
     const isLocalDevelopmentOrigin = process.env.NODE_ENV !== 'production' &&
-      /^https?:\\/\\/(localhost|127\\.0\\.0\\.1|10\\.0\\.2\\.2|192\\.168\\.\\d+\\.\\d+)(:\\d+)?$/.test(origin);
+      /^https?:\/\/(localhost|127\.0\.0\.1|10\.0\.2\.2|192\.168\.\d+\.\d+)(:\d+)?$/.test(origin);
     if (nativeOrigins.includes(origin) || allowedOrigins.includes(origin) || isLocalDevelopmentOrigin) {
       return callback(null, true);
     }
