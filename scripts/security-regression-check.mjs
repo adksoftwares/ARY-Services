@@ -12,4 +12,7 @@ assert.ok(!config.includes('http://173.212.223.108:4000/api'), 'production API c
 assert.ok(config.includes('VITE_API_FALLBACK_BASE'), 'fallback must be explicitly configurable');
 assert.ok(config.includes('import.meta.env.PROD && parsed.protocol !== \'https:\''), 'production API endpoints must require HTTPS');
 
+assert.ok(config.includes('network\\s*error'), 'network errors must use the whitespace matcher');
+assert.ok(!config.includes('network\\\\s*error'), 'network error matcher must not be double escaped');
+
 console.log('Security regression checks passed.');
