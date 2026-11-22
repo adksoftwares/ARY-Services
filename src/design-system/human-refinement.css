@@ -243,3 +243,260 @@ input::placeholder, textarea::placeholder {
   color: var(--text-muted);
 }
 
+/* ==========================================================================
+   Role-specific workspace refinement
+   ========================================================================== */
+
+/* Public discovery: make the search feel like a useful tool, not a floating
+   promotional widget. The brand green remains the single strong accent. */
+.hero-content { width: 100%; max-width: 1120px; margin-inline: auto; }
+.hero-trust-badge {
+  border-radius: 8px;
+  padding: 6px 10px;
+  letter-spacing: .045em;
+}
+.hero-title { max-width: 18ch; }
+.hero-subtext { max-width: 58ch; }
+.search-panel-elevated {
+  border-color: var(--border-default);
+  border-radius: 12px;
+  padding: 8px;
+  gap: 6px;
+}
+.search-input-field {
+  min-width: min(220px, 100%);
+  padding-inline: 12px;
+}
+.location-field { border-right-color: var(--border-default); }
+.search-text-input { min-height: 44px; }
+.gps-detect-btn {
+  border-radius: 8px;
+  padding-inline: 10px;
+}
+.location-change-btn {
+  background: var(--surface-secondary) !important;
+  border-color: var(--border-default) !important;
+  color: var(--brand-primary) !important;
+}
+.location-change-btn:hover {
+  background: var(--surface-tertiary) !important;
+  border-color: var(--border-strong) !important;
+}
+.hero-search-action-btn { border-radius: 8px !important; }
+.category-chip {
+  border-radius: 8px;
+  box-shadow: none;
+  padding-inline: 12px;
+}
+.category-chip:hover { transform: none; }
+.hero-trust-row { gap: 18px 28px; }
+
+/* Service and provider discovery: consistent card anatomy and calmer controls. */
+.services-section, .providers-section { min-width: 0; }
+.section-heading { align-items: end; gap: 16px; }
+.section-heading h2 { line-height: 1.2; }
+.service-grid { gap: 12px; }
+.service-card {
+  min-height: 94px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 16px;
+  text-align: left;
+}
+.service-card:hover {
+  border-color: var(--border-strong);
+  transform: translateY(-1px);
+}
+.service-card:focus-visible { outline-offset: 3px; }
+.service-card-copy b { line-height: 1.3; }
+.service-card-copy small { line-height: 1.45; }
+.service-icon { border-radius: 9px; }
+.card-arrow { opacity: .65; }
+.catalog-heading { gap: 9px; line-height: 1.3; }
+.catalog-toolbar {
+  gap: 12px;
+  padding-block: 12px;
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.catalog-filter-btn, .catalog-pill-btn, .catalog-sort-select {
+  min-height: 38px;
+  border-radius: 8px;
+}
+.catalog-filter-btn, .catalog-pill-btn {
+  box-shadow: none;
+}
+.catalog-sort-select { padding-inline: 10px 30px; }
+.geofence-banner { border-radius: 8px; }
+.provider-card-item {
+  border: 1px solid var(--border-subtle);
+  padding: 17px;
+}
+.provider-name { line-height: 1.3; }
+.provider-category-tag, .verified-badge, .distance-badge,
+.warranty-guarantee-badge, .rating-pill {
+  border-radius: 6px;
+}
+.provider-card-actions-row { gap: 8px; }
+.view-details-btn, .book-provider-btn {
+  min-height: 40px;
+  border-radius: 8px;
+}
+
+/* Admin workspace: establish a quiet, predictable frame for daily operations. */
+.admin-layout { min-height: 100vh; }
+.admin-sidebar { width: 252px; }
+.admin-sidebar-header { padding: 18px 16px; }
+.admin-brand-icon {
+  border-radius: 9px;
+  box-shadow: none;
+}
+.admin-brand-info b { letter-spacing: -.02em; }
+.admin-nav-list { gap: 3px; }
+.admin-nav-item {
+  min-height: 42px;
+  border-radius: 8px;
+  padding: 9px 12px;
+}
+.admin-nav-item.active {
+  box-shadow: inset 3px 0 0 var(--brand-primary);
+}
+.admin-topbar {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  min-height: 64px;
+}
+.admin-search-wrapper { width: min(280px, 28vw); }
+.admin-search-input {
+  height: 40px;
+  border-radius: 8px;
+}
+.admin-search-input:focus { box-shadow: 0 0 0 2px rgba(35, 108, 79, .12); }
+.admin-page-container {
+  max-width: 1440px;
+  gap: 22px;
+}
+.admin-kpi-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.admin-kpi-card {
+  min-width: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  box-shadow: none;
+  padding: 17px;
+}
+.admin-kpi-card.interactive {
+  cursor: pointer;
+  transition: border-color .16s ease, background-color .16s ease;
+}
+.admin-kpi-card.interactive:hover {
+  border-color: var(--border-strong);
+  transform: none;
+  box-shadow: none;
+}
+.admin-kpi-label { line-height: 1.4; }
+.admin-kpi-value { font-variant-numeric: tabular-nums; letter-spacing: -.035em; }
+.admin-kpi-icon-box { border-radius: 9px; box-shadow: none; }
+
+/* Provider workspace: operational status and earnings remain easy to scan. */
+.provider-stats-strip {
+  border-radius: 12px;
+  box-shadow: none;
+  padding: 16px 18px;
+}
+.provider-heading-name {
+  letter-spacing: -.02em !important;
+  word-spacing: normal;
+  line-height: 1.25;
+}
+.provider-avatar-circle { border-radius: 11px; }
+.provider-sidebar {
+  border-right-color: var(--border-subtle);
+  padding: 18px 14px;
+}
+.provider-nav-item {
+  min-height: 42px;
+  border-radius: 8px;
+  padding: 9px 12px;
+}
+.provider-nav-item.active {
+  box-shadow: inset 3px 0 0 var(--color-brand-300, #8bc4a9);
+}
+.provider-content-area { min-width: 0; }
+.provider-kpi-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.provider-kpi-card {
+  min-width: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  box-shadow: none;
+  padding: 16px;
+}
+.kpi-icon-wrap { border-radius: 9px; box-shadow: none; }
+.kpi-val { font-variant-numeric: tabular-nums; letter-spacing: -.03em; }
+.provider-urgent-banner { border-radius: 10px; }
+
+/* Respect reduced motion and avoid hover-only cues on touch devices. */
+@media (hover: hover) {
+  .service-card:hover, .provider-card-item:hover {
+    transform: translateY(-1px);
+  }
+}
+@media (max-width: 1100px) {
+  .admin-kpi-grid, .provider-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 768px) {
+  .hero-content { max-width: none; }
+  .search-panel-elevated { align-items: stretch; }
+  .search-input-field { flex-basis: 100%; }
+  .location-field {
+    border-right: 0;
+    border-bottom: 1px solid var(--border-subtle);
+    padding-bottom: 8px;
+  }
+  .service-field { border-bottom: 1px solid var(--border-subtle); }
+  .hero-search-action-btn { width: 100%; }
+  .section-heading { align-items: flex-start; flex-direction: column; }
+  .service-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .catalog-toolbar { align-items: flex-start; flex-direction: column; }
+  .catalog-sort-group, .catalog-sort-select { width: 100%; }
+  .admin-sidebar { width: min(280px, 84vw); }
+  .admin-topbar { padding-inline: 14px; }
+  .admin-topbar-actions { gap: 8px; }
+  .admin-search-wrapper { width: min(220px, 44vw); }
+  .admin-page-container { padding: 16px; gap: 16px; }
+  .provider-content-area { padding: 14px 12px calc(78px + var(--sab, 0px)); }
+  .provider-stats-strip { align-items: flex-start; padding: 14px; }
+}
+@media (max-width: 480px) {
+  .hero-trust-badge { font-size: 9px; letter-spacing: .025em; }
+  .location-actions-wrap { gap: 4px; }
+  .gps-detect-btn { padding-inline: 8px; }
+  .gps-btn-label { display: none; }
+  .service-grid { gap: 9px; }
+  .service-card { min-height: 88px; padding: 12px; gap: 9px; }
+  .service-icon { width: 38px; height: 38px; }
+  .service-icon svg { width: 20px; height: 20px; }
+  .admin-kpi-grid, .provider-kpi-grid { gap: 9px; }
+  .admin-kpi-card, .provider-kpi-card { padding: 13px; }
+  .admin-kpi-value { font-size: 24px; }
+  .admin-kpi-subtext { line-height: 1.4; }
+  .admin-search-wrapper { width: 42vw; }
+  .provider-profile-summary { min-width: 0; }
+  .provider-heading-name { font-size: 1.05rem; }
+}
+[data-theme="dark"] .admin-kpi-card,
+[data-theme="dark"] .provider-kpi-card,
+[data-theme="dark"] .provider-stats-strip,
+[data-theme="dark"] .service-card,
+[data-theme="dark"] .provider-card-item {
+  background: var(--surface-primary);
+  border-color: var(--border-subtle);
+}
+
