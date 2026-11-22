@@ -500,3 +500,156 @@ input::placeholder, textarea::placeholder {
   border-color: var(--border-subtle);
 }
 
+
+
+/* ==========================================================================
+   Shared design-system primitives — consistent finishing details
+   ========================================================================== */
+
+/* Page headers create a clear start point without adding another container. */
+.ds-page-header {
+  padding-block: 2px 4px;
+}
+.ds-page-header h1 {
+  text-wrap: balance;
+}
+.ds-page-header nav[aria-label="Breadcrumb"] {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  line-height: 1.4;
+}
+.ds-page-header button[aria-label="Go back"] {
+  flex: 0 0 40px;
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 9px !important;
+  transition: background-color .16s ease, border-color .16s ease;
+}
+.ds-page-header button[aria-label="Go back"]:hover {
+  background: var(--surface-secondary) !important;
+  border-color: var(--border-strong) !important;
+}
+
+/* Loading, empty and error states should feel calm and purposeful. */
+.ds-state-box {
+  gap: 0;
+  padding: clamp(28px, 5vw, 44px) 22px;
+  border: 1px dashed var(--border-default);
+  border-radius: 12px;
+  background: var(--surface-primary);
+}
+.ds-state-icon {
+  width: 50px;
+  height: 50px;
+  margin-bottom: 16px;
+  border-radius: 12px;
+}
+.ds-state-title {
+  max-width: 30ch;
+  line-height: 1.3;
+  text-wrap: balance;
+}
+.ds-state-desc {
+  max-width: 42ch;
+  margin-bottom: 20px;
+  line-height: 1.55;
+}
+.ds-state-box .ds-btn { min-height: 42px; }
+
+/* Notifications stay compact, readable and easy to dismiss. */
+.ds-toast-container {
+  width: min(420px, calc(100% - 28px));
+  gap: 8px;
+}
+.ds-toast {
+  min-height: 54px;
+  padding: 10px 12px 10px 14px;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(24, 41, 34, .12);
+  line-height: 1.45;
+}
+.ds-toast .ds-icon-btn.sm {
+  flex: 0 0 36px;
+  border-radius: 8px;
+}
+.ds-toast-success { border-left-width: 3px; }
+.ds-toast-error { border-left-width: 3px; }
+.ds-toast-warning { border-left-width: 3px; }
+.ds-toast-info { border-left-width: 3px; }
+
+/* Skeletons use a softer, less distracting loading treatment. */
+.ds-skeleton {
+  background: linear-gradient(90deg,
+    var(--surface-secondary) 0%,
+    var(--surface-tertiary) 48%,
+    var(--surface-secondary) 100%);
+  background-size: 180% 100%;
+  border-radius: 7px;
+}
+.ds-skeleton-circle { border-radius: 50%; }
+
+/* Data tables and pagination: preserve scan lines and practical controls. */
+.ds-table-wrapper {
+  border-radius: 11px;
+  box-shadow: none;
+  overscroll-behavior-x: contain;
+}
+.ds-table th {
+  padding: 13px 15px;
+  font-size: 11px;
+  letter-spacing: .035em;
+  text-transform: uppercase;
+}
+.ds-table td { padding: 13px 15px; }
+.ds-table tbody tr { transition: background-color .14s ease; }
+.ds-table tbody tr:hover td { background: var(--surface-secondary); }
+.ds-pagination { row-gap: 10px; }
+.ds-pagination-controls { gap: 4px; }
+.ds-pagination-controls button {
+  min-width: 38px;
+  min-height: 38px;
+  border-radius: 8px;
+}
+
+/* App shell: keep the main reading column comfortable on wide displays. */
+.ds-app-main { padding-inline: clamp(16px, 2.4vw, 30px) !important; }
+.ds-app-header-container { position: relative; z-index: 20; }
+.ds-app-sidebar { min-width: 0; }
+.ds-skip-link:focus {
+  top: 12px !important;
+}
+
+/* Touch and narrow-screen ergonomics. */
+@media (max-width: 768px) {
+  .ds-page-header { margin-bottom: 20px; }
+  .ds-page-header > div > div:first-child { min-width: 0 !important; }
+  .ds-page-header h1 { font-size: clamp(1.45rem, 6vw, 1.9rem) !important; }
+  .ds-page-header > div > div:last-child { width: 100%; }
+  .ds-page-header > div > div:last-child > * { max-width: 100%; }
+  .ds-state-box { padding: 28px 16px; }
+  .ds-table-wrapper { border-radius: 9px; }
+  .ds-table { min-width: 620px; }
+  .ds-pagination { align-items: flex-start; }
+  .ds-app-main { padding-inline: 14px !important; }
+  .ds-toast-container {
+    bottom: calc(14px + var(--sab, 0px));
+    width: calc(100% - 24px);
+  }
+}
+@media (max-width: 420px) {
+  .ds-page-header { gap: 12px; }
+  .ds-page-header > div { gap: 12px !important; }
+  .ds-page-header > div > div:last-child { gap: 7px !important; }
+  .ds-toast { font-size: 13px; }
+}
+[data-theme="dark"] .ds-state-box {
+  background: var(--surface-primary);
+  border-color: var(--border-default);
+}
+[data-theme="dark"] .ds-toast {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .28);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ds-skeleton { animation: none; }
+}
