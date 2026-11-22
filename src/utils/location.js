@@ -1,3 +1,5 @@
+import { API_BASE } from '../config';
+
 let lastCoordinates = null;
 
 export function getLastDetectedCoordinates() {
@@ -149,7 +151,7 @@ export async function searchSriLankaLocationsApi(query) {
 
   // 1. Try our backend API first
   try {
-    const res = await fetch(`/api/geo/search?q=${encodeURIComponent(clean)}`);
+    const res = await fetch(`${API_BASE}/geo/search?q=${encodeURIComponent(clean)}`);
     if (res.ok) {
       const data = await res.json();
       if (Array.isArray(data.results) && data.results.length > 0) {
@@ -211,7 +213,7 @@ export async function searchSriLankaLocationsApi(query) {
 
 export async function reverseGeocodeCoordsApi(lat, lng) {
   try {
-    const res = await fetch(`/api/geo/reverse?lat=${lat}&lng=${lng}`);
+    const res = await fetch(`${API_BASE}/geo/reverse?lat=${lat}&lng=${lng}`);
     if (res.ok) {
       const data = await res.json();
       if (data.address) return data;

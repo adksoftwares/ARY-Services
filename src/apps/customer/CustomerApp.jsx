@@ -434,7 +434,7 @@ function CustomerWorkspace() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`${API_BASE}/api/platform/config`).then((response) => response.ok ? response.json() : null)
+    fetch(`${API_BASE}/platform/config`).then((response) => response.ok ? response.json() : null)
       .then((config) => { if (!cancelled && config) setPlatformConfig(config); })
       .catch(() => {});
     return () => { cancelled = true; };
@@ -573,6 +573,7 @@ function CustomerWorkspace() {
   const handleSelectLocation = useCallback((newAddress, newCoords) => {
     setAddress(newAddress);
     setCoords(newCoords);
+    setLocationModalOpen(false);
     if (updateUserLocation) {
       updateUserLocation(newAddress, newCoords);
     }

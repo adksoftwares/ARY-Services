@@ -197,7 +197,7 @@ export default function CustomerLocationModal({
               padding: '8px 12px',
               borderRadius: '8px',
               border: 'none',
-              background: activeTab === 'search' ? '#ffffff' : 'transparent',
+              background: activeTab === 'search' ? 'var(--surface-primary, #ffffff)' : 'transparent',
               color: activeTab === 'search' ? 'var(--brand-primary, #15803d)' : 'var(--text-secondary, #64748b)',
               fontWeight: 700,
               fontSize: '13px',
@@ -222,7 +222,7 @@ export default function CustomerLocationModal({
               padding: '8px 12px',
               borderRadius: '8px',
               border: 'none',
-              background: activeTab === 'map' ? '#ffffff' : 'transparent',
+              background: activeTab === 'map' ? 'var(--surface-primary, #ffffff)' : 'transparent',
               color: activeTab === 'map' ? 'var(--brand-primary, #15803d)' : 'var(--text-secondary, #64748b)',
               fontWeight: 700,
               fontSize: '13px',
@@ -266,7 +266,7 @@ export default function CustomerLocationModal({
                       Current active location
                     </span>
                     <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary, #0f172a)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>
-                      {currentAddress}
+                      {/^\+?\d{9,12}$/.test(currentAddress.trim()) ? 'Location Pending (Select Below)' : currentAddress}
                     </span>
                   </div>
                 </div>
