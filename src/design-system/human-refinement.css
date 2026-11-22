@@ -1,0 +1,655 @@
+/**
+ * ARY Services — Human-led visual refinement
+ * Keeps existing components and workflows intact; refines hierarchy, rhythm and interaction.
+ */
+:root {
+  --ui-radius-card: 14px;
+  --ui-radius-control: 9px;
+  --ui-shadow-rest: 0 1px 2px rgba(24, 41, 34, .035);
+  --ui-shadow-hover: 0 5px 18px rgba(24, 41, 34, .075);
+  --ui-space-section: clamp(24px, 4vw, 40px);
+}
+
+body { letter-spacing: .005em; }
+h1, h2, h3 { letter-spacing: -.025em; }
+p { line-height: 1.62; }
+
+.app-shell { padding-inline: clamp(16px, 3.25vw, 36px); }
+.topbar {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-bottom-color: var(--border-default);
+}
+.brand-mark { box-shadow: none; border-radius: 9px; }
+.header-nav-links { gap: 4px; }
+.nav-link-btn { border-radius: 9px; padding: 9px 12px; }
+.nav-link-btn.active { font-weight: 650; }
+.user-badge { border-radius: 9px; }
+.sign-in, .prompt-sign-in-btn { border-radius: 9px; box-shadow: none; }
+
+.hero { padding-block: clamp(28px, 5vw, 54px); }
+.hero h1 { max-width: 14ch; line-height: 1.08; }
+.hero-copy > p { max-width: 54ch; }
+.search-panel, .search-panel-elevated {
+  border-radius: 12px;
+  box-shadow: var(--ui-shadow-rest);
+}
+.search-button { border-radius: 9px; min-height: 44px; }
+.quick-chip-btn { box-shadow: none; border-radius: 8px; }
+
+.service-card, .provider-card-item, .booking-card-item, .art-card,
+.stat-card, .dash-card, .admin-panel, .providers-section {
+  border-radius: var(--ui-radius-card);
+  box-shadow: var(--ui-shadow-rest);
+}
+.service-card:hover, .provider-card-item:hover, .stat-card:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--ui-shadow-hover);
+}
+.providers-section { padding: clamp(16px, 2.5vw, 26px); }
+.providers-grid { gap: 14px; }
+.provider-card-item { padding: 18px; }
+.stat-card { padding: 17px 18px; }
+.stat-icon-wrap { border-radius: 10px; box-shadow: none; }
+
+.ds-btn, button, .action-btn, .filter-btn, .customer-tab-btn, .admin-nav-tab {
+  transition: color .16s ease, background-color .16s ease, border-color .16s ease, box-shadow .16s ease;
+}
+.ds-btn { border-radius: var(--ui-radius-control); box-shadow: none; }
+input, select, textarea, .modal-form input { border-radius: var(--ui-radius-control); }
+input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 1px;
+}
+.modal-backdrop { backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); }
+.modal-card { border-radius: 14px; box-shadow: 0 16px 40px rgba(24, 41, 34, .18); }
+.modal-close { border-radius: 9px; box-shadow: none; }
+
+.provider-nav-item.active { box-shadow: none; border-radius: 9px; }
+.admin-nav-item, .provider-nav-item { border-radius: 9px; }
+.admin-nav-item.active { box-shadow: none; }
+.admin-nav-tab, .customer-tab-btn { border-radius: 9px; }
+.admin-nav-tab.active { box-shadow: none; }
+.admin-users-toolbar { border-radius: 12px; box-shadow: none; }
+.admin-users-table-container { border-radius: 12px; box-shadow: none; }
+
+:where(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+button:disabled { cursor: not-allowed; }
+@media (hover: hover) {
+  button:not(:disabled):hover { filter: none; }
+}
+@media (max-width: 768px) {
+  .app-shell { padding-inline: 16px; }
+  .hero { min-height: auto; padding-block: 28px 34px; gap: 24px; }
+  .hero h1 { font-size: clamp(2rem, 9vw, 2.7rem); }
+  .search-panel, .search-panel-elevated { box-shadow: none; }
+  .providers-section { margin-block: 24px 36px; }
+  .providers-grid { grid-template-columns: minmax(0, 1fr); }
+  .provider-card-item { padding: 16px; }
+  .modal-card { border-radius: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
+[data-theme="dark"] .service-card,
+[data-theme="dark"] .provider-card-item,
+[data-theme="dark"] .booking-card-item,
+[data-theme="dark"] .art-card,
+[data-theme="dark"] .stat-card,
+[data-theme="dark"] .dash-card,
+[data-theme="dark"] .admin-panel,
+[data-theme="dark"] .providers-section {
+  box-shadow: none;
+}
+
+/* ==========================================================================
+   Task clarity & operational polish
+   ==========================================================================
+   Keep the marketplace's existing green/cream identity. Improve scanning,
+   feedback and touch ergonomics without introducing new visual motifs.
+*/
+
+/* Section rhythm: give real content room, without making every region a card. */
+.providers-header { margin-bottom: 18px; }
+.providers-header h3 { letter-spacing: -.018em; }
+.admin-nav-tabs, .customer-nav-tabs {
+  gap: 6px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+}
+.admin-nav-tab, .customer-tab-btn {
+  min-height: 40px;
+  white-space: nowrap;
+}
+.admin-nav-tab.active, .customer-tab-btn.active {
+  border-color: var(--brand-primary);
+}
+
+/* Data should read like a working workspace, not a collection of widgets. */
+.admin-users-table th {
+  padding: 13px 16px;
+  font-size: 10px;
+  letter-spacing: .055em;
+  white-space: nowrap;
+}
+.admin-users-table td {
+  padding: 14px 16px;
+  line-height: 1.45;
+}
+.admin-users-table tbody tr:last-child td { border-bottom: 0; }
+.admin-users-table tbody tr { transition: background-color .14s ease; }
+.admin-users-table-container { overscroll-behavior-x: contain; }
+.admin-users-toolbar { align-items: center; }
+.admin-search-box { min-height: 42px; }
+.role-filter-group { max-width: 100%; }
+.filter-btn { min-height: 34px; white-space: nowrap; }
+
+/* Form hierarchy: labels remain visible; focus is clear without a glow effect. */
+.ds-form-field, .modal-form label { gap: 7px; }
+.ds-label, .modal-form label span { line-height: 1.4; }
+.ds-input, .ds-select, .ds-textarea,
+.modal-form input, input, select, textarea {
+  transition: border-color .16s ease, background-color .16s ease;
+}
+.ds-input:focus, .ds-select:focus, .ds-textarea:focus,
+.modal-form input:focus {
+  box-shadow: 0 0 0 2px rgba(35, 108, 79, .12);
+}
+input::placeholder, textarea::placeholder {
+  color: var(--text-muted);
+  opacity: .78;
+}
+
+/* Status is carried by readable labels and shape, never colour alone. */
+.status-badge, .account-badge, .service-category-tag {
+  line-height: 1.35;
+  white-space: nowrap;
+}
+.status-badge { min-height: 24px; }
+.status-dot { flex: 0 0 6px; }
+
+/* Buttons have a calm, consistent response; avoid scaling the whole layout. */
+.ds-btn:active:not(:disabled), .action-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.ds-btn:focus-visible, .action-btn:focus-visible,
+.filter-btn:focus-visible, .admin-nav-tab:focus-visible,
+.customer-tab-btn:focus-visible, .nav-link-btn:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+.action-btn { min-height: 32px; }
+.delete-user-btn { min-width: 36px; min-height: 36px; }
+
+/* Keep the public marketplace calm and let service content lead. */
+.service-card { overflow: hidden; }
+.service-card:focus-within, .provider-card-item:focus-within {
+  border-color: var(--border-focus);
+}
+.quick-chip-btn { min-height: 36px; }
+.search-field input { min-height: 44px; }
+
+/* Narrow screens: preserve readable tables and comfortable touch targets. */
+@media (max-width: 768px) {
+  .admin-nav-tabs, .customer-nav-tabs {
+    margin-block: 18px 16px;
+    padding-bottom: 8px;
+    flex-wrap: nowrap;
+  }
+  .admin-nav-tab, .customer-tab-btn {
+    min-height: 42px;
+    padding-inline: 12px;
+  }
+  .admin-users-toolbar { gap: 10px; padding: 12px; }
+  .admin-search-box { min-width: 0; width: 100%; }
+  .role-filter-group { width: 100%; overflow-x: auto; }
+  .admin-users-table { min-width: 680px; }
+  .table-actions-cell { gap: 5px; }
+  .action-btn { min-height: 36px; padding-inline: 10px; }
+  .stat-card { min-width: 0; gap: 11px; }
+  .stat-count { font-size: 22px; }
+  .providers-header { align-items: flex-start; }
+}
+@media (max-width: 420px) {
+  .app-shell { padding-inline: 12px; }
+  .providers-section { padding: 14px; }
+  .stat-card { padding: 14px 12px; }
+  .stat-icon-wrap { width: 38px; height: 38px; }
+  .hero h1 { max-width: 12ch; }
+  .modal-card { padding: 18px 14px; }
+}
+
+/* Dark mode: keep interaction states legible without bright white flashes. */
+[data-theme="dark"] .admin-users-table tbody tr:hover {
+  background: rgba(255, 255, 255, .045);
+}
+[data-theme="dark"] .ds-input:focus,
+[data-theme="dark"] .ds-select:focus,
+[data-theme="dark"] .ds-textarea:focus,
+[data-theme="dark"] .modal-form input:focus {
+  box-shadow: 0 0 0 2px rgba(139, 196, 169, .2);
+}
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder {
+  color: var(--text-muted);
+}
+
+/* ==========================================================================
+   Role-specific workspace refinement
+   ========================================================================== */
+
+/* Public discovery: make the search feel like a useful tool, not a floating
+   promotional widget. The brand green remains the single strong accent. */
+.hero-content { width: 100%; max-width: 1120px; margin-inline: auto; }
+.hero-trust-badge {
+  border-radius: 8px;
+  padding: 6px 10px;
+  letter-spacing: .045em;
+}
+.hero-title { max-width: 18ch; }
+.hero-subtext { max-width: 58ch; }
+.search-panel-elevated {
+  border-color: var(--border-default);
+  border-radius: 12px;
+  padding: 8px;
+  gap: 6px;
+}
+.search-input-field {
+  min-width: min(220px, 100%);
+  padding-inline: 12px;
+}
+.location-field { border-right-color: var(--border-default); }
+.search-text-input { min-height: 44px; }
+.gps-detect-btn {
+  border-radius: 8px;
+  padding-inline: 10px;
+}
+.location-change-btn {
+  background: var(--surface-secondary) !important;
+  border-color: var(--border-default) !important;
+  color: var(--brand-primary) !important;
+}
+.location-change-btn:hover {
+  background: var(--surface-tertiary) !important;
+  border-color: var(--border-strong) !important;
+}
+.hero-search-action-btn { border-radius: 8px !important; }
+.category-chip {
+  border-radius: 8px;
+  box-shadow: none;
+  padding-inline: 12px;
+}
+.category-chip:hover { transform: none; }
+.hero-trust-row { gap: 18px 28px; }
+
+/* Service and provider discovery: consistent card anatomy and calmer controls. */
+.services-section, .providers-section { min-width: 0; }
+.section-heading { align-items: end; gap: 16px; }
+.section-heading h2 { line-height: 1.2; }
+.service-grid { gap: 12px; }
+.service-card {
+  min-height: 94px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 16px;
+  text-align: left;
+}
+.service-card:hover {
+  border-color: var(--border-strong);
+  transform: translateY(-1px);
+}
+.service-card:focus-visible { outline-offset: 3px; }
+.service-card-copy b { line-height: 1.3; }
+.service-card-copy small { line-height: 1.45; }
+.service-icon { border-radius: 9px; }
+.card-arrow { opacity: .65; }
+.catalog-heading { gap: 9px; line-height: 1.3; }
+.catalog-toolbar {
+  gap: 12px;
+  padding-block: 12px;
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.catalog-filter-btn, .catalog-pill-btn, .catalog-sort-select {
+  min-height: 38px;
+  border-radius: 8px;
+}
+.catalog-filter-btn, .catalog-pill-btn {
+  box-shadow: none;
+}
+.catalog-sort-select { padding-inline: 10px 30px; }
+.geofence-banner { border-radius: 8px; }
+.provider-card-item {
+  border: 1px solid var(--border-subtle);
+  padding: 17px;
+}
+.provider-name { line-height: 1.3; }
+.provider-category-tag, .verified-badge, .distance-badge,
+.warranty-guarantee-badge, .rating-pill {
+  border-radius: 6px;
+}
+.provider-card-actions-row { gap: 8px; }
+.view-details-btn, .book-provider-btn {
+  min-height: 40px;
+  border-radius: 8px;
+}
+
+/* Admin workspace: establish a quiet, predictable frame for daily operations. */
+.admin-layout { min-height: 100vh; }
+.admin-sidebar { width: 252px; }
+.admin-sidebar-header { padding: 18px 16px; }
+.admin-brand-icon {
+  border-radius: 9px;
+  box-shadow: none;
+}
+.admin-brand-info b { letter-spacing: -.02em; }
+.admin-nav-list { gap: 3px; }
+.admin-nav-item {
+  min-height: 42px;
+  border-radius: 8px;
+  padding: 9px 12px;
+}
+.admin-nav-item.active {
+  box-shadow: inset 3px 0 0 var(--brand-primary);
+}
+.admin-topbar {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  min-height: 64px;
+}
+.admin-search-wrapper { width: min(280px, 28vw); }
+.admin-search-input {
+  height: 40px;
+  border-radius: 8px;
+}
+.admin-search-input:focus { box-shadow: 0 0 0 2px rgba(35, 108, 79, .12); }
+.admin-page-container {
+  max-width: 1440px;
+  gap: 22px;
+}
+.admin-kpi-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.admin-kpi-card {
+  min-width: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  box-shadow: none;
+  padding: 17px;
+}
+.admin-kpi-card.interactive {
+  cursor: pointer;
+  transition: border-color .16s ease, background-color .16s ease;
+}
+.admin-kpi-card.interactive:hover {
+  border-color: var(--border-strong);
+  transform: none;
+  box-shadow: none;
+}
+.admin-kpi-label { line-height: 1.4; }
+.admin-kpi-value { font-variant-numeric: tabular-nums; letter-spacing: -.035em; }
+.admin-kpi-icon-box { border-radius: 9px; box-shadow: none; }
+
+/* Provider workspace: operational status and earnings remain easy to scan. */
+.provider-stats-strip {
+  border-radius: 12px;
+  box-shadow: none;
+  padding: 16px 18px;
+}
+.provider-heading-name {
+  letter-spacing: -.02em !important;
+  word-spacing: normal;
+  line-height: 1.25;
+}
+.provider-avatar-circle { border-radius: 11px; }
+.provider-sidebar {
+  border-right-color: var(--border-subtle);
+  padding: 18px 14px;
+}
+.provider-nav-item {
+  min-height: 42px;
+  border-radius: 8px;
+  padding: 9px 12px;
+}
+.provider-nav-item.active {
+  box-shadow: inset 3px 0 0 var(--color-brand-300, #8bc4a9);
+}
+.provider-content-area { min-width: 0; }
+.provider-kpi-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.provider-kpi-card {
+  min-width: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  box-shadow: none;
+  padding: 16px;
+}
+.kpi-icon-wrap { border-radius: 9px; box-shadow: none; }
+.kpi-val { font-variant-numeric: tabular-nums; letter-spacing: -.03em; }
+.provider-urgent-banner { border-radius: 10px; }
+
+/* Respect reduced motion and avoid hover-only cues on touch devices. */
+@media (hover: hover) {
+  .service-card:hover, .provider-card-item:hover {
+    transform: translateY(-1px);
+  }
+}
+@media (max-width: 1100px) {
+  .admin-kpi-grid, .provider-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 768px) {
+  .hero-content { max-width: none; }
+  .search-panel-elevated { align-items: stretch; }
+  .search-input-field { flex-basis: 100%; }
+  .location-field {
+    border-right: 0;
+    border-bottom: 1px solid var(--border-subtle);
+    padding-bottom: 8px;
+  }
+  .service-field { border-bottom: 1px solid var(--border-subtle); }
+  .hero-search-action-btn { width: 100%; }
+  .section-heading { align-items: flex-start; flex-direction: column; }
+  .service-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .catalog-toolbar { align-items: flex-start; flex-direction: column; }
+  .catalog-sort-group, .catalog-sort-select { width: 100%; }
+  .admin-sidebar { width: min(280px, 84vw); }
+  .admin-topbar { padding-inline: 14px; }
+  .admin-topbar-actions { gap: 8px; }
+  .admin-search-wrapper { width: min(220px, 44vw); }
+  .admin-page-container { padding: 16px; gap: 16px; }
+  .provider-content-area { padding: 14px 12px calc(78px + var(--sab, 0px)); }
+  .provider-stats-strip { align-items: flex-start; padding: 14px; }
+}
+@media (max-width: 480px) {
+  .hero-trust-badge { font-size: 9px; letter-spacing: .025em; }
+  .location-actions-wrap { gap: 4px; }
+  .gps-detect-btn { padding-inline: 8px; }
+  .gps-btn-label { display: none; }
+  .service-grid { gap: 9px; }
+  .service-card { min-height: 88px; padding: 12px; gap: 9px; }
+  .service-icon { width: 38px; height: 38px; }
+  .service-icon svg { width: 20px; height: 20px; }
+  .admin-kpi-grid, .provider-kpi-grid { gap: 9px; }
+  .admin-kpi-card, .provider-kpi-card { padding: 13px; }
+  .admin-kpi-value { font-size: 24px; }
+  .admin-kpi-subtext { line-height: 1.4; }
+  .admin-search-wrapper { width: 42vw; }
+  .provider-profile-summary { min-width: 0; }
+  .provider-heading-name { font-size: 1.05rem; }
+}
+[data-theme="dark"] .admin-kpi-card,
+[data-theme="dark"] .provider-kpi-card,
+[data-theme="dark"] .provider-stats-strip,
+[data-theme="dark"] .service-card,
+[data-theme="dark"] .provider-card-item {
+  background: var(--surface-primary);
+  border-color: var(--border-subtle);
+}
+
+
+
+/* ==========================================================================
+   Shared design-system primitives — consistent finishing details
+   ========================================================================== */
+
+/* Page headers create a clear start point without adding another container. */
+.ds-page-header {
+  padding-block: 2px 4px;
+}
+.ds-page-header h1 {
+  text-wrap: balance;
+}
+.ds-page-header nav[aria-label="Breadcrumb"] {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  line-height: 1.4;
+}
+.ds-page-header button[aria-label="Go back"] {
+  flex: 0 0 40px;
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 9px !important;
+  transition: background-color .16s ease, border-color .16s ease;
+}
+.ds-page-header button[aria-label="Go back"]:hover {
+  background: var(--surface-secondary) !important;
+  border-color: var(--border-strong) !important;
+}
+
+/* Loading, empty and error states should feel calm and purposeful. */
+.ds-state-box {
+  gap: 0;
+  padding: clamp(28px, 5vw, 44px) 22px;
+  border: 1px dashed var(--border-default);
+  border-radius: 12px;
+  background: var(--surface-primary);
+}
+.ds-state-icon {
+  width: 50px;
+  height: 50px;
+  margin-bottom: 16px;
+  border-radius: 12px;
+}
+.ds-state-title {
+  max-width: 30ch;
+  line-height: 1.3;
+  text-wrap: balance;
+}
+.ds-state-desc {
+  max-width: 42ch;
+  margin-bottom: 20px;
+  line-height: 1.55;
+}
+.ds-state-box .ds-btn { min-height: 42px; }
+
+/* Notifications stay compact, readable and easy to dismiss. */
+.ds-toast-container {
+  width: min(420px, calc(100% - 28px));
+  gap: 8px;
+}
+.ds-toast {
+  min-height: 54px;
+  padding: 10px 12px 10px 14px;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(24, 41, 34, .12);
+  line-height: 1.45;
+}
+.ds-toast .ds-icon-btn.sm {
+  flex: 0 0 36px;
+  border-radius: 8px;
+}
+.ds-toast-success { border-left-width: 3px; }
+.ds-toast-error { border-left-width: 3px; }
+.ds-toast-warning { border-left-width: 3px; }
+.ds-toast-info { border-left-width: 3px; }
+
+/* Skeletons use a softer, less distracting loading treatment. */
+.ds-skeleton {
+  background: linear-gradient(90deg,
+    var(--surface-secondary) 0%,
+    var(--surface-tertiary) 48%,
+    var(--surface-secondary) 100%);
+  background-size: 180% 100%;
+  border-radius: 7px;
+}
+.ds-skeleton-circle { border-radius: 50%; }
+
+/* Data tables and pagination: preserve scan lines and practical controls. */
+.ds-table-wrapper {
+  border-radius: 11px;
+  box-shadow: none;
+  overscroll-behavior-x: contain;
+}
+.ds-table th {
+  padding: 13px 15px;
+  font-size: 11px;
+  letter-spacing: .035em;
+  text-transform: uppercase;
+}
+.ds-table td { padding: 13px 15px; }
+.ds-table tbody tr { transition: background-color .14s ease; }
+.ds-table tbody tr:hover td { background: var(--surface-secondary); }
+.ds-pagination { row-gap: 10px; }
+.ds-pagination-controls { gap: 4px; }
+.ds-pagination-controls button {
+  min-width: 38px;
+  min-height: 38px;
+  border-radius: 8px;
+}
+
+/* App shell: keep the main reading column comfortable on wide displays. */
+.ds-app-main { padding-inline: clamp(16px, 2.4vw, 30px) !important; }
+.ds-app-header-container { position: relative; z-index: 20; }
+.ds-app-sidebar { min-width: 0; }
+.ds-skip-link:focus {
+  top: 12px !important;
+}
+
+/* Touch and narrow-screen ergonomics. */
+@media (max-width: 768px) {
+  .ds-page-header { margin-bottom: 20px; }
+  .ds-page-header > div > div:first-child { min-width: 0 !important; }
+  .ds-page-header h1 { font-size: clamp(1.45rem, 6vw, 1.9rem) !important; }
+  .ds-page-header > div > div:last-child { width: 100%; }
+  .ds-page-header > div > div:last-child > * { max-width: 100%; }
+  .ds-state-box { padding: 28px 16px; }
+  .ds-table-wrapper { border-radius: 9px; }
+  .ds-table { min-width: 620px; }
+  .ds-pagination { align-items: flex-start; }
+  .ds-app-main { padding-inline: 14px !important; }
+  .ds-toast-container {
+    bottom: calc(14px + var(--sab, 0px));
+    width: calc(100% - 24px);
+  }
+}
+@media (max-width: 420px) {
+  .ds-page-header { gap: 12px; }
+  .ds-page-header > div { gap: 12px !important; }
+  .ds-page-header > div > div:last-child { gap: 7px !important; }
+  .ds-toast { font-size: 13px; }
+}
+[data-theme="dark"] .ds-state-box {
+  background: var(--surface-primary);
+  border-color: var(--border-default);
+}
+[data-theme="dark"] .ds-toast {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .28);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ds-skeleton { animation: none; }
+}

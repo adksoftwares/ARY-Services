@@ -11,6 +11,7 @@
 @import './design-system/driver.css';
 @import './design-system/admin.css';
 @import './design-system/dark-theme.css';
+@import './design-system/human-refinement.css';
 
 
 /* Sign-in required prompt & Modal styles */
