@@ -109,3 +109,137 @@ button:disabled { cursor: not-allowed; }
 [data-theme="dark"] .providers-section {
   box-shadow: none;
 }
+
+/* ==========================================================================
+   Task clarity & operational polish
+   ==========================================================================
+   Keep the marketplace's existing green/cream identity. Improve scanning,
+   feedback and touch ergonomics without introducing new visual motifs.
+*/
+
+/* Section rhythm: give real content room, without making every region a card. */
+.providers-header { margin-bottom: 18px; }
+.providers-header h3 { letter-spacing: -.018em; }
+.admin-nav-tabs, .customer-nav-tabs {
+  gap: 6px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+}
+.admin-nav-tab, .customer-tab-btn {
+  min-height: 40px;
+  white-space: nowrap;
+}
+.admin-nav-tab.active, .customer-tab-btn.active {
+  border-color: var(--brand-primary);
+}
+
+/* Data should read like a working workspace, not a collection of widgets. */
+.admin-users-table th {
+  padding: 13px 16px;
+  font-size: 10px;
+  letter-spacing: .055em;
+  white-space: nowrap;
+}
+.admin-users-table td {
+  padding: 14px 16px;
+  line-height: 1.45;
+}
+.admin-users-table tbody tr:last-child td { border-bottom: 0; }
+.admin-users-table tbody tr { transition: background-color .14s ease; }
+.admin-users-table-container { overscroll-behavior-x: contain; }
+.admin-users-toolbar { align-items: center; }
+.admin-search-box { min-height: 42px; }
+.role-filter-group { max-width: 100%; }
+.filter-btn { min-height: 34px; white-space: nowrap; }
+
+/* Form hierarchy: labels remain visible; focus is clear without a glow effect. */
+.ds-form-field, .modal-form label { gap: 7px; }
+.ds-label, .modal-form label span { line-height: 1.4; }
+.ds-input, .ds-select, .ds-textarea,
+.modal-form input, input, select, textarea {
+  transition: border-color .16s ease, background-color .16s ease;
+}
+.ds-input:focus, .ds-select:focus, .ds-textarea:focus,
+.modal-form input:focus {
+  box-shadow: 0 0 0 2px rgba(35, 108, 79, .12);
+}
+input::placeholder, textarea::placeholder {
+  color: var(--text-muted);
+  opacity: .78;
+}
+
+/* Status is carried by readable labels and shape, never colour alone. */
+.status-badge, .account-badge, .service-category-tag {
+  line-height: 1.35;
+  white-space: nowrap;
+}
+.status-badge { min-height: 24px; }
+.status-dot { flex: 0 0 6px; }
+
+/* Buttons have a calm, consistent response; avoid scaling the whole layout. */
+.ds-btn:active:not(:disabled), .action-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.ds-btn:focus-visible, .action-btn:focus-visible,
+.filter-btn:focus-visible, .admin-nav-tab:focus-visible,
+.customer-tab-btn:focus-visible, .nav-link-btn:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+.action-btn { min-height: 32px; }
+.delete-user-btn { min-width: 36px; min-height: 36px; }
+
+/* Keep the public marketplace calm and let service content lead. */
+.service-card { overflow: hidden; }
+.service-card:focus-within, .provider-card-item:focus-within {
+  border-color: var(--border-focus);
+}
+.quick-chip-btn { min-height: 36px; }
+.search-field input { min-height: 44px; }
+
+/* Narrow screens: preserve readable tables and comfortable touch targets. */
+@media (max-width: 768px) {
+  .admin-nav-tabs, .customer-nav-tabs {
+    margin-block: 18px 16px;
+    padding-bottom: 8px;
+    flex-wrap: nowrap;
+  }
+  .admin-nav-tab, .customer-tab-btn {
+    min-height: 42px;
+    padding-inline: 12px;
+  }
+  .admin-users-toolbar { gap: 10px; padding: 12px; }
+  .admin-search-box { min-width: 0; width: 100%; }
+  .role-filter-group { width: 100%; overflow-x: auto; }
+  .admin-users-table { min-width: 680px; }
+  .table-actions-cell { gap: 5px; }
+  .action-btn { min-height: 36px; padding-inline: 10px; }
+  .stat-card { min-width: 0; gap: 11px; }
+  .stat-count { font-size: 22px; }
+  .providers-header { align-items: flex-start; }
+}
+@media (max-width: 420px) {
+  .app-shell { padding-inline: 12px; }
+  .providers-section { padding: 14px; }
+  .stat-card { padding: 14px 12px; }
+  .stat-icon-wrap { width: 38px; height: 38px; }
+  .hero h1 { max-width: 12ch; }
+  .modal-card { padding: 18px 14px; }
+}
+
+/* Dark mode: keep interaction states legible without bright white flashes. */
+[data-theme="dark"] .admin-users-table tbody tr:hover {
+  background: rgba(255, 255, 255, .045);
+}
+[data-theme="dark"] .ds-input:focus,
+[data-theme="dark"] .ds-select:focus,
+[data-theme="dark"] .ds-textarea:focus,
+[data-theme="dark"] .modal-form input:focus {
+  box-shadow: 0 0 0 2px rgba(139, 196, 169, .2);
+}
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder {
+  color: var(--text-muted);
+}
+
