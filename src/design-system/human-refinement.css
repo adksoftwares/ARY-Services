@@ -1,0 +1,111 @@
+/**
+ * ARY Services — Human-led visual refinement
+ * Keeps existing components and workflows intact; refines hierarchy, rhythm and interaction.
+ */
+:root {
+  --ui-radius-card: 14px;
+  --ui-radius-control: 9px;
+  --ui-shadow-rest: 0 1px 2px rgba(24, 41, 34, .035);
+  --ui-shadow-hover: 0 5px 18px rgba(24, 41, 34, .075);
+  --ui-space-section: clamp(24px, 4vw, 40px);
+}
+
+body { letter-spacing: .005em; }
+h1, h2, h3 { letter-spacing: -.025em; }
+p { line-height: 1.62; }
+
+.app-shell { padding-inline: clamp(16px, 3.25vw, 36px); }
+.topbar {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-bottom-color: var(--border-default);
+}
+.brand-mark { box-shadow: none; border-radius: 9px; }
+.header-nav-links { gap: 4px; }
+.nav-link-btn { border-radius: 9px; padding: 9px 12px; }
+.nav-link-btn.active { font-weight: 650; }
+.user-badge { border-radius: 9px; }
+.sign-in, .prompt-sign-in-btn { border-radius: 9px; box-shadow: none; }
+
+.hero { padding-block: clamp(28px, 5vw, 54px); }
+.hero h1 { max-width: 14ch; line-height: 1.08; }
+.hero-copy > p { max-width: 54ch; }
+.search-panel, .search-panel-elevated {
+  border-radius: 12px;
+  box-shadow: var(--ui-shadow-rest);
+}
+.search-button { border-radius: 9px; min-height: 44px; }
+.quick-chip-btn { box-shadow: none; border-radius: 8px; }
+
+.service-card, .provider-card-item, .booking-card-item, .art-card,
+.stat-card, .dash-card, .admin-panel, .providers-section {
+  border-radius: var(--ui-radius-card);
+  box-shadow: var(--ui-shadow-rest);
+}
+.service-card:hover, .provider-card-item:hover, .stat-card:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--ui-shadow-hover);
+}
+.providers-section { padding: clamp(16px, 2.5vw, 26px); }
+.providers-grid { gap: 14px; }
+.provider-card-item { padding: 18px; }
+.stat-card { padding: 17px 18px; }
+.stat-icon-wrap { border-radius: 10px; box-shadow: none; }
+
+.ds-btn, button, .action-btn, .filter-btn, .customer-tab-btn, .admin-nav-tab {
+  transition: color .16s ease, background-color .16s ease, border-color .16s ease, box-shadow .16s ease;
+}
+.ds-btn { border-radius: var(--ui-radius-control); box-shadow: none; }
+input, select, textarea, .modal-form input { border-radius: var(--ui-radius-control); }
+input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 1px;
+}
+.modal-backdrop { backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); }
+.modal-card { border-radius: 14px; box-shadow: 0 16px 40px rgba(24, 41, 34, .18); }
+.modal-close { border-radius: 9px; box-shadow: none; }
+
+.provider-nav-item.active { box-shadow: none; border-radius: 9px; }
+.admin-nav-item, .provider-nav-item { border-radius: 9px; }
+.admin-nav-item.active { box-shadow: none; }
+.admin-nav-tab, .customer-tab-btn { border-radius: 9px; }
+.admin-nav-tab.active { box-shadow: none; }
+.admin-users-toolbar { border-radius: 12px; box-shadow: none; }
+.admin-users-table-container { border-radius: 12px; box-shadow: none; }
+
+:where(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+button:disabled { cursor: not-allowed; }
+@media (hover: hover) {
+  button:not(:disabled):hover { filter: none; }
+}
+@media (max-width: 768px) {
+  .app-shell { padding-inline: 16px; }
+  .hero { min-height: auto; padding-block: 28px 34px; gap: 24px; }
+  .hero h1 { font-size: clamp(2rem, 9vw, 2.7rem); }
+  .search-panel, .search-panel-elevated { box-shadow: none; }
+  .providers-section { margin-block: 24px 36px; }
+  .providers-grid { grid-template-columns: minmax(0, 1fr); }
+  .provider-card-item { padding: 16px; }
+  .modal-card { border-radius: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
+[data-theme="dark"] .service-card,
+[data-theme="dark"] .provider-card-item,
+[data-theme="dark"] .booking-card-item,
+[data-theme="dark"] .art-card,
+[data-theme="dark"] .stat-card,
+[data-theme="dark"] .dash-card,
+[data-theme="dark"] .admin-panel,
+[data-theme="dark"] .providers-section {
+  box-shadow: none;
+}
