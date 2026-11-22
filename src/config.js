@@ -78,7 +78,7 @@ if (typeof window !== 'undefined' && API_FALLBACK_BASE && !window.__ARY_FETCH_FA
         }
       }
       const errMsg = err?.message || '';
-      if (/failed to fetch|network\\s*error|load failed|networkrequestfailed/i.test(errMsg)) {
+      if (/failed to fetch|network\s*error|load failed|networkrequestfailed/i.test(errMsg)) {
         const friendly = new Error('Unable to connect to ARY Services server. Please check your internet connection and try again.');
         friendly.originalError = err;
         throw friendly;
