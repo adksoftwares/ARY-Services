@@ -260,7 +260,7 @@ export default function ProviderServicesManager() {
                     <div style={{ fontSize: '0.75rem', marginTop: 4 }}>
                       {isPending && (
                         <span style={{ color: 'var(--color-warning-700, #b45309)', display: 'flex', alignItems: 'center', gap: 4 }}>
-                          <Clock size={12} /> Under admin compliance review (usually approved in 12–24h).
+                          <Clock size={12} /> Submitted and waiting for an Admin decision.
                         </span>
                       )}
                       {isApproved && (
@@ -372,7 +372,7 @@ export default function ProviderServicesManager() {
           }}>
             <Info size={16} color="var(--color-brand-600, #174d3d)" style={{ flexShrink: 0 }} />
             <span>
-              All trade additions are verified by the ARY Compliance Desk to maintain quality standards across Sri Lanka.
+              New service offerings remain unavailable to customers until an Admin reviews and approves the request.
             </span>
           </div>
 
