@@ -130,7 +130,7 @@ export default function AdminWorkspace({
           type: 'kyc',
           title: 'New Driver Application Received',
           description: `Applicant: ${data?.driverName || 'Driver'}`,
-          timestamp: 'Just now',
+          createdAt: new Date().toISOString(),
           color: 'accent',
           targetTab: 'applications'
         }, ...prev]);
@@ -142,7 +142,7 @@ export default function AdminWorkspace({
           type: 'kyc',
           title: `New ${data?.role === 'provider' ? 'Provider' : 'Role'} Application Received`,
           description: `Applicant ID: ${data?.userId || 'User'}`,
-          timestamp: 'Just now',
+          createdAt: new Date().toISOString(),
           color: 'accent',
           targetTab: 'applications'
         }, ...prev]);
@@ -161,7 +161,7 @@ export default function AdminWorkspace({
           type: 'account',
           title: 'New Customer Booking Placed',
           description: `Job Ref: #${data?.bookingId || 'new'}`,
-          timestamp: 'Just now',
+          createdAt: new Date().toISOString(),
           color: 'brand',
           targetTab: 'overview'
         }, ...prev]);
@@ -172,8 +172,8 @@ export default function AdminWorkspace({
           id: Date.now(),
           type: 'dispute',
           title: 'Customer Workmanship Dispute Raised',
-          description: `Booking #${data?.bookingId || ''} frozen in escrow`,
-          timestamp: 'Just now',
+          description: `A dispute was raised for booking #${data?.bookingId || ''}. Verify its payment status before any financial action.`,
+          createdAt: new Date().toISOString(),
           color: 'danger',
           targetTab: 'disputes'
         }, ...prev]);

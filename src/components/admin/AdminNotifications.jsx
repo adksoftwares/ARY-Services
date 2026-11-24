@@ -32,11 +32,11 @@ export default function AdminNotifications({
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <Bell size={22} color="var(--color-brand-600, #174d3d)" />
               <h3 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--color-brand-900, #173b2f)' }}>
-                Platform Audit Log & System Notifications
+                Admin Session Activity
               </h3>
             </div>
             <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: 'var(--color-neutral-600, #475569)' }}>
-              Real-time audit log of administrative actions, compliance approvals, and financial disbursements.
+              Session activity received while this admin workspace is open. This feed is temporary and is not a persistent audit record.
             </p>
           </div>
 
@@ -76,7 +76,7 @@ export default function AdminNotifications({
           <EmptyState
             icon={Bell}
             title="No events found"
-            description="No recent audit logs match the selected filter category."
+            description="No session activity matches the selected filter. New events will appear here while this workspace is open."
           />
         ) : (
           <div style={{ display: 'grid', gap: 14 }}>
@@ -124,7 +124,7 @@ export default function AdminNotifications({
 
                   <div style={{ textAlign: 'right', flexShrink: 0 }}>
                     <span style={{ fontSize: '0.74rem', color: 'var(--color-neutral-400, #94a3b8)', display: 'block' }}>
-                      {evt.timestamp}
+                      {evt.createdAt && Number.isFinite(Date.parse(evt.createdAt)) ? new Date(evt.createdAt).toLocaleString() : evt.timestamp || 'Time unavailable'}
                     </span>
                     {evt.targetTab && (
                       <button
