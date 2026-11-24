@@ -268,10 +268,13 @@ export default function AdminDisputes({
                         desc: 'Propose assigning the recorded amount to the provider after reviewing the evidence and payment status.'
                       }
                     ].map(opt => (
-                      <div
+                      <button
                         key={opt.id}
+                        type="button"
+                        aria-pressed={selectedAction === opt.id}
                         className={`dispute-decision-option ${selectedAction === opt.id ? 'selected' : ''}`}
                         onClick={() => setSelectedAction(opt.id)}
+                        style={{ width: '100%', textAlign: 'left', cursor: 'pointer', font: 'inherit' }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                           <b style={{ fontSize: '0.88rem', color: 'var(--color-text, #0f172a)' }}>{opt.title}</b>
@@ -280,12 +283,12 @@ export default function AdminDisputes({
                         <p style={{ margin: '4px 0 0', fontSize: '0.78rem', color: 'var(--color-neutral-500, #64748b)' }}>
                           {opt.desc}
                         </p>
-                      </div>
+                      </button>
                     ))}
                   </div>
                 </div>
 
-                {/* Live Amount Calculation Preview */}
+                {/* Indicative Amount Allocation Preview */}
                 <div style={{
                   background: 'var(--color-brand-50, #edf7f2)',
                   border: '1px solid var(--color-brand-200, #b7decb)',
