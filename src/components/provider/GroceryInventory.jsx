@@ -184,13 +184,16 @@ export default function GroceryInventory() {
     setSaving(true);
     setError('');
     try {
-      const payload = {
-        ...form,
-        price: Number(form.price),
-        stock: Number(form.stock),
-        lowStock: Number(form.lowStock),
-        packSize: Number(form.packSize)
-      };
+      const price = Number(form.price);
+      const stock = Number(form.stock);
+      const lowStock = Number(form.lowStock);
+      const packSize = Number(form.packSize);
+      if (!String(form.name || '').trim()) throw new Error('Enter a product name.');
+      if (!Number.isFinite(price) || price <= 0) throw new Error('Enter a price greater than zero.');
+      if (!Number.isFinite(stock) || stock < 0) throw new Error('Stock must be zero or greater.');
+      if (!Number.isFinite(lowStock) || lowStock < 0) throw new Error('Low-stock threshold must be zero or greater.');
+      if (!Number.isFinite(packSize) || packSize <= 0) throw new Error('Pack size must be greater than zero.');
+      const payload = { ...form, name: form.name.trim(), price, stock, lowStock, packSize };
 
       const url = `${API_BASE}/grocery/products${editingId ? `/${editingId}` : ''}`;
       const method = editingId ? 'PUT' : 'POST';
@@ -203,7 +206,7 @@ export default function GroceryInventory() {
         },
         body: JSON.stringify(payload)
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || 'Could not save product');
 
       setIsSheetOpen(false);
@@ -223,7 +226,7 @@ export default function GroceryInventory() {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${currentUser.token}` }
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || 'Could not delete product');
       setItems(old => old.filter(x => x.id !== id));
       setConfirmDeleteId(null);
@@ -244,17 +247,18 @@ export default function GroceryInventory() {
         },
         body: JSON.stringify({ ...item, stock: newStock })
       });
-      if (res.ok) {
-        setItems(old => old.map(x => x.id === item.id ? { ...x, stock: newStock } : x));
-      }
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Could not update stock.');
+      setItems(old => old.map(x => x.id === item.id ? { ...x, stock: newStock } : x));
+      setError('');
     } catch (e) {
-      console.warn('Could not update stock:', e);
+      setError(e.message || 'Could not update stock.');
     }
   }
 
   // Filtering
   const filtered = useMemo(() => {
-    return items.filter(x => {
+    return (Array.isArray(items) ? items : []).filter(x => x && typeof x === 'object' && {
       const matchesQuery = (x.name + ' ' + x.category + ' ' + (x.brand || '') + ' ' + (x.sku || ''))
         .toLowerCase()
         .includes(query.toLowerCase());
@@ -272,7 +276,7 @@ export default function GroceryInventory() {
     });
   }, [items, query, categoryFilter, filterMode]);
 
-  const lowStockCount = items.filter(x => Number(x.stock) <= Number(x.lowStock ?? 5)).length;
+  const lowStockCount = (Array.isArray(items) ? items : []).filter(x => x && Number.isFinite(Number(x.stock)) && Number(x.stock) <= Number(x.lowStock ?? 5)).length;
 
   return (
     <div className="grocery-inventory-view" style={{ display: 'grid', gap: '20px' }}>
