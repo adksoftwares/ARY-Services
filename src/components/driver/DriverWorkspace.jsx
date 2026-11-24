@@ -100,12 +100,12 @@ export default function DriverWorkspace({ onNotice }) {
   }, [jobs]);
 
   const refresh = useCallback(async () => {
+    const requestId = ++refreshRequestRef.current;
     if (!currentUser?.token) {
       setJobs([]);
       setLoading(false);
       return;
     }
-    const requestId = ++refreshRequestRef.current;
     setLoading(true);
     setError('');
     try {
