@@ -48,6 +48,8 @@ export default function ProviderServicesManager() {
 
   const load = useCallback(async () => {
     if (!currentUser?.token) {
+      setData({ primaryCategory: {}, approvedServices: [], requests: [] });
+      setError('Please sign in again to view your service approvals.');
       setIsLoading(false);
       return;
     }
@@ -59,8 +61,8 @@ export default function ProviderServicesManager() {
       if (!response.ok) throw new Error(result.error || 'Could not load your service approvals.');
       setData({
         primaryCategory: result.primaryCategory || {},
-        approvedServices: Array.isArray(result.approvedServices) ? result.approvedServices : [],
-        requests: Array.isArray(result.requests) ? result.requests : []
+        approvedServices: Array.isArray(result.approvedServices) ? result.approvedServices.filter(item => item && typeof item === 'object') : [],
+        requests: Array.isArray(result.requests) ? result.requests.filter(item => item && typeof item === 'object') : []
       });
       setError('');
       if (!categorySlug) {
@@ -84,6 +86,11 @@ export default function ProviderServicesManager() {
   async function submit(event) {
     event.preventDefault();
     if (busy) return;
+    if (!currentUser?.token) {
+      setError('Please sign in again before submitting a service request.');
+      setNotice('');
+      return;
+    }
 
     const normalizedServiceName = serviceName.trim();
     const normalizedDescription = description.trim();
