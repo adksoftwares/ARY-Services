@@ -23,7 +23,7 @@ export default function Footer() {
             <span>ARY <b>Services</b></span>
           </a>
           <p className="footer-brand-desc">
-            Sri Lanka's trusted on-demand service ecosystem connecting certified tradespeople, verified local merchants, and professional drivers with households island-wide.
+            An on-demand service marketplace connecting local service providers, grocery and retail merchants, drivers, and customers across Sri Lanka.
           </p>
           <div className="footer-trust-pills">
             <span className="trust-pill">
