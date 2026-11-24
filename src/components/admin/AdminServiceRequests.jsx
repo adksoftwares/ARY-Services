@@ -11,9 +11,15 @@ export default function AdminServiceRequests({ onNotice }) {
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState('');
   const [error, setError] = useState('');
+  const canReview = Boolean(currentUser?.token && currentUser.accountType === 'admin');
 
   const loadRequests = useCallback(async () => {
-    if (!currentUser?.token) return;
+    if (!canReview) {
+      setRequests([]);
+      setError(currentUser?.token ? 'Administrator access is required to review service additions.' : 'Sign in with an administrator account to view service additions.');
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError('');
     try {
@@ -22,28 +28,31 @@ export default function AdminServiceRequests({ onNotice }) {
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || 'Could not load provider service requests.');
-      setRequests(Array.isArray(data.requests) ? data.requests : []);
+      setRequests(Array.isArray(data.requests) ? data.requests.filter(item => item && typeof item === 'object' && item.id !== null && item.id !== undefined && item.providerId !== null && item.providerId !== undefined) : []);
     } catch (err) {
       setError(err.message || 'Could not load provider service requests.');
-      onNotice?.(`Error: ${err.message}`);
+      setError(err.message || 'Could not review service request.');
+      onNotice?.(`Error: ${err.message || 'Could not review service request.'}`);
     } finally {
       setLoading(false);
     }
-  }, [currentUser, onNotice]);
+  }, [canReview, currentUser, onNotice]);
 
   useEffect(() => {
     loadRequests();
   }, [loadRequests]);
 
   useEffect(() => {
-    if (!currentUser?.token) return undefined;
+    if (!canReview) return undefined;
     return subscribeToAppEvents(currentUser.token, {
       'provider:service_request_created': loadRequests
     });
-  }, [currentUser?.token, loadRequests]);
+  }, [canReview, currentUser?.token, loadRequests]);
 
   async function handleReview(item, status) {
-    setBusyId(item.id);
+    if (!canReview || !item || item.id === null || item.id === undefined || item.providerId === null || item.providerId === undefined || !['approved', 'rejected'].includes(status) || busyId) return;
+    const requestKey = `${item.providerId}:${item.id}`;
+    setBusyId(requestKey);
     try {
       const response = await fetch(
         `${API_BASE}/admin/provider-service-requests/${encodeURIComponent(item.providerId)}/${encodeURIComponent(item.id)}`,
@@ -59,7 +68,7 @@ export default function AdminServiceRequests({ onNotice }) {
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || 'Could not review service request.');
 
-      onNotice?.(`Service "${item.serviceName}" has been ${status}.`);
+      onNotice?.(`Service "${item.serviceName || 'requested service'}" has been ${status}.`);
       await loadRequests();
     } catch (err) {
       onNotice?.(`Error: ${err.message}`);
@@ -107,7 +116,8 @@ export default function AdminServiceRequests({ onNotice }) {
       ) : (
         <div style={{ display: 'grid', gap: '14px' }}>
           {requests.map(item => {
-            const isBusy = busyId === item.id;
+            const requestKey = `${item.providerId}:${item.id}`;
+            const isBusy = busyId === requestKey;
 
             return (
               <Card
@@ -121,7 +131,7 @@ export default function AdminServiceRequests({ onNotice }) {
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                       <span style={{ fontSize: '0.74rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-brand-600, #174d3d)' }}>
-                        {item.categoryName || 'Trade Category'}
+                        {typeof item.categoryName === 'string' && item.categoryName.trim() ? item.categoryName : 'Trade Category'}
                       </span>
                       <Badge variant="warning" dot={true}>
                         Pending Review
@@ -129,11 +139,11 @@ export default function AdminServiceRequests({ onNotice }) {
                     </div>
 
                     <h3 style={{ margin: '2px 0 6px', fontSize: '1.15rem', color: 'var(--color-brand-900, #173b2f)' }}>
-                      {item.serviceName}
+                      {typeof item.serviceName === 'string' && item.serviceName.trim() ? item.serviceName : 'Unnamed service request'}
                     </h3>
 
                     <div style={{ fontSize: '0.82rem', color: 'var(--color-neutral-600, #475569)', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                      <span>Provider: <b>{item.providerName}</b></span>
+                      <span>Provider: <b>{item.providerName || 'Provider name unavailable'}</b></span>
                       <span>Location: <b>{item.providerLocation || 'Not provided'}</b></span>
                       <span>Requested: {item.requestedAt && Number.isFinite(Date.parse(item.requestedAt)) ? new Date(item.requestedAt).toLocaleDateString() : 'Date unavailable'}</span>
                     </div>
@@ -157,7 +167,7 @@ export default function AdminServiceRequests({ onNotice }) {
                   color: 'var(--color-neutral-700, #334155)',
                   lineHeight: 1.6
                 }}>
-                  {item.description || 'No service description provided by the partner.'}
+                  {typeof item.description === 'string' && item.description.trim() ? item.description : 'No service description provided by the partner.'}
                 </div>
 
                 {/* Actions */}
