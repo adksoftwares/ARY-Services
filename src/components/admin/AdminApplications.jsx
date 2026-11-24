@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   ShieldCheck,
   Bike,
@@ -42,8 +42,10 @@ export default function AdminApplications({
   const [kycUser, setKycUser] = useState(null);
   const [rejectingItem, setRejectingItem] = useState(null);
   const [rejectionReason, setRejectionReason] = useState('');
+  const applicationsRequestRef = useRef(0);
 
   const fetchApplications = useCallback(async () => {
+    const requestId = ++applicationsRequestRef.current;
     if (!currentUser?.token || currentUser.accountType !== 'admin') {
       setDriverApps([]);
       setRoleApps([]);
@@ -72,19 +74,23 @@ export default function AdminApplications({
       ]);
       if (!driverRes.ok) throw new Error(driverData.error || 'Could not load driver applications.');
       if (!roleRes.ok) throw new Error(roleData.error || 'Could not load role applications.');
-      setDriverApps(Array.isArray(driverData.applications) ? driverData.applications.filter(item => item && typeof item === 'object' && item.id !== null && item.id !== undefined) : []);
-      setRoleApps(Array.isArray(roleData.applications) ? roleData.applications.filter(item => item && typeof item === 'object' && item.userId !== null && item.userId !== undefined && typeof item.role === 'string') : []);
+      if (requestId !== applicationsRequestRef.current) return;
+      if (!Array.isArray(driverData.applications) || !Array.isArray(roleData.applications)) throw new Error('The server returned an unexpected applications list. Please refresh.');
+      setDriverApps(driverData.applications.filter(item => item && typeof item === 'object' && item.id !== null && item.id !== undefined));
+      setRoleApps(roleData.applications.filter(item => item && typeof item === 'object' && item.userId !== null && item.userId !== undefined && ['provider', 'driver'].includes(item.role)));
     } catch (e) {
+      if (requestId !== applicationsRequestRef.current) return;
       console.warn('Could not load applications:', e);
       setLoadError(e.message || 'Could not load application queue.');
       onNotice?.('Could not load application queue.');
     } finally {
-      setLoading(false);
+      if (requestId === applicationsRequestRef.current) setLoading(false);
     }
   }, [currentUser, onNotice, onRefreshUsers]);
 
   useEffect(() => {
     fetchApplications();
+    return () => { applicationsRequestRef.current += 1; };
   }, [fetchApplications]);
 
   // Combine driver applications, role applications, and pending provider accounts
