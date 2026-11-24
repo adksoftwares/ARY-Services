@@ -31,6 +31,7 @@ export default function AdminApplications({
   const [driverApps, setDriverApps] = useState([]);
   const [roleApps, setRoleApps] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [typeFilter, setTypeFilter] = useState('all'); // 'all' | 'driver' | 'provider' | 'role'
   const [statusFilter, setStatusFilter] = useState('pending'); // 'all' | 'pending' | 'approved' | 'rejected'
   const [searchQuery, setSearchQuery] = useState('');
@@ -44,6 +45,7 @@ export default function AdminApplications({
   const fetchApplications = useCallback(async () => {
     if (!currentUser?.token || currentUser.accountType !== 'admin') return;
     setLoading(true);
+    setLoadError('');
     try {
       if (typeof onRefreshUsers === 'function') {
         onRefreshUsers();
@@ -67,6 +69,7 @@ export default function AdminApplications({
       setRoleApps(Array.isArray(roleData.applications) ? roleData.applications : []);
     } catch (e) {
       console.warn('Could not load applications:', e);
+      setLoadError(e.message || 'Could not load application queue.');
       onNotice?.('Could not load application queue.');
     } finally {
       setLoading(false);
@@ -284,6 +287,8 @@ export default function AdminApplications({
           </div>
         </div>
       </Card>
+
+      {loadError && <div role="alert" style={{ padding: '12px 14px', borderRadius: 8, background: 'var(--color-danger-50, #fef2f2)', color: 'var(--color-danger-700, #b91c1c)', fontSize: '0.85rem' }}>{loadError} <button type="button" onClick={fetchApplications} style={{ marginLeft: 8, border: 0, background: 'transparent', color: 'inherit', textDecoration: 'underline', cursor: 'pointer', fontWeight: 700 }}>Try again</button></div>}
 
       {/* 2. Applications Queue List */}
       {loading ? (
