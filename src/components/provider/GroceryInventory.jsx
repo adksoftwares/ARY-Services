@@ -501,7 +501,8 @@ export default function GroceryInventory() {
                         type="button"
                         className="stock-stepper-btn"
                         onClick={() => adjustStock(item, -1)}
-                        aria-label="Decrease stock"
+                        aria-label={`Decrease stock for ${item.name || "product"}`}
+                        disabled={stockBusyId !== null}
                       >
                         -
                       </button>
@@ -509,7 +510,8 @@ export default function GroceryInventory() {
                         type="button"
                         className="stock-stepper-btn"
                         onClick={() => adjustStock(item, 1)}
-                        aria-label="Increase stock"
+                        aria-label={`Increase stock for ${item.name || "product"}`}
+                        disabled={stockBusyId !== null}
                       >
                         +
                       </button>
@@ -750,7 +752,7 @@ export default function GroceryInventory() {
         onConfirm={() => {
           if (confirmDeleteId) executeDelete(confirmDeleteId);
         }}
-        onCancel={() => setConfirmDeleteId(null)}
+        onCancel={() => { if (!deleteBusy) setConfirmDeleteId(null); }}
       />
     </div>
   );
