@@ -40,6 +40,9 @@ export default function NotificationCenter() {
   const [permission, setPermission] = useState(
     typeof window !== 'undefined' && 'Notification' in window ? window.Notification.permission : 'unsupported'
   );
+  const [pendingReadIds, setPendingReadIds] = useState([]);
+  const [markingAllRead, setMarkingAllRead] = useState(false);
+  const refreshRequestRef = useRef(0);
   const containerRef = useRef(null);
 
   // Close notifications dropdown when clicking outside ("side la click pannuna") or pressing Escape
@@ -70,8 +73,11 @@ export default function NotificationCenter() {
   }, [open]);
 
   const refresh = useCallback(async () => {
+    const requestId = ++refreshRequestRef.current;
     if (!currentUser?.token) {
       setItems([]);
+      setError('');
+      setLoading(false);
       return;
     }
     setLoading(true);
@@ -81,9 +87,12 @@ export default function NotificationCenter() {
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || 'Could not load notifications.');
-      const nextItems = data.notifications || [];
+      if (requestId !== refreshRequestRef.current) return;
+      if (!Array.isArray(data.notifications)) throw new Error('The server returned an unexpected notifications list. Please refresh.');
+      const nextItems = data.notifications.filter(item => item && typeof item === 'object' && item.id !== null && item.id !== undefined);
       setItems(previous => {
-        if (previous.length && permission === 'granted') {
+        if (requestId !== refreshRequestRef.current) return previous;
+        if (previous.length && permission === 'granted' && typeof window !== 'undefined' && 'Notification' in window) {
           const known = new Set(previous.map(item => item.id));
           nextItems.filter(item => !known.has(item.id) && !item.readAt).slice(0, 3).forEach(item => {
             try { new window.Notification(item.title, { body: item.body, tag: item.id }); } catch {}
@@ -93,13 +102,16 @@ export default function NotificationCenter() {
       });
       setError('');
     } catch (err) {
-      setError(err.message || 'Could not load notifications.');
+      if (requestId === refreshRequestRef.current) setError(err.message || 'Could not load notifications.');
     } finally {
-      setLoading(false);
+      if (requestId === refreshRequestRef.current) setLoading(false);
     }
   }, [currentUser?.token, permission]);
 
-  useEffect(() => { refresh(); }, [refresh]);
+  useEffect(() => {
+    refresh();
+    return () => { refreshRequestRef.current += 1; };
+  }, [refresh]);
 
   useEffect(() => {
     if (!currentUser?.token) return undefined;
@@ -108,7 +120,8 @@ export default function NotificationCenter() {
   }, [currentUser?.token, refresh]);
 
   async function markRead(item) {
-    if (item.readAt) return;
+    if (!currentUser?.token || !item?.id || item.readAt || pendingReadIds.includes(item.id)) return;
+    setPendingReadIds(previous => [...previous, item.id]);
     try {
       const response = await fetch(`${API_BASE}/notifications/${encodeURIComponent(item.id)}/read`, {
         method: 'PATCH',
@@ -117,11 +130,15 @@ export default function NotificationCenter() {
       if (!response.ok) throw new Error('Could not update notification.');
       setItems(old => old.map(entry => entry.id === item.id ? { ...entry, readAt: new Date().toISOString() } : entry));
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'Could not update notification.');
+    } finally {
+      setPendingReadIds(previous => previous.filter(id => id !== item.id));
     }
   }
 
   async function markAllRead() {
+    if (!currentUser?.token || !unread || markingAllRead) return;
+    setMarkingAllRead(true);
     try {
       const response = await fetch(`${API_BASE}/notifications/read-all`, {
         method: 'PATCH',
@@ -131,7 +148,9 @@ export default function NotificationCenter() {
       const now = new Date().toISOString();
       setItems(old => old.map(item => ({ ...item, readAt: item.readAt || now })));
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'Could not update notifications.');
+    } finally {
+      setMarkingAllRead(false);
     }
   }
 
@@ -241,7 +260,7 @@ export default function NotificationCenter() {
             <button
               type="button"
               onClick={markAllRead}
-              disabled={!unread}
+              disabled={!unread || markingAllRead}
               style={{
                 border: 0,
                 background: 'transparent',
@@ -255,17 +274,21 @@ export default function NotificationCenter() {
                 padding: 0
               }}
             >
-              <CheckCheck size={14} /> Mark all read
+              <CheckCheck size={14} /> {markingAllRead ? 'Updating…' : 'Mark all read'}
             </button>
           </div>
 
           {/* Web notification permission prompt */}
-          {'Notification' in window && permission !== 'granted' && permission !== 'denied' && (
+          {typeof window !== 'undefined' && 'Notification' in window && permission !== 'granted' && permission !== 'denied' && (
             <button
               type="button"
               onClick={async () => {
-                const next = await window.Notification.requestPermission();
-                setPermission(next);
+                try {
+                  const next = await window.Notification.requestPermission();
+                  setPermission(next);
+                } catch {
+                  setError('Browser notification permission could not be requested.');
+                }
               }}
               style={{
                 width: '100%',
@@ -279,12 +302,12 @@ export default function NotificationCenter() {
                 cursor: 'pointer'
               }}
             >
-              Enable push notifications in browser
+              Enable desktop notifications
             </button>
           )}
 
           {error && (
-            <div style={{ color: 'var(--color-danger-600, #dc2626)', fontSize: '0.8rem' }}>
+            <div role="alert" style={{ color: 'var(--color-danger-600, #dc2626)', fontSize: '0.8rem' }}>
               {error}
             </div>
           )}
@@ -298,7 +321,7 @@ export default function NotificationCenter() {
             <div style={{ textAlign: 'center', padding: '28px 16px', color: 'var(--color-neutral-500, #64748b)', fontSize: '0.85rem' }}>
               <CheckCircle2 size={28} color="var(--color-brand-600, #174d3d)" style={{ margin: '0 auto 8px', display: 'block' }} />
               <b>You are all caught up!</b>
-              <p style={{ margin: '4px 0 0', fontSize: '0.78rem' }}>New booking and order status changes will notify you in real-time.</p>
+              <p style={{ margin: '4px 0 0', fontSize: '0.78rem' }}>Booking, order and account updates received by ARY will appear here.</p>
             </div>
           ) : (
             <div style={{ display: 'grid', gap: 14 }}>
@@ -323,21 +346,28 @@ export default function NotificationCenter() {
                         const isUnread = !item.readAt;
 
                         return (
-                          <div
+                          <button
+                            type="button"
                             key={item.id}
                             onClick={() => markRead(item)}
+                            disabled={pendingReadIds.includes(item.id)}
+                            aria-label={`${isUnread ? 'Mark as read: ' : 'Notification: '}${item.title || 'Update'}`}
                             style={{
                               padding: '10px 12px',
                               borderRadius: 'var(--radius-md, 8px)',
                               background: isUnread ? 'var(--color-brand-50, #edf7f2)' : 'var(--color-neutral-50, #f8fafc)',
                               border: isUnread ? '1px solid var(--color-brand-200, #b7decb)' : '1px solid var(--color-border-subtle, #f1f5f9)',
-                              cursor: 'pointer',
+                              width: '100%',
+                              textAlign: 'left',
+                              color: 'inherit',
+                              font: 'inherit',
+                              cursor: pendingReadIds.includes(item.id) ? 'wait' : 'pointer',
                               transition: 'all 0.15s ease'
                             }}
                           >
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 6 }}>
                               <b style={{ fontSize: '0.85rem', color: isUnread ? 'var(--color-brand-900, #0c2d23)' : 'var(--color-neutral-800, #1e293b)' }}>
-                                {item.title}
+                                {item.title || 'ARY update'}
                               </b>
                               {isUnread && (
                                 <span style={{
@@ -352,19 +382,14 @@ export default function NotificationCenter() {
                             </div>
 
                             <p style={{ margin: '3px 0 0', fontSize: '0.8rem', color: 'var(--color-neutral-600, #475569)', lineHeight: 1.4 }}>
-                              {item.body}
+                              {item.body || 'You have a new account update.'}
                             </p>
 
                             <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.72rem', color: 'var(--color-neutral-400, #94a3b8)' }}>
                               <Clock size={11} />
-                              <span>{new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                              {item.link && (
-                                <span style={{ color: 'var(--color-brand-600, #174d3d)', fontWeight: 600, marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 2 }}>
-                                  View Details <ExternalLink size={10} />
-                                </span>
-                              )}
+                              <span>{item.createdAt && Number.isFinite(new Date(item.createdAt).getTime()) ? new Date(item.createdAt).toLocaleString() : 'Date unavailable'}</span>
                             </div>
-                          </div>
+                          </button>
                         );
                       })}
                     </div>
