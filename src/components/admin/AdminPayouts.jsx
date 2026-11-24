@@ -26,12 +26,15 @@ export default function AdminPayouts({
   const { currentUser } = useAuth();
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
   const [preview, setPreview] = useState({ candidates: [], eligibleCount: 0, missingBankDetailsCount: 0 });
-  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewLoading, setPreviewLoading] = useState(true);
   const [previewError, setPreviewError] = useState('');
   const minThreshold = 1000;
 
   async function loadPayoutPreview() {
-    if (!currentUser?.token) return;
+    if (!currentUser?.token) {
+      setPreviewLoading(false);
+      return;
+    }
     setPreviewLoading(true);
     setPreviewError('');
     try {
