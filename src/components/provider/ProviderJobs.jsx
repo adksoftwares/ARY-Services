@@ -20,23 +20,15 @@ import {
 } from 'lucide-react';
 import { Card, Badge, Button, Stepper, StatusPill, EmptyState, Skeleton, ConfirmDialog, SegmentedControl } from '../../design-system';
 
-function getSlaStatus(createdAt) {
+function getRequestAge(createdAt) {
   if (!createdAt) return null;
-  const elapsedMinutes = Math.floor((Date.now() - new Date(createdAt).getTime()) / 60000);
-  const remainingMinutes = 30 - elapsedMinutes;
-
-  if (remainingMinutes > 0) {
-    return {
-      text: `${remainingMinutes}m remaining (30m SLA)`,
-      urgent: remainingMinutes <= 10,
-      overdue: false
-    };
-  }
-  return {
-    text: `SLA Overdue by ${Math.abs(remainingMinutes)}m`,
-    urgent: true,
-    overdue: true
-  };
+  const createdTime = Date.parse(createdAt);
+  if (!Number.isFinite(createdTime)) return null;
+  const elapsedMinutes = Math.max(0, Math.floor((Date.now() - createdTime) / 60000));
+  if (elapsedMinutes < 60) return `Received ${elapsedMinutes}m ago`;
+  const elapsedHours = Math.floor(elapsedMinutes / 60);
+  if (elapsedHours < 24) return `Received ${elapsedHours}h ago`;
+  return `Received ${Math.floor(elapsedHours / 24)}d ago`;
 }
 
 export default function ProviderJobs({
@@ -220,7 +212,7 @@ export default function ProviderJobs({
         <div style={{ display: 'grid', gap: '16px' }}>
           {filteredBookings.map(b => {
             const isBroadcast = b.status === 'broadcast_pool';
-            const sla = b.status === 'requested' ? getSlaStatus(b.createdAt) : null;
+            const requestAge = b.status === 'requested' ? getRequestAge(b.createdAt) : null;
             const stepIndex = getStepIndex(b.status);
             const currentAmount = quoteDrafts[b.id] ?? b.quote?.amount ?? b.baseAmount ?? 0;
             const feePreview = Math.round(Number(currentAmount) * 0.1);
@@ -243,14 +235,14 @@ export default function ProviderJobs({
                       </Badge>
                     </div>
                     <div style={{ fontSize: '0.8rem', color: 'var(--color-neutral-500, #64748b)', marginTop: 2 }}>
-                      Created: {new Date(b.createdAt || Date.now()).toLocaleString()}
+                      Created: {b.createdAt && Number.isFinite(Date.parse(b.createdAt)) ? new Date(b.createdAt).toLocaleString() : 'Date unavailable'}
                     </div>
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                    {sla && (
-                      <Badge variant={sla.overdue ? 'danger' : sla.urgent ? 'warning' : 'neutral'} dot={false}>
-                        <Clock size={12} /> {sla.text}
+                    {requestAge && (
+                      <Badge variant="neutral" dot={false}>
+                        <Clock size={12} /> {requestAge}
                       </Badge>
                     )}
                     <StatusPill status={b.status} />
@@ -284,13 +276,15 @@ export default function ProviderJobs({
                     <span style={{ color: 'var(--color-neutral-500, #64748b)', fontSize: '0.75rem', display: 'block' }}>Contact Phone</span>
                     {isBroadcast ? (
                       <span style={{ color: 'var(--color-neutral-500, #64748b)', fontStyle: 'italic' }}>Visible after claiming</span>
-                    ) : (
+                    ) : b.customerPhone ? (
                       <a
                         href={`tel:${b.customerPhone}`}
                         style={{ color: 'var(--color-brand-600, #174d3d)', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}
                       >
                         <Phone size={13} /> {b.customerPhone} (Call)
                       </a>
+                    ) : (
+                      <span style={{ color: 'var(--color-neutral-500, #64748b)' }}>Not provided</span>
                     )}
                   </div>
                   <div>
@@ -299,14 +293,18 @@ export default function ProviderJobs({
                   </div>
                   <div>
                     <span style={{ color: 'var(--color-neutral-500, #64748b)', fontSize: '0.75rem', display: 'block' }}>Location</span>
-                    <a
-                      href={`https://maps.google.com/?q=${encodeURIComponent(b.serviceAddress || 'Sri Lanka')}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ fontWeight: 600, color: 'var(--color-brand-700, #174d3d)', display: 'inline-flex', alignItems: 'center', gap: 4 }}
-                    >
-                      <MapPin size={13} /> {b.serviceAddress} <ExternalLink size={11} />
-                    </a>
+                    {b.serviceAddress ? (
+                      <a
+                        href={`https://maps.google.com/?q=${encodeURIComponent(b.serviceAddress)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ fontWeight: 600, color: 'var(--color-brand-700, #174d3d)', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                      >
+                        <MapPin size={13} /> {b.serviceAddress} <ExternalLink size={11} />
+                      </a>
+                    ) : (
+                      <span style={{ color: 'var(--color-neutral-500, #64748b)' }}>Address not provided</span>
+                    )}
                   </div>
                 </div>
 
