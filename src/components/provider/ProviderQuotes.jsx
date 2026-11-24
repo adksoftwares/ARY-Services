@@ -5,9 +5,7 @@ import {
   CheckCircle2,
   AlertCircle,
   ArrowRight,
-  TrendingUp,
   Percent,
-  Calendar,
   DollarSign
 } from 'lucide-react';
 import { Card, Badge, Button, EmptyState, SegmentedControl } from '../../design-system';
@@ -108,9 +106,6 @@ export default function ProviderQuotes({
       {filteredQuotes.length > 0 ? (
         <div style={{ display: 'grid', gap: '14px' }}>
           {filteredQuotes.map(q => {
-            const fee = Math.round(q.amount * 0.1);
-            const net = q.amount - fee;
-
             return (
               <Card key={q.bookingId} style={{ padding: '18px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 10, marginBottom: 10 }}>
@@ -153,16 +148,13 @@ export default function ProviderQuotes({
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, fontSize: '0.85rem' }}>
                     <span>Total Quoted: <b style={{ fontSize: '1rem', color: 'var(--text-primary, #f8fafc)' }}>LKR {q.amount.toLocaleString()}</b></span>
-                    <span style={{ color: 'var(--color-neutral-500, #64748b)' }}>ARY Platform Fee (10%): - LKR {fee.toLocaleString()}</span>
-                    <span style={{ color: 'var(--color-success-700, #047857)', fontWeight: 700 }}>
-                      Net Payout: LKR {net.toLocaleString()}
-                    </span>
+
                   </div>
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
                   <small style={{ color: 'var(--color-neutral-400, #94a3b8)', fontSize: '0.75rem' }}>
-                    {q.validUntil ? `Valid until ${new Date(q.validUntil).toLocaleDateString()}` : 'Standard 48-hour validity'}
+                    {q.validUntil && Number.isFinite(Date.parse(q.validUntil)) ? `Valid until ${new Date(q.validUntil).toLocaleDateString()}` : 'Validity period not specified'}
                   </small>
                   <Button
                     variant="ghost"
