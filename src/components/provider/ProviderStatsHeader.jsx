@@ -8,9 +8,6 @@ import {
   VolumeX,
   Wifi,
   WifiOff,
-  ShieldCheck,
-  CheckCircle2,
-  AlertCircle
 } from 'lucide-react';
 import { Badge, Card } from '../../design-system';
 
@@ -26,9 +23,15 @@ export default function ProviderStatsHeader({
   isAvailable = true,
   onToggleAvailability
 }) {
-  const pendingCount = bookings.filter(b => b.status === 'requested').length;
-  const inProgressCount = bookings.filter(b => b.status === 'in_progress').length;
-  const completedCount = bookings.filter(b => b.status === 'completed').length;
+  const safeBookings = Array.isArray(bookings) ? bookings.filter(booking => booking && typeof booking === 'object' && booking.id !== null && booking.id !== undefined) : [];
+  const pendingCount = safeBookings.filter(booking => booking.status === 'requested').length;
+  const inProgressCount = safeBookings.filter(booking => booking.status === 'in_progress').length;
+  const walletValue = walletBalance !== null && walletBalance !== undefined && walletBalance !== '' ? Number(walletBalance) : NaN;
+  const safeWalletBalance = Number.isFinite(walletValue) && walletValue >= 0 ? `LKR ${walletValue.toLocaleString('en-LK')}` : '—';
+  const reviewCountValue = Number(reviewCount);
+  const safeReviewCount = Number.isFinite(reviewCountValue) && reviewCountValue > 0 ? Math.floor(reviewCountValue) : 0;
+  const ratingValue = averageRating !== null && averageRating !== undefined && averageRating !== '' ? Number(averageRating) : NaN;
+  const safeRating = safeReviewCount > 0 && Number.isFinite(ratingValue) && ratingValue >= 1 && ratingValue <= 5 ? ratingValue.toFixed(1) : '—';
 
   return (
     <div className="provider-stats-container">
@@ -41,12 +44,10 @@ export default function ProviderStatsHeader({
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <h2 className="provider-heading-name">{currentUser?.fullName}</h2>
-              <Badge variant="success" dot={false}>
-                <CheckCircle2 size={13} /> Verified Partner
-              </Badge>
+              <Badge variant="neutral" dot={false}>Provider account</Badge>
             </div>
             <span className="provider-category-subtitle">
-              {currentUser?.categoryName || 'Professional Service Provider'} · {currentUser?.location || 'Colombo, Sri Lanka'}
+              {currentUser?.categoryName || 'Service Provider'} · {currentUser?.location || 'Service area not provided'}
             </span>
           </div>
         </div>
@@ -56,10 +57,10 @@ export default function ProviderStatsHeader({
           <button
             type="button"
             className={`status-pill-toggle ${isOnline ? 'online' : 'offline'}`}
-            title={isOnline ? 'Network Online' : 'Network Offline'}
+            title={isOnline ? 'Network connection available' : 'Network connection unavailable'}
           >
             {isOnline ? <Wifi size={14} /> : <WifiOff size={14} />}
-            <span>{isOnline ? 'Online' : 'Offline'}</span>
+            <span>{isOnline ? 'Network online' : 'Network offline'}</span>
           </button>
 
           <button
@@ -101,7 +102,7 @@ export default function ProviderStatsHeader({
             <Wallet size={20} />
           </div>
           <div className="kpi-data">
-            <span className="kpi-val">LKR {Number(walletBalance).toLocaleString('en-LK')}</span>
+            <span className="kpi-val">{safeWalletBalance}</span>
             <span className="kpi-label">Available Balance</span>
           </div>
         </Card>
@@ -111,8 +112,8 @@ export default function ProviderStatsHeader({
             <Star size={20} fill="currentColor" />
           </div>
           <div className="kpi-data">
-            <span className="kpi-val">{reviewCount > 0 ? averageRating : '—'}</span>
-            <span className="kpi-label">Rating ({reviewCount} reviews)</span>
+            <span className="kpi-val">{safeRating}</span>
+            <span className="kpi-label">Rating ({safeReviewCount} reviews)</span>
           </div>
         </Card>
       </div>
