@@ -53,22 +53,24 @@ export default function MyBookingsList({
   const [actionBusyId, setActionBusyId] = useState('');
   const [actionErrors, setActionErrors] = useState({});
 
+  const safeBookings = useMemo(() => (Array.isArray(bookings) ? bookings : []).filter(Boolean), [bookings]);
+
   const TABS = [
-    { id: 'upcoming', label: 'Upcoming', badge: bookings.filter(b => ['requested', 'accepted'].includes(b.status)).length },
-    { id: 'in_progress', label: 'In Progress', badge: bookings.filter(b => b.status === 'in_progress').length },
-    { id: 'completed', label: 'Completed', badge: bookings.filter(b => b.status === 'completed').length },
-    { id: 'cancelled', label: 'Cancelled', badge: bookings.filter(b => ['cancelled', 'rejected'].includes(b.status)).length },
-    { id: 'all', label: 'All Requests', badge: bookings.length }
+    { id: 'upcoming', label: 'Upcoming', badge: safeBookings.filter(b => ['requested', 'accepted'].includes(b.status)).length },
+    { id: 'in_progress', label: 'In Progress', badge: safeBookings.filter(b => b.status === 'in_progress').length },
+    { id: 'completed', label: 'Completed', badge: safeBookings.filter(b => b.status === 'completed').length },
+    { id: 'cancelled', label: 'Cancelled', badge: safeBookings.filter(b => ['cancelled', 'rejected'].includes(b.status)).length },
+    { id: 'all', label: 'All Requests', badge: safeBookings.length }
   ];
 
   const filteredBookings = useMemo(() => {
-    if (activeTab === 'all') return bookings;
-    if (activeTab === 'upcoming') return bookings.filter(b => ['requested', 'accepted'].includes(b.status));
-    if (activeTab === 'in_progress') return bookings.filter(b => b.status === 'in_progress');
-    if (activeTab === 'completed') return bookings.filter(b => b.status === 'completed');
-    if (activeTab === 'cancelled') return bookings.filter(b => ['cancelled', 'rejected'].includes(b.status));
-    return bookings;
-  }, [bookings, activeTab]);
+    if (activeTab === 'all') return safeBookings;
+    if (activeTab === 'upcoming') return safeBookings.filter(b => ['requested', 'accepted'].includes(b.status));
+    if (activeTab === 'in_progress') return safeBookings.filter(b => b.status === 'in_progress');
+    if (activeTab === 'completed') return safeBookings.filter(b => b.status === 'completed');
+    if (activeTab === 'cancelled') return safeBookings.filter(b => ['cancelled', 'rejected'].includes(b.status));
+    return safeBookings;
+  }, [safeBookings, activeTab]);
 
   const getStepIndex = (status) => {
     switch (status) {
@@ -127,7 +129,7 @@ export default function MyBookingsList({
       <div className="section-heading">
         <div>
           <div className="eyebrow">YOUR ACTIVE REQUESTS</div>
-          <h2 id="bookings-main-title">My Bookings ({bookings.length})</h2>
+          <h2 id="bookings-main-title">My Bookings ({safeBookings.length})</h2>
         </div>
         <Button
           variant="outline"
@@ -213,12 +215,12 @@ export default function MyBookingsList({
 
                   <div className="detail-item">
                     <span className="detail-label">Scheduled Date & Time</span>
-                    <span className="detail-val">{b.bookingDate} ({b.bookingTime})</span>
+                    <span className="detail-val">{b.bookingDate || 'Date unavailable'}{b.bookingTime ? ` (${b.bookingTime})` : ''}</span>
                   </div>
 
                   <div className="detail-item">
                     <span className="detail-label">Service Address</span>
-                    <span className="detail-val">{b.serviceAddress}</span>
+                    <span className="detail-val">{b.serviceAddress || 'Address not provided'}</span>
                   </div>
                 </div>
 
@@ -350,7 +352,7 @@ export default function MyBookingsList({
                       </Button>
                     )}
 
-                    {/* Dispute Button (14-day workmanship warranty on completed jobs) */}
+                    {/* Dispute action is available without implying a fixed warranty period. */}
                     {b.status === 'completed' && !b.dispute && (
                       <Button
                         variant="outline"
