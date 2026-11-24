@@ -131,7 +131,7 @@ export default function AdminDispatch({
         }}>
           <div style={{ padding: '14px', background: '#ecfdf5', borderRadius: 'var(--radius-md, 10px)', border: '1px solid #a7f3d0' }}>
             <span style={{ fontSize: '0.74rem', color: '#065f46', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Broadcasting Drivers
+              Drivers in Dispatch Feed
             </span>
             <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#047857', marginTop: 4 }}>
               {summary.onlineDrivers ?? drivers.length}
