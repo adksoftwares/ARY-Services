@@ -166,6 +166,7 @@ export default function HeroSection({
                   key={chip.slug}
                   type="button"
                   className={`category-chip ${isActive ? 'active' : ''}`}
+                  aria-pressed={isActive}
                   onClick={() => {
                     setQuery(chip.label);
                     if (['parcel', 'ride', 'food'].includes(chip.slug)) {
