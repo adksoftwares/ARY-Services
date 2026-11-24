@@ -14,7 +14,7 @@ import { Card, Badge, Button, StatusPill, EmptyState, SegmentedControl } from '.
 
 function parseLocalBookingDate(value, timeValue) {
   if (typeof value !== 'string') return null;
-  const match = /^(\\d{4})-(\\d{2})-(\\d{2})/.exec(value);
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
   if (!match) return null;
   const year = Number(match[1]);
   const month = Number(match[2]);
@@ -23,7 +23,7 @@ function parseLocalBookingDate(value, timeValue) {
   if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return null;
 
   const timeText = typeof timeValue === 'string' ? timeValue : '';
-  const timeMatch = /(\\d{1,2})(?::(\\d{2}))?\\s*(AM|PM)?/i.exec(timeText);
+  const timeMatch = /(\d{1,2})(?::(\d{2}))?\\s*(AM|PM)?/i.exec(timeText);
   let hours = 12;
   let minutes = 0;
   if (timeMatch) {
