@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Users,
   Search,
@@ -31,13 +31,19 @@ import AdminDeleteUserModal from './AdminDeleteUserModal';
 
 export default function AdminUsers({
   adminUsers = [],
+  initialSearchQuery = '',
   isLoadingUsers = false,
   onRefresh,
   onUpdateStatus,
   onDeleteUser,
   onResetPassword
 }) {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
+
+  useEffect(() => {
+    setSearchQuery(initialSearchQuery);
+    setCurrentPage(1);
+  }, [initialSearchQuery]);
   const [roleFilter, setRoleFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortField, setSortField] = useState('id');
@@ -199,36 +205,21 @@ export default function AdminUsers({
           <table className="admin-table">
             <thead>
               <tr>
-                <th
-                  className="sortable"
-                  onClick={() => handleSort('fullName')}
-                  style={{ width: '30%' }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span>Participant</span>
-                    <ArrowUpDown size={12} />
-                  </div>
+                <th style={{ width: '30%' }}>
+                  <button type="button" className="sortable" onClick={() => handleSort('fullName')} aria-label={`Sort by participant name, currently ${sortDirection === 'asc' ? 'ascending' : 'descending'}`}>
+                    <span>Participant</span><ArrowUpDown size={12} />
+                  </button>
                 </th>
-                <th
-                  className="sortable"
-                  onClick={() => handleSort('accountType')}
-                  style={{ width: '15%' }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span>Role</span>
-                    <ArrowUpDown size={12} />
-                  </div>
+                <th style={{ width: '15%' }}>
+                  <button type="button" className="sortable" onClick={() => handleSort('accountType')} aria-label="Sort by account role">
+                    <span>Role</span><ArrowUpDown size={12} />
+                  </button>
                 </th>
                 <th style={{ width: '25%' }}>Phone & Operating Area</th>
-                <th
-                  className="sortable"
-                  onClick={() => handleSort('status')}
-                  style={{ width: '12%' }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span>Status</span>
-                    <ArrowUpDown size={12} />
-                  </div>
+                <th style={{ width: '12%' }}>
+                  <button type="button" className="sortable" onClick={() => handleSort('status')} aria-label="Sort by account status">
+                    <span>Status</span><ArrowUpDown size={12} />
+                  </button>
                 </th>
                 <th style={{ textAlign: 'right', width: '18%' }}>Management Actions</th>
               </tr>
@@ -298,7 +289,7 @@ export default function AdminUsers({
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.75rem', color: 'var(--color-neutral-500, #64748b)', marginTop: 2 }}>
                           <MapPin size={12} color="#94a3b8" />
-                          <span>{user.location || 'Colombo, Sri Lanka'}</span>
+                          <span>{user.location || 'Location not provided'}</span>
                         </div>
                       </td>
 

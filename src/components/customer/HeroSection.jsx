@@ -166,6 +166,7 @@ export default function HeroSection({
                   key={chip.slug}
                   type="button"
                   className={`category-chip ${isActive ? 'active' : ''}`}
+                  aria-pressed={isActive}
                   onClick={() => {
                     setQuery(chip.label);
                     if (['parcel', 'ride', 'food'].includes(chip.slug)) {
@@ -176,12 +177,11 @@ export default function HeroSection({
                       if (grocEl) grocEl.scrollIntoView({ behavior: 'smooth' });
                     } else {
                       if (onSelectCategory) {
-                        onSelectCategory({ slug: chip.slug, name: chip.label });
+                        onSelectCategory({ slug: chip.slug, name: chip.label }, chip.label);
                       }
                       const catEl = document.getElementById('providers-catalog') || document.querySelector('.providers-section');
                       if (catEl) catEl.scrollIntoView({ behavior: 'smooth' });
                     }
-                    if (onSearch) onSearch();
                   }}
                 >
                   <Icon size={14} className="chip-icon" aria-hidden="true" />
@@ -253,7 +253,7 @@ export default function HeroSection({
             {popularProviders.slice(0, 6).map(p => (
               <div key={p.id} className="popular-provider-card">
                 <div className="popular-card-header">
-                  <Avatar name={p.fullName} size="md" isOnline={true} />
+                  <Avatar name={p.fullName} size="md" isOnline={p.isOnline === true} />
                   <div className="popular-card-info">
                     <b className="popular-name">{p.fullName}</b>
                     <span className="popular-category">{p.categoryName || 'Home Services'}</span>

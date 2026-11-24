@@ -26,6 +26,7 @@ export default function CategoryGrid({
             <button
               type="button"
               className={`service-card ${isSelected ? 'active-category-card' : ''}`}
+              aria-pressed={isSelected}
               key={service.id}
               onClick={() => onSelectCategory(service)}
             >

@@ -55,7 +55,7 @@ export default function ProviderDetailModal({
       <div className="provider-detail-content">
         {/* Header Profile Section */}
         <div className="provider-detail-header">
-          <Avatar name={provider.fullName} size="xl" isOnline={true} />
+          <Avatar name={provider.fullName} size="xl" isOnline={provider.isOnline === true} />
           <div className="provider-detail-header-info">
             <div className="provider-title-row">
               <h3>{provider.fullName}</h3>

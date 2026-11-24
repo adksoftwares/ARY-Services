@@ -28,6 +28,10 @@ export default function AdminOverview({
   const providers = adminUsers.filter(u => hasRole(u, 'provider')).length;
   const drivers = adminUsers.filter(u => hasRole(u, 'driver')).length;
   const pendingApprovals = adminUsers.filter(u => u.status === 'pending').length;
+  const roleTotal = customers + providers + drivers;
+  const customerShare = roleTotal ? (customers / roleTotal) * 100 : 0;
+  const providerShare = roleTotal ? (providers / roleTotal) * 100 : 0;
+  const driverShare = roleTotal ? (drivers / roleTotal) * 100 : 0;
 
   const totalBookings = bookings.length;
   const inProgressBookings = bookings.filter(b => ['accepted', 'in_progress'].includes(b.status)).length;
@@ -214,9 +218,7 @@ export default function AdminOverview({
                 Platform daily service & delivery orders volume
               </p>
             </div>
-            <Badge variant="success" dot={false}>
-              <TrendingUp size={12} /> +24% WoW
-            </Badge>
+            <Badge variant="neutral" dot={false}>Actual daily bookings</Badge>
           </div>
 
           <div style={{ width: '100%', overflowX: 'auto' }}>
@@ -285,32 +287,23 @@ export default function AdminOverview({
             {/* Donut SVG */}
             <svg width="130" height="130" viewBox="0 0 42 42" style={{ transform: 'rotate(-90deg)' }}>
               <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#e2e8f0" strokeWidth="5" />
-              {/* Customers: ~60% */}
+              {/* Distribution is calculated from the currently loaded account records. */}
               <circle
                 cx="21" cy="21" r="15.91549430918954"
-                fill="transparent"
-                stroke="#174d3d"
-                strokeWidth="5"
-                strokeDasharray="60 40"
-                strokeDashoffset="0"
+                fill="transparent" stroke="#174d3d" strokeWidth="5"
+                strokeDasharray={`${customerShare} ${100 - customerShare}`} strokeDashoffset="0"
               />
-              {/* Providers: ~25% */}
               <circle
                 cx="21" cy="21" r="15.91549430918954"
-                fill="transparent"
-                stroke="#d18b54"
-                strokeWidth="5"
-                strokeDasharray="25 75"
-                strokeDashoffset="-60"
+                fill="transparent" stroke="#d18b54" strokeWidth="5"
+                strokeDasharray={`${providerShare} ${100 - providerShare}`}
+                strokeDashoffset={-customerShare}
               />
-              {/* Drivers: ~15% */}
               <circle
                 cx="21" cy="21" r="15.91549430918954"
-                fill="transparent"
-                stroke="#059669"
-                strokeWidth="5"
-                strokeDasharray="15 85"
-                strokeDashoffset="-85"
+                fill="transparent" stroke="#059669" strokeWidth="5"
+                strokeDasharray={`${driverShare} ${100 - driverShare}`}
+                strokeDashoffset={-(customerShare + providerShare)}
               />
             </svg>
 

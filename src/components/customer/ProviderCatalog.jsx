@@ -46,41 +46,50 @@ export default function ProviderCatalog({
   const [selectedProviderDetail, setSelectedProviderDetail] = useState(null);
 
   // Filter and sort logic
-  const filteredProviders = useMemo(() => {
+  const { filteredProviders, showingOutsideRadius } = useMemo(() => {
     let list = [...providers];
+    let outsideRadiusFallback = false;
 
-    // Rating filter
+    // Providers without a published rating must not be treated as 5-star.
     if (minRating > 0) {
-      list = list.filter(p => (Number(p.rating) || 5) >= minRating);
+      list = list.filter(p => p.rating != null && Number.isFinite(Number(p.rating)) && Number(p.rating) >= minRating);
     }
 
-    // Price filter
-    const getNum = (str) => Number(String(str || '').replace(/[^\d]/g, '')) || 0;
+    const getNum = (str) => Number(String(str || '').replace(/[^\\d]/g, '')) || 0;
     list = list.filter(p => {
       const pPrice = getNum(p.baseCharge);
       return pPrice <= maxPrice || maxPrice >= 10000;
     });
 
-    // Distance filter
+    // Keep the catalog useful when the selected radius has no matches, but
+    // make the fallback explicit and rank those alternatives by proximity.
     if (providers.some(p => p.distanceKm != null)) {
-      const withinRadius = list.filter(p => p.distanceKm == null || p.distanceKm <= maxDistance);
-      // If there are providers within the chosen radius, show them.
-      // Otherwise, keep the island-wide list sorted by distance so the customer is never left empty!
+      const withinRadius = list.filter(p => p.distanceKm == null || Number(p.distanceKm) <= maxDistance);
       if (withinRadius.length > 0) {
         list = withinRadius;
+      } else if (list.some(p => p.distanceKm != null)) {
+        outsideRadiusFallback = true;
+        list.sort((a, b) => {
+          const distanceA = a.distanceKm != null && Number.isFinite(Number(a.distanceKm)) ? Number(a.distanceKm) : Number.POSITIVE_INFINITY;
+          const distanceB = b.distanceKm != null && Number.isFinite(Number(b.distanceKm)) ? Number(b.distanceKm) : Number.POSITIVE_INFINITY;
+          return distanceA - distanceB;
+        });
       }
     }
 
-    // Sorting
     if (sortBy === 'rating') {
       list.sort((a, b) => (Number(b.rating) || 0) - (Number(a.rating) || 0));
     } else if (sortBy === 'price') {
       list.sort((a, b) => getNum(a.baseCharge) - getNum(b.baseCharge));
     } else if (sortBy === 'distance') {
-      list.sort((a, b) => (Number(a.distanceKm) || 99) - (Number(b.distanceKm) || 99));
+      list.sort((a, b) => {
+        const distanceA = a.distanceKm != null && Number.isFinite(Number(a.distanceKm)) ? Number(a.distanceKm) : Number.POSITIVE_INFINITY;
+        const distanceB = b.distanceKm != null && Number.isFinite(Number(b.distanceKm)) ? Number(b.distanceKm) : Number.POSITIVE_INFINITY;
+        return distanceA - distanceB;
+      });
     }
 
-    return list;
+    return { filteredProviders: list, showingOutsideRadius: outsideRadiusFallback };
   }, [providers, sortBy, minRating, maxPrice, maxDistance]);
 
   const catalogTitle = selectedCategory
@@ -183,6 +192,13 @@ export default function ProviderCatalog({
           </div>
         )}
 
+        {showingOutsideRadius && !isLoading && (
+          <div className="geofence-banner geofence-banner--fallback" role="status" aria-live="polite">
+            <MapPin size={14} aria-hidden="true" />
+            <span>No providers were found within {maxDistance} km. Showing the nearest available providers outside your selected radius.</span>
+          </div>
+        )}
+
         {/* Provider Cards Grid / Loading Skeletons */}
         {isLoading ? (
           <div className="providers-grid">
@@ -223,7 +239,7 @@ export default function ProviderCatalog({
                           onClick={() => setSelectedProviderDetail(provider)}
                           title="Click to view details & services"
                         >
-                          <Avatar name={provider.fullName} size="md" isOnline={true} />
+                          <Avatar name={provider.fullName} size="md" isOnline={provider.isOnline === true} />
                           <div className="provider-name-block">
                             <b className="provider-name">{provider.fullName}</b>
                             <span className="provider-category-tag">{serviceTitle}</span>
@@ -246,7 +262,7 @@ export default function ProviderCatalog({
                         {provider.distanceKm != null && (
                           <div className="provider-meta-item distance-badge">
                             <Navigation size={13} />
-                            <span>{provider.distanceKm} km away · ~{provider.etaMinutes || 25} mins</span>
+                            <span>{provider.distanceKm} km away{Number.isFinite(Number(provider.etaMinutes)) && Number(provider.etaMinutes) > 0 ? ` · ~${provider.etaMinutes} mins` : ''}</span>
                           </div>
                         )}
 

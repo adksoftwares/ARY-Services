@@ -24,6 +24,14 @@ export default function AdminDispatch({
   const [autoRefresh, setAutoRefresh] = useState(true);
   const drivers = dispatchSnapshot.drivers || [];
   const activeJobs = dispatchSnapshot.activeJobs || [];
+  const driversWithCoordinates = drivers.filter(driver => {
+    const lat = Number(driver.lat);
+    const lng = Number(driver.lng);
+    return driver.lat !== null && driver.lat !== undefined && driver.lat !== '' &&
+      driver.lng !== null && driver.lng !== undefined && driver.lng !== '' &&
+      Number.isFinite(lat) && Number.isFinite(lng) &&
+      lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+  });
 
   const summary = dispatchSnapshot.summary || {
     onlineDrivers: drivers.length,
@@ -81,7 +89,7 @@ export default function AdminDispatch({
                 Live Dispatch & Fleet Telematics Monitor
               </h3>
               <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: 'var(--color-neutral-600, #475569)' }}>
-                Real-time telematics of active drivers, GPS coordinates, and mobility missions across Sri Lanka.
+                Dispatch snapshot of drivers and active mobility missions. Location markers appear only when valid GPS coordinates are available.
               </p>
             </div>
           </div>
@@ -161,11 +169,11 @@ export default function AdminDispatch({
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <Compass size={18} color="var(--color-brand-600, #174d3d)" />
               <b style={{ fontSize: '0.95rem', color: 'var(--color-text, #0f172a)' }}>
-                Colombo & Western Province Radar Grid
+                Driver Location Plot (Colombo-centred)
               </b>
             </div>
-            <Badge variant="brand" dot={true}>
-              Real-Time Telematics
+            <Badge variant="neutral" dot={false}>
+              Schematic GPS Plot
             </Badge>
           </div>
 
@@ -191,13 +199,13 @@ export default function AdminDispatch({
               </text>
 
               {/* Plotted Online Drivers */}
-              {drivers.length === 0 ? (
+              {driversWithCoordinates.length === 0 ? (
                 <text x="250" y="180" fill="#719b8c" fontSize="12" textAnchor="middle">
-                  No online drivers broadcasting GPS
+                  No valid GPS coordinates available
                 </text>
               ) : (
-                drivers.map((d, idx) => {
-                  const pt = projectToSvg(d.lat || centerLat + (idx * 0.01 - 0.02), d.lng || centerLng + (idx * 0.015 - 0.02));
+                driversWithCoordinates.map((d, idx) => {
+                  const pt = projectToSvg(Number(d.lat), Number(d.lng));
 
                   return (
                     <g key={d.driverId || d.id || idx}>
@@ -257,7 +265,9 @@ export default function AdminDispatch({
                       Networks: {(d.networks || ['Ride', 'Delivery']).join(', ')}
                     </div>
                     <div style={{ fontSize: '0.72rem', color: 'var(--color-brand-700, #174d3d)', marginTop: 2 }}>
-                      GPS: {d.lat?.toFixed(4)}, {d.lng?.toFixed(4)}
+                      GPS: {d.lat !== null && d.lat !== undefined && d.lng !== null && d.lng !== undefined && Number.isFinite(Number(d.lat)) && Number.isFinite(Number(d.lng))
+                        ? `${Number(d.lat).toFixed(4)}, ${Number(d.lng).toFixed(4)}`
+                        : 'Coordinates unavailable'}
                     </div>
                   </div>
 
@@ -312,13 +322,13 @@ export default function AdminDispatch({
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.82rem' }}>
                         <MapPin size={13} color="var(--color-brand-600, #174d3d)" />
-                        <span>{job.pickupAddress || 'Colombo'}</span>
+                        <span>{job.pickupAddress || 'Pickup address unavailable'}</span>
                       </div>
                     </td>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.82rem' }}>
                         <Flag size={13} color="#dc2626" />
-                        <span>{job.destinationAddress || 'Colombo'}</span>
+                        <span>{job.destinationAddress || 'Destination unavailable'}</span>
                       </div>
                     </td>
                     <td>

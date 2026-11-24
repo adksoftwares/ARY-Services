@@ -63,21 +63,27 @@ export default function ProviderOverview({
         </div>
 
         <div className="provider-quick-toggles">
-          <button
-            type="button"
-            className={`availability-toggle-btn ${isAvailable ? 'available' : 'paused'}`}
-            onClick={onToggleAvailability}
-            title={isAvailable ? 'Currently taking new customer bookings' : 'Bookings paused'}
-          >
-            <span style={{
-              width: 8,
-              height: 8,
-              borderRadius: '50%',
-              background: isAvailable ? 'var(--color-success-600, #059669)' : 'var(--color-neutral-400, #94a3b8)',
-              display: 'inline-block'
-            }} />
-            {isAvailable ? 'Accepting New Jobs' : 'Bookings Paused'}
-          </button>
+          <div className="provider-availability-control">
+            <button
+              type="button"
+              className={`availability-toggle-btn ${isAvailable ? 'available' : 'paused'}`}
+              onClick={onToggleAvailability}
+              aria-pressed={isAvailable}
+              title="This is a local dashboard preference and does not change public booking availability."
+            >
+              <span style={{
+                width: 8,
+                height: 8,
+                borderRadius: '50%',
+                background: isAvailable ? 'var(--color-success-600, #059669)' : 'var(--color-neutral-400, #94a3b8)',
+                display: 'inline-block'
+              }} />
+              {isAvailable ? 'Local preference: Accepting' : 'Local preference: Paused'}
+            </button>
+            <small className="provider-availability-note">
+              Saved on this device only. It does not change public availability.
+            </small>
+          </div>
         </div>
       </div>
 

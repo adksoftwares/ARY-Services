@@ -42,6 +42,26 @@ import ProviderProfile from './ProviderProfile';
 
 let sharedAudioCtx = null;
 
+function readLocalPreference(key, fallback = true) {
+  try {
+    if (typeof window === 'undefined') return fallback;
+    const stored = window.localStorage.getItem(key);
+    return stored === null ? fallback : stored !== 'false';
+  } catch {
+    return fallback;
+  }
+}
+
+function saveLocalPreference(key, value) {
+  try {
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(key, String(value));
+    }
+  } catch {
+    // Preferences remain active for the current session if storage is unavailable.
+  }
+}
+
 function getOrCreateAudioContext() {
   try {
     if (typeof window === 'undefined') return null;
@@ -110,16 +130,10 @@ export default function ProviderDashboard({
   const [claimingJobId, setClaimingJobId] = useState(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Sound, vibration, and availability state persisted in localStorage
-  const [soundEnabled, setSoundEnabled] = useState(() => {
-    return typeof localStorage !== 'undefined' ? localStorage.getItem('ary_provider_sound') !== 'false' : true;
-  });
-  const [vibrationEnabled, setVibrationEnabled] = useState(() => {
-    return typeof localStorage !== 'undefined' ? localStorage.getItem('ary_provider_vibration') !== 'false' : true;
-  });
-  const [isAvailable, setIsAvailable] = useState(() => {
-    return typeof localStorage !== 'undefined' ? localStorage.getItem('ary_provider_available') !== 'false' : true;
-  });
+  // Sound, vibration and the local dashboard preference are device-scoped.
+  const [soundEnabled, setSoundEnabled] = useState(() => readLocalPreference('ary_provider_sound'));
+  const [vibrationEnabled, setVibrationEnabled] = useState(() => readLocalPreference('ary_provider_vibration'));
+  const [isAvailable, setIsAvailable] = useState(() => readLocalPreference('ary_provider_available'));
 
   const isGrocery = currentUser?.category === 'grocery-products';
   const pendingRequests = useMemo(() => bookings.filter(b => b.status === 'requested'), [bookings]);
@@ -138,22 +152,24 @@ export default function ProviderDashboard({
     getOrCreateAudioContext();
     const next = !soundEnabled;
     setSoundEnabled(next);
-    localStorage.setItem('ary_provider_sound', String(next));
+    saveLocalPreference('ary_provider_sound', next);
     if (next) playAlertChime();
   }
 
   function toggleVibration() {
     const next = !vibrationEnabled;
     setVibrationEnabled(next);
-    localStorage.setItem('ary_provider_vibration', String(next));
+    saveLocalPreference('ary_provider_vibration', next);
     if (next) triggerHapticVibration();
   }
 
   function toggleAvailability() {
     const next = !isAvailable;
     setIsAvailable(next);
-    localStorage.setItem('ary_provider_available', String(next));
-    onSetNotice?.(next ? 'Status set to Accepting Bookings.' : 'Status set to Paused.');
+    saveLocalPreference('ary_provider_available', next);
+    onSetNotice?.(next
+      ? 'Local dashboard preference updated to accepting. Public availability is not changed by this setting.'
+      : 'Local dashboard preference updated to paused. Public availability is not changed by this setting.');
   }
 
   // Fetch reviews when on reviews tab or overview
@@ -324,6 +340,7 @@ export default function ProviderDashboard({
                 <button
                   type="button"
                   className={`provider-nav-item ${isActive ? 'active' : ''}`}
+                  aria-current={isActive ? 'page' : undefined}
                   onClick={() => handleNavigateTab(item.id)}
                 >
                   <Icon size={17} />
@@ -441,6 +458,7 @@ export default function ProviderDashboard({
         <button
           type="button"
           className={`provider-bottom-tab ${activeTab === 'overview' ? 'active' : ''}`}
+          aria-current={activeTab === 'overview' ? 'page' : undefined}
           onClick={() => handleNavigateTab('overview')}
         >
           <LayoutDashboard size={20} />
@@ -450,6 +468,7 @@ export default function ProviderDashboard({
         <button
           type="button"
           className={`provider-bottom-tab ${activeTab === 'jobs' ? 'active' : ''}`}
+          aria-current={activeTab === 'jobs' ? 'page' : undefined}
           onClick={() => handleNavigateTab('jobs')}
         >
           <Briefcase size={20} />
@@ -462,6 +481,7 @@ export default function ProviderDashboard({
         <button
           type="button"
           className={`provider-bottom-tab ${activeTab === 'wallet' ? 'active' : ''}`}
+          aria-current={activeTab === 'wallet' ? 'page' : undefined}
           onClick={() => handleNavigateTab('wallet')}
         >
           <Wallet size={20} />
@@ -472,6 +492,7 @@ export default function ProviderDashboard({
           <button
             type="button"
             className={`provider-bottom-tab ${activeTab === 'orders' ? 'active' : ''}`}
+            aria-current={activeTab === 'orders' ? 'page' : undefined}
             onClick={() => handleNavigateTab('orders')}
           >
             <ShoppingBag size={20} />
@@ -481,6 +502,7 @@ export default function ProviderDashboard({
           <button
             type="button"
             className={`provider-bottom-tab ${activeTab === 'services' ? 'active' : ''}`}
+            aria-current={activeTab === 'services' ? 'page' : undefined}
             onClick={() => handleNavigateTab('services')}
           >
             <Layers size={20} />

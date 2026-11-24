@@ -707,3 +707,16 @@
 [data-theme="dark"] .provider-urgent-meta span {
   color: #cbd5e1 !important;
 }
+
+.provider-availability-control {
+  display: grid;
+  justify-items: start;
+  gap: 6px;
+  min-width: 0;
+}
+.provider-availability-note {
+  max-width: 260px;
+  color: var(--color-neutral-500, #64748b);
+  font-size: 0.72rem;
+  line-height: 1.4;
+}

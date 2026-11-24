@@ -396,6 +396,7 @@ export default function AdminWorkspace({
                 key={item.id}
                 type="button"
                 className={`admin-nav-item ${isActive ? 'active' : ''}`}
+                aria-current={isActive ? 'page' : undefined}
                 onClick={() => {
                   setActiveTab(item.id);
                   setSidebarOpen(false);
@@ -554,6 +555,7 @@ export default function AdminWorkspace({
             <AdminUsers
               adminUsers={adminUsers}
               isLoadingUsers={isLoadingUsers}
+              initialSearchQuery={globalSearch}
               onRefresh={fetchAdminUsers}
               onUpdateStatus={handleUpdateUserStatus}
               onDeleteUser={handleDeleteUser}
