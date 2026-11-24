@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import {
   MapPin,
   Star,
-  ShieldCheck,
   CheckCircle2,
   Calendar,
   Clock,
@@ -39,9 +38,12 @@ export default function ProviderDetailModal({
   ];
   const selectedService = services.find((service, index) => (service.id || `service-${index}`) === selectedServiceId) || services[0];
   const selectedServiceKey = selectedService ? (selectedService.id || `service-${services.indexOf(selectedService)}`) : '';
-  const reviewCount = Number(provider.reviewCount) || 0;
-  const rating = reviewCount > 0 && provider.rating != null ? Number(provider.rating) : null;
-  const experienceYears = provider.experienceYears != null ? Number(provider.experienceYears) : null;
+  const reviewCountValue = Number(provider.reviewCount);
+  const reviewCount = Number.isFinite(reviewCountValue) && reviewCountValue > 0 ? reviewCountValue : 0;
+  const ratingValue = Number(provider.rating);
+  const rating = reviewCount > 0 && provider.rating != null && Number.isFinite(ratingValue) && ratingValue >= 0 && ratingValue <= 5 ? ratingValue : null;
+  const experienceValue = Number(provider.experienceYears);
+  const experienceYears = provider.experienceYears != null && Number.isFinite(experienceValue) && experienceValue >= 0 ? experienceValue : null;
   const operatingMode = provider.operatingMode === 'shop' ? 'Shop-based' : provider.operatingMode === 'online' ? 'Online service' : provider.operatingMode === 'mobile' ? 'Mobile / on-location' : 'Not specified';
 
   return (
@@ -89,10 +91,6 @@ export default function ProviderDetailModal({
             <span className="highlight-label">Starting Rate</span>
             <b>{selectedService?.baseCharge ? `LKR ${Number(selectedService.baseCharge).toLocaleString('en-LK')}` : provider.baseCharge || 'Contact for rate'}</b>
           </div>
-          <div className="highlight-pill">
-            <span className="highlight-label">Warranty</span>
-            <b>14-Day ARY</b>
-          </div>
           {provider.distanceKm != null && (
             <div className="highlight-pill">
               <span className="highlight-label">Proximity</span>
@@ -118,7 +116,13 @@ export default function ProviderDetailModal({
                   onClick={() => setSelectedServiceId(serviceKey)}
                   role="button"
                   tabIndex={0}
-                  onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') setSelectedServiceId(serviceKey); }}
+                  aria-pressed={isSelected}
+                  onKeyDown={event => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      setSelectedServiceId(serviceKey);
+                    }
+                  }}
                 >
                   <div className="service-info-left">
                     <b className="service-item-name">{srv.serviceName}</b>
@@ -135,12 +139,11 @@ export default function ProviderDetailModal({
           </div>
         </div>
 
-        {/* Workmanship Guarantee Banner */}
+        {/* Keep booking and payment terms transparent; do not imply unsupported guarantees. */}
         <div className="warranty-callout-card">
-          <ShieldCheck size={20} className="warranty-icon" />
           <div>
-            <b>14-Day ARY Quality Guarantee</b>
-            <p>Every booking comes with our escrow safety and 14-day warranty protection. Pay cash or escrow only after you inspect the work.</p>
+            <b>Before confirming your booking</b>
+            <p>Review the service scope, final quote, timing and payment arrangement with the provider before work begins.</p>
           </div>
         </div>
 
