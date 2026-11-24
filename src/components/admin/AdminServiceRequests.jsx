@@ -31,7 +31,6 @@ export default function AdminServiceRequests({ onNotice }) {
       setRequests(Array.isArray(data.requests) ? data.requests.filter(item => item && typeof item === 'object' && item.id !== null && item.id !== undefined && item.providerId !== null && item.providerId !== undefined) : []);
     } catch (err) {
       setError(err.message || 'Could not load provider service requests.');
-      setError(err.message || 'Could not review service request.');
       onNotice?.(`Error: ${err.message || 'Could not review service request.'}`);
     } finally {
       setLoading(false);
@@ -71,7 +70,8 @@ export default function AdminServiceRequests({ onNotice }) {
       onNotice?.(`Service "${item.serviceName || 'requested service'}" has been ${status}.`);
       await loadRequests();
     } catch (err) {
-      onNotice?.(`Error: ${err.message}`);
+      setError(err.message || 'Could not review service request.');
+      onNotice?.(`Error: ${err.message || 'Could not review service request.'}`);
     } finally {
       setBusyId('');
     }
@@ -175,7 +175,7 @@ export default function AdminServiceRequests({ onNotice }) {
                   <Button
                     variant="danger"
                     size="sm"
-                    disabled={isBusy}
+                    disabled={Boolean(busyId)}
                     onClick={() => handleReview(item, 'rejected')}
                   >
                     <XCircle size={14} /> Reject Request
@@ -184,7 +184,7 @@ export default function AdminServiceRequests({ onNotice }) {
                     variant="primary"
                     size="sm"
                     loading={isBusy}
-                    disabled={isBusy}
+                    disabled={Boolean(busyId)}
                     onClick={() => handleReview(item, 'approved')}
                   >
                     <CheckCircle2 size={14} /> Approve & Publish Service
