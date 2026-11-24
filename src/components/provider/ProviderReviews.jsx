@@ -1,6 +1,6 @@
 import React from 'react';
-import { Star, ShieldCheck, MessageSquare, ThumbsUp } from 'lucide-react';
-import { Card, Badge, RatingStars, EmptyState, Skeleton } from '../../design-system';
+import { MessageSquare } from 'lucide-react';
+import { Card, RatingStars, EmptyState, Skeleton } from '../../design-system';
 
 export default function ProviderReviews({
   reviews = [],
@@ -56,10 +56,10 @@ export default function ProviderReviews({
             fontSize: '1rem',
             marginBottom: 6
           }}>
-            <ShieldCheck size={20} /> 100% Verified Customer Reviews
+            Customer feedback
           </div>
           <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--color-neutral-600, #475569)', lineHeight: 1.6 }}>
-            Every review is tied directly to a completed and settled service booking under the 14-Day ARY Workmanship Guarantee. Clients rate your punctuality, skill, and professionalism.
+            Feedback shared by customers is shown below. Review verification and any applicable service guarantee are handled according to the booking records and ARY policy.
           </p>
         </div>
       </Card>
@@ -74,17 +74,14 @@ export default function ProviderReviews({
                   <b style={{ color: 'var(--color-neutral-900, #0f172a)', fontSize: '0.95rem' }}>
                     {r.customerName}
                   </b>
-                  <Badge variant="success" dot={false}>
-                    Verified Client
-                  </Badge>
                 </div>
                 <span style={{ fontSize: '0.78rem', color: 'var(--color-neutral-400, #94a3b8)' }}>
-                  {new Date(r.createdAt).toLocaleDateString()}
+                  {r.createdAt && Number.isFinite(Date.parse(r.createdAt)) ? new Date(r.createdAt).toLocaleDateString() : 'Date unavailable'}
                 </span>
               </div>
 
               <div style={{ marginBottom: 10 }}>
-                <RatingStars value={Number(r.rating) || 5} readOnly size={15} />
+                <RatingStars value={Number.isFinite(Number(r.rating)) && Number(r.rating) >= 1 && Number(r.rating) <= 5 ? Number(r.rating) : 0} readOnly size={15} />
               </div>
 
               {r.comment ? (
@@ -99,7 +96,7 @@ export default function ProviderReviews({
                 </p>
               ) : (
                 <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--color-neutral-400, #94a3b8)', fontStyle: 'italic' }}>
-                  Client gave a {r.rating}-star rating without additional comments.
+                  Client left a rating without additional comments.
                 </p>
               )}
             </Card>
