@@ -21,7 +21,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE } from '../../config';
 import { subscribeToAppEvents } from '../../utils/events';
-import { Button, Input, Select, Badge, SegmentedControl, Card, Stepper, ConfirmDialog } from '../../design-system';
+import { Button, Input, Select, Badge, SegmentedControl, Card, Stepper, ConfirmDialog, EmptyState } from '../../design-system';
 
 export default function MobilityServices({ onNotice }) {
   const { currentUser, openAuthModal } = useAuth();
@@ -408,7 +408,7 @@ export default function MobilityServices({ onNotice }) {
       </div>
 
       {/* Active Requests Feed with Live Status Stepper */}
-      {currentUser?.token && myJobs.length > 0 && (
+      {currentUser?.token && (
         <section className="active-mobility-feed" aria-labelledby="active-mobility-title">
           <div className="section-heading" style={{ marginTop: 'var(--space-8)' }}>
             <div>
@@ -426,6 +426,7 @@ export default function MobilityServices({ onNotice }) {
             </div>
           )}
 
+          {myJobs.length > 0 ? (
           <div className="mobility-jobs-list">
             {myJobs.map(job => {
               const isAssigned = Boolean(job.driverName);
@@ -543,6 +544,9 @@ export default function MobilityServices({ onNotice }) {
               );
             })}
           </div>
+          ) : !jobsError ? (
+            <EmptyState icon={CarFront} title="No ride or delivery requests yet" description="Your submitted ride, food delivery and parcel requests will appear here." />
+          ) : null}
         </section>
       )}
 
