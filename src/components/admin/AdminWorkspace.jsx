@@ -52,11 +52,13 @@ export default function AdminWorkspace({
   // Platform state
   const [allBookings, setAllBookings] = useState([]);
   const [isLoadingBookings, setIsLoadingBookings] = useState(false);
+  const [bookingsError, setBookingsError] = useState('');
   const [arbitratingId, setArbitratingId] = useState(null);
   const [payoutResult, setPayoutResult] = useState(null);
   const [isSettling, setIsSettling] = useState(false);
   const [dispatchSnapshot, setDispatchSnapshot] = useState({ drivers: [], activeJobs: [], summary: {} });
   const [dispatchLoading, setDispatchLoading] = useState(false);
+  const [dispatchError, setDispatchError] = useState('');
   const [auditEvents, setAuditEvents] = useState([]);
 
   const isAdmin = currentUser?.accountType === 'admin';
@@ -69,11 +71,13 @@ export default function AdminWorkspace({
       const res = await fetch(`${API_BASE}/bookings`, {
         headers: { Authorization: `Bearer ${currentUser.token}` }
       });
-      if (res.ok) {
-        const data = await res.json();
-        setAllBookings(data.bookings || []);
-      }
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Could not load bookings.');
+      setAllBookings(Array.isArray(data.bookings) ? data.bookings.filter(booking => booking && typeof booking === 'object') : []);
+      setBookingsError('');
     } catch (e) {
+      const message = e.message || 'Could not load bookings.';
+      setBookingsError(message);
       console.warn('Could not load bookings:', e);
     } finally {
       setIsLoadingBookings(false);
@@ -88,16 +92,18 @@ export default function AdminWorkspace({
       const res = await fetch(`${API_BASE}/admin/driver-dispatch`, {
         headers: { Authorization: `Bearer ${currentUser.token}` }
       });
-      if (res.ok) {
-        const data = await res.json();
-        setDispatchSnapshot({
-          drivers: data.drivers || [],
-          activeJobs: data.activeJobs || [],
-          summary: data.summary || {}
-        });
-      }
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Could not load dispatch information.');
+      setDispatchSnapshot({
+        drivers: Array.isArray(data.drivers) ? data.drivers.filter(driver => driver && typeof driver === 'object') : [],
+        activeJobs: Array.isArray(data.activeJobs) ? data.activeJobs.filter(job => job && typeof job === 'object') : [],
+        summary: data.summary && typeof data.summary === 'object' ? data.summary : {}
+      });
+      setDispatchError('');
     } catch (e) {
-      console.warn('Could not load dispatch telemetry:', e);
+      const message = e.message || 'Could not load dispatch information.';
+      setDispatchError(message);
+      console.warn('Could not load dispatch information:', e);
     } finally {
       setDispatchLoading(false);
     }
@@ -346,9 +352,9 @@ export default function AdminWorkspace({
     { id: 'applications', label: 'Applications Queue', icon: ShieldCheck, count: pendingUsersCount, badgeType: 'warning' },
     { id: 'services', label: 'Service Requests', icon: BriefcaseBusiness },
     { id: 'categories', label: 'Marketplace Categories', icon: Layers, count: services.length },
-    { id: 'disputes', label: 'Disputes & Escrow', icon: Scale, count: disputedCount, badgeType: 'danger' },
-    { id: 'payouts', label: 'CEFT Settlement', icon: Banknote },
-    { id: 'dispatch', label: 'Dispatch Telematics', icon: Radio, count: dispatchSnapshot.summary?.onlineDrivers ?? dispatchSnapshot.drivers?.length ?? 0, badgeType: 'brand' },
+    { id: 'disputes', label: 'Disputes', icon: Scale, count: disputedCount, badgeType: 'danger' },
+    { id: 'payouts', label: 'Manual Payouts', icon: Banknote },
+    { id: 'dispatch', label: 'Driver Dispatch', icon: Radio, count: dispatchSnapshot.summary?.onlineDrivers ?? dispatchSnapshot.drivers?.length ?? 0, badgeType: 'brand' },
     { id: 'notifications', label: 'System Audit Log', icon: Bell }
   ];
 
@@ -542,6 +548,18 @@ export default function AdminWorkspace({
 
         {/* 3. Page Content Area */}
         <main className="admin-page-container">
+          {(activeTab === 'overview' || activeTab === 'disputes' || activeTab === 'payouts') && bookingsError && (
+            <div role="alert" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', padding: '12px 14px', marginBottom: 14, border: '1px solid #fecaca', borderRadius: 10, background: '#fef2f2', color: '#991b1b' }}>
+              <span>Booking data could not be refreshed: {bookingsError}. Previously loaded records may be shown.</span>
+              <Button size="sm" variant="outline" onClick={fetchBookings}>Retry</Button>
+            </div>
+          )}
+          {(activeTab === 'overview' || activeTab === 'dispatch') && dispatchError && (
+            <div role="alert" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', padding: '12px 14px', marginBottom: 14, border: '1px solid #fecaca', borderRadius: 10, background: '#fef2f2', color: '#991b1b' }}>
+              <span>Dispatch data could not be refreshed: {dispatchError}. Previously loaded records may be shown.</span>
+              <Button size="sm" variant="outline" onClick={fetchDispatchSnapshot}>Retry</Button>
+            </div>
+          )}
           {activeTab === 'overview' && (
             <AdminOverview
               adminUsers={adminUsers}
