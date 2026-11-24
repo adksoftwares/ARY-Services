@@ -29,10 +29,9 @@ export default function ProviderOverview({
   isAvailable = true,
   onToggleAvailability
 }) {
-  const safeBookings = (Array.isArray(bookings) ? bookings : []).filter(booking => booking && typeof booking === 'object');
+  const safeBookings = (Array.isArray(bookings) ? bookings : []).filter(booking => booking && typeof booking === 'object' && booking.id !== null && booking.id !== undefined && String(booking.id).trim() !== '');
   const pendingRequests = safeBookings.filter(b => b.status === 'requested');
   const activeJobs = safeBookings.filter(b => ['accepted', 'in_progress'].includes(b.status));
-  const completedBookings = safeBookings.filter(b => b.status === 'completed');
   const upcomingJobs = safeBookings
     .filter(b => ['requested', 'accepted', 'in_progress'].includes(b.status))
     .slice(0, 5);
@@ -58,11 +57,11 @@ export default function ProviderOverview({
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
               <h1 className="provider-heading-name">{currentUser?.fullName}</h1>
               <Badge variant="success" dot={false}>
-                <ShieldCheck size={13} /> Verified Partner
+                <ShieldCheck size={13} /> Approved Provider
               </Badge>
             </div>
             <span className="provider-category-subtitle">
-              {currentUser?.categoryName || 'Professional Service Provider'} · {currentUser?.location || 'Colombo, Sri Lanka'}
+              {currentUser?.categoryName || 'Professional Service Provider'} · {currentUser?.location || 'Location not provided'}
             </span>
           </div>
         </div>
@@ -116,7 +115,7 @@ export default function ProviderOverview({
                   {pendingRequests.length} Urgent Booking Request{pendingRequests.length > 1 ? 's' : ''} Awaiting Response!
                 </b>
                 <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: 'var(--color-danger-800, #7f1d1d)' }}>
-                  Review each request and respond when you are ready. No response-time ranking guarantee is applied here.
+                  Review each request and respond based on your availability.
                 </p>
               </div>
             </div>
