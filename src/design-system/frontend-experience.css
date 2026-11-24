@@ -74,3 +74,13 @@ img, video, canvas { max-width: 100%; }
 @media (prefers-reduced-motion: reduce) {
   .connection-banner { animation: none !important; }
 }
+
+/* Clear fallback state when the selected service radius has no matches. */
+.geofence-banner--fallback {
+  align-items: flex-start;
+  background: var(--surface-muted, #f5f7f4);
+  border: 1px solid var(--border-subtle, #dce5dc);
+  color: var(--text-secondary, #46534a);
+  line-height: 1.5;
+}
+.geofence-banner--fallback svg { flex: 0 0 auto; margin-top: 2px; }
