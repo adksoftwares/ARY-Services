@@ -49,8 +49,9 @@ export default function ProviderJobs({
   const [actionBusyId, setActionBusyId] = useState('');
   const [actionError, setActionError] = useState({});
 
-  const broadcastJobs = useMemo(() => bookings.filter(b => b.status === 'broadcast_pool'), [bookings]);
-  const directBookings = useMemo(() => bookings.filter(b => b.status !== 'broadcast_pool'), [bookings]);
+  const safeBookings = useMemo(() => (Array.isArray(bookings) ? bookings : []).filter(Boolean), [bookings]);
+  const broadcastJobs = useMemo(() => safeBookings.filter(b => b.status === 'broadcast_pool'), [safeBookings]);
+  const directBookings = useMemo(() => safeBookings.filter(b => b.status !== 'broadcast_pool'), [safeBookings]);
 
   const filteredBookings = useMemo(() => {
     switch (filterTab) {
@@ -69,13 +70,15 @@ export default function ProviderJobs({
   }, [filterTab, directBookings, broadcastJobs]);
 
   async function runBookingAction(bookingId, action, ...args) {
-    if (!bookingId || actionBusyId === bookingId) return;
+    if (!bookingId || typeof action !== 'function' || actionBusyId === bookingId) return false;
     setActionBusyId(bookingId);
     setActionError(prev => ({ ...prev, [bookingId]: '' }));
     try {
-      await action?.(bookingId, ...args);
+      await action(bookingId, ...args);
+      return true;
     } catch (error) {
       setActionError(prev => ({ ...prev, [bookingId]: error?.message || 'This action could not be completed. Please try again.' }));
+      return false;
     } finally {
       setActionBusyId('');
     }
@@ -85,7 +88,7 @@ export default function ProviderJobs({
     e.preventDefault();
     const amountVal = quoteDrafts[booking.id] ?? booking.quote?.amount ?? booking.baseAmount;
     const amount = Number(amountVal);
-    const description = String(quoteNotes[booking.id] ?? booking.quote?.description ?? 'Service work as discussed').trim();
+    const description = String(quoteNotes[booking.id] ?? booking.quote?.description ?? '').trim();
 
     if (!Number.isSafeInteger(amount) || amount < 1 || amount > 10000000) {
       setQuoteError(prev => ({ ...prev, [booking.id]: 'Enter a valid quote between LKR 1 and 10,000,000' }));
@@ -168,7 +171,7 @@ export default function ProviderJobs({
                   {broadcastJobs.length} Open Broadcast Job{broadcastJobs.length > 1 ? 's' : ''} in Your Category
                 </b>
                 <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: 'var(--color-warning-800, #78350f)' }}>
-                  Another contractor was unavailable. Fast-track claim: Earn direct payout with 1 tap.
+                  Review the request details before claiming. Customer contact details may become available after assignment.
                 </p>
               </div>
             </div>
@@ -194,7 +197,7 @@ export default function ProviderJobs({
                 <div style={{ flex: 1, minWidth: 260 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                     <b style={{ color: 'var(--text-primary, #f8fafc)', fontSize: '0.95rem' }}>{b.categoryName || 'Service Job'}</b>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--color-neutral-500, #64748b)' }}>#{b.id.slice(-6)}</span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--color-neutral-500, #64748b)' }}>#{String(b.id || '—').slice(-6)}</span>
                     <Badge variant="success" dot={false}>{b.baseCharge || 'Quote required'}</Badge>
                   </div>
                   <div style={{ fontSize: '0.82rem', color: 'var(--color-neutral-600, #475569)', display: 'flex', gap: 14, flexWrap: 'wrap' }}>
@@ -393,14 +396,16 @@ export default function ProviderJobs({
                     borderRadius: 'var(--radius-md, 8px)'
                   }}>
                     <b style={{ fontSize: '0.85rem', color: '#1e40af' }}>
-                      Quote Awaiting Customer Decision{Date.parse(b.quote.validUntil || '') <= Date.now() ? ' (Expired)' : ''}
+                      Quote Awaiting Customer Decision{b.quote.validUntil && Number.isFinite(Date.parse(b.quote.validUntil)) && Date.parse(b.quote.validUntil) <= Date.now() ? ' (Expired)' : ''}
                     </b>
                     <p style={{ fontSize: '0.82rem', color: '#334155', margin: '4px 0' }}>
                       <b>LKR {Number(b.quote.amount).toLocaleString('en-LK')}</b> · {b.quote.description}
                     </p>
-                    <small style={{ color: '#64748b', fontSize: '0.75rem' }}>
-                      Valid until {new Date(b.quote.validUntil).toLocaleDateString()}
-                    </small>
+                    {b.quote.validUntil && Number.isFinite(Date.parse(b.quote.validUntil)) && (
+                      <small style={{ color: '#64748b', fontSize: '0.75rem' }}>
+                        Valid until {new Date(b.quote.validUntil).toLocaleDateString()}
+                      </small>
+                    )}
                   </div>
                 )}
 
@@ -420,7 +425,7 @@ export default function ProviderJobs({
 
                 {/* Quote Composer Form (Available on requested/accepted before in_progress) */}
                 {['requested', 'accepted'].includes(b.status) &&
-                  (b.quote?.status !== 'pending' || Date.parse(b.quote.validUntil || '') <= Date.now()) &&
+                  (b.quote?.status !== 'pending' || (b.quote.validUntil && Number.isFinite(Date.parse(b.quote.validUntil)) && Date.parse(b.quote.validUntil) <= Date.now())) &&
                   b.quote?.status !== 'accepted' && (
                     <form
                       onSubmit={(e) => handleQuoteSubmit(b, e)}
@@ -487,8 +492,9 @@ export default function ProviderJobs({
                   {isBroadcast ? (
                     <Button
                       variant="primary"
-                      onClick={() => onClaimJob?.(b.id)}
-                      loading={claimingJobId === b.id}
+                      onClick={() => runBookingAction(b.id, onClaimJob)}
+                      loading={claimingJobId === b.id || actionBusyId === b.id}
+                      disabled={claimingJobId === b.id || actionBusyId === b.id}
                     >
                       <Zap size={15} /> Claim This Broadcast Job
                     </Button>
@@ -574,7 +580,7 @@ export default function ProviderJobs({
         <EmptyState
           icon={AlertTriangle}
           title="No booking requests in this category"
-          description="When new customer requests arrive, they will be listed here instantly in real time."
+          description="Requests that match your services will appear here when they are available."
         />
       )}
 
