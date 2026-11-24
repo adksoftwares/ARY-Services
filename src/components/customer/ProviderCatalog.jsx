@@ -68,7 +68,7 @@ export default function ProviderCatalog({
 
     // Keep the catalog useful when the selected radius has no matches, but
     // make the fallback explicit and rank those alternatives by proximity.
-    if (providers.some(p => p.distanceKm != null)) {
+    if (safeProviders.some(p => p.distanceKm != null)) {
       const withinRadius = list.filter(p => p.distanceKm == null || Number(p.distanceKm) <= maxDistance);
       if (withinRadius.length > 0) {
         list = withinRadius;
@@ -232,14 +232,23 @@ export default function ProviderCatalog({
           <>
             <div className="providers-grid">
               {displayedProviders.map(provider => {
-                const selectedService = provider.approvedServices?.find(
-                  service => service.categorySlug === selectedCategory?.slug
+                const selectedService = (Array.isArray(provider.approvedServices) ? provider.approvedServices : []).find(
+                  service => service && service.categorySlug === selectedCategory?.slug
                 );
                 const serviceTitle = selectedService?.serviceName || provider.categoryName || selectedCategory?.name || 'General Services';
                 const operatingModeLabel = provider.operatingMode === 'shop' ? 'Shop-based' : provider.operatingMode === 'online' ? 'Online service' : provider.operatingMode === 'mobile' ? 'Mobile / on-location' : '';
-                const startingPrice = selectedService?.baseCharge
-                  ? `LKR ${Number(selectedService.baseCharge).toLocaleString('en-LK')}`
+                const servicePrice = selectedService?.baseCharge;
+                const parsedServicePrice = servicePrice == null || servicePrice === '' ? NaN : Number(String(servicePrice).replace(/[^\d.]/g, ''));
+                const startingPrice = Number.isFinite(parsedServicePrice) && parsedServicePrice >= 0
+                  ? `LKR ${parsedServicePrice.toLocaleString('en-LK')}`
                   : provider.baseCharge || 'Contact for rate';
+                const numericRating = Number(provider.rating);
+                const numericReviewCount = Number(provider.reviewCount);
+                const hasPublishedRating = Number.isFinite(numericRating) && numericRating >= 0 && numericRating <= 5 && Number.isFinite(numericReviewCount) && numericReviewCount > 0;
+                const numericDistance = Number(provider.distanceKm);
+                const hasDistance = provider.distanceKm !== null && provider.distanceKm !== undefined && Number.isFinite(numericDistance) && numericDistance >= 0;
+                const numericExperience = Number(provider.experienceYears);
+                const hasExperience = provider.experienceYears !== null && provider.experienceYears !== undefined && Number.isFinite(numericExperience) && numericExperience >= 0;
 
                 return (
                   <div key={provider.id} className="provider-card-item">
@@ -247,9 +256,7 @@ export default function ProviderCatalog({
                       {/* Top Row: Avatar & Name */}
                       <div className="provider-card-top">
                         <div
-                          className="provider-avatar-wrap clickable"
-                          onClick={() => setSelectedProviderDetail(provider)}
-                          title="Click to view details & services"
+                          className="provider-avatar-wrap"
                         >
                           <Avatar name={provider.fullName} size="md" isOnline={provider.isOnline === true} />
                           <div className="provider-name-block">
@@ -271,20 +278,20 @@ export default function ProviderCatalog({
 
                         {operatingModeLabel && <div className="provider-meta-item"><Briefcase size={14} className="meta-icon" /><span>{operatingModeLabel}</span></div>}
 
-                        {provider.distanceKm != null && (
+                        {hasDistance && (
                           <div className="provider-meta-item distance-badge">
                             <Navigation size={13} />
-                            <span>{provider.distanceKm} km away{Number.isFinite(Number(provider.etaMinutes)) && Number(provider.etaMinutes) > 0 ? ` · ~${provider.etaMinutes} mins` : ''}</span>
+                            <span>{numericDistance.toFixed(1)} km away{Number.isFinite(Number(provider.etaMinutes)) && Number(provider.etaMinutes) > 0 ? ` · ~${Math.round(Number(provider.etaMinutes))} mins` : ''}</span>
                           </div>
                         )}
 
                         <div className="provider-meta-item">
                           <Star size={14} className="meta-star" fill={provider.reviewCount > 0 ? 'currentColor' : 'none'} />
                           <span>
-                            {provider.reviewCount > 0 && provider.rating != null
-                              ? <><b>{Number(provider.rating).toFixed(1)}</b> ({provider.reviewCount} reviews)</>
+                            {hasPublishedRating
+                              ? <><b>{numericRating.toFixed(1)}</b> ({Math.floor(numericReviewCount)} reviews)</>
                               : 'No customer reviews yet'}
-                            {provider.experienceYears != null ? ` · ${provider.experienceYears} yrs experience` : ''}
+                            {hasExperience ? ` · ${numericExperience} yrs experience` : ''}
                           </span>
                         </div>
 
@@ -293,10 +300,6 @@ export default function ProviderCatalog({
                         </div>
                       </div>
 
-                      <div className="warranty-guarantee-badge">
-                        <ShieldCheck size={14} />
-                        <span>14-Day ARY Workmanship Guarantee</span>
-                      </div>
                     </div>
 
                     {/* Card Actions */}
