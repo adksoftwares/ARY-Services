@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { BrowserRouter, Link, useNavigate } from 'react-router-dom';
 import { LogIn, ShieldCheck } from 'lucide-react';
 import { AuthProvider, useAuth } from '../../context/AuthContext';
@@ -25,11 +25,14 @@ function AdminPortal() {
   const [services, setServices] = useState(initialServices);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
   const [notice, setNotice] = useState('');
+  const usersRequestRef = useRef(0);
   const isAdmin = currentUser?.accountType === 'admin';
 
   const fetchAdminUsers = useCallback(async () => {
+    const requestId = ++usersRequestRef.current;
     if (!currentUser?.token || currentUser.accountType !== 'admin') {
       setAdminUsers([]);
+      setIsLoadingUsers(false);
       return;
     }
     setIsLoadingUsers(true);
@@ -39,15 +42,20 @@ function AdminPortal() {
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || 'Could not load registered accounts.');
-      setAdminUsers(data.users || []);
+      if (requestId !== usersRequestRef.current) return;
+      if (!Array.isArray(data.users)) throw new Error('The server returned an unexpected user list. Please refresh.');
+      setAdminUsers(data.users.filter(user => user && typeof user === 'object' && user.id !== null && user.id !== undefined));
     } catch (error) {
-      setNotice(error.message || 'Could not load registered accounts.');
+      if (requestId === usersRequestRef.current) setNotice(error.message || 'Could not load registered accounts.');
     } finally {
-      setIsLoadingUsers(false);
+      if (requestId === usersRequestRef.current) setIsLoadingUsers(false);
     }
-  }, [currentUser]);
+  }, [currentUser?.token, currentUser?.accountType]);
 
-  useEffect(() => { fetchAdminUsers(); }, [fetchAdminUsers]);
+  useEffect(() => {
+    fetchAdminUsers();
+    return () => { usersRequestRef.current += 1; };
+  }, [fetchAdminUsers]);
 
   useEffect(() => {
     if (!isAdmin) return undefined;

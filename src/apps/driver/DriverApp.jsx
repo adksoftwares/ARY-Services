@@ -90,7 +90,7 @@ function DriverPortal() {
           {isDriver ? (
             <div className="user-profile">
               <NotificationCenter/>
-              <span className="user-badge" title="Verified Driver">
+              <span className="user-badge" title="Driver account">
                 <UserRound size={14}/>
                 <span>{currentUser.fullName}</span>
               </span>
@@ -158,7 +158,7 @@ function DriverPortal() {
               Every journey, connected.
             </h1>
             <p style={{ color: 'var(--text-secondary, #94a3b8)', maxWidth: 540, margin: '0 auto 24px', lineHeight: 1.7, fontSize: '0.95rem' }}>
-              Sign in with your Driver account to receive nearby ride and delivery requests, enter secure handoff PINs, and track your daily earnings across Sri Lanka.
+              Sign in with your Driver account to receive nearby ride and delivery requests, use request-specific handoff details where provided, and review your completed job records.
             </p>
             <Button
               variant="primary"

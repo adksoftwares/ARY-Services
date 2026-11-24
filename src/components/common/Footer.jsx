@@ -23,14 +23,14 @@ export default function Footer() {
             <span>ARY <b>Services</b></span>
           </a>
           <p className="footer-brand-desc">
-            Sri Lanka's trusted on-demand service ecosystem connecting certified tradespeople, verified local merchants, and professional drivers with households island-wide.
+            An on-demand service marketplace connecting local service providers, grocery and retail merchants, drivers, and customers across Sri Lanka.
           </p>
           <div className="footer-trust-pills">
             <span className="trust-pill">
-              <ShieldCheck size={13} /> 14-Day Guarantee
+              <ShieldCheck size={13} /> Provider applications reviewed
             </span>
             <span className="trust-pill">
-              <Globe size={13} /> Island-wide Coverage
+              <Globe size={13} /> Service areas shown in listings
             </span>
           </div>
         </div>
@@ -60,21 +60,19 @@ export default function Footer() {
 
         {/* Col 4: 24/7 Partner & Customer Desk */}
         <div className="footer-col footer-col-support">
-          <h4 className="footer-col-title">24/7 Dispatch Desk</h4>
+          <h4 className="footer-col-title">Support</h4>
           <div className="footer-hotline-card">
             <div className="hotline-icon-box">
               <PhoneCall size={16} />
             </div>
             <div>
-              <span className="hotline-sub">Emergency & Job Hotline</span>
-              <a href="tel:0112345678" className="hotline-number">
-                011 234 5678
-              </a>
+              <span className="hotline-sub">Contact ARY Services</span>
+              <span className="hotline-number">Support details</span>
             </div>
           </div>
           <div className="footer-email-row">
             <Mail size={13} />
-            <a href="mailto:support@adksoftwares.com">support@adksoftwares.com</a>
+            <span>Contact details will be published here</span>
           </div>
         </div>
       </div>
@@ -102,7 +100,7 @@ export default function Footer() {
         </div>
 
         <div className="footer-legal-links">
-          <span className="footer-safe-badge">Verified Secure SSL</span>
+          <span className="footer-safe-badge">ARY Services</span>
           <span>&bull;</span>
           <span>Made for Sri Lanka</span>
         </div>

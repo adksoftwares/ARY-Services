@@ -333,8 +333,10 @@ function AdminPortalView({ onNotice }) {
   const isAdmin = currentUser?.accountType === 'admin';
 
   const fetchAdminUsers = useCallback(async () => {
+    const requestId = ++adminUsersRequestRef.current;
     if (!currentUser?.token || currentUser.accountType !== 'admin') {
       setAdminUsers([]);
+      setIsLoadingUsers(false);
       return;
     }
     setIsLoadingUsers(true);
@@ -344,15 +346,20 @@ function AdminPortalView({ onNotice }) {
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || 'Could not load registered accounts.');
-      setAdminUsers(data.users || []);
+      if (requestId !== adminUsersRequestRef.current) return;
+      if (!Array.isArray(data.users)) throw new Error('The server returned an unexpected user list. Please refresh.');
+      setAdminUsers(data.users.filter(user => user && typeof user === 'object' && user.id !== null && user.id !== undefined));
     } catch (error) {
-      onNotice?.(getFriendlyErrorMessage(error, 'Could not load registered accounts.'));
+      if (requestId === adminUsersRequestRef.current) onNotice?.(getFriendlyErrorMessage(error, 'Could not load registered accounts.'));
     } finally {
-      setIsLoadingUsers(false);
+      if (requestId === adminUsersRequestRef.current) setIsLoadingUsers(false);
     }
-  }, [currentUser, onNotice]);
+  }, [currentUser?.token, currentUser?.accountType, onNotice]);
 
-  useEffect(() => { fetchAdminUsers(); }, [fetchAdminUsers]);
+  useEffect(() => {
+    fetchAdminUsers();
+    return () => { adminUsersRequestRef.current += 1; };
+  }, [fetchAdminUsers]);
 
   useEffect(() => {
     if (!isAdmin) return undefined;
@@ -455,6 +462,7 @@ function CustomerWorkspace() {
   const autoDetectDoneRef = React.useRef(false);
   const providerRequestRef = React.useRef(0);
   const bookingRequestRef = React.useRef(0);
+  const adminUsersRequestRef = React.useRef(0);
 
   // Hardware Back Button Handling for Capacitor WebView & Native Android
   useEffect(() => {
