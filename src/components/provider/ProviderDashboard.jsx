@@ -136,7 +136,8 @@ export default function ProviderDashboard({
   const [isAvailable, setIsAvailable] = useState(() => readLocalPreference('ary_provider_available'));
 
   const isGrocery = currentUser?.category === 'grocery-products';
-  const pendingRequests = useMemo(() => bookings.filter(b => b.status === 'requested'), [bookings]);
+  const safeBookings = useMemo(() => (Array.isArray(bookings) ? bookings : []).filter(Boolean), [bookings]);
+  const pendingRequests = useMemo(() => safeBookings.filter(b => b.status === 'requested'), [safeBookings]);
 
   // Tab navigation helper
   const handleNavigateTab = useCallback((tabName) => {
@@ -179,8 +180,10 @@ export default function ProviderDashboard({
     try {
       const res = await fetch(`${API_BASE}/reviews/provider/${currentUser.id}`);
       if (res.ok) {
-        const data = await res.json();
-        setProviderReviews(data.reviews || []);
+        const data = await res.json().catch(() => ({}));
+        setProviderReviews(Array.isArray(data.reviews) ? data.reviews : []);
+      } else {
+        throw new Error('Could not load provider reviews.');
       }
     } catch (e) {
       console.warn('Could not fetch reviews:', e);
@@ -197,9 +200,10 @@ export default function ProviderDashboard({
         headers: { Authorization: `Bearer ${currentUser.token}` }
       });
       if (res.ok) {
-        const data = await res.json();
-        setWalletBalance(data.walletBalance || 0);
-        setLedgerEntries(data.entries || []);
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'Could not load wallet information.');
+        setWalletBalance(Number.isFinite(Number(data.walletBalance)) ? Number(data.walletBalance) : 0);
+        setLedgerEntries(Array.isArray(data.entries) ? data.entries : []);
       }
     } catch (e) {
       console.warn('Could not fetch wallet ledger:', e);
@@ -241,7 +245,7 @@ export default function ProviderDashboard({
 
   // Claim job handler
   async function handleClaimJob(jobId) {
-    if (!currentUser?.token) return;
+    if (!currentUser?.token || !jobId || claimingJobId) return;
     setClaimingJobId(jobId);
     try {
       const res = await fetch(`${API_BASE}/bookings/${jobId}/claim`, {
@@ -251,7 +255,7 @@ export default function ProviderDashboard({
           Authorization: `Bearer ${currentUser.token}`
         }
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         onSetNotice?.(data.error || 'Failed to claim job.');
       } else {
@@ -282,6 +286,7 @@ export default function ProviderDashboard({
       onRefresh?.();
     } catch (error) {
       onSetNotice?.(error.message || 'Could not send quote.');
+      throw error;
     }
   }
 
