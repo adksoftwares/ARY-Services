@@ -49,7 +49,9 @@ export default function ProviderJobs({
   const [actionBusyId, setActionBusyId] = useState('');
   const [actionError, setActionError] = useState({});
 
-  const safeBookings = useMemo(() => (Array.isArray(bookings) ? bookings : []).filter(Boolean), [bookings]);
+  const safeBookings = useMemo(() => (Array.isArray(bookings) ? bookings : []).filter(booking =>
+    booking && typeof booking === 'object' && booking.id !== null && booking.id !== undefined && String(booking.id).trim() !== ''
+  ), [bookings]);
   const broadcastJobs = useMemo(() => safeBookings.filter(b => b.status === 'broadcast_pool'), [safeBookings]);
   const directBookings = useMemo(() => safeBookings.filter(b => b.status !== 'broadcast_pool'), [safeBookings]);
 
@@ -70,7 +72,15 @@ export default function ProviderJobs({
   }, [filterTab, directBookings, broadcastJobs]);
 
   async function runBookingAction(bookingId, action, ...args) {
-    if (!bookingId || typeof action !== 'function' || actionBusyId === bookingId) return false;
+    if (bookingId === null || bookingId === undefined || String(bookingId).trim() === '') return false;
+    if (typeof action !== 'function') {
+      setActionError(prev => ({ ...prev, [bookingId]: 'This action is currently unavailable. Refresh the page and try again.' }));
+      return false;
+    }
+    if (actionBusyId) {
+      setActionError(prev => ({ ...prev, [bookingId]: 'Another booking update is already in progress. Please wait and try again.' }));
+      return false;
+    }
     setActionBusyId(bookingId);
     setActionError(prev => ({ ...prev, [bookingId]: '' }));
     try {
@@ -86,6 +96,14 @@ export default function ProviderJobs({
 
   async function handleQuoteSubmit(booking, e) {
     e.preventDefault();
+    if (!booking || booking.id === null || booking.id === undefined || String(booking.id).trim() === '') {
+      setQuoteError(prev => ({ ...prev, [booking?.id ?? 'unknown']: 'This booking is missing a valid reference. Refresh the job list before quoting.' }));
+      return;
+    }
+    if (typeof onSendQuote !== 'function') {
+      setQuoteError(prev => ({ ...prev, [booking.id]: 'Quote submission is unavailable right now. Refresh the page and try again.' }));
+      return;
+    }
     const amountVal = quoteDrafts[booking.id] ?? booking.quote?.amount ?? booking.baseAmount;
     const amount = Number(amountVal);
     const description = String(quoteNotes[booking.id] ?? booking.quote?.description ?? '').trim();
@@ -103,7 +121,7 @@ export default function ProviderJobs({
     if (quoteBusy === booking.id) return;
     setQuoteBusy(booking.id);
     try {
-      await onSendQuote?.(booking, amount, description);
+      await onSendQuote(booking, amount, description);
       setQuoteError(prev => ({ ...prev, [booking.id]: '' }));
     } catch (error) {
       setQuoteError(prev => ({ ...prev, [booking.id]: error?.message || 'Could not send the quote. Please try again.' }));
@@ -248,7 +266,7 @@ export default function ProviderJobs({
                         {b.categoryName || 'Service Request'}
                       </h3>
                       <span style={{ fontSize: '0.75rem', color: 'var(--color-neutral-500, #64748b)' }}>
-                        #{b.id.slice(-6)}
+                        #{String(b.id).slice(-6)}
                       </span>
                       <Badge variant="brand" dot={false}>
                         {b.baseCharge || 'Quote required'}
@@ -399,7 +417,7 @@ export default function ProviderJobs({
                       Quote Awaiting Customer Decision{b.quote.validUntil && Number.isFinite(Date.parse(b.quote.validUntil)) && Date.parse(b.quote.validUntil) <= Date.now() ? ' (Expired)' : ''}
                     </b>
                     <p style={{ fontSize: '0.82rem', color: '#334155', margin: '4px 0' }}>
-                      <b>LKR {Number(b.quote.amount).toLocaleString('en-LK')}</b> · {b.quote.description}
+                      <b>{Number.isFinite(Number(b.quote.amount)) && Number(b.quote.amount) >= 0 ? `LKR ${Number(b.quote.amount).toLocaleString('en-LK')}` : 'Amount unavailable'}</b> · {b.quote.description || 'Quote details unavailable'}
                     </p>
                     {b.quote.validUntil && Number.isFinite(Date.parse(b.quote.validUntil)) && (
                       <small style={{ color: '#64748b', fontSize: '0.75rem' }}>
@@ -419,7 +437,7 @@ export default function ProviderJobs({
                     fontSize: '0.85rem',
                     color: 'var(--color-brand-800, #154636)'
                   }}>
-                    ✓ Customer accepted quote: <b>LKR {Number(b.quote.amount).toLocaleString('en-LK')}</b>
+                    ✓ Customer accepted quote: <b>{Number.isFinite(Number(b.quote.amount)) && Number(b.quote.amount) >= 0 ? `LKR ${Number(b.quote.amount).toLocaleString('en-LK')}` : 'Amount unavailable'}</b>
                   </div>
                 )}
 
