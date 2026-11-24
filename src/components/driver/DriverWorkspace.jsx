@@ -54,6 +54,8 @@ export default function DriverWorkspace({ onNotice }) {
   const [error, setError] = useState('');
   const [presence, setPresence] = useState({ online: false });
   const [presenceBusy, setPresenceBusy] = useState(false);
+  const [jobActionBusy, setJobActionBusy] = useState(false);
+  const [busyJobId, setBusyJobId] = useState(null);
 
   // GPS Permission Modal
   const [gpsModalOpen, setGpsModalOpen] = useState(false);
@@ -262,6 +264,10 @@ export default function DriverWorkspace({ onNotice }) {
   }
 
   async function claimJob(id) {
+    if (!currentUser?.token || jobActionBusy) return;
+    setJobActionBusy(true);
+    setBusyJobId(id);
+    setError('');
     try {
       const response = await fetch(`${API_BASE}/driver-jobs/${encodeURIComponent(id)}/claim`, {
         method: 'POST',
@@ -273,10 +279,17 @@ export default function DriverWorkspace({ onNotice }) {
       await refresh();
     } catch (err) {
       setError(err.message || 'Could not accept this job.');
+    } finally {
+      setJobActionBusy(false);
+      setBusyJobId(null);
     }
   }
 
   async function updateStatus(id, status) {
+    if (!currentUser?.token || jobActionBusy) return;
+    setJobActionBusy(true);
+    setBusyJobId(id);
+    setError('');
     try {
       const response = await fetch(`${API_BASE}/driver-jobs/${encodeURIComponent(id)}/status`, {
         method: 'PATCH',
@@ -289,11 +302,17 @@ export default function DriverWorkspace({ onNotice }) {
       onNotice?.(status === 'completed' ? 'Trip completed! Payout credited to your balance.' : 'Job status updated.');
     } catch (err) {
       setError(err.message || 'Could not update job.');
+    } finally {
+      setJobActionBusy(false);
+      setBusyJobId(null);
     }
   }
 
   async function handleConfirmRelease(reason) {
-    if (!releaseModal.jobId) return;
+    if (!releaseModal.jobId || !currentUser?.token || jobActionBusy) return;
+    setJobActionBusy(true);
+    setBusyJobId(releaseModal.jobId);
+    setError('');
     setReleaseModal(prev => ({ ...prev, isReleasing: true }));
     try {
       const response = await fetch(`${API_BASE}/driver-jobs/${encodeURIComponent(releaseModal.jobId)}/cancel`, {
@@ -309,6 +328,9 @@ export default function DriverWorkspace({ onNotice }) {
     } catch (err) {
       setError(err.message || 'Could not release this job.');
       setReleaseModal(prev => ({ ...prev, isReleasing: false }));
+    } finally {
+      setJobActionBusy(false);
+      setBusyJobId(null);
     }
   }
 
@@ -404,7 +426,7 @@ export default function DriverWorkspace({ onNotice }) {
           type="button"
           className={`driver-giant-power-btn ${presence.online ? 'go-offline' : 'go-online'}`}
           onClick={handleToggleOnlineClick}
-          disabled={presenceBusy}
+          disabled={presenceBusy || jobActionBusy}
         >
           <Power size={20} />
           <span>{presenceBusy ? 'Connecting GPS...' : presence.online ? 'Go Offline (End Shift)' : 'GO ONLINE NOW'}</span>
@@ -507,6 +529,8 @@ export default function DriverWorkspace({ onNotice }) {
                   type="button"
                   className="driver-field-action-btn primary"
                   onClick={() => updateStatus(activeTrip.id, activeTrip.serviceType === 'ride' ? 'arrived' : 'arrived_pickup')}
+                  disabled={jobActionBusy}
+                  aria-busy={jobActionBusy && busyJobId === activeTrip.id}
                 >
                   <MapPin size={18} /> I Have Arrived at Pickup
                 </button>
@@ -514,6 +538,7 @@ export default function DriverWorkspace({ onNotice }) {
                   type="button"
                   className="driver-field-action-btn danger"
                   onClick={() => setReleaseModal({ isOpen: true, jobId: activeTrip.id, isReleasing: false })}
+                  disabled={jobActionBusy}
                 >
                   Release Job Before Pickup
                 </button>
@@ -540,6 +565,8 @@ export default function DriverWorkspace({ onNotice }) {
                 type="button"
                 className="driver-field-action-btn primary"
                 onClick={() => updateStatus(activeTrip.id, 'in_transit')}
+                disabled={jobActionBusy}
+                aria-busy={jobActionBusy && busyJobId === activeTrip.id}
               >
                 <Navigation size={18} /> Start Delivery Transit
               </button>
@@ -714,8 +741,11 @@ export default function DriverWorkspace({ onNotice }) {
                   type="button"
                   className="driver-field-action-btn primary"
                   onClick={() => claimJob(job.id)}
+                  disabled={jobActionBusy}
+                  aria-busy={jobActionBusy && busyJobId === job.id}
                 >
-                  <ArrowUpRight size={18} /> Accept Job (1-Tap)
+                  {jobActionBusy && busyJobId === job.id ? <RefreshCw size={18} className="spin" /> : <ArrowUpRight size={18} />}
+                  {jobActionBusy && busyJobId === job.id ? 'Accepting…' : 'Accept Job'}
                 </button>
               </Card>
             );
