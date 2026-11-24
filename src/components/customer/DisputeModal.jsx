@@ -7,10 +7,10 @@ import { Modal, Button, Select, Textarea } from '../../design-system';
 const PRESET_DISPUTE_REASONS = [
   'Defective parts or replacement component failure',
   'Unsatisfactory or incomplete workmanship',
-  'Appliance or installation stopped functioning within 14 days',
+  'Appliance or installation stopped functioning after the service',
   'Contractor caused incidental property damage during repair',
   'Contractor demanded unauthorized extra cash outside ARY Escrow',
-  'Other workmanship or warranty issue'
+  'Other workmanship or service issue'
 ];
 
 export default function DisputeModal({ isOpen, onClose, booking, onSuccess, onDisputeSuccess }) {
@@ -32,7 +32,7 @@ export default function DisputeModal({ isOpen, onClose, booking, onSuccess, onDi
       return;
     }
 
-    if (!details.trim() || details.trim().length < 8) {
+    if (!booking?.id || !categoryReason || !details.trim() || details.trim().length < 8) {
       setError('Please provide at least 8 characters explaining the issue for ARY administrators.');
       return;
     }
@@ -52,11 +52,12 @@ export default function DisputeModal({ isOpen, onClose, booking, onSuccess, onDi
         })
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         throw new Error(data.error || 'Failed to lodge dispute.');
       }
 
+      if (!data.dispute) throw new Error('The server did not confirm the dispute report. Please refresh before trying again.');
       if (onSuccess) onSuccess();
       if (onDisputeSuccess) onDisputeSuccess(data.dispute);
       onClose();
@@ -71,7 +72,7 @@ export default function DisputeModal({ isOpen, onClose, booking, onSuccess, onDi
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Lodge 14-Day Warranty Dispute"
+      title="Report a Booking Dispute"
       isBottomSheet={true}
       size="md"
     >
@@ -79,9 +80,9 @@ export default function DisputeModal({ isOpen, onClose, booking, onSuccess, onDi
         <div className="security-notice-box">
           <ShieldCheck size={18} />
           <div>
-            <b>ARY Customer Protection Guarantee</b>
+            <b>Booking Dispute Review</b>
             <p style={{ margin: 0, fontSize: 'var(--text-xs)' }}>
-              All verified provider jobs are covered by a 14-day workmanship guarantee. If work was not completed as agreed, administration reviews your report.
+              Share the issue and any supporting information. ARY administrators can review the report; submitting it does not guarantee a particular outcome or fixed response period.
             </p>
           </div>
         </div>
@@ -124,7 +125,7 @@ export default function DisputeModal({ isOpen, onClose, booking, onSuccess, onDi
           <Button variant="ghost" type="button" onClick={onClose} style={{ flex: 1 }}>
             Cancel
           </Button>
-          <Button variant="danger" type="submit" loading={isSubmitting} style={{ flex: 2 }}>
+          <Button variant="danger" type="submit" loading={isSubmitting} disabled={isSubmitting || !details.trim() || details.trim().length < 8} style={{ flex: 2 }}>
             Submit Dispute Report
           </Button>
         </div>

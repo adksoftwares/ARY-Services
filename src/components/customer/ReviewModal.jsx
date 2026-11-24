@@ -30,7 +30,12 @@ export default function ReviewModal({ isOpen, onClose, booking, onSuccess, onRev
       return;
     }
 
-    if (rating < 1 || rating > 5) {
+    if (!booking?.id) {
+      setError('This booking is missing a valid reference. Refresh your bookings and try again.');
+      return;
+    }
+
+    if (!Number.isInteger(Number(rating)) || rating < 1 || rating > 5) {
       setError('Please select a star rating between 1 and 5.');
       return;
     }
@@ -50,11 +55,12 @@ export default function ReviewModal({ isOpen, onClose, booking, onSuccess, onRev
         })
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         throw new Error(data.error || 'Failed to submit review.');
       }
 
+      if (!data.review) throw new Error('The server did not confirm the review. Please refresh before trying again.');
       if (onSuccess) onSuccess();
       if (onReviewSuccess) onReviewSuccess(data.review, data.providerStats);
       onClose();
@@ -75,7 +81,7 @@ export default function ReviewModal({ isOpen, onClose, booking, onSuccess, onRev
     >
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
         <div>
-          <b>Booking #{booking.id.slice(-6)} · {booking.providerName}</b>
+          <b>Booking #{String(booking.id).slice(-6)} · {booking.providerName || 'Service provider'}</b>
           <p style={{ margin: '4px 0 0', fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
             Your honest rating helps other customers understand the service experience.
           </p>
@@ -114,7 +120,7 @@ export default function ReviewModal({ isOpen, onClose, booking, onSuccess, onRev
           <Button variant="ghost" type="button" onClick={onClose} style={{ flex: 1 }}>
             Cancel
           </Button>
-          <Button variant="primary" type="submit" loading={isSubmitting} style={{ flex: 2 }}>
+          <Button variant="primary" type="submit" loading={isSubmitting} disabled={isSubmitting || !booking?.id} style={{ flex: 2 }}>
             Submit Review
           </Button>
         </div>

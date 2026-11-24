@@ -24,31 +24,31 @@ export default function ProviderWallet({
   const [requestPayoutOpen, setRequestPayoutOpen] = useState(false);
   const [ledgerFilter, setLedgerFilter] = useState('all'); // 'all' | 'credit' | 'debit'
 
-  const completedBookings = useMemo(() => bookings.filter(b => b.status === 'completed'), [bookings]);
-
-
-
-  const pendingEscrowPayout = useMemo(() => {
-    return bookings
-      .filter(b => b.paymentStatus === 'escrow_held' && b.status !== 'completed')
-      .reduce((sum, b) => {
-        const charge = Number(b.baseAmount ?? String(b.baseCharge || '').replace(/[^0-9.]/g, ''));
-        return sum + Number(b.providerPayout ?? (Number.isFinite(charge) ? Math.round(charge * 0.9) : 0));
-      }, 0);
-  }, [bookings]);
-
-  const totalPlatformFees = useMemo(() => {
-    return completedBookings.reduce((sum, b) => {
-      const charge = Number(b.baseAmount ?? String(b.baseCharge || '').replace(/[^0-9.]/g, ''));
-      return sum + Number(b.platformFee ?? (Number.isFinite(charge) ? Math.round(charge * 0.1) : 0));
-    }, 0);
-  }, [completedBookings]);
-
+  const safeBookings = useMemo(() => (Array.isArray(bookings) ? bookings : []).filter(b =>
+    b && typeof b === 'object' && b.id !== null && b.id !== undefined && String(b.id).trim() !== ''
+  ), [bookings]);
+  const safeLedgerEntries = useMemo(() => (Array.isArray(ledgerEntries) ? ledgerEntries : []).filter(entry =>
+    entry && typeof entry === 'object' && entry.id !== null && entry.id !== undefined && String(entry.id).trim() !== ''
+  ), [ledgerEntries]);
+  const normalizedWalletBalance = walletBalance !== null && walletBalance !== undefined && walletBalance !== '' && Number.isFinite(Number(walletBalance))
+    ? Number(walletBalance)
+    : null;
+  const completedBookings = useMemo(() => safeBookings.filter(b => b.status === 'completed'), [safeBookings]);
+  const pendingEscrowPayout = useMemo(() => safeBookings
+    .filter(b => b.paymentStatus === 'escrow_held' && b.status !== 'completed')
+    .reduce((sum, b) => {
+      const amount = Number(b.providerPayout);
+      return sum + (Number.isFinite(amount) && amount >= 0 ? amount : 0);
+    }, 0), [safeBookings]);
+  const totalPlatformFees = useMemo(() => completedBookings.reduce((sum, b) => {
+    const fee = Number(b.platformFee);
+    return sum + (Number.isFinite(fee) && fee >= 0 ? fee : 0);
+  }, 0), [completedBookings]);
   const filteredLedger = useMemo(() => {
-    if (ledgerFilter === 'credit') return ledgerEntries.filter(e => e.type === 'credit');
-    if (ledgerFilter === 'debit') return ledgerEntries.filter(e => e.type === 'debit');
-    return ledgerEntries;
-  }, [ledgerEntries, ledgerFilter]);
+    if (ledgerFilter === 'credit') return safeLedgerEntries.filter(e => e.type === 'credit');
+    if (ledgerFilter === 'debit') return safeLedgerEntries.filter(e => e.type === 'debit');
+    return safeLedgerEntries;
+  }, [safeLedgerEntries, ledgerFilter]);
 
 
   return (
@@ -68,7 +68,7 @@ export default function ProviderWallet({
             <CheckCircle2 size={16} color="var(--color-brand-600, #174d3d)" /> Available Wallet Balance
           </span>
           <div style={{ fontSize: '1.9rem', fontWeight: 800, color: 'var(--color-brand-700, #174d3d)', marginTop: 6, letterSpacing: '-0.02em' }}>
-            LKR {Number(walletBalance || 0).toLocaleString()}
+            {normalizedWalletBalance === null ? '—' : `LKR ${normalizedWalletBalance.toLocaleString('en-LK')}`}
           </div>
           <small style={{ fontSize: '0.75rem', color: 'var(--color-brand-700, #1b5e4b)' }}>
             Available balance from your wallet ledger
@@ -87,7 +87,7 @@ export default function ProviderWallet({
             LKR {pendingEscrowPayout.toLocaleString()}
           </div>
           <small style={{ fontSize: '0.75rem', color: 'var(--color-warning-800, #78350f)' }}>
-            Released immediately upon customer completion
+            Pending amount includes only provider payout values supplied by the booking records; release timing is not guaranteed here.
           </small>
         </Card>
 
@@ -97,13 +97,13 @@ export default function ProviderWallet({
           padding: '18px 20px'
         }}>
           <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-neutral-600, #475569)', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Banknote size={16} color="#64748b" /> Platform Fee (estimated where charge data exists)
+            <Banknote size={16} color="#64748b" /> Recorded Platform Fees
           </span>
           <div style={{ fontSize: '1.9rem', fontWeight: 800, color: 'var(--color-neutral-800, #1e293b)', marginTop: 6, letterSpacing: '-0.02em' }}>
             LKR {totalPlatformFees.toLocaleString()}
           </div>
           <small style={{ fontSize: '0.75rem', color: 'var(--color-neutral-500, #64748b)' }}>
-            Covers customer support & 14-Day Guarantee
+            Shows platform fees recorded on completed booking records.
           </small>
         </Card>
       </div>
@@ -122,7 +122,7 @@ export default function ProviderWallet({
       }}>
         <Info size={18} color="var(--color-brand-600, #174d3d)" style={{ flexShrink: 0 }} />
         <div>
-          <b>Transparent 90 / 10 Revenue Model:</b> For every booking, you receive 90% of the gross charge directly. The flat 10% platform fee funds ARY payment gateway escrow, 24/7 client dispatch support, and national marketing for Sri Lankan contractors.
+          <b>Booking financial breakdown:</b> Commission and provider payout values are shown only when supplied by the booking or ledger records. Rates and settlement timing depend on the recorded transaction; this screen does not initiate transfers.
         </div>
       </div>
 
@@ -153,7 +153,7 @@ export default function ProviderWallet({
           variant="accent"
           size="md"
           onClick={() => setRequestPayoutOpen(true)}
-          disabled={Number(walletBalance || 0) <= 0}
+          disabled={normalizedWalletBalance === null || normalizedWalletBalance <= 0}
         >
           <ArrowUpRight size={16} /> Payout Information
         </Button>
@@ -170,7 +170,7 @@ export default function ProviderWallet({
             Bank Transfer Information
           </h4>
           <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary, #64748b)', marginBottom: 14 }}>
-            Your available wallet balance is <b>LKR {Number(walletBalance || 0).toLocaleString()}</b>. A payout request here does not trigger a bank transfer.
+            Your available wallet balance is <b>{normalizedWalletBalance === null ? 'unavailable' : `LKR ${normalizedWalletBalance.toLocaleString('en-LK')}`}</b>. This information panel does not submit a payout request or trigger a bank transfer.
           </p>
           <div style={{
             background: 'var(--surface-secondary, #f8fafc)',
@@ -193,10 +193,10 @@ export default function ProviderWallet({
       {/* 4. Job Payout & Escrow Breakdown Table */}
       <Card style={{ padding: '20px' }}>
         <h3 style={{ margin: '0 0 16px', fontSize: '1.05rem', color: 'var(--color-neutral-900, #0f172a)' }}>
-          Job Payout & Commission Ledger ({bookings.length})
+          Booking Financial Records ({safeBookings.length})
         </h3>
 
-        {bookings.length > 0 ? (
+        {safeBookings.length > 0 ? (
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
               <thead>
@@ -206,33 +206,36 @@ export default function ProviderWallet({
                   <th style={{ padding: '10px 12px' }}>Date</th>
                   <th style={{ padding: '10px 12px' }}>Payment</th>
                   <th style={{ padding: '10px 12px' }}>Gross Fee</th>
-                  <th style={{ padding: '10px 12px' }}>Commission (10%)</th>
-                  <th style={{ padding: '10px 12px' }}>Net Payout (90%)</th>
+                  <th style={{ padding: '10px 12px' }}>Recorded Fee</th>
+                  <th style={{ padding: '10px 12px' }}>Recorded Provider Payout</th>
                   <th style={{ padding: '10px 12px' }}>Payout Status</th>
                 </tr>
               </thead>
               <tbody>
-                {bookings.map(b => {
-                  const base = Number(b.baseAmount ?? String(b.baseCharge || '').replace(/[^0-9.]/g, '')) || 0;
-                  const fee = Number(b.platformFee ?? Math.round(base * 0.1));
-                  const net = Number(b.providerPayout ?? Math.max(0, base - fee));
+                {safeBookings.map(b => {
+                  const baseValue = Number(b.baseAmount ?? String(b.baseCharge || '').replace(/[^0-9.]/g, ''));
+                  const base = Number.isFinite(baseValue) && baseValue >= 0 ? baseValue : null;
+                  const feeValue = Number(b.platformFee);
+                  const fee = Number.isFinite(feeValue) && feeValue >= 0 ? feeValue : null;
+                  const netValue = Number(b.providerPayout);
+                  const net = Number.isFinite(netValue) && netValue >= 0 ? netValue : null;
 
                   return (
                     <tr key={b.id} style={{ borderBottom: '1px solid var(--color-border-subtle, #f8fafc)' }}>
                       <td style={{ padding: '12px', fontWeight: 600, color: 'var(--color-neutral-700, #334155)' }}>
-                        #{b.id.slice(-6)}
+                        #{String(b.id).slice(-6)}
                       </td>
                       <td style={{ padding: '12px' }}>{b.customerName}</td>
                       <td style={{ padding: '12px', color: 'var(--color-neutral-500, #64748b)' }}>{b.bookingDate}</td>
                       <td style={{ padding: '12px' }}>
                         <Badge variant={b.paymentMethod === 'cash' ? 'neutral' : 'brand'} dot={false}>
-                          {b.paymentMethod === 'cash' ? 'Cash' : 'Escrow'}
+                          {b.paymentMethod === 'cash' ? 'Cash' : b.paymentStatus === 'escrow_held' || b.paymentStatus === 'released_to_provider' ? 'Escrow' : 'Not recorded'}
                         </Badge>
                       </td>
-                      <td style={{ padding: '12px', fontWeight: 600 }}>LKR {base.toLocaleString()}</td>
-                      <td style={{ padding: '12px', color: 'var(--color-danger-600, #dc2626)' }}>- LKR {fee.toLocaleString()}</td>
+                      <td style={{ padding: '12px', fontWeight: 600 }}>{base === null ? '—' : `LKR ${base.toLocaleString('en-LK')}`}</td>
+                      <td style={{ padding: '12px', color: 'var(--color-danger-600, #dc2626)' }}>{fee === null ? '—' : `- LKR ${fee.toLocaleString('en-LK')}`}</td>
                       <td style={{ padding: '12px', fontWeight: 700, color: 'var(--color-success-700, #047857)' }}>
-                        LKR {net.toLocaleString()}
+                        {net === null ? '—' : `LKR ${net.toLocaleString('en-LK')}`}
                       </td>
                       <td style={{ padding: '12px' }}>
                         <Badge
@@ -256,24 +259,24 @@ export default function ProviderWallet({
           <EmptyState
             icon={Wallet}
             title="No payout transactions yet"
-            description="Complete customer bookings to record earnings and build up your escrow balance."
+            description="Booking financial records will appear here when available."
           />
         )}
       </Card>
 
-      {/* 5. Immutable Double-Entry Ledger Audit Trail */}
-      {ledgerEntries.length > 0 && (
+      {/* 5. Wallet Ledger Entries */}
+      {safeLedgerEntries.length > 0 && (
         <Card style={{ padding: '20px', background: 'var(--color-neutral-50, #f8fafc)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 10 }}>
             <h4 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--color-neutral-900, #0f172a)', display: 'flex', alignItems: 'center', gap: 6 }}>
               <FileCheck size={18} color="var(--color-brand-600, #174d3d)" />
-              Double-Entry Ledger Audit Trail ({filteredLedger.length})
+              Wallet Ledger Entries ({filteredLedger.length})
             </h4>
 
             <div style={{ maxWidth: 280 }}>
               <SegmentedControl
                 options={[
-                  { value: 'all', label: `All (${ledgerEntries.length})` },
+                  { value: 'all', label: `All (${safeLedgerEntries.length})` },
                   { value: 'credit', label: 'Credits' },
                   { value: 'debit', label: 'Debits' }
                 ]}
@@ -299,7 +302,7 @@ export default function ProviderWallet({
                 {filteredLedger.map(e => (
                   <tr key={e.id} style={{ borderBottom: '1px solid var(--color-border-subtle, #f1f5f9)' }}>
                     <td style={{ padding: '8px 10px', fontFamily: 'monospace' }}>
-                      {e.transactionId ? e.transactionId.slice(-8) : e.id.slice(-6)}
+                      {e.transactionId ? String(e.transactionId).slice(-8) : String(e.id).slice(-6)}
                     </td>
                     <td style={{ padding: '8px 10px', fontWeight: 600 }}>{e.account}</td>
                     <td style={{ padding: '8px 10px' }}>
@@ -308,11 +311,11 @@ export default function ProviderWallet({
                       </Badge>
                     </td>
                     <td style={{ padding: '8px 10px', fontWeight: 700 }}>
-                      LKR {Number(e.amount).toLocaleString()}
+                      {Number.isFinite(Number(e.amount)) && Number(e.amount) >= 0 ? `LKR ${Number(e.amount).toLocaleString('en-LK')}` : '—'}
                     </td>
                     <td style={{ padding: '8px 10px', color: 'var(--color-neutral-600, #475569)' }}>{e.description}</td>
                     <td style={{ padding: '8px 10px', color: 'var(--color-neutral-400, #94a3b8)' }}>
-                      {new Date(e.timestamp).toLocaleTimeString()}
+                      {e.timestamp && Number.isFinite(new Date(e.timestamp).getTime()) ? new Date(e.timestamp).toLocaleString() : 'Time unavailable'}
                     </td>
                   </tr>
                 ))}
