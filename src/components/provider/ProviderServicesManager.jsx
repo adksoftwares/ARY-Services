@@ -15,7 +15,7 @@ import {
 import { API_BASE } from '../../config';
 import { useAuth } from '../../context/AuthContext';
 import { subscribeToAppEvents } from '../../utils/events';
-import { Card, Badge, Button, Modal, StatusPill, EmptyState } from '../../design-system';
+import { Card, Badge, Button, Modal, StatusPill, EmptyState, Skeleton } from '../../design-system';
 
 const categories = [
   { slug: 'food-shops', name: 'Food Shops & Catering' },
@@ -34,6 +34,7 @@ export default function ProviderServicesManager() {
   const [description, setDescription] = useState('');
   const [baseCharge, setBaseCharge] = useState('');
   const [busy, setBusy] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
 
@@ -45,13 +46,20 @@ export default function ProviderServicesManager() {
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || 'Could not load your service approvals.');
-      setData(result);
+      setData({
+        primaryCategory: result.primaryCategory || {},
+        approvedServices: Array.isArray(result.approvedServices) ? result.approvedServices : [],
+        requests: Array.isArray(result.requests) ? result.requests : []
+      });
+      setError('');
       if (!categorySlug) {
         const primary = categories.find(item => item.slug === result.primaryCategory?.categorySlug);
         setCategorySlug((primary || categories[0])?.slug || 'other-services');
       }
     } catch (err) {
       setError(err.message || 'Could not load service approvals.');
+    } finally {
+      setIsLoading(false);
     }
   }, [currentUser?.token, categorySlug]);
 
@@ -141,6 +149,13 @@ export default function ProviderServicesManager() {
         </div>
       )}
 
+      {isLoading ? (
+        <div style={{ display: 'grid', gap: 12 }}>
+          <Skeleton height="110px" radius="12px" />
+          <Skeleton height="110px" radius="12px" />
+        </div>
+      ) : (
+      <>
       {/* 2. Active Approved Services Grid */}
       <div>
         <h3 style={{ margin: '0 0 12px', fontSize: '1rem', color: 'var(--color-neutral-900, #0f172a)' }}>
@@ -148,6 +163,7 @@ export default function ProviderServicesManager() {
         </h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px' }}>
           {/* Primary registered category */}
+          {(data.primaryCategory?.categoryName || data.primaryCategory?.categorySlug) && (
           <Card style={{ padding: '16px 18px', borderLeft: '4px solid var(--color-brand-600, #174d3d)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
               <div>
@@ -169,6 +185,7 @@ export default function ProviderServicesManager() {
               <ShieldCheck size={14} /> Active in public customer search
             </div>
           </Card>
+          )}
 
           {/* Approved individual service offerings */}
           {data.approvedServices.map(service => (
@@ -195,6 +212,9 @@ export default function ProviderServicesManager() {
             </Card>
           ))}
         </div>
+        {!(data.primaryCategory?.categoryName || data.primaryCategory?.categorySlug) && data.approvedServices.length === 0 && (
+          <EmptyState icon={BriefcaseBusiness} title="No approved services yet" description="Your approved service offerings will appear here after Admin review." />
+        )}
       </div>
 
       {/* 3. Service Requests & Approval Status History */}
@@ -267,6 +287,9 @@ export default function ProviderServicesManager() {
             })}
           </div>
         </Card>
+      )}
+
+      </>
       )}
 
       {/* 4. Add Service BottomSheet / Modal */}
