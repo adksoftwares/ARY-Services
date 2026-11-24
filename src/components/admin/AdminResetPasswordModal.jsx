@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Key, Copy, Check, AlertTriangle, Eye, EyeOff } from 'lucide-react';
 import { Modal, Button } from '../../design-system';
 
@@ -11,32 +11,58 @@ export default function AdminResetPasswordModal({
 }) {
   const [password, setPassword] = useState('');
   const [copied, setCopied] = useState(false);
-  const [showPassword, setShowPassword] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
+  const feedbackTimerRef = useRef(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  useEffect(() => () => { if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current); }, []);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setPassword('');
+      setCopied(false);
+      setError('');
+      setSuccess('');
+      setShowPassword(false);
+      if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
+    }
+  }, [isOpen]);
 
   if (!isOpen || !user) return null;
 
   function generateStrongPassword() {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%';
-    let res = 'Ary@';
-    for (let i = 0; i < 8; i++) {
-      res += chars.charAt(Math.floor(Math.random() * chars.length));
+    const cryptoApi = typeof window !== 'undefined' ? window.crypto : null;
+    if (!cryptoApi?.getRandomValues) {
+      setError('Secure password generation is unavailable in this browser. Enter a temporary password manually.');
+      return;
     }
-    setPassword(res);
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%';
+    const randomValues = new Uint32Array(16);
+    cryptoApi.getRandomValues(randomValues);
+    const generated = Array.from(randomValues, value => chars[value % chars.length]).join('');
+    setPassword(generated);
     setCopied(false);
+    setError('');
   }
 
-  function handleCopy() {
+  async function handleCopy() {
     if (!password) return;
-    navigator.clipboard.writeText(password).then(() => {
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error('Clipboard access is unavailable.');
+      await navigator.clipboard.writeText(password);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
-    });
+      if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
+      feedbackTimerRef.current = setTimeout(() => setCopied(false), 2500);
+    } catch {
+      setCopied(false);
+      setError('Could not copy the password. Select and copy it manually.');
+    }
   }
 
   async function handleSubmit(e) {
     e.preventDefault();
+    if (isSubmitting || typeof onSubmit !== 'function' || !user?.id) return;
     if (!password || password.length < 6) {
       setError('Password must be at least 6 characters long.');
       return;
@@ -45,9 +71,10 @@ export default function AdminResetPasswordModal({
     try {
       await onSubmit(user.id, password);
       setSuccess(`Password for ${user.fullName} has been successfully updated.`);
-      setTimeout(() => {
+      if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
+      feedbackTimerRef.current = setTimeout(() => {
         setSuccess('');
-        onClose();
+        onClose?.();
       }, 2000);
     } catch (err) {
       setError(err.message || 'Failed to reset password.');
@@ -81,7 +108,7 @@ export default function AdminResetPasswordModal({
         }}>
           <AlertTriangle size={18} color="#d97706" style={{ flexShrink: 0 }} />
           <span>
-            <b>Security Note:</b> Generated temporary passwords are <u>shown only once</u>. Copy and securely deliver to the user before closing.
+            <b>Security Note:</b> This temporary password is displayed in this dialog. Share it through a secure channel and do not reuse it for another account.
           </span>
         </div>
 
@@ -172,7 +199,7 @@ export default function AdminResetPasswordModal({
         )}
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 18 }}>
-          <Button variant="ghost" onClick={onClose} disabled={isSubmitting}>
+          <Button variant="ghost" onClick={() => onClose?.()} disabled={isSubmitting}>
             Cancel
           </Button>
           <Button variant="primary" type="submit" loading={isSubmitting} disabled={!password}>
