@@ -46,8 +46,9 @@ export default function ProviderCatalog({
   const [selectedProviderDetail, setSelectedProviderDetail] = useState(null);
 
   // Filter and sort logic
+  const safeProviders = Array.isArray(providers) ? providers.filter(provider => provider && typeof provider === 'object') : [];
   const { filteredProviders, showingOutsideRadius } = useMemo(() => {
-    let list = [...providers];
+    let list = [...safeProviders];
     let outsideRadiusFallback = false;
 
     // Providers without a published rating must not be treated as 5-star.
@@ -55,10 +56,14 @@ export default function ProviderCatalog({
       list = list.filter(p => p.rating != null && Number.isFinite(Number(p.rating)) && Number(p.rating) >= minRating);
     }
 
-    const getNum = (str) => Number(String(str || '').replace(/[^\\d]/g, '')) || 0;
+    const getNum = (value) => {
+      if (value == null || value === '') return null;
+      const parsed = Number(String(value).replace(/[^\d.]/g, ''));
+      return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
+    };
     list = list.filter(p => {
       const pPrice = getNum(p.baseCharge);
-      return pPrice <= maxPrice || maxPrice >= 10000;
+      return pPrice == null || pPrice <= maxPrice || maxPrice >= 10000;
     });
 
     // Keep the catalog useful when the selected radius has no matches, but
@@ -80,7 +85,14 @@ export default function ProviderCatalog({
     if (sortBy === 'rating') {
       list.sort((a, b) => (Number(b.rating) || 0) - (Number(a.rating) || 0));
     } else if (sortBy === 'price') {
-      list.sort((a, b) => getNum(a.baseCharge) - getNum(b.baseCharge));
+      list.sort((a, b) => {
+        const priceA = getNum(a.baseCharge);
+        const priceB = getNum(b.baseCharge);
+        if (priceA == null && priceB == null) return 0;
+        if (priceA == null) return 1;
+        if (priceB == null) return -1;
+        return priceA - priceB;
+      });
     } else if (sortBy === 'distance') {
       list.sort((a, b) => {
         const distanceA = a.distanceKm != null && Number.isFinite(Number(a.distanceKm)) ? Number(a.distanceKm) : Number.POSITIVE_INFINITY;
@@ -90,14 +102,14 @@ export default function ProviderCatalog({
     }
 
     return { filteredProviders: list, showingOutsideRadius: outsideRadiusFallback };
-  }, [providers, sortBy, minRating, maxPrice, maxDistance]);
+  }, [safeProviders, sortBy, minRating, maxPrice, maxDistance]);
 
   const catalogTitle = selectedCategory
     ? `Available Providers for ${selectedCategory.name}`
-    : `Verified Service Providers (${providers.length})`;
+    : `Verified Service Providers (${safeProviders.length})`;
 
   // If no category selected, no search results and not loading, keep catalog hidden
-  if (!selectedCategory && providers.length === 0 && !isLoading) {
+  if (!selectedCategory && safeProviders.length === 0 && !isLoading) {
     return null;
   }
 
@@ -185,7 +197,7 @@ export default function ProviderCatalog({
         </div>
 
         {/* Geofence Proximity Badge */}
-        {providers.some(p => p.distanceKm != null) && (
+        {safeProviders.some(p => p.distanceKm != null && Number.isFinite(Number(p.distanceKm)) && Number(p.distanceKm) >= 0) && (
           <div className="geofence-banner">
             <Navigation size={13} className="geofence-icon" aria-hidden="true" />
             <span><b>Geofence Active:</b> Showing verified contractors within your area</span>
