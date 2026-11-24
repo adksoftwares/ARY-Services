@@ -37,15 +37,20 @@ export default function GroceryOrders() {
   const [activeMobileColumn, setActiveMobileColumn] = useState('pending');
 
   const load = useCallback(async () => {
-    if (!currentUser?.token) return;
+    if (!currentUser?.token) {
+      setOrders([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const res = await fetch(`${API_BASE}/grocery/orders/provider`, {
         headers: { Authorization: `Bearer ${currentUser.token}` }
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Could not load store orders');
-      setOrders(data.orders || []);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || data.message || 'Could not load store orders');
+      setOrders(Array.isArray(data.orders) ? data.orders : []);
+      setError('');
     } catch (e) {
       setError(e.message || 'Error loading orders');
     } finally {
@@ -63,6 +68,7 @@ export default function GroceryOrders() {
   }, [load, currentUser?.token]);
 
   async function updateOrderStatus(orderId, status) {
+    if (!orderId || busyId) return false;
     setBusyId(orderId);
     setError('');
     try {
@@ -74,11 +80,13 @@ export default function GroceryOrders() {
         },
         body: JSON.stringify({ status })
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Could not update order status');
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || data.message || 'Could not update order status');
       await load();
+      return true;
     } catch (e) {
       setError(e.message || 'Error updating order status');
+      return false;
     } finally {
       setBusyId('');
     }
@@ -118,14 +126,15 @@ export default function GroceryOrders() {
           </p>
         </div>
 
-        <Button variant="ghost" size="sm" onClick={load}>
+        <Button variant="ghost" size="sm" onClick={load} loading={loading} disabled={loading}>
           <RefreshCw size={14} /> Refresh Orders
         </Button>
       </div>
 
       {error && (
-        <div style={{ background: '#fef2f2', color: '#b91c1c', padding: '12px 16px', borderRadius: 8, fontSize: 13 }}>
-          {error}
+        <div role="alert" aria-live="assertive" style={{ background: '#fef2f2', color: '#b91c1c', padding: '12px 16px', borderRadius: 8, fontSize: 13, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+          <span>{error}</span>
+          <Button variant="ghost" size="sm" onClick={load} loading={loading} disabled={loading}>Retry</Button>
         </div>
       )}
 
@@ -183,15 +192,15 @@ export default function GroceryOrders() {
                         #{o.id.slice(-6)}
                       </b>
                       <b style={{ fontSize: '0.95rem', color: 'var(--color-brand-800, #174d3d)' }}>
-                        LKR {Number(o.total || 0).toLocaleString('en-LK')}
+                        {o.total !== null && o.total !== undefined && o.total !== '' && Number.isFinite(Number(o.total)) ? `LKR ${Number(o.total).toLocaleString('en-LK')}` : 'Total unavailable'}
                       </b>
                     </div>
 
                     {/* Customer & Address */}
                     <div style={{ fontSize: '0.8rem', color: 'var(--color-neutral-600, #475569)' }}>
-                      <div><b>{o.customerName}</b> · <a href={`tel:${o.customerPhone}`} style={{ color: 'var(--color-brand-600, #174d3d)', fontWeight: 600 }}>{o.customerPhone}</a></div>
+                      <div><b>{o.customerName || 'Customer details unavailable'}</b>{o.customerPhone ? <> · <a href={`tel:${o.customerPhone}`} style={{ color: 'var(--color-brand-600, #174d3d)', fontWeight: 600 }}>{o.customerPhone}</a></> : <span> · Phone not provided</span>}</div>
                       <div style={{ marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <MapPin size={12} /> {o.deliveryAddress}
+                        <MapPin size={12} /> {o.deliveryAddress || 'Delivery address not provided'}
                       </div>
                     </div>
 
@@ -206,17 +215,17 @@ export default function GroceryOrders() {
                       flexDirection: 'column',
                       gap: 4
                     }}>
-                      {(o.items || []).map((item, idx) => (
+                      {(Array.isArray(o.items) ? o.items : []).map((item, idx) => (
                         <div key={idx} className="grocery-item-row">
-                          <span>{item.name} × <b>{item.quantity}</b></span>
-                          <span style={{ color: 'var(--color-neutral-500, #64748b)' }}>LKR {Number(item.unitPrice || 0).toLocaleString()}</span>
+                          <span>{item.name || 'Unnamed item'} × <b>{item.quantity ?? '—'}</b></span>
+                          <span style={{ color: 'var(--color-neutral-500, #64748b)' }}>{item.unitPrice !== null && item.unitPrice !== undefined && item.unitPrice !== '' && Number.isFinite(Number(item.unitPrice)) ? `LKR ${Number(item.unitPrice).toLocaleString('en-LK')}` : 'Price unavailable'}</span>
                         </div>
                       ))}
                     </div>
 
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', color: 'var(--color-neutral-400, #94a3b8)' }}>
                       <span>Cash on Delivery</span>
-                      <span>{new Date(o.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                      <span>{o.createdAt && Number.isFinite(Date.parse(o.createdAt)) ? new Date(o.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Time unavailable'}</span>
                     </div>
 
                     {/* Action Row per State */}
@@ -227,6 +236,7 @@ export default function GroceryOrders() {
                             variant="primary"
                             size="sm"
                             loading={busyId === o.id}
+                            disabled={Boolean(busyId)}
                             onClick={() => updateOrderStatus(o.id, 'accepted')}
                             style={{ flex: 1 }}
                           >
@@ -235,6 +245,7 @@ export default function GroceryOrders() {
                           <Button
                             variant="danger"
                             size="sm"
+                            disabled={Boolean(busyId)}
                             onClick={() => setCancelOrderTarget(o)}
                           >
                             <Ban size={14} /> Cancel
@@ -248,6 +259,7 @@ export default function GroceryOrders() {
                             variant="primary"
                             size="sm"
                             loading={busyId === o.id}
+                            disabled={Boolean(busyId)}
                             onClick={() => updateOrderStatus(o.id, 'preparing')}
                             style={{ flex: 1 }}
                           >
@@ -268,6 +280,7 @@ export default function GroceryOrders() {
                           variant="secondary"
                           size="sm"
                           loading={busyId === o.id}
+                          disabled={Boolean(busyId)}
                           onClick={() => updateOrderStatus(o.id, 'ready_for_pickup')}
                           style={{ width: '100%' }}
                         >
@@ -301,7 +314,7 @@ export default function GroceryOrders() {
                           color: 'var(--color-success-700, #047857)',
                           fontWeight: 700
                         }}>
-                          ✓ Completed & Paid
+                          ✓ Order Completed
                         </div>
                       )}
 
@@ -315,7 +328,7 @@ export default function GroceryOrders() {
                           fontSize: '0.78rem',
                           color: 'var(--color-neutral-600, #475569)'
                         }}>
-                          Cancelled (Stock Restored)
+                          Cancelled
                         </div>
                       )}
                     </div>
@@ -331,17 +344,17 @@ export default function GroceryOrders() {
       <ConfirmDialog
         isOpen={Boolean(cancelOrderTarget)}
         title="Cancel Grocery Order?"
-        message="Cancelling this order will immediately notify the customer and automatically restore stock quantities for all items in the store inventory."
+        message="Are you sure you want to cancel this grocery order? Confirm the cancellation only if you intend to stop fulfilment."
         confirmLabel="Cancel Order & Restore Stock"
         cancelLabel="Keep Order Active"
         variant="danger"
-        onConfirm={() => {
+        onConfirm={async () => {
           if (cancelOrderTarget) {
-            updateOrderStatus(cancelOrderTarget.id, 'cancelled');
-            setCancelOrderTarget(null);
+            const updated = await updateOrderStatus(cancelOrderTarget.id, 'cancelled');
+            if (updated) setCancelOrderTarget(null);
           }
         }}
-        onCancel={() => setCancelOrderTarget(null)}
+        onCancel={() => { if (!busyId) setCancelOrderTarget(null); }}
       />
     </div>
   );
