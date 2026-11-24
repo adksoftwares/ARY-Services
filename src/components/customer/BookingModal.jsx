@@ -10,16 +10,19 @@ import {
   Calendar,
   Clock,
   FileText,
-  CreditCard,
   Banknote,
   Check,
   AlertCircle,
-  ExternalLink
 } from 'lucide-react';
 import { fetchCurrentLocationAddress } from '../../utils/location';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE } from '../../config';
-import { Button, Input, Textarea, Badge, Stepper, Modal } from '../../design-system';
+import { Button, Input, Textarea, Stepper, Modal } from '../../design-system';
+
+function toLocalDateInputValue(date) {
+  const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return localDate.toISOString().slice(0, 10);
+}
 
 export default function BookingModal({
   isOpen,
@@ -35,8 +38,9 @@ export default function BookingModal({
   const [step, setStep] = useState(1); // 1: Service/Problem -> 2: Date/Time -> 3: Address -> 4: Review -> 5: Success
   const [bookingAddress, setBookingAddress] = useState(() => initialAddress || currentUser?.location || '');
   const [bookingDate, setBookingDate] = useState(() => {
-    const tomorrow = new Date(Date.now() + 86400000);
-    return tomorrow.toISOString().split('T')[0];
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return toLocalDateInputValue(tomorrow);
   });
   const [bookingTimeSlot, setBookingTimeSlot] = useState('Morning (9 AM - 12 PM)');
   const [bookingProblem, setBookingProblem] = useState('');
@@ -120,10 +124,10 @@ export default function BookingModal({
         categorySlug: provider.selectedService?.categorySlug || selectedCategory?.slug || provider.category || 'general',
         categoryName: provider.selectedService?.categoryName || selectedCategory?.name || provider.categoryName || 'General Service',
         serviceId: provider.selectedService?.id && provider.selectedService.id !== 'primary' ? provider.selectedService.id : undefined,
-        serviceAddress: bookingAddress.trim() || currentUser.location || 'Local Area',
+        serviceAddress: bookingAddress.trim(),
         bookingDate,
         bookingTime: bookingTimeSlot,
-        problemDescription: bookingProblem.trim() || 'General inspection and service.',
+        problemDescription: bookingProblem.trim(),
         paymentMethod
       };
 
@@ -256,7 +260,7 @@ export default function BookingModal({
               <Input
                 type="date"
                 value={bookingDate}
-                min={new Date().toISOString().split('T')[0]}
+                min={toLocalDateInputValue(new Date())}
                 onChange={e => { setBookingDate(e.target.value); setError(''); }}
                 required={true}
               />
@@ -334,46 +338,26 @@ export default function BookingModal({
               </div>
               <div className="summary-row">
                 <span className="sum-label">Starting Rate</span>
-                <b className="sum-val" style={{ color: 'var(--brand-primary)' }}>{provider.baseCharge || 'LKR 1,500'}</b>
+                <b className="sum-val" style={{ color: 'var(--brand-primary)' }}>{provider.baseCharge || 'Quote required'}</b>
               </div>
             </div>
 
             <div className="payment-method-selector">
-              <span className="payment-title">Payment Method</span>
+              <span className="payment-title">Payment</span>
               <div className="payment-options-grid">
-                <button
-                  type="button"
-                  className={`payment-option-btn ${paymentMethod === 'cash' ? 'active' : ''}`}
-                  onClick={() => setPaymentMethod('cash')}
-                >
+                <div className="payment-option-btn active" aria-current="true">
                   <Banknote size={18} />
                   <div>
-                    <b>Cash on Completion (Recommended)</b>
-                    <small>Pay directly to the provider after inspection and satisfaction.</small>
+                    <b>Cash on Completion</b>
+                    <small>Payment is arranged directly with the provider after the service. Online payments are not available in this booking flow yet.</small>
                   </div>
-                </button>
-
-                <button
-                  type="button"
-                  className="payment-option-btn disabled"
-                  style={{ opacity: 0.65, cursor: 'not-allowed' }}
-                  onClick={() => {
-                    setError('Online card escrow is temporarily paused pending LankaPay gateway certification. Please use Cash on Completion.');
-                    setPaymentMethod('cash');
-                  }}
-                >
-                  <CreditCard size={18} />
-                  <div>
-                    <b>ARY Escrow Shield (Cards / Online)</b>
-                    <small>Coming soon · Please choose Cash on Completion for now.</small>
-                  </div>
-                </button>
+                </div>
               </div>
             </div>
 
             <div className="trust-guarantee-note">
               <ShieldCheck size={16} />
-              <span>Includes 14-day ARY workmanship warranty. Quote changes require your approval.</span>
+              <span>Review the provider's quote and agree on any changes before work begins.</span>
             </div>
           </div>
         )}
@@ -387,7 +371,7 @@ export default function BookingModal({
 
             <h3 className="success-heading">Booking Request Sent!</h3>
             <p className="success-subtext">
-              We've dispatched your service request to <b>{provider.fullName}</b>.
+              Your booking request has been submitted for <b>{provider.fullName}</b> to review.
               {createdBooking?.id && (
                 <span className="booking-ref-chip">Ref #{createdBooking.id.slice(0, 8)}</span>
               )}
@@ -396,9 +380,9 @@ export default function BookingModal({
             <div className="next-steps-card">
               <b>What happens next?</b>
               <ol className="next-steps-list">
-                <li>Provider reviews your schedule request within 15-30 minutes.</li>
-                <li>If special parts or scope is needed, they will send a formal quote.</li>
-                <li>You can accept or decline quotes anytime in <b>My Bookings</b>.</li>
+                <li>The provider can review your requested service, date and time.</li>
+                <li>If more detail or a custom price is needed, the provider can contact you with a quote.</li>
+                <li>Track the request and respond to any quote in <b>My Bookings</b>.</li>
               </ol>
             </div>
 
