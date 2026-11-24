@@ -268,11 +268,11 @@ export default function HeroSection({
                 <div className="popular-card-meta">
                   <div className="popular-meta-row">
                     <span className="rating-pill">
-                      <Star size={12} fill="currentColor" /> {Number.isFinite(Number(p.rating)) && Number(p.rating) >= 0 && Number(p.rating) <= 5 && Number(p.reviewCount) > 0 ? Number(p.rating).toFixed(1) : 'New'}
+                      <Star size={12} fill="currentColor" /> {p.rating !== null && p.rating !== undefined && p.rating !== '' && Number.isFinite(Number(p.rating)) && Number(p.rating) >= 0 && Number(p.rating) <= 5 && Number(p.reviewCount) > 0 ? Number(p.rating).toFixed(1) : 'New'}
                     </span>
-                    <span className="reviews-count">({p.reviewCount > 0 ? `${p.reviewCount} reviews` : 'No reviews yet'})</span>
-                    {p.distanceKm != null && (
-                      <span className="distance-pill">{Number.isFinite(Number(p.distanceKm)) && Number(p.distanceKm) >= 0 ? `${Number(p.distanceKm).toFixed(1)} km` : ''}</span>
+                    <span className="reviews-count">({Number.isFinite(Number(p.reviewCount)) && Number(p.reviewCount) > 0 ? `${Math.floor(Number(p.reviewCount))} reviews` : 'No reviews yet'})</span>
+                    {p.distanceKm != null && Number.isFinite(Number(p.distanceKm)) && Number(p.distanceKm) >= 0 && (
+                      <span className="distance-pill">{`${Number(p.distanceKm).toFixed(1)} km`}</span>
                     )}
                   </div>
                   <div className="rate-text">
