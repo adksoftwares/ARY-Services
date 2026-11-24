@@ -253,7 +253,7 @@ export default function HeroSection({
             {popularProviders.slice(0, 6).map(p => (
               <div key={p.id} className="popular-provider-card">
                 <div className="popular-card-header">
-                  <Avatar name={p.fullName} size="md" isOnline={true} />
+                  <Avatar name={p.fullName} size="md" isOnline={p.isOnline === true} />
                   <div className="popular-card-info">
                     <b className="popular-name">{p.fullName}</b>
                     <span className="popular-category">{p.categoryName || 'Home Services'}</span>
