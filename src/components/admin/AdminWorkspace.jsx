@@ -555,6 +555,7 @@ export default function AdminWorkspace({
             <AdminUsers
               adminUsers={adminUsers}
               isLoadingUsers={isLoadingUsers}
+              initialSearchQuery={globalSearch}
               onRefresh={fetchAdminUsers}
               onUpdateStatus={handleUpdateUserStatus}
               onDeleteUser={handleDeleteUser}
