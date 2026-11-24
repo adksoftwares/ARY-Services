@@ -164,7 +164,7 @@ function ProviderWorkspace() {
           {isProvider ? (
             <div className="user-profile">
               <NotificationCenter/>
-              <span className="user-badge" title="Verified Trade Partner">
+              <span className="user-badge" title="Provider account">
                 <UserRound size={14}/>
                 <span>{currentUser.fullName}</span>
               </span>
@@ -239,7 +239,7 @@ function ProviderWorkspace() {
               Your business, one workspace.
             </h1>
             <p style={{ color: 'var(--text-secondary, #64748b)', maxWidth: 540, margin: '0 auto 24px', lineHeight: 1.7, fontSize: '0.95rem' }}>
-              Sign in with your approved Service Provider account to manage bookings, customer reviews, earnings and grocery inventory. New provider applications are verified by admin compliance.
+              Sign in with your approved Service Provider account to manage bookings, customer reviews, earnings and grocery inventory. New provider applications are reviewed by Admin before activation.
             </p>
             <Button
               variant="primary"
