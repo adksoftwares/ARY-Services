@@ -132,7 +132,7 @@ export default function ProviderProfile({
           </div>
           <div>
             <span style={{ color: 'var(--color-neutral-500, #64748b)', fontSize: '0.75rem', display: 'block' }}>Primary Service Base</span>
-            <b style={{ color: 'var(--color-neutral-900, #0f172a)' }}>{currentUser?.location || 'Colombo, Sri Lanka'}</b>
+            <b style={{ color: 'var(--color-neutral-900, #0f172a)' }}>{currentUser?.location || 'Not provided'}</b>
           </div>
           <div>
             <span style={{ color: 'var(--color-neutral-500, #64748b)', fontSize: '0.75rem', display: 'block' }}>Account ID</span>
