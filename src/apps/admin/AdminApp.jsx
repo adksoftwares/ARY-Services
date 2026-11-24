@@ -117,7 +117,7 @@ function AdminPortal() {
                 Super Admin workspace.
               </h1>
               <p style={{ color: 'var(--text-secondary, #94a3b8)', maxWidth: 540, margin: '0 auto 24px', lineHeight: 1.7, fontSize: '0.95rem' }}>
-                Sign in with your authorized Super Admin account to inspect registered accounts, verify KYC documents, arbitrate customer disputes, and disburse LankaPay CEFT batch payouts.
+                Sign in with your authorized Super Admin account to review registered accounts and applications, manage service requests, review customer disputes, inspect dispatch information, and prepare manual payout records. Bank transfers are handled separately.
               </p>
               <Button
                 variant="primary"
