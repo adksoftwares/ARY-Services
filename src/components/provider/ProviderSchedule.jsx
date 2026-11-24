@@ -44,7 +44,9 @@ export default function ProviderSchedule({
   onDecideReschedule
 }) {
   const [filter, setFilter] = useState('upcoming'); // 'upcoming' | 'completed' | 'all'
-  const safeBookings = Array.isArray(bookings) ? bookings.filter(booking => booking && typeof booking === 'object') : [];
+  const safeBookings = Array.isArray(bookings) ? bookings.filter(booking =>
+    booking && typeof booking === 'object' && booking.id !== null && booking.id !== undefined && String(booking.id).trim() !== ''
+  ) : [];
 
   // Sort using local calendar dates so date-only API values do not shift by timezone.
   const sortedBookings = useMemo(() => {
@@ -167,7 +169,7 @@ export default function ProviderSchedule({
 
               <div style={{ display: 'grid', gap: '12px' }}>
                 {items.map(b => (
-                  <Card key={b.id} style={{ padding: '16px 20px' }}>
+                  <Card key={String(b.id)} style={{ padding: '16px 20px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 10, marginBottom: 12 }}>
                       <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
