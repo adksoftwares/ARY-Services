@@ -84,7 +84,8 @@ export default function BookingModal({
       return Boolean(bookingProblem.trim());
     }
     if (step === 2) {
-      return Boolean(bookingDate) && Boolean(bookingTimeSlot);
+      const today = toLocalDateInputValue(new Date());
+      return /^\d{4}-\d{2}-\d{2}$/.test(bookingDate) && bookingDate >= today && Boolean(bookingTimeSlot);
     }
     if (step === 3) {
       return Boolean(bookingAddress.trim());
@@ -110,6 +111,11 @@ export default function BookingModal({
   }
 
   async function handleSubmitBooking() {
+    if (isSubmitting) return;
+    if (!canProceedNext()) {
+      setError('Please check the requested date, time and address before confirming.');
+      return;
+    }
     if (!currentUser?.token) {
       if (onClose) onClose();
       if (openAuthModal) openAuthModal('login');
@@ -139,12 +145,12 @@ export default function BookingModal({
         },
         body: JSON.stringify(payload)
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error(data.error || 'Failed to submit booking.');
+        throw new Error(data.error || data.message || 'Failed to submit booking. Please try again.');
       }
 
-      setCreatedBooking(data.booking);
+      setCreatedBooking(data.booking || null);
       setStep(5);
     } catch (err) {
       setError(err.message || 'Could not submit booking.');
@@ -311,7 +317,7 @@ export default function BookingModal({
               className="wizard-textarea"
             />
             <small className="wizard-input-hint">
-              Accurate address helps the verified provider estimate travel time and reach you punctually.
+              Add a nearby landmark or access instructions if they will help the provider find the location.
             </small>
           </div>
         )}
