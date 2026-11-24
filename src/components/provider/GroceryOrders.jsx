@@ -49,7 +49,7 @@ export default function GroceryOrders() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || data.message || 'Could not load store orders');
-      setOrders(Array.isArray(data.orders) ? data.orders : []);
+      setOrders(Array.isArray(data.orders) ? data.orders.filter(order => order && typeof order === 'object') : []);
       setError('');
     } catch (e) {
       setError(e.message || 'Error loading orders');
@@ -68,11 +68,11 @@ export default function GroceryOrders() {
   }, [load, currentUser?.token]);
 
   async function updateOrderStatus(orderId, status) {
-    if (!orderId || busyId) return false;
+    if (!orderId || !status || busyId || !currentUser?.token) return false;
     setBusyId(orderId);
     setError('');
     try {
-      const res = await fetch(`${API_BASE}/grocery/orders/${orderId}/status`, {
+      const res = await fetch(`${API_BASE}/grocery/orders/${encodeURIComponent(orderId)}/status`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -95,11 +95,11 @@ export default function GroceryOrders() {
   // Group orders into columns
   const groupedOrders = useMemo(() => {
     return {
-      pending: orders.filter(o => o.status === 'pending'),
-      preparing: orders.filter(o => ['accepted', 'preparing'].includes(o.status)),
-      ready_for_pickup: orders.filter(o => o.status === 'ready_for_pickup'),
-      completed: orders.filter(o => ['delivered', 'completed'].includes(o.status)),
-      cancelled: orders.filter(o => o.status === 'cancelled')
+      pending: (Array.isArray(orders) ? orders : []).filter(o => o && o.status === 'pending'),
+      preparing: (Array.isArray(orders) ? orders : []).filter(o => o && ['accepted', 'preparing'].includes(o.status)),
+      ready_for_pickup: (Array.isArray(orders) ? orders : []).filter(o => o && o.status === 'ready_for_pickup'),
+      completed: (Array.isArray(orders) ? orders : []).filter(o => o && ['delivered', 'completed'].includes(o.status)),
+      cancelled: (Array.isArray(orders) ? orders : []).filter(o => o && o.status === 'cancelled')
     };
   }, [orders]);
 

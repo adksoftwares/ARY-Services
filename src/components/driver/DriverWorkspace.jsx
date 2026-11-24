@@ -47,7 +47,7 @@ export default function DriverWorkspace({ onNotice }) {
   const { currentUser } = useAuth();
   const [jobs, setJobs] = useState([]);
   const [selectedServices, setSelectedServices] = useState(
-    currentUser?.driverServices?.length ? currentUser.driverServices : ['food_delivery']
+    Array.isArray(currentUser?.driverServices) && currentUser.driverServices.length ? currentUser.driverServices.filter(value => DRIVER_OPTIONS.some(option => option.value === value)) : ['food_delivery']
   );
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -112,7 +112,7 @@ export default function DriverWorkspace({ onNotice }) {
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || 'Could not load driver jobs.');
-      setJobs(Array.isArray(data.jobs) ? data.jobs : []);
+      setJobs(Array.isArray(data.jobs) ? data.jobs.filter(job => job && typeof job === 'object') : []);
       if (data.presence) setPresence(data.presence);
     } catch (err) {
       setError(getFriendlyErrorMessage(err, 'Could not load driver jobs.'));
@@ -377,8 +377,8 @@ export default function DriverWorkspace({ onNotice }) {
 
   // Proximity sorting (ascending distanceKm)
   const availableJobs = useMemo(() => {
-    return jobs
-      .filter(j => j.status === 'requested')
+    return (Array.isArray(jobs) ? jobs : [])
+      .filter(j => j && j.status === 'requested')
       .slice()
       .sort((a, b) => {
         const distanceA = Number(a.distanceKm);
@@ -393,7 +393,7 @@ export default function DriverWorkspace({ onNotice }) {
   }, [jobs]);
 
   const completedJobs = useMemo(() => {
-    return jobs.filter(j => ['completed', 'delivered'].includes(j.status));
+    return (Array.isArray(jobs) ? jobs : []).filter(j => j && ['completed', 'delivered'].includes(j.status));
   }, [jobs]);
 
   // GPS Freshness assessment
@@ -624,7 +624,7 @@ export default function DriverWorkspace({ onNotice }) {
             Available Nearby Dispatches ({availableJobs.length})
           </h2>
           <p style={{ fontSize: '0.78rem', color: 'var(--color-neutral-500, #64748b)', margin: '2px 0 0' }}>
-            Sorted by straight-line proximity. 1-tap accept.
+            Requests are ordered by available distance information. Review details before accepting.
           </p>
         </div>
 
