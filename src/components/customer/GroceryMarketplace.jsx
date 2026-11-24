@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Package,
   Search,
@@ -42,40 +42,54 @@ export default function GroceryMarketplace() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [cancelTargetId, setCancelTargetId] = useState(null);
+  const [cancelBusy, setCancelBusy] = useState(false);
+  const productsRequestRef = useRef(0);
+  const ordersRequestRef = useRef(0);
 
   async function load() {
+    const requestId = ++productsRequestRef.current;
     setLoading(true);
     try {
       const r = await fetch(API_BASE + '/grocery/products');
       const d = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(d.error || 'Grocery products could not be loaded.');
+      if (requestId !== productsRequestRef.current) return;
       if (!Array.isArray(d.products)) throw new Error('The product list response was invalid. Please retry.');
-      setProducts(d.products.filter(product => product && typeof product === 'object'));
+      setProducts(d.products.filter(product => product && typeof product === 'object' && product.id !== null && product.id !== undefined && String(product.id).trim() !== ''));
       setLoadError('');
     } catch (error) {
-      setLoadError(error.message || 'Grocery products could not be loaded.');
+      if (requestId === productsRequestRef.current) setLoadError(error.message || 'Grocery products could not be loaded.');
     } finally {
-      setLoading(false);
+      if (requestId === productsRequestRef.current) setLoading(false);
     }
   }
 
   async function loadOrders() {
-    if (!currentUser?.token) return;
+    const requestId = ++ordersRequestRef.current;
+    if (!currentUser?.token) {
+      setOrders([]);
+      setOrdersError('');
+      return;
+    }
     try {
       const r = await fetch(API_BASE + '/grocery/orders/mine', {
         headers: { Authorization: 'Bearer ' + currentUser.token }
       });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(d.error || 'Your grocery orders could not be loaded.');
+      if (requestId !== ordersRequestRef.current) return;
       if (!Array.isArray(d.orders)) throw new Error('The orders response was invalid. Please retry.');
-      setOrders(d.orders.filter(order => order && typeof order === 'object'));
+      setOrders(d.orders.filter(order => order && typeof order === 'object' && order.id !== null && order.id !== undefined && String(order.id).trim() !== ''));
       setOrdersError('');
     } catch (error) {
-      setOrdersError(error.message || 'Your grocery orders could not be loaded.');
+      if (requestId === ordersRequestRef.current) setOrdersError(error.message || 'Your grocery orders could not be loaded.');
     }
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    return () => { productsRequestRef.current += 1; ordersRequestRef.current += 1; };
+  }, []);
 
   useEffect(() => {
     if (currentUser?.token) {
@@ -102,7 +116,10 @@ export default function GroceryMarketplace() {
     }))
     .filter(x => x.product);
 
-  const total = cartLines.reduce((sum, x) => sum + Number(x.product.price) * x.quantity, 0);
+  const total = cartLines.reduce((sum, x) => {
+    const price = Number(x.product.price);
+    return sum + (Number.isFinite(price) && price >= 0 ? price * x.quantity : 0);
+  }, 0);
   const totalItemsCount = cartLines.reduce((sum, x) => sum + x.quantity, 0);
 
   // Check unique shops in cart
@@ -111,6 +128,7 @@ export default function GroceryMarketplace() {
   const currentShopName = cartLines[0]?.product?.providerName;
 
   function changeQty(product, delta) {
+    if (!product?.id || !Number.isFinite(Number(product.stock)) || Number(product.stock) < 0 || !Number.isFinite(delta)) return;
     setCart(old => {
       const next = { ...old };
       const current = Number(next[product.id] || 0);
@@ -123,7 +141,8 @@ export default function GroceryMarketplace() {
   }
 
   async function handleConfirmCancel() {
-    if (!currentUser?.token || !cancelTargetId) return;
+    if (!currentUser?.token || !cancelTargetId || cancelBusy) return;
+    setCancelBusy(true);
     try {
       const r = await fetch(API_BASE + '/grocery/orders/' + encodeURIComponent(cancelTargetId) + '/cancel', {
         method: 'PATCH',
@@ -132,17 +151,19 @@ export default function GroceryMarketplace() {
       const d = await r.json().catch(() => ({}));
       if (!r.ok) throw Error(d.error || 'Could not cancel order.');
       setMessage(d.message || 'Order cancelled.');
+      setCancelTargetId(null);
       await loadOrders();
       await load();
     } catch (e) {
-      setMessage(e.message);
+      setMessage(e.message || 'Could not cancel order.');
     } finally {
-      setCancelTargetId(null);
+      setCancelBusy(false);
     }
   }
 
   async function checkout(e) {
     e.preventDefault();
+    if (busy) return;
     if (!currentUser) {
       openAuthModal('login');
       setMessage('Sign in as a customer to place your order.');
@@ -197,10 +218,13 @@ export default function GroceryMarketplace() {
       });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) throw Error(d.error || 'Could not place order.');
+      if (!d.order || typeof d.order !== 'object' || d.order.id === null || d.order.id === undefined || String(d.order.id).trim() === '') {
+        throw new Error('The server did not confirm an order reference. Check My Orders before trying again.');
+      }
 
-      setMessage(d.order?.deliveryStatus === 'driver_requested'
-        ? 'Order placed! An approved delivery driver has been requested. Your handoff PINs are shown in My Orders.'
-        : 'Order placed! The shop will prepare your order for delivery. Pay cash on delivery.');
+      setMessage(d.order.deliveryStatus === 'driver_requested'
+        ? 'Order placed. A delivery driver has been requested; check My Orders for the latest status and any handoff details.'
+        : 'Order placed. Check My Orders for the latest status. Payment is cash on delivery.');
       setCart({});
       setIsCheckoutModalOpen(false);
       await load();
@@ -228,7 +252,7 @@ export default function GroceryMarketplace() {
         <div>
           <div className="eyebrow">LOCAL SHOPS & ESSENTIALS</div>
           <h2 id="grocery-heading">Grocery & Everyday Essentials</h2>
-          <p className="section-desc">Order groceries, pantry items, and gas cylinders from verified neighborhood shops.</p>
+          <p className="section-desc">Order groceries, pantry items, and gas cylinders from local shops listed on ARY.</p>
         </div>
 
         <div className="grocery-header-actions">
@@ -298,7 +322,7 @@ export default function GroceryMarketplace() {
                     <div className="order-top">
                       <div>
                         <b>{o.providerName}</b>
-                        <span className="order-id">Ref #{o.id?.slice(0, 8)}</span>
+                        <span className="order-id">Ref #{String(o.id).slice(0, 8)}</span>
                       </div>
                       <Badge variant={o.status === 'completed' ? 'success' : o.status === 'cancelled' ? 'danger' : 'warning'}>
                         {o.status?.replace('_', ' ')}
@@ -387,7 +411,7 @@ export default function GroceryMarketplace() {
         <Info size={16} className="rule-icon" />
         <div>
           <b>Single-Shop Cart Rule</b>
-          <p>To ensure freshness and rapid point-to-point courier delivery, items in your cart must come from a single shop per order.</p>
+          <p>Each order can contain products from one shop at a time. Complete separate checkouts for different shops.</p>
         </div>
       </div>
 
