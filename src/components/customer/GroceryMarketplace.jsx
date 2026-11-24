@@ -28,6 +28,8 @@ export default function GroceryMarketplace() {
   const { currentUser, openAuthModal } = useAuth();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [ordersError, setOrdersError] = useState('');
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('All');
   const [cart, setCart] = useState({});
@@ -45,10 +47,13 @@ export default function GroceryMarketplace() {
     setLoading(true);
     try {
       const r = await fetch(API_BASE + '/grocery/products');
-      const d = await r.json();
-      if (r.ok) setProducts(d.products || []);
-    } catch {
-      setMessage('Grocery products could not be loaded.');
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.error || 'Grocery products could not be loaded.');
+      if (!Array.isArray(d.products)) throw new Error('The product list response was invalid. Please retry.');
+      setProducts(d.products.filter(product => product && typeof product === 'object'));
+      setLoadError('');
+    } catch (error) {
+      setLoadError(error.message || 'Grocery products could not be loaded.');
     } finally {
       setLoading(false);
     }
@@ -60,9 +65,14 @@ export default function GroceryMarketplace() {
       const r = await fetch(API_BASE + '/grocery/orders/mine', {
         headers: { Authorization: 'Bearer ' + currentUser.token }
       });
-      const d = await r.json();
-      if (r.ok) setOrders(d.orders || []);
-    } catch {}
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.error || 'Your grocery orders could not be loaded.');
+      if (!Array.isArray(d.orders)) throw new Error('The orders response was invalid. Please retry.');
+      setOrders(d.orders.filter(order => order && typeof order === 'object'));
+      setOrdersError('');
+    } catch (error) {
+      setOrdersError(error.message || 'Your grocery orders could not be loaded.');
+    }
   }
 
   useEffect(() => { load(); }, []);
@@ -75,12 +85,14 @@ export default function GroceryMarketplace() {
     }
   }, [currentUser?.token]);
 
-  const categories = ['All', ...new Set(products.map(p => p.category).filter(Boolean))];
+  const safeProducts = Array.isArray(products) ? products : [];
+  const safeOrders = Array.isArray(orders) ? orders : [];
+  const categories = ['All', ...new Set(safeProducts.filter(p => p && typeof p === 'object').map(p => p.category).filter(Boolean))];
 
-  const visible = useMemo(() => products.filter(p =>
+  const visible = useMemo(() => safeProducts.filter(p => p && typeof p === 'object' &&
     (category === 'All' || p.category === category) &&
     (p.name + ' ' + (p.brand || '') + ' ' + p.category + ' ' + p.providerName).toLowerCase().includes(query.toLowerCase())
-  ), [products, category, query]);
+  ), [safeProducts, category, query]);
 
   const cartLines = Object.entries(cart)
     .filter(([, q]) => q > 0)
@@ -117,7 +129,7 @@ export default function GroceryMarketplace() {
         method: 'PATCH',
         headers: { Authorization: 'Bearer ' + currentUser.token }
       });
-      const d = await r.json();
+      const d = await r.json().catch(() => ({}));
       if (!r.ok) throw Error(d.error || 'Could not cancel order.');
       setMessage(d.message || 'Order cancelled.');
       await loadOrders();
@@ -140,7 +152,29 @@ export default function GroceryMarketplace() {
       setMessage('Switch to your Customer account to place grocery orders.');
       return;
     }
-    if (!cartLines.length) return;
+    if (!currentUser?.token) {
+      setMessage('Please sign in again before placing your order.');
+      return;
+    }
+    if (!cartLines.length) {
+      setMessage('Add at least one item before checkout.');
+      return;
+    }
+    if (!address.trim()) {
+      setMessage('Enter a delivery address to continue.');
+      return;
+    }
+    const phoneDigits = phone.replace(/\D/g, '');
+    if (phoneDigits.length < 7 || phoneDigits.length > 15) {
+      setMessage('Enter a valid contact phone number.');
+      return;
+    }
+    const unavailableLine = cartLines.find(line => !Number.isFinite(Number(line.product.stock)) || line.quantity > Number(line.product.stock) || !Number.isFinite(Number(line.product.price)) || Number(line.product.price) < 0);
+    if (unavailableLine) {
+      setMessage(`${unavailableLine.product.name} is no longer available in the requested quantity. Refresh products and review your cart.`);
+      await load();
+      return;
+    }
     if (hasMultipleShops) {
       setMessage('Please checkout one shop at a time. Remove items from other shops first.');
       return;
@@ -161,7 +195,7 @@ export default function GroceryMarketplace() {
           notes
         })
       });
-      const d = await r.json();
+      const d = await r.json().catch(() => ({}));
       if (!r.ok) throw Error(d.error || 'Could not place order.');
 
       setMessage(d.order?.deliveryStatus === 'driver_requested'
@@ -222,6 +256,13 @@ export default function GroceryMarketplace() {
         </div>
       </div>
 
+      {loadError && (
+        <div className="ds-toast ds-toast-warning" role="alert" style={{ width: '100%', marginBottom: 'var(--space-4)' }}>
+          <span>{loadError}</span>
+          <Button variant="ghost" size="sm" onClick={load} loading={loading} disabled={loading}>Retry</Button>
+        </div>
+      )}
+
       {message && (
         <div className={`ds-toast ${message.includes('placed') ? 'ds-toast-success' : 'ds-toast-info'}`} style={{ width: '100%', marginBottom: 'var(--space-4)' }}>
           <span>{message}</span>
@@ -243,11 +284,12 @@ export default function GroceryMarketplace() {
             </button>
           </div>
 
-          {orders.length === 0 ? (
+          {ordersError && <div role="alert" className="ds-toast ds-toast-warning"><span>{ordersError}</span><Button variant="ghost" size="sm" onClick={loadOrders}>Retry</Button></div>}
+          {safeOrders.length === 0 ? (
             <p style={{ color: 'var(--text-muted)' }}>No previous grocery orders placed yet.</p>
           ) : (
             <div className="grocery-orders-feed">
-              {orders.map(o => {
+              {safeOrders.map(o => {
                 const stepIndex = getOrderStatusStep(o.status);
                 const isTerminal = ['completed', 'cancelled'].includes(o.status);
 
@@ -273,7 +315,7 @@ export default function GroceryMarketplace() {
                     )}
 
                     <div className="order-items-list">
-                      {o.items.map((it, idx) => (
+                      {(Array.isArray(o.items) ? o.items : []).map((it, idx) => (
                         <span key={idx} className="order-item-tag">
                           {it.name} × {it.quantity}
                         </span>
@@ -367,7 +409,7 @@ export default function GroceryMarketplace() {
             </div>
           ))}
         </div>
-      ) : visible.length === 0 ? (
+      ) : loadError ? null : visible.length === 0 ? (
         <EmptyState
           icon={Package}
           title="No products listed"
