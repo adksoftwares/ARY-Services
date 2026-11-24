@@ -57,6 +57,8 @@ export default function HeroSection({
     }
   }
 
+  const safePopularProviders = Array.isArray(popularProviders) ? popularProviders.filter(provider => provider && typeof provider === 'object' && provider.id !== null && provider.id !== undefined) : [];
+
   const QUICK_CHIPS = [
     { label: 'Electrical Repair', icon: Zap, slug: 'electrical-repair', query: 'electrical' },
     { label: 'Plumbing', icon: Wrench, slug: 'plumbing', query: 'plumbing' },
@@ -72,7 +74,7 @@ export default function HeroSection({
         {/* Eyebrow Pill */}
         <div className="hero-trust-badge">
           <span className="live-dot" aria-hidden="true" />
-          <span>SRI LANKA'S VERIFIED SERVICES & MOBILITY NETWORK</span>
+          <span>SERVICES & MOBILITY ACROSS SRI LANKA</span>
         </div>
 
         {/* Clean, Focused Heading */}
@@ -80,7 +82,7 @@ export default function HeroSection({
           {t('heroTitle', 'Good help is closer than you think.')}
         </h1>
         <p className="hero-subtext">
-          {t('heroSubtitle', 'Discover verified local tradespeople, grocery storefronts, rides, and secure parcel couriers across Sri Lanka.')}
+          {t('heroSubtitle', 'Discover local service providers, grocery storefronts, rides, and parcel delivery options across Sri Lanka.')}
         </p>
 
         {/* Prominent Dual Search Panel */}
@@ -192,19 +194,19 @@ export default function HeroSection({
           </div>
         </div>
 
-        {/* Trust Row */}
-        <div className="hero-trust-row" aria-label="Trust guarantees">
+        {/* Service information */}
+        <div className="hero-trust-row" aria-label="Service information">
           <div className="trust-item">
             <ShieldCheck size={16} className="trust-icon" aria-hidden="true" />
-            <span>100% Verified Sri Lankan Providers</span>
+            <span>Provider applications reviewed by Admin</span>
           </div>
           <div className="trust-item">
             <Lock size={16} className="trust-icon" aria-hidden="true" />
-            <span>4-Digit PIN Secured Handoff</span>
+            <span>Request-specific handoff details</span>
           </div>
           <div className="trust-item">
             <Clock size={16} className="trust-icon" aria-hidden="true" />
-            <span>14-Day ARY Workmanship Warranty</span>
+            <span>Booking status updates</span>
           </div>
         </div>
 
@@ -214,8 +216,8 @@ export default function HeroSection({
             <div className="guest-card-left">
               <span className="guest-lock-icon"><ShieldCheck size={18} /></span>
               <div>
-                <b>Instant Booking & Secure Live Tracking</b>
-                <p>Sign in with mobile number and password to book verified providers and track drivers in real time.</p>
+                <b>Book and manage services with ARY</b>
+                <p>Sign in with your account to request services, review provider details and follow the status updates available for your bookings.</p>
               </div>
             </div>
             <div className="guest-card-actions">
@@ -239,18 +241,18 @@ export default function HeroSection({
       </div>
 
       {/* Popular Near You Carousel / Scroller */}
-      {popularProviders && popularProviders.length > 0 && (
+      {safePopularProviders.length > 0 && (
         <div className="hero-carousel-section" aria-labelledby="popular-near-you-title">
           <div className="carousel-header">
             <div className="carousel-title-group">
               <Sparkles size={16} className="carousel-title-icon" aria-hidden="true" />
               <h2 id="popular-near-you-title" className="carousel-heading">Popular Near You</h2>
             </div>
-            <span className="carousel-hint">Swipe to explore verified partners</span>
+            <span className="carousel-hint">Browse listed service providers</span>
           </div>
 
           <div className="popular-carousel-track" tabIndex={0} role="region" aria-label="Popular providers scroll list">
-            {popularProviders.slice(0, 6).map(p => (
+            {safePopularProviders.slice(0, 6).map(p => (
               <div key={p.id} className="popular-provider-card">
                 <div className="popular-card-header">
                   <Avatar name={p.fullName} size="md" isOnline={p.isOnline === true} />
@@ -258,19 +260,19 @@ export default function HeroSection({
                     <b className="popular-name">{p.fullName}</b>
                     <span className="popular-category">{p.categoryName || 'Home Services'}</span>
                   </div>
-                  <Badge variant="success" dot={false} className="popular-badge">
-                    <CheckCircle2 size={12} /> Verified
+                  <Badge variant="neutral" dot={false} className="popular-badge">
+                    Listed on ARY
                   </Badge>
                 </div>
 
                 <div className="popular-card-meta">
                   <div className="popular-meta-row">
                     <span className="rating-pill">
-                      <Star size={12} fill="currentColor" /> {p.reviewCount > 0 && p.rating != null ? Number(p.rating).toFixed(1) : 'New'}
+                      <Star size={12} fill="currentColor" /> {Number.isFinite(Number(p.rating)) && Number(p.rating) >= 0 && Number(p.rating) <= 5 && Number(p.reviewCount) > 0 ? Number(p.rating).toFixed(1) : 'New'}
                     </span>
                     <span className="reviews-count">({p.reviewCount > 0 ? `${p.reviewCount} reviews` : 'No reviews yet'})</span>
                     {p.distanceKm != null && (
-                      <span className="distance-pill">{p.distanceKm} km</span>
+                      <span className="distance-pill">{Number.isFinite(Number(p.distanceKm)) && Number(p.distanceKm) >= 0 ? `${Number(p.distanceKm).toFixed(1)} km` : ''}</span>
                     )}
                   </div>
                   <div className="rate-text">
