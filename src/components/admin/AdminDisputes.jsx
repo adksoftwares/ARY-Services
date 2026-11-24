@@ -24,8 +24,9 @@ export default function AdminDisputes({
   const [selectedAction, setSelectedAction] = useState('split_50_50'); // 'refund_customer' | 'split_50_50' | 'release_provider'
   const [arbitrationNotes, setArbitrationNotes] = useState('');
 
-  const disputedBookings = bookings.filter(
-    b => b.status === 'disputed' || b.paymentStatus === 'disputed_frozen' || b.dispute
+  const disputedBookings = (Array.isArray(bookings) ? bookings : []).filter(
+    booking => booking && typeof booking === 'object' && booking.id !== null && booking.id !== undefined &&
+      (booking.status === 'disputed' || booking.paymentStatus === 'disputed_frozen' || Boolean(booking.dispute))
   );
 
   function openArbitrationModal(booking) {
@@ -67,9 +68,9 @@ export default function AdminDisputes({
   }
 
   async function handleConfirmArbitration() {
-    if (!selectedBooking) return;
-    await onArbitrate(selectedBooking.id, selectedAction, arbitrationNotes);
-    setSelectedBooking(null);
+    if (!selectedBooking || typeof onArbitrate !== 'function' || arbitratingId === selectedBooking.id) return;
+    const completed = await onArbitrate(selectedBooking.id, selectedAction, arbitrationNotes);
+    if (completed === true) setSelectedBooking(null);
   }
 
   return (
@@ -357,7 +358,7 @@ export default function AdminDisputes({
                     variant="primary"
                     onClick={handleConfirmArbitration}
                     loading={arbitratingId === selectedBooking.id}
-                    disabled={!hasFundedEscrow}
+                    disabled={!hasFundedEscrow || typeof onArbitrate !== 'function' || selectedBooking.id === null || selectedBooking.id === undefined}
                   >
                     <CheckCircle2 size={15} /> Confirm administrative ruling
                   </Button>

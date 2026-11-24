@@ -252,7 +252,7 @@ export default function AdminWorkspace({
 
   // Action: Arbitrate Dispute
   async function handleArbitrateDispute(bookingId, action, notes) {
-    if (!currentUser?.token) return;
+    if (!currentUser?.token || bookingId === null || bookingId === undefined || !['split_50_50', 'refund_customer', 'release_provider'].includes(action) || arbitratingId !== null) return false;
     setArbitratingId(bookingId);
     try {
       const res = await fetch(`${API_BASE}/admin/bookings/${bookingId}/arbitrate`, {
@@ -271,8 +271,10 @@ export default function AdminWorkspace({
 
       onNotice?.(`Dispute Settlement Executed: ${action.replace(/_/g, ' ').toUpperCase()}`);
       await fetchBookings();
+      return true;
     } catch (e) {
-      onNotice?.(`Error: ${e.message}`);
+      onNotice?.(`Error: ${e.message || 'Failed to arbitrate dispute.'}`);
+      return false;
     } finally {
       setArbitratingId(null);
     }
