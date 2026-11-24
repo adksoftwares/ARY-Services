@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Bike,
   Utensils,
@@ -48,25 +48,32 @@ export default function MobilityServices({ onNotice }) {
   const [myJobs, setMyJobs] = useState([]);
   const [jobsError, setJobsError] = useState('');
   const [cancelTargetJobId, setCancelTargetJobId] = useState(null);
+  const jobsRequestRef = useRef(0);
 
   const change = (key, value) => setForm(old => ({ ...old, [key]: value }));
 
   const refreshJobs = useCallback(async () => {
-    if (!currentUser?.token) { setMyJobs([]); return; }
+    const requestId = ++jobsRequestRef.current;
+    if (!currentUser?.token) { setMyJobs([]); setJobsError(''); return; }
     try {
       const response = await fetch(API_BASE + '/my-mobility-jobs', {
         headers: { Authorization: 'Bearer ' + currentUser.token }
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || 'Could not load your ride and delivery requests.');
-      setMyJobs(data.jobs || []);
+      if (requestId !== jobsRequestRef.current) return;
+      if (!Array.isArray(data.jobs)) throw new Error('The server returned an unexpected requests list. Please refresh.');
+      setMyJobs(data.jobs.filter(job => job && typeof job === 'object' && job.id !== null && job.id !== undefined && String(job.id).trim() !== ''));
       setJobsError('');
     } catch (err) {
-      setJobsError(err.message || 'Could not load your requests.');
+      if (requestId === jobsRequestRef.current) setJobsError(err.message || 'Could not load your requests.');
     }
   }, [currentUser?.token]);
 
-  useEffect(() => { refreshJobs(); }, [refreshJobs]);
+  useEffect(() => {
+    refreshJobs();
+    return () => { jobsRequestRef.current += 1; };
+  }, [refreshJobs]);
 
   useEffect(() => {
     if (!currentUser?.token) return undefined;
@@ -79,6 +86,7 @@ export default function MobilityServices({ onNotice }) {
   }, [currentUser?.token, refreshJobs]);
 
   async function cancelRequest(jobId) {
+    if (!jobId || !currentUser?.token) return;
     try {
       const response = await fetch(API_BASE + '/my-mobility-jobs/' + encodeURIComponent(jobId) + '/cancel', {
         method: 'PATCH',
@@ -138,22 +146,20 @@ export default function MobilityServices({ onNotice }) {
         headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + currentUser.token },
         body: JSON.stringify(payload)
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || 'Could not submit request.');
+      if (!data.job || data.job.id === null || data.job.id === undefined) throw new Error('The server did not confirm the request. Refresh your requests before trying again.');
 
-      setMessage(`Request created successfully (ID: #${data.job?.id?.slice(0, 8)})`);
+      setMessage(`Request created successfully (ID: #${String(data.job.id).slice(0, 8)})`);
       setForm(old => ({ ...old, orderReference: '', notes: '' }));
       await refreshJobs();
-      onNotice?.('Request broadcasted to nearby verified drivers.');
+      onNotice?.('Your mobility request was created. Driver assignment status is shown in your requests.');
     } catch (err) {
       setMessage(err.message);
     } finally {
       setBusy(false);
     }
   }
-
-  // Estimated fare calculation
-  const estimatedFare = mode === 'food' ? 'LKR 450 - 650' : mode === 'parcel' ? 'LKR 550 - 900' : 'LKR 650 - 1,200';
 
   const getJobStep = (job) => {
     if (job.status === 'completed') return 3;
@@ -169,7 +175,7 @@ export default function MobilityServices({ onNotice }) {
           <div className="eyebrow">DEDICATED MOBILITY FLEETS</div>
           <h2 id="mobility-heading">Rides, Food & Parcel Delivery</h2>
         </div>
-        <span className="section-note">Separate driver networks · Verified background checks</span>
+        <span className="section-note">Ride and delivery requests</span>
       </div>
 
       <div style={{ marginBottom: 'var(--space-6)' }}>
@@ -193,14 +199,14 @@ export default function MobilityServices({ onNotice }) {
               {mode === 'food' ? <Utensils size={18} /> : mode === 'parcel' ? <PackageCheck size={18} /> : <Car size={18} />}
               <span>{mode === 'food' ? 'Food Delivery Driver Request' : mode === 'parcel' ? 'Parcel Courier Request' : 'On-Demand Ride Request'}</span>
             </b>
-            <Badge variant="brand" dot={false}>
-              Est. Fare: {estimatedFare}
+            <Badge variant="neutral" dot={false}>
+              Fare shown after request review
             </Badge>
           </div>
 
           <div className="fare-estimate-notice">
             <Info size={14} />
-            <span>Fares shown are <b>estimates</b> based on straight-line distance. Road routing, traffic, and toll conditions may adjust final meter.</span>
+            <span>A fare estimate is not available in this form. Confirm the fare shown in your request or with the assigned service provider before proceeding.</span>
           </div>
 
           {mode === 'food' && (
@@ -357,7 +363,7 @@ export default function MobilityServices({ onNotice }) {
           />
 
           {message && (
-            <div className={`ds-toast ${message.includes('created') ? 'ds-toast-success' : 'ds-toast-info'}`} style={{ width: '100%' }}>
+            <div role="status" aria-live="polite" className={`ds-toast ${message.includes('created') ? 'ds-toast-success' : 'ds-toast-info'}`} style={{ width: '100%' }}>
               <span>{message}</span>
             </div>
           )}
@@ -385,17 +391,17 @@ export default function MobilityServices({ onNotice }) {
 
           <p className="mobility-info-body">
             {mode === 'food'
-              ? 'Dedicated food couriers equipped with insulated bags to keep hot meals fresh from restaurant to door.'
+              ? 'Submit your pickup and delivery details. Driver assignment and request progress will appear in your request list.'
               : mode === 'parcel'
-              ? 'Point-to-point courier service with mandatory 4-digit recipient verification PIN before package release.'
-              : 'Direct passenger rides with upfront fare estimate and 4-digit ride start PIN for peace of mind.'}
+              ? 'Submit sender, recipient and parcel details. Any handoff verification details will be shown when available for your request.'
+              : 'Enter your pickup, destination and passenger count. Confirm the fare and driver details shown for your request before travelling.'}
           </p>
 
           <div className="pin-security-callout">
             <ShieldCheck size={18} className="callout-icon" />
             <div>
-              <b>Secure 4-Digit PIN Handoff</b>
-              <p>Every trip and delivery generates a unique verification PIN. Never share your PIN until the package is handed over or the ride begins.</p>
+              <b>Handoff Verification</b>
+              <p>If a verification PIN is provided for your request, share it only at the relevant pickup or handoff step.</p>
             </div>
           </div>
         </div>
@@ -406,8 +412,8 @@ export default function MobilityServices({ onNotice }) {
         <section className="active-mobility-feed" aria-labelledby="active-mobility-title">
           <div className="section-heading" style={{ marginTop: 'var(--space-8)' }}>
             <div>
-              <div className="eyebrow">YOUR LIVE FLEET STATUS</div>
-              <h3 id="active-mobility-title">Active Trips & Deliveries ({myJobs.length})</h3>
+              <div className="eyebrow">YOUR REQUEST STATUS</div>
+              <h3 id="active-mobility-title">Ride & Delivery Requests ({myJobs.length})</h3>
             </div>
             <Button variant="outline" size="sm" icon={RefreshCw} onClick={refreshJobs}>
               Refresh Status
@@ -433,7 +439,7 @@ export default function MobilityServices({ onNotice }) {
                       <b className="mobility-job-title">
                         {job.serviceType === 'food_delivery' ? 'Food Delivery' : job.serviceType === 'parcel_delivery' ? 'Parcel Courier' : 'Ride Trip'}
                       </b>
-                      <span className="mobility-job-id">Ref: #{job.id?.slice(0, 8)}</span>
+                      <span className="mobility-job-id">Ref: #{String(job.id).slice(0, 8)}</span>
                     </div>
                     <Badge variant={job.status === 'completed' ? 'success' : job.status === 'in_progress' ? 'brand' : 'warning'}>
                       {String(job.status || 'requested').replace('_', ' ')}
@@ -451,11 +457,11 @@ export default function MobilityServices({ onNotice }) {
                   <div className="mobility-route-box">
                     <div className="route-point">
                       <MapPin size={15} className="pickup-pin" />
-                      <span><b>Pickup:</b> {job.pickupAddress}</span>
+                      <span><b>Pickup:</b> {job.pickupAddress || 'Pickup address unavailable'}</span>
                     </div>
                     <div className="route-point">
                       <MapPin size={15} className="dest-pin" />
-                      <span><b>Drop-off:</b> {job.destinationAddress}</span>
+                      <span><b>Drop-off:</b> {job.destinationAddress || 'Destination address unavailable'}</span>
                     </div>
                   </div>
 
