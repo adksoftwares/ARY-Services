@@ -854,7 +854,7 @@ export default function DriverWorkspace({ onNotice }) {
             disabled={submitting || selectedServices.length === 0}
             loading={submitting}
           >
-            Update Active Streams
+            Submit Stream Changes for Review
           </Button>
         </div>
       </Card>
