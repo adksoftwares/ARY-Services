@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import {
   Plus,
   Package,
@@ -103,6 +103,10 @@ export default function GroceryInventory() {
   const [filterMode, setFilterMode] = useState('all'); // 'all' | 'low_stock' | 'available'
   const [categoryFilter, setCategoryFilter] = useState('');
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [stockBusyId, setStockBusyId] = useState(null);
+  const inventoryRequestRef = useRef(0);
+  const catalogRequestRef = useRef(0);
 
   const units = UNIT_GROUPS[form.unitGroup] || UNIT_GROUPS.count;
   const selectedCatalogSizes = useMemo(() => {
@@ -112,25 +116,44 @@ export default function GroceryInventory() {
   }, [catalog, catalogChoice]);
 
   const load = useCallback(async () => {
-    if (!currentUser?.token) return;
+    const requestId = ++inventoryRequestRef.current;
+    if (!currentUser?.token || currentUser.accountType !== 'provider') {
+      setItems([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const res = await fetch(`${API_BASE}/grocery/products/mine`, {
         headers: { Authorization: `Bearer ${currentUser.token}` }
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || 'Could not load store inventory');
-      setItems(data.products || []);
+      if (requestId !== inventoryRequestRef.current) return;
+      if (!Array.isArray(data.products)) throw new Error('The server returned an unexpected inventory list. Please refresh.');
+      setItems(data.products.filter(item => item && typeof item === 'object' && item.id !== null && item.id !== undefined && String(item.id).trim() !== ''));
+      setError('');
     } catch (e) {
-      setError(e.message || 'Error loading inventory');
+      if (requestId === inventoryRequestRef.current) setError(e.message || 'Error loading inventory');
     } finally {
-      setLoading(false);
+      if (requestId === inventoryRequestRef.current) setLoading(false);
     }
   }, [currentUser?.token]);
 
   useEffect(() => {
     load();
-    fetch(`${API_BASE}/grocery/catalog`).then(res => res.json()).then(data => setCatalog(Array.isArray(data.catalog) ? data.catalog : [])).catch(() => setCatalog([]));
+    const catalogRequestId = ++catalogRequestRef.current;
+    fetch(`${API_BASE}/grocery/catalog`)
+      .then(async response => {
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || 'Could not load product templates.');
+        return data;
+      })
+      .then(data => {
+        if (catalogRequestId === catalogRequestRef.current) setCatalog(Array.isArray(data.catalog) ? data.catalog.filter(group => group && typeof group === 'object' && Array.isArray(group.products)) : []);
+      })
+      .catch(() => { if (catalogRequestId === catalogRequestRef.current) setCatalog([]); });
+    return () => { inventoryRequestRef.current += 1; catalogRequestRef.current += 1; };
   }, [load]);
 
   function applyCatalogTemplate(value) {
@@ -181,6 +204,7 @@ export default function GroceryInventory() {
 
   async function handleSave(e) {
     e.preventDefault();
+    if (saving || !currentUser?.token || currentUser.accountType !== 'provider') return;
     setSaving(true);
     setError('');
     try {
@@ -195,7 +219,7 @@ export default function GroceryInventory() {
       if (!Number.isFinite(packSize) || packSize <= 0) throw new Error('Pack size must be greater than zero.');
       const payload = { ...form, name: form.name.trim(), price, stock, lowStock, packSize };
 
-      const url = `${API_BASE}/grocery/products${editingId ? `/${editingId}` : ''}`;
+      const url = `${API_BASE}/grocery/products${editingId ? `/${encodeURIComponent(editingId)}` : ''}`;
       const method = editingId ? 'PUT' : 'POST';
 
       const res = await fetch(url, {
@@ -221,8 +245,10 @@ export default function GroceryInventory() {
   }
 
   async function executeDelete(id) {
+    if (!currentUser?.token || !id || deleteBusy) return;
+    setDeleteBusy(true);
     try {
-      const res = await fetch(`${API_BASE}/grocery/products/${id}`, {
+      const res = await fetch(`${API_BASE}/grocery/products/${encodeURIComponent(id)}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${currentUser.token}` }
       });
@@ -232,14 +258,18 @@ export default function GroceryInventory() {
       setConfirmDeleteId(null);
     } catch (e) {
       setError(e.message || 'Could not delete product');
+    } finally {
+      setDeleteBusy(false);
     }
   }
 
   // Quick inline stock adjustment
   async function adjustStock(item, delta) {
+    if (!currentUser?.token || !item?.id || stockBusyId !== null || !Number.isFinite(Number(item.stock)) || Number(item.stock) < 0 || !Number.isFinite(delta) || delta === 0) return;
     const newStock = Math.max(0, Number(item.stock) + delta);
+    setStockBusyId(item.id);
     try {
-      const res = await fetch(`${API_BASE}/grocery/products/${item.id}`, {
+      const res = await fetch(`${API_BASE}/grocery/products/${encodeURIComponent(item.id)}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -253,30 +283,34 @@ export default function GroceryInventory() {
       setError('');
     } catch (e) {
       setError(e.message || 'Could not update stock.');
+    } finally {
+      setStockBusyId(null);
     }
   }
 
   // Filtering
   const filtered = useMemo(() => {
-    return (Array.isArray(items) ? items : []).filter(x => x && typeof x === 'object' && {
-      const matchesQuery = (x.name + ' ' + x.category + ' ' + (x.brand || '') + ' ' + (x.sku || ''))
-        .toLowerCase()
-        .includes(query.toLowerCase());
-      if (!matchesQuery) return false;
-
-      if (categoryFilter && x.category !== categoryFilter) return false;
-
+    return (Array.isArray(items) ? items : []).filter(item => {
+      if (!item || typeof item !== 'object') return false;
+      const searchable = [item.name, item.category, item.brand, item.sku].filter(Boolean).join(' ').toLowerCase();
+      if (!searchable.includes(query.toLowerCase())) return false;
+      if (categoryFilter && item.category !== categoryFilter) return false;
       if (filterMode === 'low_stock') {
-        return Number(x.stock) <= Number(x.lowStock ?? 5);
+        const stock = Number(item.stock);
+        const threshold = Number(item.lowStock ?? 5);
+        return Number.isFinite(stock) && stock >= 0 && Number.isFinite(threshold) && threshold >= 0 && stock <= threshold;
       }
-      if (filterMode === 'available') {
-        return Boolean(x.isAvailable);
-      }
+      if (filterMode === 'available') return Boolean(item.isAvailable);
       return true;
     });
   }, [items, query, categoryFilter, filterMode]);
 
-  const lowStockCount = (Array.isArray(items) ? items : []).filter(x => x && Number.isFinite(Number(x.stock)) && Number(x.stock) <= Number(x.lowStock ?? 5)).length;
+  const lowStockCount = (Array.isArray(items) ? items : []).filter(item => {
+    if (!item || typeof item !== 'object') return false;
+    const stock = Number(item.stock);
+    const threshold = Number(item.lowStock ?? 5);
+    return Number.isFinite(stock) && stock >= 0 && Number.isFinite(threshold) && threshold >= 0 && stock <= threshold;
+  }).length;
 
   return (
     <div className="grocery-inventory-view" style={{ display: 'grid', gap: '20px' }}>
@@ -435,7 +469,7 @@ export default function GroceryInventory() {
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
                     <span style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--color-brand-800, #174d3d)' }}>
-                      LKR {Number(item.price).toLocaleString('en-LK')}
+                      {Number.isFinite(Number(item.price)) && Number(item.price) >= 0 ? `LKR ${Number(item.price).toLocaleString('en-LK')}` : 'Price unavailable'}
                     </span>
                     <span style={{ fontSize: '0.8rem', color: 'var(--color-neutral-600, #475569)' }}>
                       Pack: <b>{item.packSize} {item.unit === 'kg_cylinder' ? 'kg cylinder' : item.unit}</b>
@@ -467,7 +501,8 @@ export default function GroceryInventory() {
                         type="button"
                         className="stock-stepper-btn"
                         onClick={() => adjustStock(item, -1)}
-                        aria-label="Decrease stock"
+                        aria-label={`Decrease stock for ${item.name || "product"}`}
+                        disabled={stockBusyId !== null}
                       >
                         -
                       </button>
@@ -475,7 +510,8 @@ export default function GroceryInventory() {
                         type="button"
                         className="stock-stepper-btn"
                         onClick={() => adjustStock(item, 1)}
-                        aria-label="Increase stock"
+                        aria-label={`Increase stock for ${item.name || "product"}`}
+                        disabled={stockBusyId !== null}
                       >
                         +
                       </button>
@@ -716,7 +752,7 @@ export default function GroceryInventory() {
         onConfirm={() => {
           if (confirmDeleteId) executeDelete(confirmDeleteId);
         }}
-        onCancel={() => setConfirmDeleteId(null)}
+        onCancel={() => { if (!deleteBusy) setConfirmDeleteId(null); }}
       />
     </div>
   );
