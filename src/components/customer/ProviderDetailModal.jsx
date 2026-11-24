@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import {
   MapPin,
   Star,
-  CheckCircle2,
   Calendar,
   Clock,
   Wrench,
@@ -47,11 +46,11 @@ export default function ProviderDetailModal({
   const providerRate = formatRate(provider.baseCharge);
   const selectedRate = formatRate(selectedService?.baseCharge) || providerRate || 'Contact for rate';
   const reviewCountValue = Number(provider.reviewCount);
-  const reviewCount = Number.isFinite(reviewCountValue) && reviewCountValue > 0 ? reviewCountValue : 0;
+  const reviewCount = Number.isFinite(reviewCountValue) && reviewCountValue > 0 ? Math.floor(reviewCountValue) : 0;
   const ratingValue = Number(provider.rating);
-  const rating = reviewCount > 0 && provider.rating != null && Number.isFinite(ratingValue) && ratingValue >= 0 && ratingValue <= 5 ? ratingValue : null;
+  const rating = reviewCount > 0 && provider.rating != null && Number.isFinite(ratingValue) && ratingValue >= 1 && ratingValue <= 5 ? ratingValue : null;
   const experienceValue = Number(provider.experienceYears);
-  const experienceYears = provider.experienceYears != null && Number.isFinite(experienceValue) && experienceValue >= 0 ? experienceValue : null;
+  const experienceYears = provider.experienceYears != null && provider.experienceYears !== '' && Number.isFinite(experienceValue) && experienceValue >= 0 ? experienceValue : null;
   const operatingMode = provider.operatingMode === 'shop' ? 'Shop-based' : provider.operatingMode === 'online' ? 'Online service' : provider.operatingMode === 'mobile' ? 'Mobile / on-location' : 'Not specified';
 
   return (
