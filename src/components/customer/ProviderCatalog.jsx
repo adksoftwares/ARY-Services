@@ -200,7 +200,7 @@ export default function ProviderCatalog({
         {safeProviders.some(p => p.distanceKm != null && Number.isFinite(Number(p.distanceKm)) && Number(p.distanceKm) >= 0) && (
           <div className="geofence-banner">
             <Navigation size={13} className="geofence-icon" aria-hidden="true" />
-            <span><b>Geofence Active:</b> Showing verified contractors within your area</span>
+            <span><b>Location data available:</b> Distance details are shown for providers with usable location data</span>
           </div>
         )}
 
@@ -264,16 +264,14 @@ export default function ProviderCatalog({
                             <span className="provider-category-tag">{serviceTitle}</span>
                           </div>
                         </div>
-                        <Badge variant="success" dot={false} className="verified-badge">
-                          <CheckCircle2 size={13} /> Verified
-                        </Badge>
+                        <Badge variant="neutral" dot={false} className="verified-badge">Listed on ARY</Badge>
                       </div>
 
                       {/* Meta Row: Location, Distance, Rating, Experience */}
                       <div className="provider-meta-row">
                         <div className="provider-meta-item">
                           <MapPin size={14} className="meta-icon" />
-                          <span>{provider.location || 'Local Area'}</span>
+                          <span>{provider.location || 'Location not provided'}</span>
                         </div>
 
                         {operatingModeLabel && <div className="provider-meta-item"><Briefcase size={14} className="meta-icon" /><span>{operatingModeLabel}</span></div>}
@@ -344,8 +342,8 @@ export default function ProviderCatalog({
         ) : (
           <EmptyState
             icon={Users}
-            title={selectedCategory ? `No verified providers in ${selectedCategory.name} matching filters.` : 'No matching providers found.'}
-            description="Try resetting your filters or exploring another service category across Sri Lanka."
+            title={selectedCategory ? `No listed providers in ${selectedCategory.name} match these filters.` : 'No matching providers found.'}
+            description="Try resetting your filters or exploring another service category."
             actionLabel="Reset All Filters"
             onAction={resetFilters}
           />
