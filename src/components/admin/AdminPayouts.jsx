@@ -28,6 +28,7 @@ export default function AdminPayouts({
   const [preview, setPreview] = useState({ candidates: [], eligibleCount: 0, missingBankDetailsCount: 0 });
   const [previewLoading, setPreviewLoading] = useState(true);
   const [previewError, setPreviewError] = useState('');
+  const [recordingProviderId, setRecordingProviderId] = useState(null);
   const minThreshold = 1000;
 
   async function loadPayoutPreview() {
@@ -41,10 +42,19 @@ export default function AdminPayouts({
       const response = await fetch(`${API_BASE}/admin/payouts/preview`, { headers: { Authorization: `Bearer ${currentUser.token}` } });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || 'Could not load wallet balances');
+      const candidates = Array.isArray(data.candidates) ? data.candidates
+        .filter(item => item && typeof item === 'object' && item.providerId !== null && item.providerId !== undefined)
+        .map(item => ({
+          ...item,
+          balance: Number(item.balance),
+          bankDetailsComplete: item.bankDetailsComplete === true
+        }))
+        .filter(item => Number.isFinite(item.balance) && item.balance >= 0)
+        : [];
       setPreview({
-        candidates: Array.isArray(data.candidates) ? data.candidates : [],
-        eligibleCount: Number(data.eligibleCount) || 0,
-        missingBankDetailsCount: Number(data.missingBankDetailsCount) || 0
+        candidates,
+        eligibleCount: Number.isFinite(Number(data.eligibleCount)) && Number(data.eligibleCount) >= 0 ? Math.floor(Number(data.eligibleCount)) : 0,
+        missingBankDetailsCount: Number.isFinite(Number(data.missingBankDetailsCount)) && Number(data.missingBankDetailsCount) >= 0 ? Math.floor(Number(data.missingBankDetailsCount)) : 0
       });
     } catch (error) {
       setPreviewError(error.message || 'Could not load wallet balances.');
@@ -60,7 +70,10 @@ export default function AdminPayouts({
 
   // Client-side CSV Export for manual bank transfer instructions
   function handleExportCsv() {
-    const records = payoutResult?.disbursements?.length > 0 ? payoutResult.disbursements : eligibleSettlements;
+    const preparedRecords = Array.isArray(payoutResult?.disbursements)
+      ? payoutResult.disbursements.filter(record => record && typeof record === 'object')
+      : [];
+    const records = preparedRecords.length > 0 ? preparedRecords : eligibleSettlements;
 
     const csvCell = value => {
       const textValue = String(value ?? '');
@@ -291,8 +304,8 @@ export default function AdminPayouts({
                   </td>
                 </tr>
               ) : (
-                pendingSettlements.map(item => (
-                  <tr key={item.providerId}>
+                pendingSettlements.map((item, index) => (
+                  <tr key={item.providerId ?? `provider-${index}`}>
                     <td>
                       <b style={{ color: 'var(--color-text, #0f172a)', display: 'block' }}>{item.fullName}</b>
                       <span style={{ fontSize: '0.74rem', color: 'var(--color-neutral-500, #64748b)' }}>{item.phone}</span>
@@ -318,26 +331,36 @@ export default function AdminPayouts({
                       <Button
                         size="sm"
                         variant="outline"
-                        disabled={!payoutResult?.batchId || !payoutResult?.disbursements?.some(record => record.providerId === item.providerId)}
+                        disabled={recordingProviderId !== null || !payoutResult?.batchId || !Array.isArray(payoutResult?.disbursements) || !payoutResult.disbursements.some(record => record && record.providerId === item.providerId)}
                         onClick={async () => {
-                          const prepared = payoutResult?.disbursements?.find(record => record.providerId === item.providerId);
-                          if (!prepared) return;
+                          const prepared = Array.isArray(payoutResult?.disbursements)
+                            ? payoutResult.disbursements.find(record => record && record.providerId === item.providerId)
+                            : null;
+                          if (!prepared || !currentUser?.token || item.providerId === null || item.providerId === undefined || recordingProviderId !== null) return;
                           const bankReference = window.prompt('Enter the bank reference after you have completed this transfer externally:');
-                          if (!bankReference) return;
+                          if (!bankReference || !bankReference.trim()) return;
+                          if (bankReference.trim().length > 200) {
+                            window.alert('Bank reference must be 200 characters or fewer.');
+                            return;
+                          }
+                          setRecordingProviderId(item.providerId);
                           try {
                             const response = await fetch(API_BASE + '/admin/payouts/confirm', {
                               method: 'POST',
                               headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + currentUser.token },
                               body: JSON.stringify({ providerId: item.providerId, batchId: payoutResult.batchId, amount: prepared.amount, bankReference: bankReference.trim() })
                             });
-                            const result = await response.json();
+                            const result = await response.json().catch(() => ({}));
                             if (!response.ok) throw new Error(result.error || 'Could not record bank transfer');
                             window.alert('Recorded LKR ' + Number(result.amount).toLocaleString() + ' against bank reference ' + result.bankReference + '.');
                             await loadPayoutPreview();
                           } catch (error) {
                             window.alert(error.message || 'Could not record the bank transfer.');
+                          } finally {
+                            setRecordingProviderId(null);
                           }
                         }}
+                        loading={recordingProviderId === item.providerId}
                       >Record Paid</Button>
                     </td>
                   </tr>
