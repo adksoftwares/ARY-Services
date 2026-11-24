@@ -41,8 +41,14 @@ export default function AccountView({ onNotice, onClose }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [upgradeError, setUpgradeError] = useState('');
 
-  const roles = currentUser?.roles || (currentUser ? [currentUser.accountType] : []);
-  const applications = currentUser?.roleApplications || {};
+  const roles = Array.isArray(currentUser?.roles)
+    ? currentUser.roles
+    : (currentUser?.accountType ? [currentUser.accountType] : []);
+  const applications = currentUser?.roleApplications && typeof currentUser.roleApplications === 'object'
+    ? currentUser.roleApplications
+    : {};
+  const providerApplicationPending = applications.provider?.status === 'pending';
+  const driverApplicationPending = applications.driver?.status === 'pending';
 
   useEffect(() => {
     if (roles.includes('provider') && !roles.includes('driver')) {
@@ -57,8 +63,26 @@ export default function AccountView({ onNotice, onClose }) {
   async function handleRoleSubmit(e) {
     e.preventDefault();
     setUpgradeError('');
-    if (roleToApply === 'driver' && driverServices.length === 0) {
+    if (!['provider', 'driver'].includes(roleToApply) || roles.includes(roleToApply)) {
+      setUpgradeError('This role is already active or cannot be requested.');
+      return;
+    }
+    if (applications[roleToApply]?.status === 'pending') {
+      setUpgradeError('An application for this role is already awaiting Admin review.');
+      return;
+    }
+    if (roleToApply === 'driver' && (!Array.isArray(driverServices) || driverServices.length === 0)) {
       setUpgradeError('Choose at least one driver service network.');
+      return;
+    }
+    if (!location.trim() || !nicNumber.trim()) {
+      setUpgradeError('Enter your service town and NIC number before submitting.');
+      setUpgradeStep(2);
+      return;
+    }
+    if (roleToApply === 'provider' && !nsnNumber.trim()) {
+      setUpgradeError('Enter your business registration, skills, or trade licence number.');
+      setUpgradeStep(2);
       return;
     }
     setIsSubmitting(true);
@@ -238,14 +262,14 @@ export default function AccountView({ onNotice, onClose }) {
                   <div className="role-card-header">
                     <Briefcase size={18} className="role-icon" />
                     <b>Service Provider</b>
-                    {providerApp?.status === 'pending' ? (
+                    {providerApplicationPending ? (
                       <Badge variant="warning">Under Review</Badge>
                     ) : (
                       <Badge variant="neutral">Not Active</Badge>
                     )}
                   </div>
                   <p>List services, set rates, and accept customer work orders.</p>
-                  {providerApp?.status !== 'pending' && (
+                  {!providerApplicationPending && (
                     <Button
                       variant="secondary"
                       size="sm"
@@ -279,14 +303,14 @@ export default function AccountView({ onNotice, onClose }) {
                   <div className="role-card-header">
                     <Bike size={18} className="role-icon" />
                     <b>Driver & Courier</b>
-                    {driverApp?.status === 'pending' ? (
+                    {driverApplicationPending ? (
                       <Badge variant="warning">Under Review</Badge>
                     ) : (
                       <Badge variant="neutral">Not Active</Badge>
                     )}
                   </div>
                   <p>Turn on GPS, accept rides, and earn with flexible hours.</p>
-                  {driverApp?.status !== 'pending' && (
+                  {!driverApplicationPending && (
                     <Button
                       variant="secondary"
                       size="sm"
@@ -439,7 +463,22 @@ export default function AccountView({ onNotice, onClose }) {
                       variant="primary"
                       size="md"
                       type="button"
-                      onClick={() => setUpgradeStep(2)}
+                      onClick={() => {
+                        setUpgradeError('');
+                        if (!['provider', 'driver'].includes(roleToApply) || roles.includes(roleToApply)) {
+                          setUpgradeError('Choose a role that is not already active.');
+                          return;
+                        }
+                        if (applications[roleToApply]?.status === 'pending') {
+                          setUpgradeError('An application for this role is already awaiting Admin review.');
+                          return;
+                        }
+                        if (roleToApply === 'driver' && driverServices.length === 0) {
+                          setUpgradeError('Choose at least one driver service network.');
+                          return;
+                        }
+                        setUpgradeStep(2);
+                      }}
                     >
                       Next: Verification Details <ArrowRight size={14} />
                     </Button>
@@ -507,8 +546,8 @@ export default function AccountView({ onNotice, onClose }) {
                       variant="primary"
                       size="md"
                       type="button"
-                      disabled={!nicNumber.trim() || !location.trim()}
-                      onClick={() => setUpgradeStep(3)}
+                      disabled={!nicNumber.trim() || !location.trim() || (roleToApply === 'provider' && !nsnNumber.trim())}
+                      onClick={() => { setUpgradeError(''); setUpgradeStep(3); }}
                     >
                       Review & Submit <ArrowRight size={14} />
                     </Button>
@@ -553,7 +592,7 @@ export default function AccountView({ onNotice, onClose }) {
 
                   <div className="security-notice-box">
                     <ShieldCheck size={16} />
-                    <span>Your customer privileges remain active throughout. Admin verifies KYC credentials within 24-48 business hours.</span>
+                    <span>Your customer access remains active while the application is reviewed. Approval timing depends on the Admin review queue; submission does not activate the role.</span>
                   </div>
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 'var(--space-4)' }}>
@@ -571,6 +610,7 @@ export default function AccountView({ onNotice, onClose }) {
                       size="lg"
                       type="submit"
                       loading={isSubmitting}
+                      disabled={isSubmitting}
                     >
                       Submit Application for Verification
                     </Button>
