@@ -20,6 +20,12 @@ import {
 } from 'lucide-react';
 import { Button, Badge, StatusPill, Tabs, Stepper, ConfirmDialog, Modal, Skeleton, EmptyState } from '../../design-system';
 
+function formatLkr(value) {
+  if (value === null || value === undefined || value === '') return 'Amount unavailable';
+  const amount = Number(value);
+  return Number.isFinite(amount) && amount >= 0 ? `LKR ${amount.toLocaleString('en-LK')}` : 'Amount unavailable';
+}
+
 function getLocalDateInputValue(date = new Date()) {
   const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
   return localDate.toISOString().slice(0, 10);
@@ -44,6 +50,8 @@ export default function MyBookingsList({
   const [newTime, setNewTime] = useState('Morning (9 AM - 12 PM)');
   const [rescheduleBusy, setRescheduleBusy] = useState(false);
   const [rescheduleError, setRescheduleError] = useState('');
+  const [actionBusyId, setActionBusyId] = useState('');
+  const [actionErrors, setActionErrors] = useState({});
 
   const TABS = [
     { id: 'upcoming', label: 'Upcoming', badge: bookings.filter(b => ['requested', 'accepted'].includes(b.status)).length },
@@ -71,6 +79,21 @@ export default function MyBookingsList({
       default: return 0;
     }
   };
+
+  async function runBookingAction(bookingId, action, ...args) {
+    if (!bookingId || actionBusyId === bookingId || typeof action !== 'function') return false;
+    setActionBusyId(bookingId);
+    setActionErrors(prev => ({ ...prev, [bookingId]: '' }));
+    try {
+      await action(bookingId, ...args);
+      return true;
+    } catch (error) {
+      setActionErrors(prev => ({ ...prev, [bookingId]: error?.message || 'This action could not be completed. Please try again.' }));
+      return false;
+    } finally {
+      setActionBusyId('');
+    }
+  }
 
   async function handleConfirmReschedule() {
     if (rescheduleBusy || !rescheduleTarget || !onRescheduleBooking) return;
@@ -233,7 +256,7 @@ export default function MyBookingsList({
                     <div className="quote-header">
                       <div>
                         <span className="quote-badge">New Quote Received</span>
-                        <h4 className="quote-price">LKR {Number(b.quote.amount).toLocaleString('en-LK')}</h4>
+                        <h4 className="quote-price">{formatLkr(b.quote.amount)}</h4>
                       </div>
                       <p className="quote-scope"><b>Scope:</b> {b.quote.scope}</p>
                     </div>
@@ -242,7 +265,9 @@ export default function MyBookingsList({
                         variant="primary"
                         size="sm"
                         icon={Check}
-                        onClick={() => onQuoteDecision && onQuoteDecision(b.id, 'accepted')}
+                        onClick={() => runBookingAction(b.id, onQuoteDecision, 'accepted')}
+                        loading={actionBusyId === b.id}
+                        disabled={actionBusyId === b.id}
                       >
                         Accept Quote
                       </Button>
@@ -250,7 +275,8 @@ export default function MyBookingsList({
                         variant="danger"
                         size="sm"
                         icon={X}
-                        onClick={() => onQuoteDecision && onQuoteDecision(b.id, 'declined')}
+                        onClick={() => runBookingAction(b.id, onQuoteDecision, 'declined')}
+                        disabled={actionBusyId === b.id}
                       >
                         Decline
                       </Button>
@@ -269,13 +295,17 @@ export default function MyBookingsList({
                       <Button
                         variant="primary"
                         size="sm"
-                        onClick={() => onRescheduleBooking && onRescheduleBooking(b.id, b.reschedule.date, b.reschedule.time, 'accepted')}
+                        onClick={() => runBookingAction(b.id, onRescheduleBooking, b.reschedule.date, b.reschedule.time, 'accepted')}
+                        loading={actionBusyId === b.id}
+                        disabled={actionBusyId === b.id}
                       >
                         Accept Time
                       </Button>
                     </div>
                   </div>
                 )}
+
+                {actionErrors[b.id] && <div role="alert" aria-live="assertive" className="wizard-error-banner">{actionErrors[b.id]}</div>}
 
                 {/* Booking Footer Actions */}
                 <div className="booking-card-footer">
@@ -350,16 +380,16 @@ export default function MyBookingsList({
       {/* Confirmation Dialog for Cancellation */}
       <ConfirmDialog
         isOpen={Boolean(cancelTargetId)}
-        onClose={() => setCancelTargetId(null)}
+        onClose={() => { if (!actionBusyId) setCancelTargetId(null); }}
         title="Cancel Service Booking"
-        message="Are you sure you want to cancel this booking? The booking status will be updated if the cancellation is accepted."
+        message="Are you sure you want to request cancellation of this booking?"
         confirmLabel="Yes, Cancel Booking"
         isDanger={true}
         onConfirm={async () => {
           if (cancelTargetId && onCancelBooking) {
-            await onCancelBooking(cancelTargetId);
+            const cancelled = await runBookingAction(cancelTargetId, onCancelBooking);
+            if (cancelled) setCancelTargetId(null);
           }
-          setCancelTargetId(null);
         }}
       />
 
@@ -371,7 +401,7 @@ export default function MyBookingsList({
         isBottomSheet={true}
         footer={
           <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
-            <Button variant="ghost" onClick={() => setRescheduleTarget(null)} disabled={rescheduleBusy} style={{ flex: 1 }}>
+            <Button variant="ghost" onClick={() => { setRescheduleTarget(null); setRescheduleError(''); }} disabled={rescheduleBusy} style={{ flex: 1 }}>
               Cancel
             </Button>
             <Button variant="primary" onClick={handleConfirmReschedule} loading={rescheduleBusy} disabled={!newDate || rescheduleBusy} style={{ flex: 2 }}>
