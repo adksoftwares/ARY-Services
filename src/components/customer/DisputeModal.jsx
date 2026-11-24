@@ -9,7 +9,7 @@ const PRESET_DISPUTE_REASONS = [
   'Unsatisfactory or incomplete workmanship',
   'Appliance or installation stopped functioning after the service',
   'Contractor caused incidental property damage during repair',
-  'Contractor demanded unauthorized extra cash outside ARY Escrow',
+  'Unexpected additional cash payment or price change',
   'Other workmanship or service issue'
 ];
 
@@ -27,6 +27,7 @@ export default function DisputeModal({ isOpen, onClose, booking, onSuccess, onDi
     e.preventDefault();
     setError('');
 
+    if (isSubmitting) return;
     if (!currentUser?.token) {
       setError('Please sign in to lodge a dispute.');
       return;
@@ -40,7 +41,7 @@ export default function DisputeModal({ isOpen, onClose, booking, onSuccess, onDi
     setIsSubmitting(true);
     try {
       const fullReason = `${categoryReason} - ${details.trim()}`;
-      const res = await fetch(`${API_BASE}/bookings/${booking.id}/dispute`, {
+      const res = await fetch(`${API_BASE}/bookings/${encodeURIComponent(booking.id)}/dispute`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
