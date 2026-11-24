@@ -1,24 +1,22 @@
 import React, { useState } from 'react';
-import { KeyRound, Delete, X, AlertCircle, CheckCircle2, ShieldAlert } from 'lucide-react';
+import { KeyRound, Delete, X, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Modal, Button, Badge } from '../../design-system';
 
 export default function DriverPinKeypadModal({
   isOpen,
   onClose,
-  title = 'Enter Verification PIN',
-  subtitle = 'Ask the customer for their 4-digit security PIN',
+  title = 'Enter Handoff Code',
+  subtitle = 'Enter the handoff verification code provided for this job',
   onSubmit,
   isVerifying = false,
   error = ''
 }) {
   const [pin, setPin] = useState('');
-  const [attemptsLeft, setAttemptsLeft] = useState(5);
-  const isLockedOut = attemptsLeft <= 0;
 
   if (!isOpen) return null;
 
   function handleDigit(d) {
-    if (isLockedOut || pin.length >= 4) return;
+    if (pin.length >= 4) return;
     if (typeof navigator !== 'undefined' && navigator.vibrate) {
       try { navigator.vibrate(30); } catch (e) {}
     }
@@ -39,12 +37,12 @@ export default function DriverPinKeypadModal({
   }
 
   async function handleVerify() {
-    if (pin.length !== 4 || isLockedOut) return;
+    if (pin.length !== 4 || isVerifying || typeof onSubmit !== 'function') return;
     try {
       await onSubmit(pin);
       setPin('');
     } catch (err) {
-      setAttemptsLeft(prev => Math.max(0, prev - 1));
+      // The parent owns the actionable verification error; network failures must not consume local attempts.
     }
   }
 
@@ -115,35 +113,7 @@ export default function DriverPinKeypadModal({
           </div>
         )}
 
-        {isLockedOut ? (
-          <div style={{
-            background: 'var(--color-danger-50, #fef2f2)',
-            border: '1.5px solid var(--color-danger-400, #f87171)',
-            borderRadius: 'var(--radius-md, 8px)',
-            padding: '14px',
-            marginBottom: 16,
-            color: 'var(--color-danger-900, #7f1d1d)',
-            fontSize: '0.85rem'
-          }}>
-            <ShieldAlert size={22} color="#dc2626" style={{ margin: '0 auto 6px', display: 'block' }} />
-            <b>Security Lockout Active</b>
-            <p style={{ margin: '4px 0 0', fontSize: '0.8rem' }}>
-              Maximum 5 incorrect attempts reached. Handoff is locked to protect customer goods. Please contact ARY Dispatch Hotline at <b>011 234 5678</b> to unlock this trip.
-            </p>
-          </div>
-        ) : (
-          <div style={{ marginBottom: '16px', fontSize: '0.8rem' }}>
-            {attemptsLeft < 5 ? (
-              <span style={{ color: 'var(--color-danger-600, #dc2626)', fontWeight: 700 }}>
-                ⚠️ Security limit: {attemptsLeft} of 5 attempts remaining
-              </span>
-            ) : (
-              <span style={{ color: 'var(--text-muted)' }}>
-                Ask customer / recipient for their 4-digit verification code
-              </span>
-            )}
-          </div>
-        )}
+        <div style={{ marginBottom: '16px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>Enter the 4-digit code provided for this handoff.</div>
 
         {/* Numeric Keypad Grid */}
         <div className="keypad-grid">

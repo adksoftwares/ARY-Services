@@ -158,7 +158,10 @@ export default function BookingModal({
         throw new Error(data.error || data.message || 'Failed to submit booking. Please try again.');
       }
 
-      setCreatedBooking(data.booking || null);
+      if (!data.booking || typeof data.booking !== 'object' || data.booking.id === null || data.booking.id === undefined || String(data.booking.id).trim() === '') {
+        throw new Error('The server did not confirm a booking reference. Check My Bookings before submitting again.');
+      }
+      setCreatedBooking(data.booking);
       setStep(5);
     } catch (err) {
       setError(err.message || 'Could not submit booking.');
@@ -245,7 +248,7 @@ export default function BookingModal({
           <div className="wizard-step-pane">
             <div className="provider-quick-card">
               <b>{provider.fullName}</b>
-              <span>{provider.selectedService?.serviceName || selectedCategory?.name || provider.categoryName || 'Trades Specialist'} • Starting at {provider.selectedService?.baseCharge ? `LKR ${Number(provider.selectedService.baseCharge).toLocaleString('en-LK')}` : provider.baseCharge || 'Quote required'}</span>
+              <span>{provider.selectedService?.serviceName || selectedCategory?.name || provider.categoryName || 'Trades Specialist'} • Starting at {provider.selectedService?.baseCharge !== null && provider.selectedService?.baseCharge !== undefined && Number.isFinite(Number(provider.selectedService.baseCharge)) && Number(provider.selectedService.baseCharge) >= 0 ? `LKR ${Number(provider.selectedService.baseCharge).toLocaleString('en-LK')}` : provider.baseCharge || 'Quote required'}</span>
             </div>
 
             <label className="wizard-form-label">
@@ -387,7 +390,7 @@ export default function BookingModal({
             <p className="success-subtext">
               Your booking request has been submitted for <b>{provider.fullName}</b> to review.
               {createdBooking?.id && (
-                <span className="booking-ref-chip">Ref #{createdBooking.id.slice(0, 8)}</span>
+                <span className="booking-ref-chip">Ref #{String(createdBooking.id).slice(0, 8)}</span>
               )}
             </p>
 
