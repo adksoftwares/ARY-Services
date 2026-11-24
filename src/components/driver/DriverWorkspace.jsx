@@ -352,7 +352,17 @@ export default function DriverWorkspace({ onNotice }) {
   const availableJobs = useMemo(() => {
     return jobs
       .filter(j => j.status === 'requested')
-      .sort((a, b) => (Number(a.distanceKm) || 0) - (Number(b.distanceKm) || 0));
+      .slice()
+      .sort((a, b) => {
+        const distanceA = Number(a.distanceKm);
+        const distanceB = Number(b.distanceKm);
+        const hasDistanceA = a.distanceKm !== null && a.distanceKm !== undefined && a.distanceKm !== '' && Number.isFinite(distanceA);
+        const hasDistanceB = b.distanceKm !== null && b.distanceKm !== undefined && b.distanceKm !== '' && Number.isFinite(distanceB);
+        if (hasDistanceA && hasDistanceB) return distanceA - distanceB;
+        if (hasDistanceA) return -1;
+        if (hasDistanceB) return 1;
+        return 0;
+      });
   }, [jobs]);
 
   const completedJobs = useMemo(() => {
@@ -456,21 +466,27 @@ export default function DriverWorkspace({ onNotice }) {
               </div>
             </div>
 
-            {activeTrip.distanceKm !== null && (
+            {activeTrip.distanceKm !== null && activeTrip.distanceKm !== undefined && Number.isFinite(Number(activeTrip.distanceKm)) && (
               <div style={{ fontSize: '0.78rem', color: 'var(--color-brand-700, #174d3d)', fontWeight: 600 }}>
-                Straight-line estimate: ~{activeTrip.distanceKm} km {activeTrip.etaMinutes ? `· ~${activeTrip.etaMinutes} min away` : ''}
+                Straight-line estimate: ~{Number(activeTrip.distanceKm).toFixed(1)} km {Number.isFinite(Number(activeTrip.etaMinutes)) && Number(activeTrip.etaMinutes) > 0 ? `· ~${Math.round(Number(activeTrip.etaMinutes))} min away` : ''}
               </div>
             )}
           </div>
 
           {/* Customer Call & Navigation Shortcuts */}
           <div className="driver-quick-actions-bar">
-            <a
-              href={`tel:${activeTrip.customerPhone || '0112345678'}`}
-              className="driver-quick-icon-btn call"
-            >
-              <Phone size={16} /> Call Customer
-            </a>
+            {activeTrip.customerPhone ? (
+              <a
+                href={`tel:${activeTrip.customerPhone}`}
+                className="driver-quick-icon-btn call"
+              >
+                <Phone size={16} /> Call Customer
+              </a>
+            ) : (
+              <span className="driver-quick-icon-btn call is-unavailable" aria-disabled="true">
+                <Phone size={16} /> Phone unavailable
+              </span>
+            )}
             <a
               href={`https://maps.google.com/?q=${encodeURIComponent(
                 ['accepted', 'arrived'].includes(activeTrip.status) ? activeTrip.pickupAddress : activeTrip.destinationAddress
