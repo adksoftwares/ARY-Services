@@ -31,6 +31,13 @@ function getLocalDateInputValue(date = new Date()) {
   return localDate.toISOString().slice(0, 10);
 }
 
+function isValidLocalDateInput(value) {
+  if (typeof value !== 'string' || !/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) return false;
+  const [year, month, day] = value.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+  return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
+}
+
 export default function MyBookingsList({
   bookings = [],
   isLoading,
@@ -53,7 +60,9 @@ export default function MyBookingsList({
   const [actionBusyId, setActionBusyId] = useState('');
   const [actionErrors, setActionErrors] = useState({});
 
-  const safeBookings = useMemo(() => (Array.isArray(bookings) ? bookings : []).filter(Boolean), [bookings]);
+  const safeBookings = useMemo(() => (Array.isArray(bookings) ? bookings : []).filter(booking =>
+    booking && typeof booking === 'object' && booking.id !== null && booking.id !== undefined && String(booking.id).trim() !== ''
+  ), [bookings]);
 
   const TABS = [
     { id: 'upcoming', label: 'Upcoming', badge: safeBookings.filter(b => ['requested', 'accepted'].includes(b.status)).length },
@@ -100,7 +109,7 @@ export default function MyBookingsList({
   async function handleConfirmReschedule() {
     if (rescheduleBusy || !rescheduleTarget || !onRescheduleBooking) return;
     const today = getLocalDateInputValue();
-    if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(newDate) || newDate < today || !newTime) {
+    if (!isValidLocalDateInput(newDate) || newDate < today || !newTime) {
       setRescheduleError('Choose a valid date from today onward and a time slot.');
       return;
     }
@@ -173,14 +182,14 @@ export default function MyBookingsList({
             const isTerminal = ['completed', 'cancelled', 'rejected'].includes(b.status);
 
             return (
-              <div key={b.id} className="booking-card-item" aria-labelledby={`booking-title-${b.id}`}>
+              <div key={String(b.id)} className="booking-card-item" aria-labelledby={`booking-title-${b.id}`}>
                 {/* Header */}
                 <div className="booking-card-header">
                   <div className="booking-card-title-col">
                     <h3 id={`booking-title-${b.id}`} className="booking-service-title">
                       {b.categoryName || 'Service Request'}
                     </h3>
-                    <span className="booking-ref-tag">Ref: #{b.id?.slice(0, 8)}</span>
+                    <span className="booking-ref-tag">Ref: #{String(b.id).slice(0, 8)}</span>
                   </div>
                   <StatusPill status={b.status} />
                 </div>
