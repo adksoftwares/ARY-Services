@@ -266,7 +266,7 @@ export default function ProviderJobs({
                   <div>
                     <span style={{ color: 'var(--color-neutral-500, #64748b)', fontSize: '0.75rem', display: 'block' }}>Customer</span>
                     <b style={{ color: 'var(--text-primary, #f8fafc)' }}>
-                      {isBroadcast ? 'Confidential (Unassigned)' : (b.customerName || 'Ary Client')}
+                      {isBroadcast ? 'Confidential (Unassigned)' : (b.customerName || 'Customer details unavailable')}
                     </b>
                   </div>
                   <div>
