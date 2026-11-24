@@ -396,6 +396,7 @@ export default function AdminWorkspace({
                 key={item.id}
                 type="button"
                 className={`admin-nav-item ${isActive ? 'active' : ''}`}
+                aria-current={isActive ? 'page' : undefined}
                 onClick={() => {
                   setActiveTab(item.id);
                   setSidebarOpen(false);
