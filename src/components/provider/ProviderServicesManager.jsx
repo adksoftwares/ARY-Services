@@ -18,6 +18,7 @@ import { subscribeToAppEvents } from '../../utils/events';
 import { Card, Badge, Button, Modal, StatusPill, EmptyState, Skeleton } from '../../design-system';
 
 function formatLkr(value) {
+  if (value === null || value === undefined || value === '') return 'Rate not provided';
   const amount = Number(value);
   return Number.isFinite(amount) && amount >= 0
     ? `LKR ${amount.toLocaleString('en-LK')}`
