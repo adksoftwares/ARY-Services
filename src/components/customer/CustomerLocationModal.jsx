@@ -392,7 +392,7 @@ export default function CustomerLocationModal({
                   {searchInput && !isSearching && (
                     <button
                       type="button"
-                      onClick={() => { setSearchInput(''); setSearchResults([]); }}
+                      onClick={() => handleSearchChange('')}
                       style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
                       aria-label="Clear search input"
                     >
@@ -422,6 +422,11 @@ export default function CustomerLocationModal({
               </form>
 
               {/* Instant Autocomplete Suggestions List */}
+              {searchResults.length === 0 && searchInput.trim().length >= 2 && !isSearching && (
+                <div role="status" style={{ marginTop: 6, padding: '10px 12px', border: '1px solid var(--border-subtle, #e2e8f0)', borderRadius: 8, color: 'var(--text-muted, #64748b)', fontSize: '12px' }}>
+                  No matching place suggestions. Try a nearby town, street or landmark, or choose a location on the map.
+                </div>
+              )}
               {searchResults.length > 0 && (
                 <div style={{
                   marginTop: 6,
