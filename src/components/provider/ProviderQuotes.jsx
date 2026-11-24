@@ -18,15 +18,15 @@ export default function ProviderQuotes({
 
   // Extract all bookings that have quotes
   const quotesList = useMemo(() => {
-    return bookings
-      .filter(b => b.quote && typeof b.quote === 'object')
+    return (Array.isArray(bookings) ? bookings : [])
+      .filter(b => b && typeof b === 'object' && b.id !== null && b.id !== undefined && b.quote && typeof b.quote === 'object' && !Array.isArray(b.quote))
       .map(b => ({
         bookingId: b.id,
         categoryName: b.categoryName || 'Service Request',
         customerName: b.customerName || 'Customer details unavailable',
         bookingDate: b.bookingDate || 'Schedule unavailable',
         amount: b.quote.amount !== null && b.quote.amount !== undefined && b.quote.amount !== '' && Number.isFinite(Number(b.quote.amount)) && Number(b.quote.amount) >= 0 ? Number(b.quote.amount) : null,
-        description: b.quote.description,
+        description: typeof b.quote.description === 'string' && b.quote.description.trim() ? b.quote.description.trim() : 'Quote details unavailable',
         status: b.quote.status || 'pending',
         validUntil: b.quote.validUntil,
         isExpired: Boolean(b.quote.validUntil && Number.isFinite(Date.parse(b.quote.validUntil)) && Date.parse(b.quote.validUntil) <= Date.now())
@@ -47,11 +47,11 @@ export default function ProviderQuotes({
     }
   }, [filter, pendingQuotes, acceptedQuotes, expiredOrDeclined, quotesList]);
 
-  const totalQuotedValue = quotesList.reduce((sum, q) => sum + (q.amount ?? 0), 0);
+  const totalQuotedValue = quotesList.reduce((sum, q) => sum + (q.amount !== null ? q.amount : 0), 0);
   const quotesWithAmounts = quotesList.filter(q => q.amount !== null).length;
   const acceptanceRate = quotesList.length > 0
     ? Math.round((acceptedQuotes.length / quotesList.length) * 100)
-    : 0;
+    : null;
 
   return (
     <div className="provider-quotes-view" style={{ display: 'grid', gap: '20px' }}>
@@ -75,7 +75,7 @@ export default function ProviderQuotes({
             <Percent size={15} color="#059669" /> Client Acceptance Rate
           </span>
           <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--color-success-700, #047857)', marginTop: 4 }}>
-            {acceptanceRate}%
+            {acceptanceRate === null ? '—' : `${acceptanceRate}%`}
           </div>
         </Card>
 
