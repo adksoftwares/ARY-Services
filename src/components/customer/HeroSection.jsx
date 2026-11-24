@@ -176,12 +176,11 @@ export default function HeroSection({
                       if (grocEl) grocEl.scrollIntoView({ behavior: 'smooth' });
                     } else {
                       if (onSelectCategory) {
-                        onSelectCategory({ slug: chip.slug, name: chip.label });
+                        onSelectCategory({ slug: chip.slug, name: chip.label }, chip.label);
                       }
                       const catEl = document.getElementById('providers-catalog') || document.querySelector('.providers-section');
                       if (catEl) catEl.scrollIntoView({ behavior: 'smooth' });
                     }
-                    if (onSearch) onSearch();
                   }}
                 >
                   <Icon size={14} className="chip-icon" aria-hidden="true" />
