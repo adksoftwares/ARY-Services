@@ -99,7 +99,11 @@ export default function DriverWorkspace({ onNotice }) {
   }, [jobs]);
 
   const refresh = useCallback(async () => {
-    if (!currentUser?.token) return;
+    if (!currentUser?.token) {
+      setJobs([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError('');
     try {
@@ -108,7 +112,7 @@ export default function DriverWorkspace({ onNotice }) {
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || 'Could not load driver jobs.');
-      setJobs(data.jobs || []);
+      setJobs(Array.isArray(data.jobs) ? data.jobs : []);
       if (data.presence) setPresence(data.presence);
     } catch (err) {
       setError(getFriendlyErrorMessage(err, 'Could not load driver jobs.'));
@@ -243,7 +247,7 @@ export default function DriverWorkspace({ onNotice }) {
   }
 
   async function applyServices() {
-    if (!currentUser?.token || selectedServices.length === 0) return;
+    if (!currentUser?.token || submitting || selectedServices.length === 0) return;
     setSubmitting(true);
     setError('');
     try {
@@ -299,7 +303,7 @@ export default function DriverWorkspace({ onNotice }) {
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || 'Could not update job.');
       await refresh();
-      onNotice?.(status === 'completed' ? 'Trip completed! Payout credited to your balance.' : 'Job status updated.');
+      onNotice?.(status === 'completed' ? 'Trip marked as completed.' : 'Job status updated.');
     } catch (err) {
       setError(err.message || 'Could not update job.');
     } finally {
@@ -347,6 +351,7 @@ export default function DriverWorkspace({ onNotice }) {
   }
 
   async function handleVerifyPin(pin) {
+    if (pinModal.isVerifying || !pinModal.jobId || !pinModal.endpoint) return;
     setPinModal(prev => ({ ...prev, isVerifying: true, error: '' }));
     try {
       const response = await fetch(`${API_BASE}/driver-jobs/${encodeURIComponent(pinModal.jobId)}/${pinModal.endpoint}`, {
@@ -408,7 +413,7 @@ export default function DriverWorkspace({ onNotice }) {
             </div>
             <p style={{ margin: 0, fontSize: '0.85rem', color: presence.online ? '#c7dfd4' : 'var(--color-neutral-600, #475569)', lineHeight: 1.5 }}>
               {presence.online
-                ? 'High-accuracy GPS active. Dispatches are matched based on straight-line proximity.'
+                ? 'Your availability is on. Dispatch matching uses the latest location shared by your device.'
                 : 'Turn on availability to start receiving nearby rides, grocery pickups, and deliveries.'}
             </p>
           </div>
@@ -509,16 +514,20 @@ export default function DriverWorkspace({ onNotice }) {
                 <Phone size={16} /> Phone unavailable
               </span>
             )}
-            <a
-              href={`https://maps.google.com/?q=${encodeURIComponent(
-                ['accepted', 'arrived'].includes(activeTrip.status) ? activeTrip.pickupAddress : activeTrip.destinationAddress
-              )}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="driver-quick-icon-btn maps"
-            >
-              <ExternalLink size={16} /> Open in Maps
-            </a>
+            {(['accepted', 'arrived', 'arrived_pickup'].includes(activeTrip.status) ? activeTrip.pickupAddress : activeTrip.destinationAddress) ? (
+              <a
+                href={`https://maps.google.com/?q=${encodeURIComponent(['accepted', 'arrived', 'arrived_pickup'].includes(activeTrip.status) ? activeTrip.pickupAddress : activeTrip.destinationAddress)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="driver-quick-icon-btn maps"
+              >
+                <ExternalLink size={16} /> Open in Maps
+              </a>
+            ) : (
+              <span className="driver-quick-icon-btn maps is-unavailable" aria-disabled="true">
+                <ExternalLink size={16} /> Address unavailable
+              </span>
+            )}
           </div>
 
           {/* Large Ergonomic Step Buttons Following Permitted Transitions */}
@@ -631,7 +640,7 @@ export default function DriverWorkspace({ onNotice }) {
       </div>
 
       {error && (
-        <div style={{
+        <div role="alert" aria-live="assertive" style={{
           background: 'var(--color-danger-50, #fef2f2)',
           border: '1px solid var(--color-danger-200, #fecaca)',
           borderRadius: 'var(--radius-md, 8px)',
@@ -648,6 +657,7 @@ export default function DriverWorkspace({ onNotice }) {
           <button
             type="button"
             onClick={refresh}
+            disabled={loading}
             style={{
               background: '#dc2626',
               color: '#ffffff',
