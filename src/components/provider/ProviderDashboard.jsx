@@ -340,6 +340,7 @@ export default function ProviderDashboard({
                 <button
                   type="button"
                   className={`provider-nav-item ${isActive ? 'active' : ''}`}
+                  aria-current={isActive ? 'page' : undefined}
                   onClick={() => handleNavigateTab(item.id)}
                 >
                   <Icon size={17} />
@@ -457,6 +458,7 @@ export default function ProviderDashboard({
         <button
           type="button"
           className={`provider-bottom-tab ${activeTab === 'overview' ? 'active' : ''}`}
+          aria-current={activeTab === 'overview' ? 'page' : undefined}
           onClick={() => handleNavigateTab('overview')}
         >
           <LayoutDashboard size={20} />
@@ -466,6 +468,7 @@ export default function ProviderDashboard({
         <button
           type="button"
           className={`provider-bottom-tab ${activeTab === 'jobs' ? 'active' : ''}`}
+          aria-current={activeTab === 'jobs' ? 'page' : undefined}
           onClick={() => handleNavigateTab('jobs')}
         >
           <Briefcase size={20} />
@@ -478,6 +481,7 @@ export default function ProviderDashboard({
         <button
           type="button"
           className={`provider-bottom-tab ${activeTab === 'wallet' ? 'active' : ''}`}
+          aria-current={activeTab === 'wallet' ? 'page' : undefined}
           onClick={() => handleNavigateTab('wallet')}
         >
           <Wallet size={20} />
@@ -488,6 +492,7 @@ export default function ProviderDashboard({
           <button
             type="button"
             className={`provider-bottom-tab ${activeTab === 'orders' ? 'active' : ''}`}
+            aria-current={activeTab === 'orders' ? 'page' : undefined}
             onClick={() => handleNavigateTab('orders')}
           >
             <ShoppingBag size={20} />
@@ -497,6 +502,7 @@ export default function ProviderDashboard({
           <button
             type="button"
             className={`provider-bottom-tab ${activeTab === 'services' ? 'active' : ''}`}
+            aria-current={activeTab === 'services' ? 'page' : undefined}
             onClick={() => handleNavigateTab('services')}
           >
             <Layers size={20} />
