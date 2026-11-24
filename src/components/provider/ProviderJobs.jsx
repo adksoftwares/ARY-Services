@@ -46,6 +46,8 @@ export default function ProviderJobs({
   const [quoteBusy, setQuoteBusy] = useState('');
   const [quoteError, setQuoteError] = useState({});
   const [confirmDeclineId, setConfirmDeclineId] = useState(null);
+  const [actionBusyId, setActionBusyId] = useState('');
+  const [actionError, setActionError] = useState({});
 
   const broadcastJobs = useMemo(() => bookings.filter(b => b.status === 'broadcast_pool'), [bookings]);
   const directBookings = useMemo(() => bookings.filter(b => b.status !== 'broadcast_pool'), [bookings]);
@@ -66,6 +68,19 @@ export default function ProviderJobs({
     }
   }, [filterTab, directBookings, broadcastJobs]);
 
+  async function runBookingAction(bookingId, action, ...args) {
+    if (!bookingId || actionBusyId === bookingId) return;
+    setActionBusyId(bookingId);
+    setActionError(prev => ({ ...prev, [bookingId]: '' }));
+    try {
+      await action?.(bookingId, ...args);
+    } catch (error) {
+      setActionError(prev => ({ ...prev, [bookingId]: error?.message || 'This action could not be completed. Please try again.' }));
+    } finally {
+      setActionBusyId('');
+    }
+  }
+
   async function handleQuoteSubmit(booking, e) {
     e.preventDefault();
     const amountVal = quoteDrafts[booking.id] ?? booking.quote?.amount ?? booking.baseAmount;
@@ -82,9 +97,13 @@ export default function ProviderJobs({
     }
 
     setQuoteError(prev => ({ ...prev, [booking.id]: '' }));
+    if (quoteBusy === booking.id) return;
     setQuoteBusy(booking.id);
     try {
       await onSendQuote?.(booking, amount, description);
+      setQuoteError(prev => ({ ...prev, [booking.id]: '' }));
+    } catch (error) {
+      setQuoteError(prev => ({ ...prev, [booking.id]: error?.message || 'Could not send the quote. Please try again.' }));
     } finally {
       setQuoteBusy('');
     }
@@ -187,7 +206,8 @@ export default function ProviderJobs({
                 <Button
                   variant="primary"
                   size="sm"
-                  onClick={() => onClaimJob?.(b.id)}
+                  onClick={() => runBookingAction(b.id, onClaimJob)}
+                  disabled={claimingJobId === b.id || actionBusyId === b.id}
                   loading={claimingJobId === b.id}
                 >
                   <Zap size={14} /> Claim Job (1-Tap)
@@ -344,20 +364,24 @@ export default function ProviderJobs({
                       <Button
                         variant="primary"
                         size="sm"
-                        onClick={() => onDecideReschedule?.(b.id, 'accept')}
+                        onClick={() => runBookingAction(b.id, onDecideReschedule, 'accept')}
+                        disabled={actionBusyId === b.id}
                       >
                         <Check size={14} /> Confirm New Time
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => onDecideReschedule?.(b.id, 'reject')}
+                        onClick={() => runBookingAction(b.id, onDecideReschedule, 'reject')}
+                        disabled={actionBusyId === b.id}
                       >
                         <Ban size={14} /> Decline Change
                       </Button>
                     </div>
                   </div>
                 )}
+
+                {actionError[b.id] && <div role="alert" aria-live="assertive" style={{ marginTop: 10, color: 'var(--color-danger-700, #b91c1c)', fontSize: '0.82rem' }}>{actionError[b.id]}</div>}
 
                 {/* Quote Status Display */}
                 {b.quote?.status === 'pending' && (
@@ -450,6 +474,7 @@ export default function ProviderJobs({
                         variant="secondary"
                         size="sm"
                         loading={quoteBusy === b.id}
+                        disabled={quoteBusy === b.id}
                         style={{ marginTop: 10 }}
                       >
                         <Send size={13} /> Send Official Quote to Customer
@@ -473,7 +498,9 @@ export default function ProviderJobs({
                         <>
                           <Button
                             variant="primary"
-                            onClick={() => onUpdateStatus?.(b.id, 'accepted')}
+                            onClick={() => runBookingAction(b.id, onUpdateStatus, 'accepted')}
+                            loading={actionBusyId === b.id}
+                            disabled={actionBusyId === b.id}
                           >
                             <Check size={16} /> Accept Job
                           </Button>
@@ -490,13 +517,17 @@ export default function ProviderJobs({
                         <>
                           <Button
                             variant="primary"
-                            onClick={() => onUpdateStatus?.(b.id, 'in_progress')}
+                            onClick={() => runBookingAction(b.id, onUpdateStatus, 'in_progress')}
+                            loading={actionBusyId === b.id}
+                            disabled={actionBusyId === b.id}
                           >
                             <Zap size={16} /> Start Job
                           </Button>
                           <Button
                             variant="secondary"
-                            onClick={() => onUpdateStatus?.(b.id, 'completed')}
+                            onClick={() => runBookingAction(b.id, onUpdateStatus, 'completed')}
+                            loading={actionBusyId === b.id}
+                            disabled={actionBusyId === b.id}
                           >
                             <CheckCheck size={16} /> Mark Completed
                           </Button>
@@ -506,7 +537,9 @@ export default function ProviderJobs({
                       {b.status === 'in_progress' && (
                         <Button
                           variant="primary"
-                          onClick={() => onUpdateStatus?.(b.id, 'completed')}
+                          onClick={() => runBookingAction(b.id, onUpdateStatus, 'completed')}
+                          loading={actionBusyId === b.id}
+                          disabled={actionBusyId === b.id}
                         >
                           <CheckCheck size={16} /> Mark as Finished
                         </Button>
@@ -554,9 +587,9 @@ export default function ProviderJobs({
         confirmLabel="Yes, Decline"
         cancelLabel="Keep Request"
         isDanger={true}
-        onConfirm={() => {
+        onConfirm={async () => {
           if (confirmDeclineId) {
-            onUpdateStatus?.(confirmDeclineId, 'rejected');
+            await runBookingAction(confirmDeclineId, onUpdateStatus, 'rejected');
             setConfirmDeclineId(null);
           }
         }}
