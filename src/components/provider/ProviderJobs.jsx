@@ -538,6 +538,8 @@ export default function ProviderJobs({
                         <Button
                           variant="primary"
                           onClick={() => runBookingAction(b.id, onUpdateStatus, 'completed')}
+                          loading={actionBusyId === b.id}
+                          disabled={actionBusyId === b.id}
                         >
                           <CheckCheck size={16} /> Mark as Finished
                         </Button>
