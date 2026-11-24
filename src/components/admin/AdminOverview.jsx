@@ -22,24 +22,31 @@ export default function AdminOverview({
   dispatchSnapshot = { drivers: [], activeJobs: [] },
   onNavigateTab
 }) {
-  const totalUsers = adminUsers.length;
+  const users = Array.isArray(adminUsers) ? adminUsers.filter(user => user && typeof user === 'object') : [];
+  const bookingRecords = Array.isArray(bookings) ? bookings.filter(booking => booking && typeof booking === 'object') : [];
+  const dispatch = dispatchSnapshot && typeof dispatchSnapshot === 'object' ? dispatchSnapshot : {};
+  const dispatchDrivers = Array.isArray(dispatch.drivers) ? dispatch.drivers.filter(Boolean) : [];
+  const totalUsers = users.length;
   const hasRole = (user, role) => user.accountType === role || (Array.isArray(user.roles) && user.roles.includes(role));
-  const customers = adminUsers.filter(u => hasRole(u, 'customer')).length;
-  const providers = adminUsers.filter(u => hasRole(u, 'provider')).length;
-  const drivers = adminUsers.filter(u => hasRole(u, 'driver')).length;
-  const pendingApprovals = adminUsers.filter(u => u.status === 'pending').length;
+  const customers = users.filter(u => hasRole(u, 'customer')).length;
+  const providers = users.filter(u => hasRole(u, 'provider')).length;
+  const drivers = users.filter(u => hasRole(u, 'driver')).length;
+  const pendingApprovals = users.filter(u => u.status === 'pending').length;
   const roleTotal = customers + providers + drivers;
   const customerShare = roleTotal ? (customers / roleTotal) * 100 : 0;
   const providerShare = roleTotal ? (providers / roleTotal) * 100 : 0;
   const driverShare = roleTotal ? (drivers / roleTotal) * 100 : 0;
 
-  const totalBookings = bookings.length;
-  const inProgressBookings = bookings.filter(b => ['accepted', 'in_progress'].includes(b.status)).length;
-  const disputedBookings = bookings.filter(b => b.status === 'disputed' || b.paymentStatus === 'disputed_frozen' || b.dispute).length;
+  const totalBookings = bookingRecords.length;
+  const inProgressBookings = bookingRecords.filter(b => ['accepted', 'in_progress'].includes(b.status)).length;
+  const disputedBookings = bookingRecords.filter(b => b.status === 'disputed' || b.paymentStatus === 'disputed_frozen' || Boolean(b.dispute)).length;
 
-  const settledPayouts = bookings.filter(b => b.paymentStatus === 'released_to_provider').reduce((sum, b) => {
-    return sum + Number(b.providerPayout ?? 0);
-  }, 0);
+  const releasedToProviders = bookingRecords
+    .filter(b => b.paymentStatus === 'released_to_provider')
+    .reduce((sum, b) => {
+      const amount = Number(b.providerPayout);
+      return Number.isFinite(amount) && amount > 0 ? sum + amount : sum;
+    }, 0);
 
   // Derive the last-seven-day booking trend from actual booking timestamps.
   const lastSevenDays = Array.from({ length: 7 }, (_, index) => {
@@ -49,7 +56,7 @@ export default function AdminOverview({
     return day;
   });
   const days = lastSevenDays.map(day => day.toLocaleDateString('en-LK', { weekday: 'short' }));
-  const bookingPoints = lastSevenDays.map(day => bookings.filter(booking => {
+  const bookingPoints = lastSevenDays.map(day => bookingRecords.filter(booking => {
     const created = new Date(booking.createdAt);
     return Number.isFinite(created.getTime()) &&
       created.getFullYear() === day.getFullYear() &&
@@ -84,6 +91,8 @@ export default function AdminOverview({
           onClick={() => onNavigateTab?.('users')}
           role="button"
           tabIndex={0}
+          onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onNavigateTab?.(event.currentTarget.dataset.target); } }}
+          data-target="users"
         >
           <div className="admin-kpi-header">
             <span className="admin-kpi-label">Registered Accounts</span>
@@ -103,6 +112,7 @@ export default function AdminOverview({
           onClick={() => onNavigateTab?.('dispatch')}
           role="button"
           tabIndex={0}
+          onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onNavigateTab?.('dispatch'); } }}
         >
           <div className="admin-kpi-header">
             <span className="admin-kpi-label">Broadcasting Drivers</span>
@@ -111,10 +121,10 @@ export default function AdminOverview({
             </div>
           </div>
           <div className="admin-kpi-value" style={{ color: '#047857' }}>
-            {dispatchSnapshot.summary?.onlineDrivers ?? dispatchSnapshot.drivers?.length ?? 0}
+            {Number.isFinite(Number(dispatch.summary?.onlineDrivers)) ? Number(dispatch.summary.onlineDrivers) : dispatchDrivers.length}
           </div>
           <div className="admin-kpi-subtext">
-            <span>Live GPS telemetry active</span>
+            <span>Driver records currently returned by dispatch</span>
           </div>
         </div>
 
@@ -143,6 +153,7 @@ export default function AdminOverview({
           onClick={() => onNavigateTab?.('disputes')}
           role="button"
           tabIndex={0}
+          onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onNavigateTab?.('disputes'); } }}
         >
           <div className="admin-kpi-header">
             <span className="admin-kpi-label">Open Disputes</span>
@@ -154,7 +165,7 @@ export default function AdminOverview({
             {disputedBookings}
           </div>
           <div className="admin-kpi-subtext">
-            <span>{disputedBookings > 0 ? 'Awaiting administrative ruling' : 'Zero frozen escrows'}</span>
+            <span>{disputedBookings > 0 ? 'Awaiting administrative ruling' : 'No open disputes recorded'}</span>
           </div>
         </div>
 
@@ -164,6 +175,7 @@ export default function AdminOverview({
           onClick={() => onNavigateTab?.('applications')}
           role="button"
           tabIndex={0}
+          onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onNavigateTab?.('applications'); } }}
         >
           <div className="admin-kpi-header">
             <span className="admin-kpi-label">Pending KYC / Roles</span>
@@ -179,12 +191,13 @@ export default function AdminOverview({
           </div>
         </div>
 
-        {/* CEFT Settled */}
+        {/* Released to Providers */}
         <div
           className="admin-kpi-card interactive"
           onClick={() => onNavigateTab?.('payouts')}
           role="button"
           tabIndex={0}
+          onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onNavigateTab?.('payouts'); } }}
         >
           <div className="admin-kpi-header">
             <span className="admin-kpi-label">CEFT Settled</span>
@@ -193,10 +206,10 @@ export default function AdminOverview({
             </div>
           </div>
           <div className="admin-kpi-value" style={{ fontSize: '1.65rem', color: 'var(--color-brand-700, #174d3d)' }}>
-            LKR {settledPayouts.toLocaleString()}
+            LKR {releasedToProviders.toLocaleString()}
           </div>
           <div className="admin-kpi-subtext">
-            <span>Disbursed to partner accounts</span>
+            <span>Recorded provider releases · LKR</span>
           </div>
         </div>
       </div>
@@ -404,8 +417,8 @@ export default function AdminOverview({
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <Banknote size={20} color="var(--color-brand-600, #174d3d)" />
             <div>
-              <b style={{ fontSize: '0.88rem', color: 'var(--color-text, #0f172a)', display: 'block' }}>LankaPay CEFT Payouts</b>
-              <span style={{ fontSize: '0.74rem', color: 'var(--color-neutral-500, #64748b)' }}>Batch settlement runs</span>
+              <b style={{ fontSize: '0.88rem', color: 'var(--color-text, #0f172a)', display: 'block' }}>Manual Payout Management</b>
+              <span style={{ fontSize: '0.74rem', color: 'var(--color-neutral-500, #64748b)' }}>Review payout requests and records</span>
             </div>
           </div>
           <ArrowRight size={16} color="#94a3b8" />
@@ -428,8 +441,8 @@ export default function AdminOverview({
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <Radio size={20} color="#059669" />
             <div>
-              <b style={{ fontSize: '0.88rem', color: 'var(--color-text, #0f172a)', display: 'block' }}>Dispatch Telematics</b>
-              <span style={{ fontSize: '0.74rem', color: 'var(--color-neutral-500, #64748b)' }}>Live driver radar</span>
+              <b style={{ fontSize: '0.88rem', color: 'var(--color-text, #0f172a)', display: 'block' }}>Driver Dispatch</b>
+              <span style={{ fontSize: '0.74rem', color: 'var(--color-neutral-500, #64748b)' }}>Review available dispatch information</span>
             </div>
           </div>
           <ArrowRight size={16} color="#94a3b8" />
