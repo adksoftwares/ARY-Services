@@ -207,6 +207,7 @@ export default function ProviderJobs({
                   variant="primary"
                   size="sm"
                   onClick={() => runBookingAction(b.id, onClaimJob)}
+                  disabled={claimingJobId === b.id || actionBusyId === b.id}
                   loading={claimingJobId === b.id}
                 >
                   <Zap size={14} /> Claim Job (1-Tap)
@@ -364,6 +365,7 @@ export default function ProviderJobs({
                         variant="primary"
                         size="sm"
                         onClick={() => runBookingAction(b.id, onDecideReschedule, 'accept')}
+                        disabled={actionBusyId === b.id}
                       >
                         <Check size={14} /> Confirm New Time
                       </Button>
@@ -371,6 +373,7 @@ export default function ProviderJobs({
                         variant="ghost"
                         size="sm"
                         onClick={() => runBookingAction(b.id, onDecideReschedule, 'reject')}
+                        disabled={actionBusyId === b.id}
                       >
                         <Ban size={14} /> Decline Change
                       </Button>
@@ -496,6 +499,8 @@ export default function ProviderJobs({
                           <Button
                             variant="primary"
                             onClick={() => runBookingAction(b.id, onUpdateStatus, 'accepted')}
+                            loading={actionBusyId === b.id}
+                            disabled={actionBusyId === b.id}
                           >
                             <Check size={16} /> Accept Job
                           </Button>
@@ -513,12 +518,16 @@ export default function ProviderJobs({
                           <Button
                             variant="primary"
                             onClick={() => runBookingAction(b.id, onUpdateStatus, 'in_progress')}
+                            loading={actionBusyId === b.id}
+                            disabled={actionBusyId === b.id}
                           >
                             <Zap size={16} /> Start Job
                           </Button>
                           <Button
                             variant="secondary"
                             onClick={() => runBookingAction(b.id, onUpdateStatus, 'completed')}
+                            loading={actionBusyId === b.id}
+                            disabled={actionBusyId === b.id}
                           >
                             <CheckCheck size={16} /> Mark Completed
                           </Button>
@@ -528,7 +537,7 @@ export default function ProviderJobs({
                       {b.status === 'in_progress' && (
                         <Button
                           variant="primary"
-                          onClick={() => onUpdateStatus?.(b.id, 'completed')}
+                          onClick={() => runBookingAction(b.id, onUpdateStatus, 'completed')}
                         >
                           <CheckCheck size={16} /> Mark as Finished
                         </Button>
