@@ -12,8 +12,7 @@ export default function DriverPinKeypadModal({
   error = ''
 }) {
   const [pin, setPin] = useState('');
-  const [attemptsLeft, setAttemptsLeft] = useState(5);
-  const isLockedOut = attemptsLeft <= 0;
+  const isLockedOut = false;
 
   if (!isOpen) return null;
 
@@ -44,7 +43,7 @@ export default function DriverPinKeypadModal({
       await onSubmit(pin);
       setPin('');
     } catch (err) {
-      setAttemptsLeft(prev => Math.max(0, prev - 1));
+      // The parent owns the actionable verification error; network failures must not consume local attempts.
     }
   }
 
@@ -133,9 +132,9 @@ export default function DriverPinKeypadModal({
           </div>
         ) : (
           <div style={{ marginBottom: '16px', fontSize: '0.8rem' }}>
-            {attemptsLeft < 5 ? (
+            {false ? (
               <span style={{ color: 'var(--color-danger-600, #dc2626)', fontWeight: 700 }}>
-                Input attempts remaining in this screen: {attemptsLeft} of 5
+                Enter the 4-digit code provided for this handoff
               </span>
             ) : (
               <span style={{ color: 'var(--text-muted)' }}>
