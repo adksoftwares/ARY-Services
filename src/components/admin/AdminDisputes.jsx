@@ -41,28 +41,27 @@ export default function AdminDisputes({
         customerRefund: total,
         providerPayout: 0,
         platformCommission: 0,
-        summaryText: 'Customer receives 100% refund. Escrow funds returned.'
+        summaryText: 'Proposed allocation: the full recorded booking amount is assigned to the customer. Confirm actual ledger eligibility before ruling.'
       };
     } else if (action === 'release_provider') {
-      const commission = Math.round(total * 0.1);
-      const payout = total - commission;
+      const payout = total;
       return {
         customerRefund: 0,
         providerPayout: payout,
-        platformCommission: commission,
-        summaryText: 'Provider receives 90% contract payout. ARY 10% commission recognized.'
+        platformCommission: 0,
+        summaryText: 'Proposed allocation: the full recorded booking amount is assigned to the provider before any separately configured adjustments.'
       };
     } else {
       // 50/50 split
       const customerRefund = Math.round(total * 0.5);
       const providerGross = total - customerRefund;
-      const commission = Math.round(providerGross * 0.1);
-      const providerPayout = providerGross - commission;
+      const commission = 0;
+      const providerPayout = providerGross;
       return {
         customerRefund,
         providerPayout,
         platformCommission: commission,
-        summaryText: '50% refunded to Customer. 50% released to Provider (less 10% platform fee).'
+        summaryText: 'Proposed allocation: half of the recorded booking amount to the customer and half to the provider, before any separately configured adjustments.'
       };
     }
   }
@@ -94,7 +93,7 @@ export default function AdminDisputes({
               Disputes & Escrow Arbitration Console ({disputedBookings.length})
             </h3>
             <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: 'var(--color-neutral-600, #475569)' }}>
-              Review customer workmanship complaints and exercise binding administrative authority over frozen escrow funds under ARY 14-Day Guarantee.
+              Review disputed bookings and record an administrative ruling. Confirm payment and escrow status before making any financial decision.
             </p>
           </div>
         </div>
@@ -105,8 +104,8 @@ export default function AdminDisputes({
         <Card style={{ padding: '40px', textAlign: 'center' }}>
           <EmptyState
             icon={CheckCircle2}
-            title="All escrow funds in good standing"
-            description="Zero customer workmanship disputes are currently open on the platform."
+            title="No disputed bookings in this queue"
+            description="Disputed bookings will appear here when they are included in the admin workspace data."
           />
         </Card>
       ) : (
@@ -134,13 +133,13 @@ export default function AdminDisputes({
                       </span>
                     </div>
                     <div style={{ fontSize: '0.78rem', color: 'var(--color-neutral-500, #64748b)', marginTop: 2 }}>
-                      Booking Date: <b>{b.bookingDate}</b> at {b.bookingTime}
+                      Booking Date: <b>{b.bookingDate || 'Date unavailable'}</b> at {b.bookingTime || 'Time unavailable'}
                     </div>
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <Badge variant="danger" dot={true}>
-                      FROZEN ESCROW: LKR {rawCharge.toLocaleString()}
+                      DISPUTED BOOKING: {rawCharge > 0 ? `LKR ${rawCharge.toLocaleString()}` : 'Amount unavailable'}
                     </Badge>
                     <Button
                       variant="primary"
@@ -167,15 +166,15 @@ export default function AdminDisputes({
                 }}>
                   <div>
                     <span style={{ color: 'var(--color-neutral-500, #64748b)', display: 'block', fontSize: '0.74rem' }}>Customer</span>
-                    <b>{b.customerName}</b> ({b.customerPhone})
+                    <b>{b.customerName || 'Customer details unavailable'}</b> ({b.customerPhone || 'Phone not provided'})
                   </div>
                   <div>
                     <span style={{ color: 'var(--color-neutral-500, #64748b)', display: 'block', fontSize: '0.74rem' }}>Assigned Provider</span>
-                    <b>{b.providerName}</b> ({b.providerPhone || 'On File'})
+                    <b>{b.providerName || 'Provider details unavailable'}</b> ({b.providerPhone || 'Phone not provided'})
                   </div>
                   <div>
                     <span style={{ color: 'var(--color-neutral-500, #64748b)', display: 'block', fontSize: '0.74rem' }}>Job Site Address</span>
-                    <b>{b.serviceAddress || 'Colombo Area'}</b>
+                    <b>{b.serviceAddress || 'Address not provided'}</b>
                   </div>
                 </div>
 
@@ -192,7 +191,7 @@ export default function AdminDisputes({
                     Customer Workmanship Claim:
                   </b>
                   <p style={{ margin: 0, fontStyle: 'italic', lineHeight: 1.5 }}>
-                    "{b.disputeReason || b.dispute?.reason || 'Work was not completed to professional trade standards. Requested refund under guarantee.'}"
+                    "{b.disputeReason || b.dispute?.reason || 'No dispute statement was supplied.'}"
                   </p>
                   {b.disputeEvidence && (
                     <div style={{ marginTop: 8, fontSize: '0.78rem', color: '#b91c1c' }}>
@@ -238,41 +237,44 @@ export default function AdminDisputes({
                     </div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <span style={{ fontSize: '0.72rem', color: 'var(--color-neutral-500, #64748b)', display: 'block' }}>Recorded Escrow</span>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--color-neutral-500, #64748b)', display: 'block' }}>Recorded booking amount</span>
                     <b style={{ fontSize: '1.25rem', color: '#b91c1c' }}>LKR {rawCharge.toLocaleString()}</b>
                   </div>
                 </div>
 
-                {!hasFundedEscrow && <div role="alert" style={{ padding: 12, borderRadius: 8, background: 'var(--color-warning-50, #fffbeb)', border: '1px solid var(--color-warning-200, #fde68a)', color: 'var(--color-warning-900, #78350f)', fontSize: '0.82rem' }}>This booking has no confirmed escrow funds. Financial arbitration is disabled; resolve cash payments outside the escrow ledger and record the outcome separately.</div>}
+                {!hasFundedEscrow && <div role="alert" style={{ padding: 12, borderRadius: 8, background: 'var(--color-warning-50, #fffbeb)', border: '1px solid var(--color-warning-200, #fde68a)', color: 'var(--color-warning-900, #78350f)', fontSize: '0.82rem' }}>This booking does not have the expected escrow-held status and a positive recorded amount. Financial arbitration is disabled here; verify the payment record before proceeding.</div>}
 
                 {/* Arbitration Decision Options */}
                 <div style={{ opacity: hasFundedEscrow ? 1 : 0.45, pointerEvents: hasFundedEscrow ? 'auto' : 'none' }}>
                   <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: 'var(--color-neutral-700, #334155)', marginBottom: 8 }}>
-                    Select Administrative Ruling:
+                    Select proposed administrative outcome:
                   </label>
 
                   <div style={{ display: 'grid', gap: 8 }}>
                     {[
                       {
                         id: 'split_50_50',
-                        title: 'Option A: 50/50 Mediated Settlement (Recommended)',
-                        desc: 'Customer receives 50% refund. Provider receives 50% payout (less 10% platform fee).'
+                        title: 'Option A: 50/50 proposed allocation',
+                        desc: 'Propose assigning half of the recorded amount to each party, subject to confirmed ledger rules.'
                       },
                       {
                         id: 'refund_customer',
                         title: 'Option B: 100% Refund to Customer',
-                        desc: 'Full escrow return to customer wallet. Provider payout forfeited due to incomplete job.'
+                        desc: 'Propose assigning the recorded amount to the customer, subject to confirmed ledger rules.'
                       },
                       {
                         id: 'release_provider',
                         title: 'Option C: Release Payout to Provider',
-                        desc: 'Provider receives 90% net payout. Complaint dismissed after review of evidence.'
+                        desc: 'Propose assigning the recorded amount to the provider after reviewing the evidence and payment status.'
                       }
                     ].map(opt => (
-                      <div
+                      <button
                         key={opt.id}
+                        type="button"
+                        aria-pressed={selectedAction === opt.id}
                         className={`dispute-decision-option ${selectedAction === opt.id ? 'selected' : ''}`}
                         onClick={() => setSelectedAction(opt.id)}
+                        style={{ width: '100%', textAlign: 'left', cursor: 'pointer', font: 'inherit' }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                           <b style={{ fontSize: '0.88rem', color: 'var(--color-text, #0f172a)' }}>{opt.title}</b>
@@ -281,12 +283,12 @@ export default function AdminDisputes({
                         <p style={{ margin: '4px 0 0', fontSize: '0.78rem', color: 'var(--color-neutral-500, #64748b)' }}>
                           {opt.desc}
                         </p>
-                      </div>
+                      </button>
                     ))}
                   </div>
                 </div>
 
-                {/* Live Amount Calculation Preview */}
+                {/* Indicative Amount Allocation Preview */}
                 <div style={{
                   background: 'var(--color-brand-50, #edf7f2)',
                   border: '1px solid var(--color-brand-200, #b7decb)',
@@ -296,7 +298,7 @@ export default function AdminDisputes({
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
                     <Scale size={16} color="var(--color-brand-600, #174d3d)" />
                     <b style={{ fontSize: '0.85rem', color: 'var(--color-brand-900, #0c2d23)' }}>
-                      Double-Entry Settlement Breakdown (Live Preview)
+                      Indicative allocation preview
                     </b>
                   </div>
 
@@ -315,7 +317,7 @@ export default function AdminDisputes({
                       <b style={{ fontSize: '1.05rem', color: 'var(--color-brand-700, #174d3d)' }}>LKR {preview.providerPayout.toLocaleString()}</b>
                     </div>
                     <div style={{ background: 'var(--color-surface, #ffffff)', padding: '10px', borderRadius: 6, border: '1px solid var(--color-brand-200, #b7decb)' }}>
-                      <span style={{ fontSize: '0.72rem', color: 'var(--color-neutral-500, #64748b)', display: 'block' }}>ARY Commission</span>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--color-neutral-500, #64748b)', display: 'block' }}>Additional adjustment</span>
                       <b style={{ fontSize: '1.05rem', color: 'var(--color-neutral-700, #334155)' }}>LKR {preview.platformCommission.toLocaleString()}</b>
                     </div>
                   </div>
@@ -357,7 +359,7 @@ export default function AdminDisputes({
                     loading={arbitratingId === selectedBooking.id}
                     disabled={!hasFundedEscrow}
                   >
-                    <CheckCircle2 size={15} /> Execute Binding Settlement
+                    <CheckCircle2 size={15} /> Confirm administrative ruling
                   </Button>
                 </div>
               </div>
