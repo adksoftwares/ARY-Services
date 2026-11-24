@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { KeyRound, Delete, X, AlertCircle, CheckCircle2, ShieldAlert } from 'lucide-react';
+import { KeyRound, Delete, X, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Modal, Button, Badge } from '../../design-system';
 
 export default function DriverPinKeypadModal({
@@ -12,12 +12,11 @@ export default function DriverPinKeypadModal({
   error = ''
 }) {
   const [pin, setPin] = useState('');
-  const isLockedOut = false;
 
   if (!isOpen) return null;
 
   function handleDigit(d) {
-    if (isLockedOut || pin.length >= 4) return;
+    if (pin.length >= 4) return;
     if (typeof navigator !== 'undefined' && navigator.vibrate) {
       try { navigator.vibrate(30); } catch (e) {}
     }
@@ -38,7 +37,7 @@ export default function DriverPinKeypadModal({
   }
 
   async function handleVerify() {
-    if (pin.length !== 4 || isLockedOut || isVerifying || typeof onSubmit !== 'function') return;
+    if (pin.length !== 4 || isVerifying || typeof onSubmit !== 'function') return;
     try {
       await onSubmit(pin);
       setPin('');
@@ -114,35 +113,7 @@ export default function DriverPinKeypadModal({
           </div>
         )}
 
-        {isLockedOut ? (
-          <div style={{
-            background: 'var(--color-danger-50, #fef2f2)',
-            border: '1.5px solid var(--color-danger-400, #f87171)',
-            borderRadius: 'var(--radius-md, 8px)',
-            padding: '14px',
-            marginBottom: 16,
-            color: 'var(--color-danger-900, #7f1d1d)',
-            fontSize: '0.85rem'
-          }}>
-            <ShieldAlert size={22} color="#dc2626" style={{ margin: '0 auto 6px', display: 'block' }} />
-            <b>Security Lockout Active</b>
-            <p style={{ margin: '4px 0 0', fontSize: '0.8rem' }}>
-              This keypad has paused further attempts in this screen. If the code is incorrect, ask the customer to confirm the correct code or follow the instructions shown by the booking workflow.
-            </p>
-          </div>
-        ) : (
-          <div style={{ marginBottom: '16px', fontSize: '0.8rem' }}>
-            {false ? (
-              <span style={{ color: 'var(--color-danger-600, #dc2626)', fontWeight: 700 }}>
-                Enter the 4-digit code provided for this handoff
-              </span>
-            ) : (
-              <span style={{ color: 'var(--text-muted)' }}>
-                Enter the 4-digit code provided for this handoff
-              </span>
-            )}
-          </div>
-        )}
+        <div style={{ marginBottom: '16px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>Enter the 4-digit code provided for this handoff.</div>
 
         {/* Numeric Keypad Grid */}
         <div className="keypad-grid">
