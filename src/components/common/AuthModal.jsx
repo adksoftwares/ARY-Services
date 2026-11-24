@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   X,
@@ -71,12 +71,6 @@ export default function AuthModal({ onNotice }) {
   // Loading States
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLocatingReg, setIsLocatingReg] = useState(false);
-
-  useEffect(() => {
-    if (authMode === 'admin' && !loginIdentifier) {
-      setLoginIdentifier('arikarran14@gmail.com');
-    }
-  }, [authMode, loginIdentifier]);
 
   if (!isAuthModalOpen) return null;
 
@@ -238,7 +232,6 @@ export default function AuthModal({ onNotice }) {
             onClick={() => {
               setAuthMode('admin');
               setAuthError('');
-              setLoginIdentifier('arikarran14@gmail.com');
             }}
             style={{
               padding: '8px 4px',
@@ -286,30 +279,14 @@ export default function AuthModal({ onNotice }) {
               <label>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span>{authMode === 'admin' ? 'Super Admin Email' : 'Mobile Number or Email'}</span>
-                  {authMode === 'admin' && (
-                    <button
-                      type="button"
-                      onClick={() => setLoginIdentifier('arikarran14@gmail.com')}
-                      style={{
-                        background: 'none',
-                        border: 0,
-                        color: '#ef4444',
-                        fontSize: '11px',
-                        cursor: 'pointer',
-                        padding: 0,
-                        textDecoration: 'underline'
-                      }}
-                    >
-                      Fill arikarran14@gmail.com
-                    </button>
-                  )}
+
                 </div>
                 <input
                   required
                   type="text"
                   value={loginIdentifier}
                   onChange={e => setLoginIdentifier(e.target.value)}
-                  placeholder={authMode === 'admin' ? 'arikarran14@gmail.com' : 'e.g. 077 123 4567 or user@example.com'}
+                  placeholder={authMode === 'admin' ? 'Enter administrator email' : 'e.g. 077 123 4567 or user@example.com'}
                   autoComplete="username"
                   inputMode={authMode === 'admin' ? 'email' : 'text'}
                 />
@@ -385,7 +362,6 @@ export default function AuthModal({ onNotice }) {
                     onClick={() => {
                       setAuthMode('admin');
                       setAuthError('');
-                      setLoginIdentifier('arikarran14@gmail.com');
                     }}
                     style={{
                       background: 'rgba(239, 68, 68, 0.08)',
