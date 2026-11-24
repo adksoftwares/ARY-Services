@@ -8,20 +8,23 @@ import { subscribeToAppEvents } from '../../utils/events';
 export default function AdminServiceRequests({ onNotice }) {
   const { currentUser } = useAuth();
   const [requests, setRequests] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState('');
+  const [error, setError] = useState('');
 
   const loadRequests = useCallback(async () => {
     if (!currentUser?.token) return;
     setLoading(true);
+    setError('');
     try {
       const response = await fetch(`${API_BASE}/admin/provider-service-requests`, {
         headers: { Authorization: `Bearer ${currentUser.token}` }
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || 'Could not load provider service requests.');
-      setRequests(data.requests || []);
+      setRequests(Array.isArray(data.requests) ? data.requests : []);
     } catch (err) {
+      setError(err.message || 'Could not load provider service requests.');
       onNotice?.(`Error: ${err.message}`);
     } finally {
       setLoading(false);
@@ -88,8 +91,12 @@ export default function AdminServiceRequests({ onNotice }) {
         </div>
       </Card>
 
+      {error && <div role="alert" style={{ padding: '12px 14px', borderRadius: 8, background: 'var(--color-danger-50, #fef2f2)', color: 'var(--color-danger-700, #b91c1c)', fontSize: '0.85rem' }}>{error}</div>}
+
       {/* 2. Requests List */}
-      {requests.length === 0 ? (
+      {loading ? (
+        <Card style={{ padding: '28px', color: 'var(--color-neutral-600, #475569)' }}>Loading service requests…</Card>
+      ) : requests.length === 0 ? (
         <Card style={{ padding: '40px', textAlign: 'center' }}>
           <EmptyState
             icon={BriefcaseBusiness}
@@ -127,15 +134,15 @@ export default function AdminServiceRequests({ onNotice }) {
 
                     <div style={{ fontSize: '0.82rem', color: 'var(--color-neutral-600, #475569)', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
                       <span>Provider: <b>{item.providerName}</b></span>
-                      <span>Location: <b>{item.providerLocation || 'Sri Lanka'}</b></span>
-                      <span>Requested: {new Date(item.requestedAt).toLocaleDateString()}</span>
+                      <span>Location: <b>{item.providerLocation || 'Not provided'}</b></span>
+                      <span>Requested: {item.requestedAt && Number.isFinite(Date.parse(item.requestedAt)) ? new Date(item.requestedAt).toLocaleDateString() : 'Date unavailable'}</span>
                     </div>
                   </div>
 
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ fontSize: '0.74rem', color: 'var(--color-neutral-500, #64748b)' }}>Proposed Base Rate</div>
                     <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--color-brand-700, #174d3d)' }}>
-                      LKR {Number(item.baseCharge || 0).toLocaleString()}
+                      {Number.isFinite(Number(item.baseCharge)) && Number(item.baseCharge) > 0 ? `LKR ${Number(item.baseCharge).toLocaleString()}` : 'Quote not specified'}
                     </div>
                   </div>
                 </div>
