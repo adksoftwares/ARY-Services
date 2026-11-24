@@ -525,7 +525,7 @@ export default function AccountView({ onNotice, onClose }) {
                         helperText="Business Registration Number, NVQ Trade Certificate, or Vocational License."
                       />
                       <Input
-                        label="Standard Base Inspection Charge *"
+                        label="Standard Base Inspection Charge (optional)"
                         value={baseCharge}
                         onChange={e => setBaseCharge(e.target.value)}
                         placeholder="e.g. LKR 1,500"
