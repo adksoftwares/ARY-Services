@@ -74,7 +74,7 @@ export default function ProviderReviews({
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, flexWrap: 'wrap', gap: 8 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <b style={{ color: 'var(--color-neutral-900, #0f172a)', fontSize: '0.95rem' }}>
-                    {r.customerName || 'Customer'
+                    {r.customerName || 'Customer'}
                   </b>
                 </div>
                 <span style={{ fontSize: '0.78rem', color: 'var(--color-neutral-400, #94a3b8)' }}>
