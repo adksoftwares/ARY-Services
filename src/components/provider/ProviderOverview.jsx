@@ -29,17 +29,21 @@ export default function ProviderOverview({
   isAvailable = true,
   onToggleAvailability
 }) {
-  const pendingRequests = bookings.filter(b => b.status === 'requested');
-  const activeJobs = bookings.filter(b => ['accepted', 'in_progress'].includes(b.status));
-  const completedBookings = bookings.filter(b => b.status === 'completed');
-
-
-
-  // Filter today's / upcoming jobs
-  const todayStr = new Date().toISOString().split('T')[0];
-  const upcomingJobs = bookings
+  const safeBookings = (Array.isArray(bookings) ? bookings : []).filter(booking => booking && typeof booking === 'object' && booking.id !== null && booking.id !== undefined && String(booking.id).trim() !== '');
+  const pendingRequests = safeBookings.filter(b => b.status === 'requested');
+  const activeJobs = safeBookings.filter(b => ['accepted', 'in_progress'].includes(b.status));
+  const upcomingJobs = safeBookings
     .filter(b => ['requested', 'accepted', 'in_progress'].includes(b.status))
     .slice(0, 5);
+  const normalizedWalletBalance = walletBalance !== null && walletBalance !== undefined && walletBalance !== '' && Number.isFinite(Number(walletBalance))
+    ? Number(walletBalance)
+    : null;
+  const normalizedRating = averageRating !== null && averageRating !== undefined && averageRating !== '' && Number.isFinite(Number(averageRating))
+    ? Number(averageRating).toFixed(1)
+    : '—';
+  const normalizedReviewCount = Number.isFinite(Number(reviewCount)) && Number(reviewCount) >= 0
+    ? Math.floor(Number(reviewCount))
+    : 0;
 
   return (
     <div className="provider-overview-view" style={{ display: 'grid', gap: '20px' }}>
@@ -53,11 +57,11 @@ export default function ProviderOverview({
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
               <h1 className="provider-heading-name">{currentUser?.fullName}</h1>
               <Badge variant="success" dot={false}>
-                <ShieldCheck size={13} /> Verified Partner
+                <ShieldCheck size={13} /> Approved Provider
               </Badge>
             </div>
             <span className="provider-category-subtitle">
-              {currentUser?.categoryName || 'Professional Service Provider'} · {currentUser?.location || 'Colombo, Sri Lanka'}
+              {currentUser?.categoryName || 'Professional Service Provider'} · {currentUser?.location || 'Location not provided'}
             </span>
           </div>
         </div>
@@ -70,6 +74,8 @@ export default function ProviderOverview({
               onClick={onToggleAvailability}
               aria-pressed={isAvailable}
               title="This is a local dashboard preference and does not change public booking availability."
+              disabled={!onToggleAvailability}
+              aria-disabled={!onToggleAvailability}
             >
               <span style={{
                 width: 8,
@@ -109,7 +115,7 @@ export default function ProviderOverview({
                   {pendingRequests.length} Urgent Booking Request{pendingRequests.length > 1 ? 's' : ''} Awaiting Response!
                 </b>
                 <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: 'var(--color-danger-800, #7f1d1d)' }}>
-                  Accepting within 30 minutes improves your contractor ranking across Sri Lanka.
+                  Review each request and respond based on your availability.
                 </p>
               </div>
             </div>
@@ -149,6 +155,7 @@ export default function ProviderOverview({
                     variant="primary"
                     size="sm"
                     onClick={() => onUpdateStatus?.(b.id, 'accepted')}
+                    disabled={!onUpdateStatus}
                   >
                     <Check size={14} /> 1-Tap Accept
                   </Button>
@@ -156,6 +163,7 @@ export default function ProviderOverview({
                     variant="danger"
                     size="sm"
                     onClick={() => onUpdateStatus?.(b.id, 'rejected')}
+                    disabled={!onUpdateStatus}
                   >
                     <Ban size={14} /> Decline
                   </Button>
@@ -193,7 +201,7 @@ export default function ProviderOverview({
             <Wallet size={20} />
           </div>
           <div className="kpi-data">
-            <span className="kpi-val">LKR {Number(walletBalance || 0).toLocaleString('en-LK')}</span>
+            <span className="kpi-val">{normalizedWalletBalance === null ? '—' : `LKR ${normalizedWalletBalance.toLocaleString('en-LK')}`}</span>
             <span className="kpi-label">Available Wallet Balance</span>
           </div>
         </Card>
@@ -203,8 +211,8 @@ export default function ProviderOverview({
             <Star size={20} fill="currentColor" />
           </div>
           <div className="kpi-data">
-            <span className="kpi-val">{averageRating} ★</span>
-            <span className="kpi-label">{reviewCount} Verified Reviews</span>
+            <span className="kpi-val">{normalizedRating} ★</span>
+            <span className="kpi-label">{normalizedReviewCount} Customer Reviews</span>
           </div>
         </Card>
       </div>
@@ -214,10 +222,10 @@ export default function ProviderOverview({
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <div>
             <h2 style={{ margin: 0, fontSize: '1.05rem', color: 'var(--text-primary, #f8fafc)' }}>
-              Upcoming Schedule & Active Tasks
+              Active & Pending Jobs Snapshot
             </h2>
             <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: 'var(--color-neutral-500, #64748b)' }}>
-              Next jobs requiring your attention
+              Recent bookings that may need your attention
             </p>
           </div>
           <Button variant="ghost" size="sm" onClick={() => onNavigateTab?.('schedule')}>
@@ -248,7 +256,7 @@ export default function ProviderOverview({
                       {b.categoryName || 'Service Job'}
                     </b>
                     <span style={{ fontSize: '0.75rem', color: 'var(--color-neutral-500, #64748b)' }}>
-                      #{b.id.slice(-6)}
+                      #{String(b.id ?? '—').slice(-6)}
                     </span>
                     <StatusPill status={b.status} />
                   </div>
@@ -272,7 +280,7 @@ export default function ProviderOverview({
           <EmptyState
             icon={Calendar}
             title="No upcoming jobs scheduled"
-            description="When clients book your service, their dates and addresses will appear here in chronological order."
+            description="When customers book your service, their booking details will appear here."
           />
         )}
       </Card>
@@ -328,10 +336,10 @@ export default function ProviderOverview({
             </div>
             <div>
               <b style={{ fontSize: '0.92rem', color: 'var(--color-neutral-900, #0f172a)' }}>
-                CEFT Bank Settlements
+                Wallet & Payout History
               </b>
               <p style={{ margin: '2px 0 0', fontSize: '0.78rem', color: 'var(--color-neutral-500, #64748b)' }}>
-                View 10% platform fee breakdown & request instant bank payout
+                Review your wallet balance and payout records. Bank transfers are handled separately.
               </p>
             </div>
           </div>
