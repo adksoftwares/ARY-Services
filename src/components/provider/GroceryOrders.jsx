@@ -68,6 +68,7 @@ export default function GroceryOrders() {
   }, [load, currentUser?.token]);
 
   async function updateOrderStatus(orderId, status) {
+    if (!orderId || busyId) return false;
     setBusyId(orderId);
     setError('');
     try {
@@ -235,6 +236,7 @@ export default function GroceryOrders() {
                             variant="primary"
                             size="sm"
                             loading={busyId === o.id}
+                            disabled={Boolean(busyId)}
                             onClick={() => updateOrderStatus(o.id, 'accepted')}
                             style={{ flex: 1 }}
                           >
@@ -243,6 +245,7 @@ export default function GroceryOrders() {
                           <Button
                             variant="danger"
                             size="sm"
+                            disabled={Boolean(busyId)}
                             onClick={() => setCancelOrderTarget(o)}
                           >
                             <Ban size={14} /> Cancel
@@ -256,6 +259,7 @@ export default function GroceryOrders() {
                             variant="primary"
                             size="sm"
                             loading={busyId === o.id}
+                            disabled={Boolean(busyId)}
                             onClick={() => updateOrderStatus(o.id, 'preparing')}
                             style={{ flex: 1 }}
                           >
@@ -276,6 +280,7 @@ export default function GroceryOrders() {
                           variant="secondary"
                           size="sm"
                           loading={busyId === o.id}
+                          disabled={Boolean(busyId)}
                           onClick={() => updateOrderStatus(o.id, 'ready_for_pickup')}
                           style={{ width: '100%' }}
                         >
@@ -349,7 +354,7 @@ export default function GroceryOrders() {
             if (updated) setCancelOrderTarget(null);
           }
         }}
-        onCancel={() => setCancelOrderTarget(null)}
+        onCancel={() => { if (!busyId) setCancelOrderTarget(null); }}
       />
     </div>
   );
