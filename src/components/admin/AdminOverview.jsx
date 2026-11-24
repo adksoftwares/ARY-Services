@@ -200,7 +200,7 @@ export default function AdminOverview({
           onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onNavigateTab?.('payouts'); } }}
         >
           <div className="admin-kpi-header">
-            <span className="admin-kpi-label">CEFT Settled</span>
+            <span className="admin-kpi-label">Released to Providers</span>
             <div className="admin-kpi-icon-box brand">
               <Banknote size={18} />
             </div>
@@ -354,6 +354,9 @@ export default function AdminOverview({
       }}>
         <div
           onClick={() => onNavigateTab?.('applications')}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onNavigateTab?.('applications'); } }}
           style={{
             padding: '16px',
             background: 'var(--color-surface, #ffffff)',
@@ -378,6 +381,9 @@ export default function AdminOverview({
 
         <div
           onClick={() => onNavigateTab?.('disputes')}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onNavigateTab?.('disputes'); } }}
           style={{
             padding: '16px',
             background: 'var(--color-surface, #ffffff)',
@@ -402,6 +408,9 @@ export default function AdminOverview({
 
         <div
           onClick={() => onNavigateTab?.('payouts')}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onNavigateTab?.('payouts'); } }}
           style={{
             padding: '16px',
             background: 'var(--color-surface, #ffffff)',
@@ -426,6 +435,9 @@ export default function AdminOverview({
 
         <div
           onClick={() => onNavigateTab?.('dispatch')}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onNavigateTab?.('dispatch'); } }}
           style={{
             padding: '16px',
             background: 'var(--color-surface, #ffffff)',
