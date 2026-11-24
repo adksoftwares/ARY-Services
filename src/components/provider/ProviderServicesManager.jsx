@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   BriefcaseBusiness,
   Plus,
@@ -45,9 +45,11 @@ export default function ProviderServicesManager() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const servicesRequestRef = useRef(0);
 
   const load = useCallback(async () => {
-    if (!currentUser?.token) {
+    const requestId = ++servicesRequestRef.current;
+    if (!currentUser?.token || currentUser.accountType !== 'provider') {
       setData({ primaryCategory: {}, approvedServices: [], requests: [] });
       setError('Please sign in again to view your service approvals.');
       setIsLoading(false);
@@ -59,10 +61,12 @@ export default function ProviderServicesManager() {
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || 'Could not load your service approvals.');
+      if (requestId !== servicesRequestRef.current) return;
+      if (!Array.isArray(result.approvedServices) || !Array.isArray(result.requests)) throw new Error('The server returned an unexpected services response. Please refresh.');
       setData({
-        primaryCategory: result.primaryCategory || {},
-        approvedServices: Array.isArray(result.approvedServices) ? result.approvedServices.filter(item => item && typeof item === 'object') : [],
-        requests: Array.isArray(result.requests) ? result.requests.filter(item => item && typeof item === 'object') : []
+        primaryCategory: result.primaryCategory && typeof result.primaryCategory === 'object' && !Array.isArray(result.primaryCategory) ? result.primaryCategory : {},
+        approvedServices: result.approvedServices.filter(item => item && typeof item === 'object' && item.id !== null && item.id !== undefined),
+        requests: result.requests.filter(item => item && typeof item === 'object' && item.id !== null && item.id !== undefined)
       });
       setError('');
       if (!categorySlug) {
@@ -70,13 +74,16 @@ export default function ProviderServicesManager() {
         setCategorySlug((primary || categories[0])?.slug || 'other-services');
       }
     } catch (err) {
-      setError(err.message || 'Could not load service approvals.');
+      if (requestId === servicesRequestRef.current) setError(err.message || 'Could not load service approvals.');
     } finally {
-      setIsLoading(false);
+      if (requestId === servicesRequestRef.current) setIsLoading(false);
     }
   }, [currentUser?.token, categorySlug]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+    return () => { servicesRequestRef.current += 1; };
+  }, [load]);
 
   useEffect(() => {
     if (!currentUser?.token) return undefined;
@@ -86,7 +93,7 @@ export default function ProviderServicesManager() {
   async function submit(event) {
     event.preventDefault();
     if (busy) return;
-    if (!currentUser?.token) {
+    if (!currentUser?.token || currentUser.accountType !== 'provider') {
       setError('Please sign in again before submitting a service request.');
       setNotice('');
       return;

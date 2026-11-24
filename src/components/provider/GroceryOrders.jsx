@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState, useMemo } from 'react';
+import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
 import {
   ShoppingBag,
   Clock,
@@ -35,10 +35,13 @@ export default function GroceryOrders() {
   const [busyId, setBusyId] = useState('');
   const [cancelOrderTarget, setCancelOrderTarget] = useState(null);
   const [activeMobileColumn, setActiveMobileColumn] = useState('pending');
+  const ordersRequestRef = useRef(0);
 
   const load = useCallback(async () => {
-    if (!currentUser?.token) {
+    const requestId = ++ordersRequestRef.current;
+    if (!currentUser?.token || currentUser.accountType !== 'provider') {
       setOrders([]);
+      setError('');
       setLoading(false);
       return;
     }
@@ -49,26 +52,32 @@ export default function GroceryOrders() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || data.message || 'Could not load store orders');
-      setOrders(Array.isArray(data.orders) ? data.orders.filter(order => order && typeof order === 'object') : []);
+      if (requestId !== ordersRequestRef.current) return;
+      if (!Array.isArray(data.orders)) throw new Error('The server returned an unexpected grocery orders list. Please refresh.');
+      setOrders(data.orders.filter(order => order && typeof order === 'object' && order.id !== null && order.id !== undefined && String(order.id).trim() !== ''));
       setError('');
     } catch (e) {
-      setError(e.message || 'Error loading orders');
+      if (requestId === ordersRequestRef.current) setError(e.message || 'Error loading orders');
     } finally {
-      setLoading(false);
+      if (requestId === ordersRequestRef.current) setLoading(false);
     }
   }, [currentUser?.token]);
 
   useEffect(() => {
     load();
     if (!currentUser?.token) return undefined;
-    return subscribeToAppEvents(currentUser.token, {
+    const unsubscribe = subscribeToAppEvents(currentUser.token, {
       'grocery:order_created': load,
       'grocery:order_updated': load
     });
+    return () => {
+      unsubscribe?.();
+      ordersRequestRef.current += 1;
+    };
   }, [load, currentUser?.token]);
 
   async function updateOrderStatus(orderId, status) {
-    if (!orderId || !status || busyId || !currentUser?.token) return false;
+    if (!orderId || typeof status !== 'string' || !status.trim() || busyId || !currentUser?.token || currentUser.accountType !== 'provider') return false;
     setBusyId(orderId);
     setError('');
     try {
