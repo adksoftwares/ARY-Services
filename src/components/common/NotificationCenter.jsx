@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
-import { Bell, CheckCheck, ExternalLink, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Bell, CheckCheck, Clock, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE } from '../../config';
 import { subscribeToAppEvents } from '../../utils/events';
