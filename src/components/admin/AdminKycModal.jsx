@@ -56,6 +56,7 @@ export default function AdminKycModal({
   const currentDoc = documents.find(document => document.id === selectedDoc) || documents[0] || null;
 
   async function handleApprove() {
+    if (isSubmitting || !user?.id || typeof onUpdateStatus !== 'function' || !isPending) return;
     setIsSubmitting(true);
     try {
       await onUpdateStatus(user.id, 'active', user.fullName);
@@ -67,7 +68,7 @@ export default function AdminKycModal({
 
   async function handleRejectSubmit(e) {
     e.preventDefault();
-    if (!rejectionReason.trim()) return;
+    if (!rejectionReason.trim() || isSubmitting || !user?.id || typeof onUpdateStatus !== 'function' || !isPending) return;
     setIsSubmitting(true);
     try {
       await onUpdateStatus(user.id, 'rejected', user.fullName, rejectionReason.trim());
@@ -83,7 +84,7 @@ export default function AdminKycModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Partner KYC & Credentials Verification"
+      title="Provider / Driver Document Review"
       maxWidth="860px"
     >
       <div style={{ padding: '4px 0' }}>
@@ -134,7 +135,7 @@ export default function AdminKycModal({
               variant="outline"
               size="sm"
               onClick={() => setRejectReasonOpen(true)}
-              disabled={isSubmitting || user.status === 'rejected'}
+              disabled={isSubmitting || !isPending}
             >
               <XCircle size={14} color="#dc2626" /> Reject with Reason
             </Button>
@@ -143,9 +144,9 @@ export default function AdminKycModal({
               size="sm"
               onClick={handleApprove}
               loading={isSubmitting}
-              disabled={isSubmitting || user.status === 'active'}
+              disabled={isSubmitting || !isPending}
             >
-              <CheckCircle2 size={14} /> Approve Verified Partner
+              <CheckCircle2 size={14} /> Approve Account
             </Button>
           </div>
         </div>
@@ -228,15 +229,19 @@ export default function AdminKycModal({
                   </div>
                   <Badge variant="neutral" dot={false}>SUBMITTED</Badge>
                 </div>
-                {typeof currentDoc.data === 'string' && currentDoc.data.startsWith('data:image/') ? (
+                {typeof currentDoc.data === 'string' && /^data:image\/(?:png|jpeg|webp|gif);base64,/i.test(currentDoc.data) && currentDoc.data.length <= 14000000 ? (
                   <img src={currentDoc.data} alt={currentDoc.title} style={{ display: 'block', maxWidth: '100%', maxHeight: 460, objectFit: 'contain', margin: '0 auto', borderRadius: 8 }} />
-                ) : typeof currentDoc.data === 'string' && currentDoc.data.startsWith('data:application/pdf') ? (
-                  <iframe title={currentDoc.title} src={currentDoc.data} style={{ width: '100%', height: 460, border: '1px solid var(--color-border-subtle, #e2e8f0)', borderRadius: 8 }} />
+                ) : typeof currentDoc.data === 'string' && /^data:application\/pdf;base64,/i.test(currentDoc.data) && currentDoc.data.length <= 14000000 ? (
+                  <div style={{ padding: 24, textAlign: 'center', color: 'var(--color-neutral-600, #475569)' }}>
+                    <FileText size={28} />
+                    <p>PDF document submitted. Open the file to review its contents.</p>
+                    <a href={currentDoc.data} download={`${currentDoc.id}.pdf`}>Open / download submitted PDF</a>
+                  </div>
                 ) : (
                   <div style={{ padding: 24, textAlign: 'center', color: 'var(--color-neutral-600, #475569)' }}>
                     <FileText size={28} />
                     <p>Document data is present but cannot be previewed in this format.</p>
-                    <a href={currentDoc.data} target="_blank" rel="noreferrer">Open submitted document</a>
+                    <span>Only supported PNG, JPEG, WebP, GIF and PDF uploads can be previewed here.</span>
                   </div>
                 )}
               </>
@@ -280,7 +285,7 @@ export default function AdminKycModal({
               Required: Specify Reason for KYC Rejection
             </h4>
             <p style={{ margin: '0 0 10px', fontSize: '0.8rem', color: 'var(--color-neutral-600, #475569)' }}>
-              The applicant will receive an official notification detailing this reason so they can re-submit the required documents.
+              The reason will be included with the rejection action. Use a clear explanation of the information or document that needs attention.
             </p>
 
             <form onSubmit={handleRejectSubmit}>
@@ -288,8 +293,8 @@ export default function AdminKycModal({
                 {[
                   'NIC photo is blurry or unreadable',
                   'Driving license expired or invalid class',
-                  'Address mismatch with proof of residence',
-                  'Police clearance certificate required'
+                  'Submitted information needs clarification',
+                  'Required supporting document is missing'
                 ].map((preset) => (
                   <button
                     key={preset}
@@ -331,7 +336,7 @@ export default function AdminKycModal({
                 <Button variant="ghost" size="sm" onClick={() => setRejectReasonOpen(false)}>
                   Cancel
                 </Button>
-                <Button variant="danger" size="sm" type="submit" loading={isSubmitting} disabled={!rejectionReason.trim()}>
+                <Button variant="danger" size="sm" type="submit" loading={isSubmitting} disabled={!rejectionReason.trim() || isSubmitting || !isPending}>
                   <XCircle size={14} /> Confirm Rejection
                 </Button>
               </div>
