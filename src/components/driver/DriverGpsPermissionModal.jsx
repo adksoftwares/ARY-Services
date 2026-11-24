@@ -17,7 +17,7 @@ export default function DriverGpsPermissionModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="High-Precision GPS Location Required"
+      title="Driver Location Permission"
       size="sm"
       isBottomSheet={true}
     >
@@ -36,13 +36,13 @@ export default function DriverGpsPermissionModal({
         </div>
 
         <h3 style={{ margin: '0 0 8px', fontSize: '1.2rem', color: 'var(--text-primary, #f8fafc)' }}>
-          {isDenied ? 'Location Permission Needed' : 'Connect Your Real-Time GPS'}
+          {isDenied ? 'Location Permission Needed' : 'Enable Device Location'}
         </h3>
 
         <p style={{ margin: '0 0 16px', fontSize: '0.88rem', color: 'var(--color-neutral-600, #475569)', lineHeight: 1.5 }}>
           {isDenied
-            ? 'Your browser or device has blocked GPS location access. To receive nearby passenger rides and delivery dispatches, location access is required.'
-            : 'ARY Driver matches you with nearby passenger rides and store deliveries based on live straight-line proximity.'}
+            ? 'Your browser or device has blocked location access. Allow location permission in your device or browser settings, then retry.'
+            : 'Location access can help ARY use your current position for supported driver workflows. You can stay offline if you do not want to share your location.'}
         </p>
 
         {/* Benefits Checklist */}
@@ -62,15 +62,15 @@ export default function DriverGpsPermissionModal({
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <CheckCircle2 size={15} color="var(--color-success-600, #059669)" style={{ flexShrink: 0 }} />
-              <span>Prioritizes closest jobs within 1–5 km radius</span>
+              <span>Allows the app to use your device location where supported</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <CheckCircle2 size={15} color="var(--color-success-600, #059669)" style={{ flexShrink: 0 }} />
-              <span>Calculates accurate customer arrival estimates (ETA)</span>
+              <span>Helps you review pickup and destination details for assigned jobs</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <CheckCircle2 size={15} color="var(--color-success-600, #059669)" style={{ flexShrink: 0 }} />
-              <span>Battery-optimised: pings only while you are active online</span>
+              <span>Location permission can be changed in your device settings at any time</span>
             </div>
           </div>
         )}
@@ -107,7 +107,7 @@ export default function DriverGpsPermissionModal({
             loading={isRequesting}
             style={{ minHeight: 52, fontSize: '1rem', fontWeight: 800 }}
           >
-            <Navigation size={18} /> {isDenied ? 'Retry GPS Connection' : 'Allow GPS & Go Online'}
+            <Navigation size={18} /> {isDenied ? 'Retry GPS Connection' : 'Allow Location Access'}
           </Button>
 
           <Button
