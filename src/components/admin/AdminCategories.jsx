@@ -123,7 +123,7 @@ export default function AdminCategories({
             : c
         )
       );
-      onNotice?.(`Category "${name.trim()}" updated successfully.`);
+      onNotice?.(`Category "${name.trim()}" updated in this admin session only; it has not been saved to the server.`);
     } else {
       const newCat = {
         id: Date.now(),
@@ -138,7 +138,7 @@ export default function AdminCategories({
         isActive
       };
       setServices(prev => [...prev, newCat]);
-      onNotice?.(`Category "${newCat.name}" created successfully.`);
+      onNotice?.(`Category "${newCat.name}" added to this admin session only; it has not been saved to the server.`);
     }
 
     setModalOpen(false);
@@ -148,7 +148,7 @@ export default function AdminCategories({
     setServices(prev =>
       prev.map(c => (c.id === id ? { ...c, isActive: c.isActive === false ? true : false } : c))
     );
-    onNotice?.('Category visibility updated.');
+    onNotice?.('Category visibility changed in this admin session only; it has not been saved to the server.');
   }
 
   function handleDeleteConfirm() {
@@ -158,7 +158,7 @@ export default function AdminCategories({
       return;
     }
     setServices(prev => prev.filter(c => c.id !== deleteConfirmCat.id));
-    onNotice?.(`Category "${deleteConfirmCat.name}" removed.`);
+    onNotice?.(`Category "${deleteConfirmCat.name}" removed from this admin session only; no server record was changed.`);
     setDeleteConfirmCat(null);
   }
 
@@ -175,7 +175,7 @@ export default function AdminCategories({
               </h3>
             </div>
             <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: 'var(--color-neutral-600, #475569)' }}>
-              Manage customer search verticals, multi-language naming (English, Sinhala, Tamil), and baseline pricing hints.
+              Review category labels, language names and price hints. Changes currently apply only to this admin session.
             </p>
           </div>
 
@@ -258,6 +258,7 @@ export default function AdminCategories({
                     <td>
                       <button
                         type="button"
+                        aria-pressed={active}
                         onClick={() => handleToggleActive(cat.id)}
                         style={{
                           background: 'none',
@@ -501,7 +502,7 @@ export default function AdminCategories({
               style={{ width: 16, height: 16, accentColor: 'var(--color-brand-600, #174d3d)' }}
             />
             <label htmlFor="activeToggle" style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text, #0f172a)', cursor: 'pointer' }}>
-              Publish category to marketplace (Active)
+              Mark category active in this session
             </label>
           </div>
 
