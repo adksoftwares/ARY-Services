@@ -22,8 +22,9 @@ export default function AdminDispatch({
   onRefresh
 }) {
   const [autoRefresh, setAutoRefresh] = useState(true);
-  const drivers = dispatchSnapshot.drivers || [];
-  const activeJobs = dispatchSnapshot.activeJobs || [];
+  const snapshot = dispatchSnapshot && typeof dispatchSnapshot === 'object' ? dispatchSnapshot : {};
+  const drivers = Array.isArray(snapshot.drivers) ? snapshot.drivers.filter(driver => driver && typeof driver === 'object') : [];
+  const activeJobs = Array.isArray(snapshot.activeJobs) ? snapshot.activeJobs.filter(job => job && typeof job === 'object') : [];
   const driversWithCoordinates = drivers.filter(driver => {
     const lat = Number(driver.lat);
     const lng = Number(driver.lng);
@@ -33,10 +34,12 @@ export default function AdminDispatch({
       lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
   });
 
-  const summary = dispatchSnapshot.summary || {
-    onlineDrivers: drivers.length,
-    unassignedJobs: activeJobs.filter(j => !j.assignedDriverId && !j.driverId).length,
-    assignedJobs: activeJobs.filter(j => j.assignedDriverId || j.driverId).length
+  const suppliedSummary = snapshot.summary && typeof snapshot.summary === 'object' ? snapshot.summary : {};
+  const safeCount = (value, fallback) => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value)) ? Math.max(0, Math.floor(Number(value))) : fallback;
+  const summary = {
+    onlineDrivers: safeCount(suppliedSummary.onlineDrivers, drivers.length),
+    unassignedJobs: safeCount(suppliedSummary.unassignedJobs, activeJobs.filter(job => !job.assignedDriverId && !job.driverId).length),
+    assignedJobs: safeCount(suppliedSummary.assignedJobs, activeJobs.filter(job => job.assignedDriverId || job.driverId).length)
   };
 
   // 10-second auto-poll effect when enabled
@@ -48,23 +51,20 @@ export default function AdminDispatch({
     return () => clearInterval(interval);
   }, [autoRefresh, onRefresh]);
 
-  // Colombo center coordinates for visual SVG radar projection
-  // Colombo lat: ~6.9271, lng: ~79.8612
-  const centerLat = 6.9271;
-  const centerLng = 79.8612;
-
+  // Plot only relative positions from the coordinates in this response; this is not a street map.
+  const latitudes = driversWithCoordinates.map(driver => Number(driver.lat));
+  const longitudes = driversWithCoordinates.map(driver => Number(driver.lng));
+  const minLat = Math.min(...latitudes);
+  const maxLat = Math.max(...latitudes);
+  const minLng = Math.min(...longitudes);
+  const maxLng = Math.max(...longitudes);
   function projectToSvg(lat, lng) {
-    const scale = 2200; // projection scale
-    const svgWidth = 500;
-    const svgHeight = 360;
-
-    const x = svgWidth / 2 + (lng - centerLng) * scale;
-    const y = svgHeight / 2 - (lat - centerLat) * scale;
-
-    return {
-      x: Math.max(30, Math.min(svgWidth - 30, x)),
-      y: Math.max(30, Math.min(svgHeight - 30, y))
-    };
+    const padding = 42;
+    const width = 500 - padding * 2;
+    const height = 360 - padding * 2;
+    const xRatio = maxLng === minLng ? 0.5 : (lng - minLng) / (maxLng - minLng);
+    const yRatio = maxLat === minLat ? 0.5 : (maxLat - lat) / (maxLat - minLat);
+    return { x: padding + xRatio * width, y: padding + yRatio * height };
   }
 
   return (
@@ -86,10 +86,10 @@ export default function AdminDispatch({
             </div>
             <div>
               <h3 style={{ margin: 0, fontSize: '1.15rem', color: 'var(--color-brand-900, #173b2f)' }}>
-                Live Dispatch & Fleet Telematics Monitor
+                Driver Dispatch Overview
               </h3>
               <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: 'var(--color-neutral-600, #475569)' }}>
-                Dispatch snapshot of drivers and active mobility missions. Location markers appear only when valid GPS coordinates are available.
+                Current dispatch response for drivers and active mobility jobs. Coordinates are plotted only when valid GPS values are supplied.
               </p>
             </div>
           </div>
@@ -131,12 +131,12 @@ export default function AdminDispatch({
         }}>
           <div style={{ padding: '14px', background: '#ecfdf5', borderRadius: 'var(--radius-md, 10px)', border: '1px solid #a7f3d0' }}>
             <span style={{ fontSize: '0.74rem', color: '#065f46', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Broadcasting Drivers
+              Drivers in Dispatch Feed
             </span>
             <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#047857', marginTop: 4 }}>
               {summary.onlineDrivers ?? drivers.length}
             </div>
-            <span style={{ fontSize: '0.72rem', color: '#065f46' }}>Fresh GPS &lt; 90 seconds</span>
+            <span style={{ fontSize: '0.72rem', color: '#065f46' }}>Coordinates supplied by dispatch</span>
           </div>
 
           <div style={{ padding: '14px', background: '#fef3c7', borderRadius: 'var(--radius-md, 10px)', border: '1px solid #fde68a' }}>
@@ -151,12 +151,12 @@ export default function AdminDispatch({
 
           <div style={{ padding: '14px', background: '#eff6ff', borderRadius: 'var(--radius-md, 10px)', border: '1px solid #bfdbfe' }}>
             <span style={{ fontSize: '0.74rem', color: '#1e40af', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              En Route / In Transit
+              Assigned Active Jobs
             </span>
             <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#1d4ed8', marginTop: 4 }}>
               {summary.assignedJobs ?? 0}
             </div>
-            <span style={{ fontSize: '0.72rem', color: '#1e40af' }}>Active PIN handoff missions</span>
+            <span style={{ fontSize: '0.72rem', color: '#1e40af' }}>Jobs with a driver assignment</span>
           </div>
         </div>
       </Card>
@@ -169,11 +169,11 @@ export default function AdminDispatch({
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <Compass size={18} color="var(--color-brand-600, #174d3d)" />
               <b style={{ fontSize: '0.95rem', color: 'var(--color-text, #0f172a)' }}>
-                Driver Location Plot (Colombo-centred)
+                Relative GPS Coordinate Plot (Not a Street Map)
               </b>
             </div>
             <Badge variant="neutral" dot={false}>
-              Schematic GPS Plot
+              Relative coordinate view
             </Badge>
           </div>
 
@@ -195,7 +195,7 @@ export default function AdminDispatch({
 
               {/* Area label */}
               <text x="250" y="345" fill="#527d6d" fontSize="9" textAnchor="middle" letterSpacing="0.06em">
-                SRI LANKA WESTERN PROVINCE DISPATCH ZONE
+                POSITIONS RELATIVE TO CURRENT DISPATCH RESPONSE
               </text>
 
               {/* Plotted Online Drivers */}
@@ -235,18 +235,18 @@ export default function AdminDispatch({
         {/* Drivers Fleet List */}
         <Card style={{ padding: '18px', display: 'flex', flexDirection: 'column' }}>
           <h4 style={{ margin: '0 0 12px', fontSize: '0.95rem', color: 'var(--color-text, #0f172a)' }}>
-            Online Driver Fleet ({drivers.length})
+            Drivers in Dispatch Feed ({drivers.length})
           </h4>
 
           {drivers.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '36px 16px', color: 'var(--color-neutral-500, #64748b)', fontSize: '0.85rem' }}>
-              No drivers are currently broadcasting live GPS locations.
+              No driver records were returned by the current dispatch response.
             </div>
           ) : (
             <div style={{ display: 'grid', gap: 10, overflowY: 'auto', maxHeight: '340px' }}>
-              {drivers.map(d => (
+              {drivers.map((d, index) => (
                 <div
-                  key={d.driverId || d.id}
+                  key={d.driverId || d.id || `driver-${index}`}
                   style={{
                     padding: '12px 14px',
                     border: '1px solid var(--color-border-subtle, #e2e8f0)',
@@ -262,7 +262,7 @@ export default function AdminDispatch({
                   <div>
                     <b style={{ color: 'var(--color-text, #0f172a)' }}>{d.driverName || 'Driver'}</b>
                     <div style={{ fontSize: '0.74rem', color: 'var(--color-neutral-500, #64748b)', marginTop: 2 }}>
-                      Networks: {(d.networks || ['Ride', 'Delivery']).join(', ')}
+                      Networks: {(Array.isArray(d.networks) ? d.networks.filter(Boolean).join(', ') : '') || 'Not specified'}
                     </div>
                     <div style={{ fontSize: '0.72rem', color: 'var(--color-brand-700, #174d3d)', marginTop: 2 }}>
                       GPS: {d.lat !== null && d.lat !== undefined && d.lng !== null && d.lng !== undefined && Number.isFinite(Number(d.lat)) && Number.isFinite(Number(d.lng))
@@ -271,8 +271,8 @@ export default function AdminDispatch({
                     </div>
                   </div>
 
-                  <Badge variant="success" dot={true}>
-                    ONLINE
+                  <Badge variant="neutral" dot={false}>
+                    IN FEED
                   </Badge>
                 </div>
               ))}
@@ -288,7 +288,7 @@ export default function AdminDispatch({
             Active Dispatched Missions ({activeJobs.length})
           </b>
           <span style={{ fontSize: '0.78rem', color: 'var(--color-neutral-500, #64748b)' }}>
-            Real-time Status Feed
+            Current dispatch snapshot
           </span>
         </div>
 
@@ -311,8 +311,8 @@ export default function AdminDispatch({
                   </td>
                 </tr>
               ) : (
-                activeJobs.map(job => (
-                  <tr key={job.id}>
+                activeJobs.map((job, index) => (
+                  <tr key={job.id ?? `job-${index}`}>
                     <td>
                       <b style={{ color: 'var(--color-text, #0f172a)' }}>#{job.id}</b>
                       <div style={{ fontSize: '0.74rem', color: 'var(--color-neutral-500, #64748b)', textTransform: 'capitalize' }}>
@@ -336,7 +336,7 @@ export default function AdminDispatch({
                     </td>
                     <td style={{ textAlign: 'right' }}>
                       <Badge variant={job.status === 'in_transit' ? 'brand' : 'warning'} dot={false}>
-                        {job.status?.toUpperCase() || 'DISPATCHED'}
+                        {typeof job.status === 'string' ? job.status.toUpperCase() : 'DISPATCHED'}
                       </Badge>
                     </td>
                   </tr>
@@ -361,7 +361,7 @@ export default function AdminDispatch({
       }}>
         <ShieldCheck size={18} color="var(--color-brand-600, #174d3d)" style={{ flexShrink: 0 }} />
         <span>
-          <b>Sri Lanka Personal Data Protection Act (PDPA No. 9 of 2022) Notice:</b> Driver GPS coordinates and route traces are processed exclusively while drivers are actively online for ride matching and navigational safety. Geolocation coordinates are never persisted beyond active trip lifecycles.
+          <b>Location data notice:</b> This view displays coordinates only when they are included in the dispatch response. Access, consent, and retention should follow the platform’s approved privacy policy.
         </span>
       </div>
     </div>
