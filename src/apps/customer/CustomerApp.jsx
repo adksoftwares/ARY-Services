@@ -631,9 +631,9 @@ function CustomerWorkspace() {
     return unsub;
   }, [currentUser?.token, fetchBookings]);
 
-  const handleCategorySelect = (category) => {
+  const handleCategorySelect = (category, searchTerm = query) => {
     setSelectedCategory(category);
-    fetchProviders(category.slug, query, coords);
+    fetchProviders(category.slug, searchTerm, coords);
     const catalogEl = document.getElementById('providers-catalog') || document.querySelector('.providers-section');
     if (catalogEl) {
       catalogEl.scrollIntoView({ behavior: 'smooth' });
