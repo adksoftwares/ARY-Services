@@ -26,19 +26,28 @@ export default function AdminPayouts({
   const { currentUser } = useAuth();
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
   const [preview, setPreview] = useState({ candidates: [], eligibleCount: 0, missingBankDetailsCount: 0 });
-  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewLoading, setPreviewLoading] = useState(true);
+  const [previewError, setPreviewError] = useState('');
   const minThreshold = 1000;
 
   async function loadPayoutPreview() {
-    if (!currentUser?.token) return;
+    if (!currentUser?.token) {
+      setPreviewLoading(false);
+      return;
+    }
     setPreviewLoading(true);
+    setPreviewError('');
     try {
       const response = await fetch(`${API_BASE}/admin/payouts/preview`, { headers: { Authorization: `Bearer ${currentUser.token}` } });
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || 'Could not load wallet balances');
-      setPreview(data);
+      setPreview({
+        candidates: Array.isArray(data.candidates) ? data.candidates : [],
+        eligibleCount: Number(data.eligibleCount) || 0,
+        missingBankDetailsCount: Number(data.missingBankDetailsCount) || 0
+      });
     } catch (error) {
-      console.warn('Payout preview unavailable:', error);
+      setPreviewError(error.message || 'Could not load wallet balances.');
     } finally {
       setPreviewLoading(false);
     }
@@ -132,7 +141,7 @@ export default function AdminPayouts({
               variant="outline"
               size="md"
               onClick={handleExportCsv}
-              disabled={eligibleSettlements.length === 0 && !payoutResult}
+              disabled={previewLoading || Boolean(previewError) || (eligibleSettlements.length === 0 && !payoutResult)}
             >
               <Download size={15} /> Export CEFT CSV
             </Button>
@@ -142,7 +151,7 @@ export default function AdminPayouts({
               size="md"
               onClick={() => setConfirmModalOpen(true)}
               loading={isSettling}
-              disabled={isSettling}
+              disabled={isSettling || previewLoading || Boolean(previewError) || eligibleSettlements.length === 0}
             >
               <Zap size={15} /> Prepare Transfer File
             </Button>
@@ -195,6 +204,13 @@ export default function AdminPayouts({
           </div>
         </div>
       </Card>
+
+      {previewError && (
+        <div role="alert" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: '12px 16px', border: '1px solid var(--color-danger-200, #fecaca)', borderRadius: 'var(--radius-md, 8px)', background: 'var(--color-danger-50, #fef2f2)', color: 'var(--color-danger-700, #b91c1c)' }}>
+          <span>Wallet preview unavailable: {previewError} Transfer preparation is disabled until current balances can be loaded.</span>
+          <Button variant="outline" size="sm" onClick={loadPayoutPreview} loading={previewLoading}>Retry</Button>
+        </div>
+      )}
 
       {/* 2. Generated Settlement Manifest (if executed) */}
       {payoutResult && (
@@ -271,7 +287,7 @@ export default function AdminPayouts({
               {pendingSettlements.length === 0 ? (
                 <tr>
                   <td colSpan={6} style={{ padding: '36px', textAlign: 'center', color: '#64748b' }}>
-                    No contractor balances currently eligible for payout.
+                    {previewLoading ? 'Loading provider wallet balances…' : previewError ? 'Wallet balances could not be loaded. Retry the preview above.' : 'No contractor balances currently eligible for payout.'}
                   </td>
                 </tr>
               ) : (
