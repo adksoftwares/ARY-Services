@@ -77,7 +77,10 @@ export default function ProviderJobs({
       setActionError(prev => ({ ...prev, [bookingId]: 'This action is currently unavailable. Refresh the page and try again.' }));
       return false;
     }
-    if (actionBusyId === bookingId) return false;
+    if (actionBusyId) {
+      setActionError(prev => ({ ...prev, [bookingId]: 'Another booking update is already in progress. Please wait and try again.' }));
+      return false;
+    }
     setActionBusyId(bookingId);
     setActionError(prev => ({ ...prev, [bookingId]: '' }));
     try {
@@ -434,7 +437,7 @@ export default function ProviderJobs({
                     fontSize: '0.85rem',
                     color: 'var(--color-brand-800, #154636)'
                   }}>
-                    ✓ Customer accepted quote: <b>LKR {Number(b.quote.amount).toLocaleString('en-LK')}</b>
+                    ✓ Customer accepted quote: <b>{Number.isFinite(Number(b.quote.amount)) && Number(b.quote.amount) >= 0 ? `LKR ${Number(b.quote.amount).toLocaleString('en-LK')}` : 'Amount unavailable'}</b>
                   </div>
                 )}
 
