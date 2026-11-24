@@ -214,9 +214,6 @@ export default function ProviderJobs({
             const isBroadcast = b.status === 'broadcast_pool';
             const requestAge = b.status === 'requested' ? getRequestAge(b.createdAt) : null;
             const stepIndex = getStepIndex(b.status);
-            const currentAmount = quoteDrafts[b.id] ?? b.quote?.amount ?? b.baseAmount ?? 0;
-            const feePreview = Math.round(Number(currentAmount) * 0.1);
-            const netPreview = Number(currentAmount) - feePreview;
 
             return (
               <Card key={b.id} className="job-card">
@@ -441,15 +438,6 @@ export default function ProviderJobs({
                             className="provider-form-input"
                           />
                         </div>
-                      </div>
-
-                      {/* Live Quote Breakdown Preview */}
-                      <div className="quote-preview-callout">
-                        <span>Customer pays: <b>LKR {Number(currentAmount || 0).toLocaleString()}</b></span>
-                        <span style={{ color: 'var(--color-neutral-500, #64748b)' }}>ARY 10% fee: - LKR {feePreview.toLocaleString()}</span>
-                        <span style={{ color: 'var(--color-success-700, #047857)', fontWeight: 700 }}>
-                          Your Net Payout: LKR {netPreview.toLocaleString()}
-                        </span>
                       </div>
 
                       {quoteError[b.id] && (
