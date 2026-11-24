@@ -38,6 +38,7 @@ export default function CustomerLocationModal({
   const [selectedCity, setSelectedCity] = useState('All');
 
   const searchDebounceRef = useRef(null);
+  const searchRequestRef = useRef(0);
 
   // Reset search when modal opens
   useEffect(() => {
@@ -47,6 +48,11 @@ export default function CustomerLocationModal({
       setIsSearching(false);
       setActiveTab('search');
     }
+    return () => {
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+      searchDebounceRef.current = null;
+      searchRequestRef.current += 1;
+    };
   }, [isOpen]);
 
   if (!isOpen) return null;
@@ -55,6 +61,7 @@ export default function CustomerLocationModal({
   function handleSearchChange(val) {
     setSearchInput(val);
     if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    const requestId = ++searchRequestRef.current;
 
     if (!val.trim() || val.trim().length < 2) {
       setSearchResults([]);
@@ -66,11 +73,13 @@ export default function CustomerLocationModal({
     searchDebounceRef.current = setTimeout(async () => {
       try {
         const results = await searchSriLankaLocationsApi(val.trim());
-        setSearchResults(results);
+        if (requestId === searchRequestRef.current) {
+          setSearchResults(Array.isArray(results) ? results.filter(item => item && typeof item === 'object' && (item.id !== null && item.id !== undefined) && (item.displayName || item.name) && Number.isFinite(Number(item.lat)) && Number.isFinite(Number(item.lng))) : []);
+        }
       } catch (err) {
-        setSearchResults([]);
+        if (requestId === searchRequestRef.current) setSearchResults([]);
       } finally {
-        setIsSearching(false);
+        if (requestId === searchRequestRef.current) setIsSearching(false);
       }
     }, 280);
   }
@@ -91,7 +100,10 @@ export default function CustomerLocationModal({
   }
 
   function handleSelectResult(item) {
-    const coords = { lat: item.lat, lng: item.lng };
+    if (!item || !Number.isFinite(Number(item.lat)) || !Number.isFinite(Number(item.lng))) return;
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    searchRequestRef.current += 1;
+    const coords = { lat: Number(item.lat), lng: Number(item.lng) };
     const label = item.displayName || item.name;
     onSelectLocation(label, coords);
     if (onNotice) onNotice(`📍 Location selected: ${label}`);
@@ -424,10 +436,17 @@ export default function CustomerLocationModal({
                     Sri Lanka Place Suggestions ({searchResults.length})
                   </div>
                   {searchResults.map(item => (
-                    <div
+                    <button
+                      type="button"
                       key={item.id}
+                      aria-label={`Select ${item.displayName || item.name}`}
                       onClick={() => handleSelectResult(item)}
                       style={{
+                        width: '100%',
+                        textAlign: 'left',
+                        background: 'transparent',
+                        border: 'none',
+                        font: 'inherit',
                         padding: '10px 14px',
                         borderBottom: '1px solid var(--border-subtle, #f1f5f9)',
                         cursor: 'pointer',
@@ -451,7 +470,7 @@ export default function CustomerLocationModal({
                       <span style={{ fontSize: '10.5px', color: '#15803d', fontWeight: 600, background: 'rgba(21,128,61,0.08)', padding: '2px 6px', borderRadius: '4px', flexShrink: 0 }}>
                         Select ↵
                       </span>
-                    </div>
+                    </button>
                   ))}
                 </div>
               )}
