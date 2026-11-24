@@ -95,7 +95,7 @@ export default function AccountView({ onNotice, onClose }) {
     <div className="account-view-container" role="region" aria-label="Account and Profile Management">
       {/* User Identity Header Card */}
       <div className="account-profile-hero">
-        <Avatar name={currentUser.fullName} size="xl" isOnline={true} />
+        <Avatar name={currentUser.fullName} size="xl" />
         <div className="profile-hero-info">
           <div className="profile-hero-name-row">
             <h3>{currentUser.fullName}</h3>
