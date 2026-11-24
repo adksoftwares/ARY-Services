@@ -5,8 +5,8 @@ import { Modal, Button, Badge } from '../../design-system';
 export default function DriverPinKeypadModal({
   isOpen,
   onClose,
-  title = 'Enter Verification PIN',
-  subtitle = 'Ask the customer for their 4-digit security PIN',
+  title = 'Enter Handoff Code',
+  subtitle = 'Enter the handoff verification code provided for this job',
   onSubmit,
   isVerifying = false,
   error = ''
@@ -39,7 +39,7 @@ export default function DriverPinKeypadModal({
   }
 
   async function handleVerify() {
-    if (pin.length !== 4 || isLockedOut) return;
+    if (pin.length !== 4 || isLockedOut || isVerifying || typeof onSubmit !== 'function') return;
     try {
       await onSubmit(pin);
       setPin('');
@@ -128,18 +128,18 @@ export default function DriverPinKeypadModal({
             <ShieldAlert size={22} color="#dc2626" style={{ margin: '0 auto 6px', display: 'block' }} />
             <b>Security Lockout Active</b>
             <p style={{ margin: '4px 0 0', fontSize: '0.8rem' }}>
-              Maximum 5 incorrect attempts reached. Handoff is locked to protect customer goods. Please contact ARY Dispatch Hotline at <b>011 234 5678</b> to unlock this trip.
+              This keypad has paused further attempts in this screen. If the code is incorrect, ask the customer to confirm the correct code or follow the instructions shown by the booking workflow.
             </p>
           </div>
         ) : (
           <div style={{ marginBottom: '16px', fontSize: '0.8rem' }}>
             {attemptsLeft < 5 ? (
               <span style={{ color: 'var(--color-danger-600, #dc2626)', fontWeight: 700 }}>
-                ⚠️ Security limit: {attemptsLeft} of 5 attempts remaining
+                Input attempts remaining in this screen: {attemptsLeft} of 5
               </span>
             ) : (
               <span style={{ color: 'var(--text-muted)' }}>
-                Ask customer / recipient for their 4-digit verification code
+                Enter the 4-digit code provided for this handoff
               </span>
             )}
           </div>
