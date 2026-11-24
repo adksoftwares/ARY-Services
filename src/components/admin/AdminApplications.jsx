@@ -28,6 +28,7 @@ export default function AdminApplications({
   onNotice
 }) {
   const { currentUser } = useAuth();
+  const safeAdminUsers = Array.isArray(adminUsers) ? adminUsers.filter(user => user && typeof user === 'object') : [];
   const [driverApps, setDriverApps] = useState([]);
   const [roleApps, setRoleApps] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -43,12 +44,18 @@ export default function AdminApplications({
   const [rejectionReason, setRejectionReason] = useState('');
 
   const fetchApplications = useCallback(async () => {
-    if (!currentUser?.token || currentUser.accountType !== 'admin') return;
+    if (!currentUser?.token || currentUser.accountType !== 'admin') {
+      setDriverApps([]);
+      setRoleApps([]);
+      setLoadError(currentUser?.token ? 'Administrator access is required to review applications.' : 'Sign in with an administrator account to view applications.');
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setLoadError('');
     try {
       if (typeof onRefreshUsers === 'function') {
-        onRefreshUsers();
+        Promise.resolve(onRefreshUsers()).catch(error => console.warn('Could not refresh account list:', error));
       }
       const [driverRes, roleRes] = await Promise.all([
         fetch(`${API_BASE}/admin/driver-applications`, {
@@ -65,8 +72,8 @@ export default function AdminApplications({
       ]);
       if (!driverRes.ok) throw new Error(driverData.error || 'Could not load driver applications.');
       if (!roleRes.ok) throw new Error(roleData.error || 'Could not load role applications.');
-      setDriverApps(Array.isArray(driverData.applications) ? driverData.applications : []);
-      setRoleApps(Array.isArray(roleData.applications) ? roleData.applications : []);
+      setDriverApps(Array.isArray(driverData.applications) ? driverData.applications.filter(item => item && typeof item === 'object' && item.id !== null && item.id !== undefined) : []);
+      setRoleApps(Array.isArray(roleData.applications) ? roleData.applications.filter(item => item && typeof item === 'object' && item.userId !== null && item.userId !== undefined && typeof item.role === 'string') : []);
     } catch (e) {
       console.warn('Could not load applications:', e);
       setLoadError(e.message || 'Could not load application queue.');
@@ -74,7 +81,7 @@ export default function AdminApplications({
     } finally {
       setLoading(false);
     }
-  }, [currentUser, onNotice]);
+  }, [currentUser, onNotice, onRefreshUsers]);
 
   useEffect(() => {
     fetchApplications();
@@ -121,7 +128,7 @@ export default function AdminApplications({
     }
 
     // 3. Pending direct provider registrations
-    for (const u of adminUsers) {
+    for (const u of safeAdminUsers) {
       if (u.accountType === 'provider' && u.status === 'pending') {
         // Only if not already present in role applications
         if (!list.some(item => (item.kind === 'role' && item.rawId === u.id) || (item.kind === 'provider' && item.rawId === u.id))) {
@@ -154,14 +161,11 @@ export default function AdminApplications({
 
     // Filter
     return list.filter(item => {
-      const q = searchQuery.toLowerCase().trim();
-      const matchQuery =
-        !q ||
-        item.applicantName?.toLowerCase().includes(q) ||
-        item.phone?.toLowerCase().includes(q) ||
-        item.serviceNetwork?.toLowerCase().includes(q) ||
-        item.email?.toLowerCase().includes(q) ||
-        item.nicNumber?.toLowerCase().includes(q);
+      const q = String(searchQuery ?? '').toLowerCase().trim();
+      const searchable = [item.applicantName, item.phone, item.serviceNetwork, item.email, item.nicNumber]
+        .filter(value => value !== null && value !== undefined)
+        .map(value => String(value).toLowerCase());
+      const matchQuery = !q || searchable.some(value => value.includes(q));
 
       const matchType =
         typeFilter === 'all' ||
@@ -173,10 +177,12 @@ export default function AdminApplications({
 
       return matchQuery && matchType && matchStatus;
     });
-  }, [driverApps, roleApps, adminUsers, searchQuery, typeFilter, statusFilter]);
+  }, [driverApps, roleApps, safeAdminUsers, searchQuery, typeFilter, statusFilter]);
 
   // Handle application decision
   async function handleDecide(item, decision, reason = '') {
+    if (!currentUser?.token || !item || item.rawId === null || item.rawId === undefined || !['approved', 'rejected', 'active'].includes(decision) || busyId) return;
+    const normalizedDecision = decision === 'active' ? 'approved' : decision;
     setBusyId(item.id);
     try {
       if (item.kind === 'driver') {
@@ -186,7 +192,7 @@ export default function AdminApplications({
             'Content-Type': 'application/json',
             Authorization: `Bearer ${currentUser.token}`
           },
-          body: JSON.stringify({ status: decision, reason })
+          body: JSON.stringify({ status: normalizedDecision, reason })
         });
         if (!res.ok) throw new Error('Failed to update driver application.');
       } else if (item.kind === 'role') {
@@ -206,16 +212,16 @@ export default function AdminApplications({
             'Content-Type': 'application/json',
             Authorization: `Bearer ${currentUser.token}`
           },
-          body: JSON.stringify({ status: decision === 'approved' ? 'active' : 'rejected' })
+          body: JSON.stringify({ status: normalizedDecision === 'approved' ? 'active' : 'rejected' })
         });
         if (!res.ok) throw new Error('Failed to update provider status.');
         onRefreshUsers?.();
       }
 
-      onNotice?.(`Application ${decision === 'approved' ? 'Approved' : 'Rejected'} for ${item.applicantName}`);
+      onNotice?.(`Application ${normalizedDecision === 'approved' ? 'Approved' : 'Rejected'} for ${item.applicantName || 'applicant'}`);
       await fetchApplications();
     } catch (e) {
-      onNotice?.(`Error: ${e.message}`);
+      onNotice?.(`Error: ${e.message || 'Could not update application.'}`);
     } finally {
       setBusyId('');
       setRejectingItem(null);
@@ -335,13 +341,13 @@ export default function AdminApplications({
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <b style={{ fontSize: '1.02rem', color: 'var(--color-text, #0f172a)' }}>
-                          {item.applicantName}
+                          {item.applicantName || 'Applicant name unavailable'}
                         </b>
                         <Badge
                           variant={item.status === 'approved' ? 'success' : item.status === 'pending' ? 'warning' : 'danger'}
                           dot={false}
                         >
-                          {item.status.toUpperCase()}
+                          {String(item.status || 'pending').toUpperCase()}
                         </Badge>
                       </div>
 
@@ -415,7 +421,11 @@ export default function AdminApplications({
         onClose={() => setKycUser(null)}
         onUpdateStatus={async (userId, status, name, reason) => {
           // Find matching item
-          const match = unifiedList.find(i => String(i.rawId) === String(userId));
+          const accountType = kycUser?.accountType;
+          const match = unifiedList.find(i => String(i.rawId) === String(userId) && (
+            accountType === 'driver' ? (i.kind === 'driver' || i.role === 'driver') :
+            accountType === 'provider' ? (i.kind === 'provider' || i.role === 'provider') : true
+          ));
           if (match) {
             await handleDecide(match, status, reason);
           }
