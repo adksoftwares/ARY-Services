@@ -22,7 +22,11 @@ import { API_BASE } from '../../config';
 import { useAuth } from '../../context/AuthContext';
 import { Button, Input, Badge, ConfirmDialog, Skeleton, EmptyState, Stepper, Modal } from '../../design-system';
 
-const money = value => 'LKR ' + Number(value || 0).toLocaleString('en-LK', { maximumFractionDigits: 2 });
+const money = value => {
+  if (value === null || value === undefined || value === '') return 'Amount unavailable';
+  const amount = Number(value);
+  return Number.isFinite(amount) && amount >= 0 ? `LKR ${amount.toLocaleString('en-LK', { maximumFractionDigits: 2 })}` : 'Amount unavailable';
+};
 
 export default function GroceryMarketplace() {
   const { currentUser, openAuthModal } = useAuth();
@@ -619,9 +623,9 @@ export default function GroceryMarketplace() {
       {/* Confirmation Dialog for Order Cancellation */}
       <ConfirmDialog
         isOpen={Boolean(cancelTargetId)}
-        onClose={() => setCancelTargetId(null)}
+        onClose={() => { if (!cancelBusy) setCancelTargetId(null); }}
         title="Cancel Grocery Order"
-        message="Are you sure you want to cancel this pending grocery order? The shop will be notified immediately."
+        message="Are you sure you want to cancel this pending grocery order?"
         confirmLabel="Yes, Cancel Order"
         isDanger={true}
         onConfirm={handleConfirmCancel}
