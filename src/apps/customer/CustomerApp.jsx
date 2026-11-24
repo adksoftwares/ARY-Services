@@ -453,6 +453,7 @@ function CustomerWorkspace() {
   const [disputeBookingItem, setDisputeBookingItem] = useState(null);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const autoDetectDoneRef = React.useRef(false);
+  const providerRequestRef = React.useRef(0);
 
   // Hardware Back Button Handling for Capacitor WebView & Native Android
   useEffect(() => {
@@ -528,22 +529,32 @@ function CustomerWorkspace() {
   ]);
 
   const fetchProviders = useCallback(async (category = selectedCategory?.slug, search = query, location = coords) => {
+    const requestId = ++providerRequestRef.current;
     setLoadingProviders(true);
     try {
       const params = new URLSearchParams();
       if (category && category !== 'all') params.set('category', category);
       if (search) params.set('query', search);
-      if (location?.lat && location?.lng) { params.set('lat', location.lat); params.set('lng', location.lng); }
+      if (location?.lat !== null && location?.lat !== undefined && location?.lng !== null && location?.lng !== undefined && Number.isFinite(Number(location.lat)) && Number.isFinite(Number(location.lng))) {
+        params.set('lat', String(location.lat));
+        params.set('lng', String(location.lng));
+      }
       const response = await fetch(`${API_BASE}/providers?${params.toString()}`);
       if (!response.ok) throw new Error('Could not load service providers.');
-      const data = await response.json();
-      setProviders(data.providers || []);
+      const data = await response.json().catch(() => ({}));
+      if (requestId === providerRequestRef.current) {
+        setProviders(Array.isArray(data.providers) ? data.providers.filter(provider => provider && typeof provider === 'object') : []);
+      }
     } catch (err) {
-      setNotice(getFriendlyErrorMessage(err, 'Error loading providers.'));
+      if (requestId === providerRequestRef.current) {
+        setNotice(getFriendlyErrorMessage(err, 'Error loading providers.'));
+      }
     } finally {
-      setLoadingProviders(false);
+      if (requestId === providerRequestRef.current) setLoadingProviders(false);
     }
   }, [selectedCategory?.slug, query, coords]);
+
+  useEffect(() => () => { providerRequestRef.current += 1; }, []);
 
   const handleAutoDetectLocation = useCallback(async () => {
     try {
@@ -598,8 +609,8 @@ function CustomerWorkspace() {
     try {
       const response = await fetch(`${API_BASE}/bookings`, { headers: { Authorization: `Bearer ${currentUser.token}` } });
       if (!response.ok) throw new Error('Could not load bookings.');
-      const data = await response.json();
-      setBookings(data.bookings || []);
+      const data = await response.json().catch(() => ({}));
+      setBookings(Array.isArray(data.bookings) ? data.bookings.filter(booking => booking && typeof booking === 'object') : []);
     } catch (error) {
       setNotice(getFriendlyErrorMessage(error, 'Could not load your bookings.'));
     } finally {
