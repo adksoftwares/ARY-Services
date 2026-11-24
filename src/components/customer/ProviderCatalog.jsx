@@ -51,7 +51,7 @@ export default function ProviderCatalog({
 
     // Rating filter
     if (minRating > 0) {
-      list = list.filter(p => (Number(p.rating) || 5) >= minRating);
+      list = list.filter(p => p.rating != null && Number.isFinite(Number(p.rating)) && Number(p.rating) >= minRating);
     }
 
     // Price filter
@@ -223,7 +223,7 @@ export default function ProviderCatalog({
                           onClick={() => setSelectedProviderDetail(provider)}
                           title="Click to view details & services"
                         >
-                          <Avatar name={provider.fullName} size="md" isOnline={true} />
+                          <Avatar name={provider.fullName} size="md" isOnline={provider.isOnline === true} />
                           <div className="provider-name-block">
                             <b className="provider-name">{provider.fullName}</b>
                             <span className="provider-category-tag">{serviceTitle}</span>
@@ -246,7 +246,7 @@ export default function ProviderCatalog({
                         {provider.distanceKm != null && (
                           <div className="provider-meta-item distance-badge">
                             <Navigation size={13} />
-                            <span>{provider.distanceKm} km away · ~{provider.etaMinutes || 25} mins</span>
+                            <span>{provider.distanceKm} km away{Number.isFinite(Number(provider.etaMinutes)) && Number(provider.etaMinutes) > 0 ? ` · ~${provider.etaMinutes} mins` : ''}</span>
                           </div>
                         )}
 
