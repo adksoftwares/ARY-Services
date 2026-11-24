@@ -19,18 +19,18 @@ export default function DriverEarningsSummary({
 }) {
   const [historyFilter, setHistoryFilter] = useState('all'); // 'all' | 'ride' | 'food_delivery' | 'parcel_delivery'
 
-  const completedCount = completedJobs.length;
-
-  const totalEarnings = useMemo(() => {
-    return completedJobs.reduce((sum, j) => {
-      return sum + (Number(j.fare ?? j.baseCharge) || 0);
-    }, 0);
-  }, [completedJobs]);
-
+  const safeCompletedJobs = useMemo(() => (Array.isArray(completedJobs) ? completedJobs : []).filter(job =>
+    job && typeof job === 'object' && job.id !== null && job.id !== undefined && String(job.id).trim() !== ''
+  ), [completedJobs]);
+  const completedCount = safeCompletedJobs.length;
+  const totalEarnings = useMemo(() => safeCompletedJobs.reduce((sum, job) => {
+    const fare = Number(job.fare ?? job.baseCharge);
+    return sum + (Number.isFinite(fare) && fare >= 0 ? fare : 0);
+  }, 0), [safeCompletedJobs]);
   const filteredHistory = useMemo(() => {
-    if (historyFilter === 'all') return completedJobs;
-    return completedJobs.filter(j => j.serviceType === historyFilter);
-  }, [completedJobs, historyFilter]);
+    if (historyFilter === 'all') return safeCompletedJobs;
+    return safeCompletedJobs.filter(job => job.serviceType === historyFilter);
+  }, [safeCompletedJobs, historyFilter]);
 
   return (
     <div className="driver-earnings-container" style={{ display: 'grid', gap: '16px', marginBottom: '20px' }}>
@@ -99,9 +99,9 @@ export default function DriverEarningsSummary({
         </Card>
 
         <Card style={{
-          background: presence?.online ? 'var(--color-success-50, #ecfdf5)' : 'var(--color-neutral-50, #f8fafc)',
+          background: presence?.online === true ? 'var(--color-success-50, #ecfdf5)' : 'var(--color-neutral-50, #f8fafc)',
           padding: '16px 18px',
-          border: presence?.online ? '1px solid var(--color-success-200, #a7f3d0)' : '1px solid var(--color-border-subtle, #e2e8f0)'
+          border: presence?.online === true ? '1px solid var(--color-success-200, #a7f3d0)' : '1px solid var(--color-border-subtle, #e2e8f0)'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
             <div style={{
@@ -120,20 +120,20 @@ export default function DriverEarningsSummary({
             </span>
           </div>
           <div style={{ fontSize: '1.3rem', fontWeight: 800, color: presence?.online ? 'var(--color-success-800, #065f46)' : 'var(--color-neutral-700, #334155)' }}>
-            {presence?.online ? '🟢 Available' : '⏸️ Offline'}
+            {presence?.online === true ? 'Online' : presence?.online === false ? 'Offline' : 'Unknown'}
           </div>
           <small style={{ fontSize: '0.72rem', color: presence?.online ? 'var(--color-success-700, #047857)' : 'var(--color-neutral-500, #64748b)' }}>
-            {presence?.online ? 'GPS proximity active' : 'Turn online to receive trips'}
+            {presence?.online ? 'Driver presence is marked online' : 'Set your driver presence online to receive eligible requests'}
           </small>
         </Card>
       </div>
 
       {/* 2. Completed Trip History Feed */}
-      {completedJobs.length > 0 && (
+      {safeCompletedJobs.length > 0 && (
         <Card style={{ padding: '18px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 14 }}>
             <h2 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--color-neutral-900, #0f172a)' }}>
-              Completed Trip History ({completedJobs.length})
+              Completed Trip History ({safeCompletedJobs.length})
             </h2>
 
             <div style={{ maxWidth: 360 }}>
@@ -153,12 +153,13 @@ export default function DriverEarningsSummary({
           {filteredHistory.length > 0 ? (
             <div style={{ display: 'grid', gap: 10 }}>
               {filteredHistory.map(job => {
-                const fare = Number(job.fare ?? job.baseCharge) || null;
+                const fareValue = Number(job.fare ?? job.baseCharge);
+                const fare = Number.isFinite(fareValue) && fareValue >= 0 ? fareValue : null;
                 const Icon = job.serviceType === 'food_delivery' ? PackageCheck : job.serviceType === 'parcel_delivery' ? Package : Bike;
 
                 return (
                   <div
-                    key={job.id}
+                    key={String(job.id)}
                     style={{
                       padding: '12px 14px',
                       background: 'var(--color-surface-subtle, #f8faf8)',
@@ -199,7 +200,7 @@ export default function DriverEarningsSummary({
                         {fare != null ? `LKR ${fare.toLocaleString()}` : 'Fare not recorded'}
                       </b>
                       <div style={{ fontSize: '0.72rem', color: 'var(--color-neutral-400, #94a3b8)' }}>
-                        {new Date(job.updatedAt || job.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {job.updatedAt || job.createdAt ? (Number.isFinite(new Date(job.updatedAt || job.createdAt).getTime()) ? new Date(job.updatedAt || job.createdAt).toLocaleString() : 'Time unavailable') : 'Time unavailable'}
                       </div>
                     </div>
                   </div>
