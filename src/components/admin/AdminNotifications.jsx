@@ -20,8 +20,8 @@ export default function AdminNotifications({
 }) {
   const [filter, setFilter] = useState('all');
 
-  const displayEvents = events;
-  const filteredEvents = filter === 'all' ? displayEvents : displayEvents.filter(e => e.type === filter);
+  const displayEvents = Array.isArray(events) ? events : [];
+  const filteredEvents = filter === 'all' ? displayEvents : displayEvents.filter(e => e?.type === filter);
 
   return (
     <div style={{ display: 'grid', gap: '16px' }}>
@@ -52,6 +52,7 @@ export default function AdminNotifications({
                 key={f.id}
                 type="button"
                 onClick={() => setFilter(f.id)}
+                aria-pressed={filter === f.id}
                 style={{
                   padding: '5px 12px',
                   borderRadius: 'var(--radius-full, 9999px)',
@@ -76,16 +77,18 @@ export default function AdminNotifications({
           <EmptyState
             icon={Bell}
             title="No events found"
-            description="No session activity matches the selected filter. New events will appear here while this workspace is open."
+            description={displayEvents.length === 0
+              ? 'No session activity has been received while this workspace is open.'
+              : 'No session activity matches this filter. Choose another filter to view the available events.'}
           />
         ) : (
           <div style={{ display: 'grid', gap: 14 }}>
-            {filteredEvents.map(evt => {
+            {filteredEvents.map((evt, index) => {
               const Icon = evt.icon || ShieldCheck;
 
               return (
                 <div
-                  key={evt.id}
+                  key={evt.id || `${evt.type || 'event'}-${evt.createdAt || evt.timestamp || index}`}
                   style={{
                     padding: '14px 16px',
                     borderRadius: 'var(--radius-md, 10px)',
@@ -114,10 +117,10 @@ export default function AdminNotifications({
 
                     <div>
                       <b style={{ color: 'var(--color-text, #0f172a)', fontSize: '0.92rem', display: 'block' }}>
-                        {evt.title}
+                        {evt.title || 'Activity update'}
                       </b>
                       <p style={{ margin: '4px 0 0', color: 'var(--color-neutral-600, #475569)', fontSize: '0.82rem', lineHeight: 1.5 }}>
-                        {evt.description}
+                        {evt.description || 'No additional details were provided.'}
                       </p>
                     </div>
                   </div>
