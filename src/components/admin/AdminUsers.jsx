@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Users,
   Search,
@@ -31,13 +31,19 @@ import AdminDeleteUserModal from './AdminDeleteUserModal';
 
 export default function AdminUsers({
   adminUsers = [],
+  initialSearchQuery = '',
   isLoadingUsers = false,
   onRefresh,
   onUpdateStatus,
   onDeleteUser,
   onResetPassword
 }) {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
+
+  useEffect(() => {
+    setSearchQuery(initialSearchQuery);
+    setCurrentPage(1);
+  }, [initialSearchQuery]);
   const [roleFilter, setRoleFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortField, setSortField] = useState('id');
@@ -298,7 +304,7 @@ export default function AdminUsers({
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.75rem', color: 'var(--color-neutral-500, #64748b)', marginTop: 2 }}>
                           <MapPin size={12} color="#94a3b8" />
-                          <span>{user.location || 'Colombo, Sri Lanka'}</span>
+                          <span>{user.location || 'Location not provided'}</span>
                         </div>
                       </td>
 
