@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState, useMemo } from 'react';
+import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
 import {
   Bike,
   PackageCheck,
@@ -56,6 +56,7 @@ export default function DriverWorkspace({ onNotice }) {
   const [presenceBusy, setPresenceBusy] = useState(false);
   const [jobActionBusy, setJobActionBusy] = useState(false);
   const [busyJobId, setBusyJobId] = useState(null);
+  const refreshRequestRef = useRef(0);
 
   // GPS Permission Modal
   const [gpsModalOpen, setGpsModalOpen] = useState(false);
@@ -99,6 +100,7 @@ export default function DriverWorkspace({ onNotice }) {
   }, [jobs]);
 
   const refresh = useCallback(async () => {
+    const requestId = ++refreshRequestRef.current;
     if (!currentUser?.token) {
       setJobs([]);
       setLoading(false);
@@ -112,16 +114,26 @@ export default function DriverWorkspace({ onNotice }) {
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || 'Could not load driver jobs.');
-      setJobs(Array.isArray(data.jobs) ? data.jobs.filter(job => job && typeof job === 'object') : []);
-      if (data.presence) setPresence(data.presence);
+      if (requestId !== refreshRequestRef.current) return;
+      setJobs(Array.isArray(data.jobs) ? data.jobs.filter(job =>
+        job && typeof job === 'object' && job.id !== null && job.id !== undefined && String(job.id).trim() !== ''
+      ) : []);
+      if (data.presence && typeof data.presence === 'object' && !Array.isArray(data.presence)) {
+        setPresence(previous => ({ ...previous, ...data.presence, online: data.presence.online === true }));
+      }
     } catch (err) {
-      setError(getFriendlyErrorMessage(err, 'Could not load driver jobs.'));
+      if (requestId === refreshRequestRef.current) {
+        setError(getFriendlyErrorMessage(err, 'Could not load driver jobs.'));
+      }
     } finally {
-      setLoading(false);
+      if (requestId === refreshRequestRef.current) setLoading(false);
     }
   }, [currentUser?.token]);
 
-  useEffect(() => { refresh(); }, [refresh]);
+  useEffect(() => {
+    refresh();
+    return () => { refreshRequestRef.current += 1; };
+  }, [refresh]);
 
   async function savePresence(online, coords) {
     const response = await fetch(`${API_BASE}/driver-presence`, {
@@ -313,7 +325,7 @@ export default function DriverWorkspace({ onNotice }) {
   }
 
   async function handleConfirmRelease(reason) {
-    if (!releaseModal.jobId || !currentUser?.token || jobActionBusy) return;
+    if (releaseModal.jobId === null || releaseModal.jobId === undefined || !currentUser?.token || jobActionBusy) return;
     setJobActionBusy(true);
     setBusyJobId(releaseModal.jobId);
     setError('');
@@ -351,7 +363,7 @@ export default function DriverWorkspace({ onNotice }) {
   }
 
   async function handleVerifyPin(pin) {
-    if (pinModal.isVerifying || !pinModal.jobId || !pinModal.endpoint) return;
+    if (pinModal.isVerifying || pinModal.jobId === null || pinModal.jobId === undefined || !pinModal.endpoint || !currentUser?.token) return;
     setPinModal(prev => ({ ...prev, isVerifying: true, error: '' }));
     try {
       const response = await fetch(`${API_BASE}/driver-jobs/${encodeURIComponent(pinModal.jobId)}/${pinModal.endpoint}`, {
@@ -456,7 +468,7 @@ export default function DriverWorkspace({ onNotice }) {
               </div>
               <div>
                 <b style={{ fontSize: '0.95rem', color: 'var(--text-primary, #f8fafc)' }}>
-                  ACTIVE DISPATCH #{activeTrip.id.slice(-6)}
+                  ACTIVE DISPATCH #{String(activeTrip.id).slice(-6)}
                 </b>
                 <div style={{ fontSize: '0.75rem', color: 'var(--color-neutral-500, #64748b)' }}>
                   {activeTrip.serviceType === 'food_delivery' ? 'Food Store Pickup' : activeTrip.serviceType === 'parcel_delivery' ? 'Parcel Courier' : 'Passenger Ride'}
@@ -718,7 +730,7 @@ export default function DriverWorkspace({ onNotice }) {
                         {job.serviceType === 'food_delivery' ? 'Food Order' : job.serviceType === 'parcel_delivery' ? 'Parcel Courier' : 'Passenger Ride'}
                       </b>
                       <span style={{ fontSize: '0.75rem', color: 'var(--color-neutral-400, #94a3b8)', marginLeft: 8 }}>
-                        #{job.id.slice(-6)}
+                        #{String(job.id).slice(-6)}
                       </span>
                     </div>
                   </div>
@@ -771,11 +783,11 @@ export default function DriverWorkspace({ onNotice }) {
               Driver Transport Streams
             </h2>
             <p style={{ margin: '3px 0 0', fontSize: '0.8rem', color: 'var(--color-neutral-600, #475569)' }}>
-              Select which transportation streams you operate. Compliance review validates your driving license.
+              Choose the transportation streams you want to operate. Submitted changes remain subject to Admin compliance review.
             </p>
           </div>
           <Badge variant="brand" dot={false}>
-            {selectedServices.length} Active Stream{selectedServices.length === 1 ? '' : 's'}
+            {selectedServices.length} Selected Stream{selectedServices.length === 1 ? '' : 's'}
           </Badge>
         </div>
 
@@ -842,7 +854,7 @@ export default function DriverWorkspace({ onNotice }) {
             disabled={submitting || selectedServices.length === 0}
             loading={submitting}
           >
-            Update Active Streams
+            Submit Stream Changes for Review
           </Button>
         </div>
       </Card>
