@@ -17,6 +17,13 @@ import { useAuth } from '../../context/AuthContext';
 import { subscribeToAppEvents } from '../../utils/events';
 import { Card, Badge, Button, Modal, StatusPill, EmptyState, Skeleton } from '../../design-system';
 
+function formatLkr(value) {
+  const amount = Number(value);
+  return Number.isFinite(amount) && amount >= 0
+    ? `LKR ${amount.toLocaleString('en-LK')}`
+    : 'Rate not provided';
+}
+
 const categories = [
   { slug: 'food-shops', name: 'Food Shops & Catering' },
   { slug: 'electrical-repair', name: 'Electrical & Appliances' },
@@ -39,7 +46,10 @@ export default function ProviderServicesManager() {
   const [notice, setNotice] = useState('');
 
   const load = useCallback(async () => {
-    if (!currentUser?.token) return;
+    if (!currentUser?.token) {
+      setIsLoading(false);
+      return;
+    }
     try {
       const response = await fetch(`${API_BASE}/providers/services/mine`, {
         headers: { Authorization: `Bearer ${currentUser.token}` }
@@ -72,6 +82,22 @@ export default function ProviderServicesManager() {
 
   async function submit(event) {
     event.preventDefault();
+    if (busy) return;
+
+    const normalizedServiceName = serviceName.trim();
+    const normalizedDescription = description.trim();
+    const parsedBaseCharge = Number(baseCharge);
+    if (
+      !categorySlug ||
+      normalizedServiceName.length < 2 || normalizedServiceName.length > 120 ||
+      normalizedDescription.length < 10 || normalizedDescription.length > 1000 ||
+      !Number.isFinite(parsedBaseCharge) || parsedBaseCharge < 1 || parsedBaseCharge > 10000000
+    ) {
+      setError('Check the category, service title, service scope and base charge before submitting.');
+      setNotice('');
+      return;
+    }
+
     setBusy(true);
     setError('');
     setNotice('');
@@ -79,7 +105,7 @@ export default function ProviderServicesManager() {
       const response = await fetch(`${API_BASE}/providers/services`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${currentUser.token}` },
-        body: JSON.stringify({ categorySlug, serviceName, description, baseCharge: Number(baseCharge) })
+        body: JSON.stringify({ categorySlug, serviceName: normalizedServiceName, description: normalizedDescription, baseCharge: parsedBaseCharge })
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || 'Could not submit service request.');
@@ -117,14 +143,14 @@ export default function ProviderServicesManager() {
           >
             <Plus size={16} /> Add Service Offering
           </Button>
-          <Button variant="ghost" onClick={load}>
+          <Button variant="ghost" onClick={load} loading={isLoading} disabled={isLoading}>
             <RefreshCw size={14} /> Refresh
           </Button>
         </div>
       </div>
 
       {notice && (
-        <div style={{
+        <div role="status" aria-live="polite" style={{
           background: 'var(--color-success-50, #ecfdf5)',
           border: '1px solid var(--color-success-200, #a7f3d0)',
           color: 'var(--color-success-800, #065f46)',
@@ -137,7 +163,7 @@ export default function ProviderServicesManager() {
       )}
 
       {error && (
-        <div style={{
+        <div role="alert" aria-live="assertive" style={{
           background: 'var(--color-danger-50, #fef2f2)',
           border: '1px solid var(--color-danger-200, #fecaca)',
           color: 'var(--color-danger-800, #991b1b)',
@@ -179,7 +205,7 @@ export default function ProviderServicesManager() {
               </Badge>
             </div>
             <p style={{ margin: '6px 0 0', fontSize: '0.82rem', color: 'var(--text-secondary, #475569)' }}>
-              Base charge: <b>{currentUser?.baseCharge || 'Quote-based pricing'}</b>
+              Base charge: <b>{currentUser?.baseCharge ? formatLkr(currentUser.baseCharge) : 'Quote-based pricing'}</b>
             </p>
             <div style={{ marginTop: 8, fontSize: '0.75rem', color: 'var(--brand-primary, #16a34a)', display: 'flex', alignItems: 'center', gap: 4 }}>
               <ShieldCheck size={14} /> Active in public customer search
@@ -204,7 +230,7 @@ export default function ProviderServicesManager() {
                 </Badge>
               </div>
               <p style={{ margin: '6px 0 0', fontSize: '0.82rem', color: 'var(--color-neutral-600, #475569)' }}>
-                Starting at <b>LKR {Number(service.baseCharge).toLocaleString('en-LK')}</b>
+                Starting at <b>{formatLkr(service.baseCharge)}</b>
               </p>
               <div style={{ marginTop: 8, fontSize: '0.75rem', color: 'var(--color-success-700, #047857)', display: 'flex', alignItems: 'center', gap: 4 }}>
                 <CheckCircle2 size={13} /> Active in discovery catalog
@@ -254,7 +280,7 @@ export default function ProviderServicesManager() {
                       </span>
                     </div>
                     <div style={{ fontSize: '0.8rem', color: 'var(--color-neutral-600, #475569)', marginTop: 2 }}>
-                      Proposed Rate: <b>LKR {Number(request.baseCharge).toLocaleString('en-LK')}</b>
+                      Proposed Rate: <b>{formatLkr(request.baseCharge)}</b>
                     </div>
                     {/* What-to-do-next hints */}
                     <div style={{ fontSize: '0.75rem', marginTop: 4 }}>
@@ -301,8 +327,9 @@ export default function ProviderServicesManager() {
       >
         <form onSubmit={submit} style={{ display: 'grid', gap: '14px', padding: '4px 0' }}>
           <div className="provider-form-group">
-            <label className="provider-form-label">Service Category *</label>
+            <label className="provider-form-label" htmlFor="provider-service-category">Service Category *</label>
             <select
+              id="provider-service-category"
               required
               value={categorySlug}
               onChange={e => setCategorySlug(e.target.value)}
@@ -316,8 +343,9 @@ export default function ProviderServicesManager() {
           </div>
 
           <div className="provider-form-group">
-            <label className="provider-form-label">Service Title *</label>
+            <label className="provider-form-label" htmlFor="provider-service-title">Service Title *</label>
             <input
+              id="provider-service-title"
               required
               minLength={2}
               maxLength={120}
@@ -329,8 +357,9 @@ export default function ProviderServicesManager() {
           </div>
 
           <div className="provider-form-group">
-            <label className="provider-form-label">Base Charge (LKR) *</label>
+            <label className="provider-form-label" htmlFor="provider-service-base-charge">Base Charge (LKR) *</label>
             <input
+              id="provider-service-base-charge"
               required
               type="number"
               min="1"
@@ -346,8 +375,9 @@ export default function ProviderServicesManager() {
           </div>
 
           <div className="provider-form-group">
-            <label className="provider-form-label">Service Scope & Qualifications *</label>
+            <label className="provider-form-label" htmlFor="provider-service-description">Service Scope & Qualifications *</label>
             <textarea
+              id="provider-service-description"
               required
               minLength={10}
               maxLength={1000}
@@ -381,7 +411,7 @@ export default function ProviderServicesManager() {
               type="submit"
               variant="primary"
               loading={busy}
-              disabled={!categorySlug || !serviceName}
+              disabled={busy || !categorySlug || serviceName.trim().length < 2 || description.trim().length < 10 || !Number.isFinite(Number(baseCharge)) || Number(baseCharge) < 1 || Number(baseCharge) > 10000000}
             >
               <Send size={15} /> Submit for Admin Approval
             </Button>
