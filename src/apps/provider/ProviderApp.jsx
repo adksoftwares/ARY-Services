@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { BrowserRouter, Link, useNavigate } from 'react-router-dom';
 import { BriefcaseBusiness, LogIn, LogOut, RefreshCw, ShieldCheck, UserRound, ArrowLeftRight, Wifi, WifiOff } from 'lucide-react';
 import { AuthProvider, useAuth } from '../../context/AuthContext';
@@ -21,6 +21,7 @@ function ProviderWorkspace() {
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState('');
   const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
+  const bookingsRequestRef = useRef(0);
 
   // Network online/offline monitor
   useEffect(() => {
@@ -66,8 +67,10 @@ function ProviderWorkspace() {
   }, []);
 
   const fetchBookings = useCallback(async () => {
+    const requestId = ++bookingsRequestRef.current;
     if (!currentUser?.token || currentUser.accountType !== 'provider') {
       setBookings([]);
+      setLoading(false);
       return;
     }
     setLoading(true);
@@ -77,15 +80,20 @@ function ProviderWorkspace() {
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || 'Could not load provider bookings.');
-      setBookings(data.bookings || []);
+      if (requestId !== bookingsRequestRef.current) return;
+      if (!Array.isArray(data.bookings)) throw new Error('The server returned an unexpected bookings list. Please refresh.');
+      setBookings(data.bookings.filter(booking => booking && typeof booking === 'object' && booking.id !== null && booking.id !== undefined));
     } catch (error) {
-      setNotice(getFriendlyErrorMessage(error, 'Could not load bookings.'));
+      if (requestId === bookingsRequestRef.current) setNotice(getFriendlyErrorMessage(error, 'Could not load bookings.'));
     } finally {
-      setLoading(false);
+      if (requestId === bookingsRequestRef.current) setLoading(false);
     }
   }, [currentUser]);
 
-  useEffect(() => { fetchBookings(); }, [fetchBookings]);
+  useEffect(() => {
+    fetchBookings();
+    return () => { bookingsRequestRef.current += 1; };
+  }, [fetchBookings]);
 
   useEffect(() => {
     if (!currentUser || currentUser.accountType !== 'provider') return undefined;
