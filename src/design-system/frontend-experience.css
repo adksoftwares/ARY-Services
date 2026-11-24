@@ -1,0 +1,76 @@
+/**
+ * ARY Services — frontend experience refinements
+ * Responsive, accessible and role-consistent interaction polish.
+ */
+
+:root {
+  --ary-safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Connection feedback shared by all four role applications. */
+.connection-banner {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 42px;
+  padding: 9px 16px;
+  text-align: center;
+  font-size: .84rem;
+  font-weight: 600;
+  line-height: 1.45;
+  box-shadow: 0 2px 8px rgba(18, 32, 25, .12);
+}
+.connection-banner svg { flex: 0 0 auto; }
+.connection-banner--online { color: #fff; background: #176b4b; }
+.connection-banner--offline { color: #422b08; background: #f5d58a; }
+
+/* Keep compact headers usable when role controls no longer fit on one row. */
+.topbar { min-width: 0; gap: clamp(8px, 1.5vw, 18px); }
+.topbar > * { min-width: 0; }
+.header-nav-links {
+  min-width: 0;
+  scrollbar-width: thin;
+  overscroll-behavior-x: contain;
+}
+.user-profile, .header-guest-actions { min-width: 0; }
+.user-badge span { overflow: hidden; text-overflow: ellipsis; }
+button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+:where(button, a, input, select, textarea, [role="button"], [tabindex]):focus-visible {
+  outline: 2px solid var(--border-focus, #2f8060);
+  outline-offset: 3px;
+}
+:where(button, [role="button"], .nav-link-btn, .mob-nav-item) { touch-action: manipulation; }
+.mobile-bottom-nav { padding-bottom: max(8px, var(--ary-safe-bottom)); }
+.modal-backdrop, .modal-overlay { padding-bottom: max(16px, var(--ary-safe-bottom)); }
+input, select, textarea { max-width: 100%; }
+img, video, canvas { max-width: 100%; }
+
+@media (max-width: 900px) {
+  .topbar { flex-wrap: wrap; align-items: center; }
+  .header-nav-links {
+    order: 3;
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+}
+@media (max-width: 640px) {
+  .topbar { padding-inline: 14px; row-gap: 10px; }
+  .topbar > div:last-child { margin-left: auto; }
+  .header-guest-actions { gap: 6px !important; }
+  .header-guest-actions .ds-btn { min-height: 40px; padding-inline: 10px; }
+  .connection-banner {
+    justify-content: flex-start;
+    text-align: left;
+    font-size: .8rem;
+    padding-inline: 12px;
+  }
+  .mobile-bottom-nav { padding-bottom: max(8px, var(--ary-safe-bottom)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .connection-banner { animation: none !important; }
+}
