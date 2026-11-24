@@ -454,6 +454,7 @@ function CustomerWorkspace() {
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const autoDetectDoneRef = React.useRef(false);
   const providerRequestRef = React.useRef(0);
+  const bookingRequestRef = React.useRef(0);
 
   // Hardware Back Button Handling for Capacitor WebView & Native Android
   useEffect(() => {
@@ -604,17 +605,24 @@ function CustomerWorkspace() {
   }, [currentUser?.id, currentUser?.accountType, handleAutoDetectLocation]);
 
   const fetchBookings = useCallback(async () => {
-    if (!currentUser?.token || currentUser.accountType !== 'customer') { setBookings([]); return; }
+    const requestId = ++bookingRequestRef.current;
+    if (!currentUser?.token || currentUser.accountType !== 'customer') {
+      setBookings([]);
+      setLoadingBookings(false);
+      return;
+    }
     setLoadingBookings(true);
     try {
       const response = await fetch(`${API_BASE}/bookings`, { headers: { Authorization: `Bearer ${currentUser.token}` } });
       if (!response.ok) throw new Error('Could not load bookings.');
       const data = await response.json().catch(() => ({}));
-      setBookings(Array.isArray(data.bookings) ? data.bookings.filter(booking => booking && typeof booking === 'object') : []);
+      if (requestId !== bookingRequestRef.current) return;
+      if (!Array.isArray(data.bookings)) throw new Error('The server returned an unexpected bookings list. Please refresh.');
+      setBookings(data.bookings.filter(booking => booking && typeof booking === 'object' && booking.id !== null && booking.id !== undefined));
     } catch (error) {
-      setNotice(getFriendlyErrorMessage(error, 'Could not load your bookings.'));
+      if (requestId === bookingRequestRef.current) setNotice(getFriendlyErrorMessage(error, 'Could not load your bookings.'));
     } finally {
-      setLoadingBookings(false);
+      if (requestId === bookingRequestRef.current) setLoadingBookings(false);
     }
   }, [currentUser?.token, currentUser?.accountType]);
 
@@ -624,6 +632,7 @@ function CustomerWorkspace() {
 
   useEffect(() => {
     fetchBookings();
+    return () => { bookingRequestRef.current += 1; };
   }, [fetchBookings]);
 
   useEffect(() => {
