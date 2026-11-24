@@ -86,7 +86,23 @@ export default function AdminCategories({
       return;
     }
 
-    const cleanSlug = slug.trim() || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    const cleanSlug = (slug.trim() || name.toLowerCase().replace(/[^a-z0-9]+/g, '-')).replace(/(^-|-$)/g, '').toLowerCase();
+    if (!cleanSlug) {
+      setValidationError('Enter a URL slug using English letters or numbers.');
+      return;
+    }
+    const duplicateSlug = services.some(category =>
+      category.id !== editingCategory?.id && String(category.slug || '').toLowerCase() === cleanSlug
+    );
+    if (duplicateSlug) {
+      setValidationError('This URL slug is already used by another category. Choose a unique slug.');
+      return;
+    }
+    const parsedBasePrice = Number(basePriceHint);
+    if (!Number.isFinite(parsedBasePrice) || parsedBasePrice < 500) {
+      setValidationError('Enter a valid base price hint of at least LKR 500.');
+      return;
+    }
 
     if (editingCategory) {
       setServices(prev =>
@@ -99,7 +115,7 @@ export default function AdminCategories({
                 nameTa: nameTa.trim() || name.trim(),
                 slug: cleanSlug,
                 description: description.trim(),
-                basePriceHint: parseInt(basePriceHint, 10) || 1500,
+                basePriceHint: Math.round(parsedBasePrice),
                 iconName,
                 color,
                 isActive
@@ -116,7 +132,7 @@ export default function AdminCategories({
         nameTa: nameTa.trim() || name.trim(),
         slug: cleanSlug,
         description: description.trim() || 'Professional marketplace service category',
-        basePriceHint: parseInt(basePriceHint, 10) || 1500,
+        basePriceHint: Math.round(parsedBasePrice),
         iconName,
         color,
         isActive
@@ -184,6 +200,14 @@ export default function AdminCategories({
               </tr>
             </thead>
             <tbody>
+              {services.length === 0 && (
+                <tr>
+                  <td colSpan={6} style={{ padding: '28px 16px', textAlign: 'center', color: 'var(--color-neutral-500, #64748b)' }}>
+                    <b style={{ display: 'block', color: 'var(--color-neutral-800, #1e293b)', marginBottom: 4 }}>No marketplace categories yet</b>
+                    Create a category to make a service vertical available for administration.
+                  </td>
+                </tr>
+              )}
               {services.map(cat => {
                 const IconComponent = ICON_MAP[cat.iconName] || Layers;
                 const active = cat.isActive !== false;
@@ -244,6 +268,7 @@ export default function AdminCategories({
                           gap: 6
                         }}
                       >
+                        <span className="sr-only">Toggle visibility for {cat.name}</span>
                         <Badge variant={active ? 'success' : 'neutral'} dot={true}>
                           {active ? 'ACTIVE' : 'HIDDEN'}
                         </Badge>
