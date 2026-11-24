@@ -70,8 +70,8 @@ export default function ProviderCatalog({
       } else if (list.some(p => p.distanceKm != null)) {
         outsideRadiusFallback = true;
         list.sort((a, b) => {
-          const distanceA = Number.isFinite(Number(a.distanceKm)) ? Number(a.distanceKm) : Number.POSITIVE_INFINITY;
-          const distanceB = Number.isFinite(Number(b.distanceKm)) ? Number(b.distanceKm) : Number.POSITIVE_INFINITY;
+          const distanceA = a.distanceKm != null && Number.isFinite(Number(a.distanceKm)) ? Number(a.distanceKm) : Number.POSITIVE_INFINITY;
+          const distanceB = b.distanceKm != null && Number.isFinite(Number(b.distanceKm)) ? Number(b.distanceKm) : Number.POSITIVE_INFINITY;
           return distanceA - distanceB;
         });
       }
@@ -83,8 +83,8 @@ export default function ProviderCatalog({
       list.sort((a, b) => getNum(a.baseCharge) - getNum(b.baseCharge));
     } else if (sortBy === 'distance') {
       list.sort((a, b) => {
-        const distanceA = Number.isFinite(Number(a.distanceKm)) ? Number(a.distanceKm) : Number.POSITIVE_INFINITY;
-        const distanceB = Number.isFinite(Number(b.distanceKm)) ? Number(b.distanceKm) : Number.POSITIVE_INFINITY;
+        const distanceA = a.distanceKm != null && Number.isFinite(Number(a.distanceKm)) ? Number(a.distanceKm) : Number.POSITIVE_INFINITY;
+        const distanceB = b.distanceKm != null && Number.isFinite(Number(b.distanceKm)) ? Number(b.distanceKm) : Number.POSITIVE_INFINITY;
         return distanceA - distanceB;
       });
     }
