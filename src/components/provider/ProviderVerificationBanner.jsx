@@ -37,15 +37,15 @@ export default function ProviderVerificationBanner({ currentUser }) {
           </div>
           <div>
             <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary, #f8fafc)' }}>
-              Verified ARY Service Partner
+              ARY Provider Account Active
             </div>
             <div style={{ fontSize: '0.8rem', color: 'var(--color-brand-700, #1b5e4b)' }}>
-              Your national ID and trade qualifications have been verified. You are eligible for direct bookings and instant broadcast jobs.
+              Your provider account is active. Service listings and booking access remain subject to their individual approval and availability status.
             </div>
           </div>
         </div>
         <Badge variant="success" dot={false}>
-          <CheckCircle2 size={12} /> Active & Verified
+          <CheckCircle2 size={12} /> Account Active
         </Badge>
       </div>
     );
@@ -84,12 +84,12 @@ export default function ProviderVerificationBanner({ currentUser }) {
               Application Under Review
             </div>
             <div style={{ fontSize: '0.82rem', color: 'var(--color-warning-700, #b45309)' }}>
-              Our admin compliance team is reviewing your NIC, certificates, and background credentials. Approvals typically take 12–24 business hours.
+              Your application is awaiting Admin review. You can continue using your existing customer account while the review is pending.
             </div>
           </div>
         </div>
         <Badge variant="warning" dot={true}>
-          Pending Verification
+          Pending Admin Review
         </Badge>
       </div>
     );
@@ -128,7 +128,7 @@ export default function ProviderVerificationBanner({ currentUser }) {
               Account {status === 'suspended' ? 'Suspended' : 'Verification Incomplete'}
             </div>
             <div style={{ fontSize: '0.82rem', color: 'var(--color-danger-700, #b91c1c)' }}>
-              {currentUser.rejectionReason || 'Please contact ARY Partner Support at support@aryservices.lk to appeal or submit missing documents.'}
+              {currentUser.rejectionReason || 'Your provider account is not currently active. Contact ARY support if you need clarification or want to submit updated information.'}
             </div>
           </div>
         </div>

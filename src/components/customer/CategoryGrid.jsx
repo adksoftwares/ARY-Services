@@ -6,6 +6,8 @@ export default function CategoryGrid({
   selectedCategory,
   onSelectCategory
 }) {
+  const safeServices = Array.isArray(services) ? services.filter(service => service && typeof service === 'object' && service.id !== null && service.id !== undefined) : [];
+
   return (
     <section className="services-section">
       <div className="section-heading">
@@ -14,12 +16,12 @@ export default function CategoryGrid({
           <h2>Explore services & providers</h2>
         </div>
         <span className="section-note">
-          Click a service to view verified local providers <ArrowRight size={15} />
+          Select a category to browse available providers <ArrowRight size={15} />
         </span>
       </div>
 
       <div className="service-grid">
-        {services.map(service => {
+        {safeServices.map(service => {
           const Icon = service.icon || Sparkles;
           const isSelected = selectedCategory?.id === service.id;
           return (
@@ -28,21 +30,21 @@ export default function CategoryGrid({
               className={`service-card ${isSelected ? 'active-category-card' : ''}`}
               aria-pressed={isSelected}
               key={service.id}
-              onClick={() => onSelectCategory(service)}
+              onClick={() => onSelectCategory?.(service)}
             >
               <span className={'service-icon ' + (service.color || 'lilac')}>
                 <Icon size={25} />
               </span>
               <span className="service-card-copy">
-                <b>{service.name}</b>
-                <small>{service.description}</small>
+                <b>{service.name || 'Service category'}</b>
+                <small>{service.description || 'Browse providers in this category'}</small>
               </span>
               <ArrowRight className="card-arrow" size={18} />
             </button>
           );
         })}
       </div>
-      {services.length === 0 && <p className="empty">No categories match your search.</p>}
+      {safeServices.length === 0 && <p className="empty">No categories match your search.</p>}
     </section>
   );
 }

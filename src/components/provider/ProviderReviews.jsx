@@ -7,7 +7,9 @@ export default function ProviderReviews({
   averageRating = '—',
   isLoading = false
 }) {
-  const roundedRating = reviews.length > 0 && Number.isFinite(Number(averageRating)) ? Number(averageRating) : null;
+  const safeReviews = Array.isArray(reviews) ? reviews.filter(review => review && typeof review === 'object' && review.id !== null && review.id !== undefined) : [];
+  const ratingValue = averageRating !== null && averageRating !== undefined && averageRating !== '' ? Number(averageRating) : NaN;
+  const roundedRating = safeReviews.length > 0 && Number.isFinite(ratingValue) && ratingValue >= 0 && ratingValue <= 5 ? ratingValue : null;
 
   if (isLoading) {
     return (
@@ -42,7 +44,7 @@ export default function ProviderReviews({
             <RatingStars value={Math.round(roundedRating)} readOnly size={18} />
           </div>}
           <div style={{ fontSize: '0.8rem', color: 'var(--color-neutral-500, #64748b)' }}>
-            {reviews.length > 0 ? `Based on ${reviews.length} client review${reviews.length === 1 ? '' : 's'}` : 'No ratings yet'}
+            {safeReviews.length > 0 ? `Based on ${safeReviews.length} customer review${safeReviews.length === 1 ? '' : 's'}` : 'No ratings yet'}
           </div>
         </div>
 
@@ -59,20 +61,20 @@ export default function ProviderReviews({
             Customer feedback
           </div>
           <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--color-neutral-600, #475569)', lineHeight: 1.6 }}>
-            Feedback shared by customers is shown below. Review verification and any applicable service guarantee are handled according to the booking records and ARY policy.
+            Customer feedback submitted for your bookings is shown below.
           </p>
         </div>
       </Card>
 
       {/* 2. Reviews Feed */}
-      {reviews.length > 0 ? (
+      {safeReviews.length > 0 ? (
         <div style={{ display: 'grid', gap: '14px' }}>
-          {reviews.map(r => (
+          {safeReviews.map(r => (
             <Card key={r.id} style={{ padding: '18px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, flexWrap: 'wrap', gap: 8 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <b style={{ color: 'var(--color-neutral-900, #0f172a)', fontSize: '0.95rem' }}>
-                    {r.customerName}
+                    {r.customerName || 'Customer'}
                   </b>
                 </div>
                 <span style={{ fontSize: '0.78rem', color: 'var(--color-neutral-400, #94a3b8)' }}>
@@ -81,7 +83,7 @@ export default function ProviderReviews({
               </div>
 
               <div style={{ marginBottom: 10 }}>
-                <RatingStars value={Number.isFinite(Number(r.rating)) && Number(r.rating) >= 1 && Number(r.rating) <= 5 ? Number(r.rating) : 0} readOnly size={15} />
+                <RatingStars value={r.rating !== null && r.rating !== undefined && r.rating !== '' && Number.isFinite(Number(r.rating)) && Number(r.rating) >= 1 && Number(r.rating) <= 5 ? Number(r.rating) : 0} readOnly size={15} />
               </div>
 
               {r.comment ? (
