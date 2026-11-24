@@ -3,13 +3,8 @@ import {
   Bell,
   ShieldCheck,
   Scale,
-  Banknote,
-  Users,
-  BriefcaseBusiness,
-  Bike,
-  Filter,
-  CheckCircle2,
-  AlertTriangle
+  UserRound,
+  Wallet
 } from 'lucide-react';
 import { Card, Badge, Button, EmptyState } from '../../design-system';
 
@@ -20,8 +15,11 @@ export default function AdminNotifications({
 }) {
   const [filter, setFilter] = useState('all');
 
-  const displayEvents = Array.isArray(events) ? events : [];
-  const filteredEvents = filter === 'all' ? displayEvents : displayEvents.filter(e => e?.type === filter);
+  const displayEvents = Array.isArray(events)
+    ? events.filter(event => event && typeof event === 'object' && !Array.isArray(event))
+    : [];
+  const filteredEvents = filter === 'all' ? displayEvents : displayEvents.filter(event => event.type === filter);
+  const eventIcons = { kyc: ShieldCheck, dispute: Scale, payout: Wallet, account: UserRound };
 
   return (
     <div style={{ display: 'grid', gap: '16px' }}>
@@ -82,13 +80,17 @@ export default function AdminNotifications({
               : 'No session activity matches this filter. Choose another filter to view the available events.'}
           />
         ) : (
-          <div style={{ display: 'grid', gap: 14 }}>
+          <div style={{ display: 'grid', gap: 14 }} role="log" aria-live="polite" aria-relevant="additions text">
             {filteredEvents.map((evt, index) => {
-              const Icon = evt.icon || ShieldCheck;
+              const Icon = eventIcons[evt.type] || ShieldCheck;
+              const createdAt = typeof evt.createdAt === 'string' ? Date.parse(evt.createdAt) : NaN;
+              const displayTime = Number.isFinite(createdAt)
+                ? new Date(createdAt).toLocaleString()
+                : (typeof evt.timestamp === 'string' || typeof evt.timestamp === 'number' ? String(evt.timestamp) : 'Time unavailable');
 
               return (
                 <div
-                  key={evt.id || `${evt.type || 'event'}-${evt.createdAt || evt.timestamp || index}`}
+                  key={evt.id !== undefined && evt.id !== null ? String(evt.id) : `${typeof evt.type === 'string' ? evt.type : 'event'}-${evt.createdAt || evt.timestamp || index}`}
                   style={{
                     padding: '14px 16px',
                     borderRadius: 'var(--radius-md, 10px)',
@@ -117,19 +119,19 @@ export default function AdminNotifications({
 
                     <div>
                       <b style={{ color: 'var(--color-text, #0f172a)', fontSize: '0.92rem', display: 'block' }}>
-                        {evt.title || 'Activity update'}
+                        {typeof evt.title === 'string' && evt.title.trim() ? evt.title : 'Activity update'}
                       </b>
                       <p style={{ margin: '4px 0 0', color: 'var(--color-neutral-600, #475569)', fontSize: '0.82rem', lineHeight: 1.5 }}>
-                        {evt.description || 'No additional details were provided.'}
+                        {typeof evt.description === 'string' && evt.description.trim() ? evt.description : 'No additional details were provided.'}
                       </p>
                     </div>
                   </div>
 
                   <div style={{ textAlign: 'right', flexShrink: 0 }}>
                     <span style={{ fontSize: '0.74rem', color: 'var(--color-neutral-400, #94a3b8)', display: 'block' }}>
-                      {evt.createdAt && Number.isFinite(Date.parse(evt.createdAt)) ? new Date(evt.createdAt).toLocaleString() : evt.timestamp || 'Time unavailable'}
+                      {displayTime}
                     </span>
-                    {evt.targetTab && (
+                    {typeof evt.targetTab === 'string' && evt.targetTab.trim() && (
                       <button
                         type="button"
                         onClick={() => onNavigateTab?.(evt.targetTab)}
