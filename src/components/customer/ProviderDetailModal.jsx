@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import {
   MapPin,
   Star,
-  CheckCircle2,
   Calendar,
   Clock,
   Wrench,
@@ -31,19 +30,27 @@ export default function ProviderDetailModal({
       categorySlug: provider.category,
       categoryName: provider.categoryName || selectedCategory?.name || 'Primary Service',
       serviceName: provider.categoryName || selectedCategory?.name || 'Primary Service',
-      baseCharge: provider.baseCharge || null,
+      baseCharge: provider.baseCharge ?? null,
       description: ''
     },
-    ...(Array.isArray(provider.approvedServices) ? provider.approvedServices : [])
+    ...(Array.isArray(provider.approvedServices) ? provider.approvedServices.filter(service => service && typeof service === 'object' && !Array.isArray(service)) : [])
   ];
-  const selectedService = services.find((service, index) => (service.id || `service-${index}`) === selectedServiceId) || services[0];
-  const selectedServiceKey = selectedService ? (selectedService.id || `service-${services.indexOf(selectedService)}`) : '';
+  const serviceKey = (service, index) => service.id !== null && service.id !== undefined && String(service.id).trim() !== '' ? String(service.id) : `service-${index}`;
+  const selectedService = services.find((service, index) => serviceKey(service, index) === selectedServiceId) || services[0];
+  const selectedServiceKey = selectedService ? serviceKey(selectedService, services.indexOf(selectedService)) : '';
+  const formatRate = value => {
+    if (value === null || value === undefined || value === '') return null;
+    const amount = Number(value);
+    return Number.isFinite(amount) && amount >= 0 ? `LKR ${amount.toLocaleString('en-LK')}` : (typeof value === 'string' && value.trim() ? value.trim() : null);
+  };
+  const providerRate = formatRate(provider.baseCharge);
+  const selectedRate = formatRate(selectedService?.baseCharge) || providerRate || 'Contact for rate';
   const reviewCountValue = Number(provider.reviewCount);
-  const reviewCount = Number.isFinite(reviewCountValue) && reviewCountValue > 0 ? reviewCountValue : 0;
+  const reviewCount = Number.isFinite(reviewCountValue) && reviewCountValue > 0 ? Math.floor(reviewCountValue) : 0;
   const ratingValue = Number(provider.rating);
-  const rating = reviewCount > 0 && provider.rating != null && Number.isFinite(ratingValue) && ratingValue >= 0 && ratingValue <= 5 ? ratingValue : null;
+  const rating = reviewCount > 0 && provider.rating != null && Number.isFinite(ratingValue) && ratingValue >= 1 && ratingValue <= 5 ? ratingValue : null;
   const experienceValue = Number(provider.experienceYears);
-  const experienceYears = provider.experienceYears != null && Number.isFinite(experienceValue) && experienceValue >= 0 ? experienceValue : null;
+  const experienceYears = provider.experienceYears != null && provider.experienceYears !== '' && Number.isFinite(experienceValue) && experienceValue >= 0 ? experienceValue : null;
   const operatingMode = provider.operatingMode === 'shop' ? 'Shop-based' : provider.operatingMode === 'online' ? 'Online service' : provider.operatingMode === 'mobile' ? 'Mobile / on-location' : 'Not specified';
 
   return (
@@ -61,9 +68,7 @@ export default function ProviderDetailModal({
           <div className="provider-detail-header-info">
             <div className="provider-title-row">
               <h3>{provider.fullName}</h3>
-              <Badge variant="success" dot={false}>
-                <CheckCircle2 size={13} /> Verified Partner
-              </Badge>
+              <Badge variant="neutral" dot={false}>Listed on ARY</Badge>
             </div>
             <div className="provider-subtitle">
               <span>{provider.categoryName || selectedCategory?.name || 'Trade Specialist'}</span>
@@ -71,7 +76,7 @@ export default function ProviderDetailModal({
               <span>{operatingMode}</span>
               <span>•</span>
               <span className="location-text">
-                <MapPin size={13} /> {provider.location || 'Local Area'}
+                <MapPin size={13} /> {provider.location || 'Location not provided'}
               </span>
             </div>
 
@@ -89,12 +94,12 @@ export default function ProviderDetailModal({
           </div>
           <div className="highlight-pill">
             <span className="highlight-label">Starting Rate</span>
-            <b>{selectedService?.baseCharge ? `LKR ${Number(selectedService.baseCharge).toLocaleString('en-LK')}` : provider.baseCharge || 'Contact for rate'}</b>
+            <b>{selectedRate}</b>
           </div>
-          {provider.distanceKm != null && (
+          {provider.distanceKm !== null && provider.distanceKm !== undefined && provider.distanceKm !== '' && Number.isFinite(Number(provider.distanceKm)) && Number(provider.distanceKm) >= 0 && (
             <div className="highlight-pill">
               <span className="highlight-label">Proximity</span>
-              <b>{provider.distanceKm} km away</b>
+              <b>{Number(provider.distanceKm).toFixed(1)} km away</b>
             </div>
           )}
         </div>
@@ -106,32 +111,32 @@ export default function ProviderDetailModal({
           </h4>
           <div className="detail-services-list">
             {services.map((srv, idx) => {
-              const serviceKey = srv.id || `service-${idx}`;
-              const isSelected = selectedServiceKey === serviceKey;
+              const serviceKeyValue = serviceKey(srv, idx);
+              const isSelected = selectedServiceKey === serviceKeyValue;
               return (
                 <div
-                  key={serviceKey}
+                  key={serviceKeyValue}
                   className="detail-service-card"
                   style={{ border: isSelected ? '2px solid var(--color-brand-600, #174d3d)' : '1px solid var(--color-border-subtle, #e2e8f0)', background: isSelected ? 'var(--color-brand-50, #edf7f2)' : 'var(--color-surface, #fff)', cursor: 'pointer' }}
-                  onClick={() => setSelectedServiceId(serviceKey)}
+                  onClick={() => setSelectedServiceId(serviceKeyValue)}
                   role="button"
                   tabIndex={0}
                   aria-pressed={isSelected}
                   onKeyDown={event => {
                     if (event.key === 'Enter' || event.key === ' ') {
                       event.preventDefault();
-                      setSelectedServiceId(serviceKey);
+                      setSelectedServiceId(serviceKeyValue);
                     }
                   }}
                 >
                   <div className="service-info-left">
-                    <b className="service-item-name">{srv.serviceName}</b>
-                    {srv.description && <p className="service-item-desc">{srv.description}</p>}
+                    <b className="service-item-name">{srv.serviceName || srv.categoryName || 'Additional service'}</b>
+                    {typeof srv.description === 'string' && srv.description.trim() && <p className="service-item-desc">{srv.description}</p>}
                     <small style={{ color: 'var(--color-brand-700, #174d3d)', fontWeight: 700 }}>{isSelected ? 'Selected service' : 'Select this service'}</small>
                   </div>
                   <div className="service-item-price">
                     <span>Starting at</span>
-                    <b>{srv.baseCharge ? `LKR ${Number(srv.baseCharge).toLocaleString('en-LK')}` : provider.baseCharge || 'Contact for rate'}</b>
+                    <b>{formatRate(srv.baseCharge) || providerRate || 'Contact for rate'}</b>
                   </div>
                 </div>
               );
@@ -171,16 +176,17 @@ export default function ProviderDetailModal({
         <div className="provider-sticky-book-bar">
           <div className="book-bar-price">
             <span>Starting rate</span>
-            <b>{provider.baseCharge || 'Contact for rate'}</b>
+            <b>{providerRate || 'Contact for rate'}</b>
           </div>
           <Button
             variant="primary"
             size="lg"
             icon={Calendar}
             className="book-now-cta"
+            disabled={typeof onBook !== 'function'}
             onClick={() => {
-              onClose();
-              if (onBook) onBook(provider, selectedService);
+              onClose?.();
+              if (typeof onBook === 'function') onBook(provider, selectedService);
             }}
           >
             Book Now / Request Quote
