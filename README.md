@@ -109,3 +109,8 @@ Relevant endpoints (Admin only):
 ## Documentation
 
 - **Design System Reference**: Detailed tokens, components, and accessibility guidelines can be found in [`docs/DESIGN-SYSTEM.md`](docs/DESIGN-SYSTEM.md).
+
+
+## Hybrid Marketplace Product Requirements
+
+The complete Customer, Provider, Driver and Admin feature scope, Sri Lanka-specific workflows, operational rules and release safeguards are documented in [PickMe-Inspired Hybrid Platform Requirements](docs/PICKME-HYBRID-PLATFORM-REQUIREMENTS.md). This is a product benchmark only; ARY retains its own branding and workflows. Online payment integration remains deferred.

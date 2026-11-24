@@ -14,6 +14,28 @@ export function isDriverPresenceFresh(presence, now = Date.now(), maxAgeMs = 90_
   return Number.isFinite(updatedAt) && now - updatedAt >= 0 && now - updatedAt <= maxAgeMs;
 }
 
+// Request aging prevents nearby new requests from indefinitely starving older jobs.
+export function dispatchFairnessScore(distanceKm, createdAt, now = Date.now()) {
+  const created = Date.parse(createdAt || '');
+  const ageMinutes = Number.isFinite(created) ? Math.max(0, (now - created) / 60_000) : 0;
+  const agePriorityKm = Math.min(5, ageMinutes / 10); // capped at 5km-equivalent after 50 minutes
+  return distanceKm === null ? -agePriorityKm : distanceKm - agePriorityKm;
+}
+
+/** A bounded urgency boost for repeatedly released requests. Lower scores dispatch sooner. */
+export function releasePriorityBoost(job) {
+  const count = Number.isFinite(Number(job?.driverReleaseCount))
+    ? Math.max(0, Number(job.driverReleaseCount))
+    : (Array.isArray(job?.driverReleaseHistory) ? job.driverReleaseHistory.length : 0);
+  return Math.min(2, count * 0.5);
+}
+
+/** Drivers who previously released this request cannot reclaim it after requeue. */
+export function isDriverEligibleForRequeuedJob(job, driverId) {
+  if (!driverId) return false;
+  return !(Array.isArray(job?.driverReleaseHistory) && job.driverReleaseHistory.some(entry => entry?.driverId === driverId));
+}
+
 export function rankJobsForDriver(jobs, presence, now = Date.now()) {
   const fresh = isDriverPresenceFresh(presence, now);
   return jobs.map(job => {
@@ -21,11 +43,17 @@ export function rankJobsForDriver(jobs, presence, now = Date.now()) {
     const targetLng = job.serviceType === 'food_delivery' ? job.destinationLng : job.pickupLng;
     const target = cleanSriLankaCoordinates(targetLat, targetLng);
     const distanceKm = fresh && target ? calculateDistanceKm(presence.lat, presence.lng, target.lat, target.lng) : null;
-    return { ...job, distanceKm, etaMinutes: distanceKm === null ? null : estimateEtaMinutes(distanceKm) };
+    const releaseBoost = releasePriorityBoost(job);
+    const fairnessScore = dispatchFairnessScore(distanceKm, job.createdAt, now) - releaseBoost;
+    return { ...job, distanceKm, etaMinutes: distanceKm === null ? null : estimateEtaMinutes(distanceKm), fairnessScore, releasePriorityBoost: releaseBoost };
   }).sort((a, b) => {
     const aAssigned = Boolean(a.driverId);
     const bAssigned = Boolean(b.driverId);
     if (aAssigned !== bAssigned) return aAssigned ? -1 : 1;
+    if (a.fairnessScore !== b.fairnessScore) return a.fairnessScore - b.fairnessScore;
+    const aCreated = Date.parse(a.createdAt || '');
+    const bCreated = Date.parse(b.createdAt || '');
+    if (Number.isFinite(aCreated) && Number.isFinite(bCreated) && aCreated !== bCreated) return aCreated - bCreated;
     if (a.distanceKm === null) return 1;
     if (b.distanceKm === null) return -1;
     return a.distanceKm - b.distanceKm;
@@ -57,4 +85,13 @@ export function buildAdminDispatchSnapshot(jobs, applications, presence, now = D
     unassignedJobs: activeJobs.filter(job => job.status === 'requested').length,
     assignedJobs: activeJobs.filter(job => Boolean(job.driverId)).length
   }};
+}
+
+/** Aggregate dispatch outcomes for a driver without exposing customer data. */
+export function summarizeDriverReliability(jobs, driverId) {
+  const records = Array.isArray(jobs) ? jobs : [];
+  const releases = records.reduce((total, job) => total + (Array.isArray(job.driverReleaseHistory) ? job.driverReleaseHistory.filter(entry => entry.driverId === driverId).length : 0), 0);
+  const completed = records.filter(job => job.driverId === driverId && ['completed', 'delivered'].includes(job.status)).length;
+  const engagements = completed + releases;
+  return { completed, prePickupReleases: releases, engagements, reliabilityRate: engagements ? Math.round((completed / engagements) * 100) : null };
 }
