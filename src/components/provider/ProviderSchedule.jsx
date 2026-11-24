@@ -23,7 +23,7 @@ function parseLocalBookingDate(value, timeValue) {
   if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return null;
 
   const timeText = typeof timeValue === 'string' ? timeValue : '';
-  const timeMatch = /(\d{1,2})(?::(\d{2}))?\\s*(AM|PM)?/i.exec(timeText);
+  const timeMatch = /(\d{1,2})(?::(\d{2}))?\s*(AM|PM)?/i.exec(timeText);
   let hours = 12;
   let minutes = 0;
   if (timeMatch) {
