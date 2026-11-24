@@ -30,7 +30,7 @@ export default function AdminApplications({
   const { currentUser } = useAuth();
   const [driverApps, setDriverApps] = useState([]);
   const [roleApps, setRoleApps] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [typeFilter, setTypeFilter] = useState('all'); // 'all' | 'driver' | 'provider' | 'role'
   const [statusFilter, setStatusFilter] = useState('pending'); // 'all' | 'pending' | 'approved' | 'rejected'
   const [searchQuery, setSearchQuery] = useState('');
@@ -57,14 +57,14 @@ export default function AdminApplications({
         })
       ]);
 
-      if (driverRes.ok) {
-        const d = await driverRes.json();
-        setDriverApps(d.applications || []);
-      }
-      if (roleRes.ok) {
-        const r = await roleRes.json();
-        setRoleApps(r.applications || []);
-      }
+      const [driverData, roleData] = await Promise.all([
+        driverRes.json().catch(() => ({})),
+        roleRes.json().catch(() => ({}))
+      ]);
+      if (!driverRes.ok) throw new Error(driverData.error || 'Could not load driver applications.');
+      if (!roleRes.ok) throw new Error(roleData.error || 'Could not load role applications.');
+      setDriverApps(Array.isArray(driverData.applications) ? driverData.applications : []);
+      setRoleApps(Array.isArray(roleData.applications) ? roleData.applications : []);
     } catch (e) {
       console.warn('Could not load applications:', e);
       onNotice?.('Could not load application queue.');
@@ -88,10 +88,10 @@ export default function AdminApplications({
         rawId: d.id,
         kind: 'driver',
         applicantName: d.driverName || d.userId,
-        phone: d.phone || 'Phone on file',
+        phone: d.phone || 'Not provided',
         serviceNetwork: d.driverType === 'food_delivery' ? 'Shop & Grocery Delivery Driver' : d.driverType === 'parcel_delivery' ? 'Parcel Courier Driver' : 'Passenger Ride Driver',
         status: d.status || 'pending',
-        appliedAt: d.createdAt || d.requestedAt || new Date().toISOString(),
+        appliedAt: d.createdAt || d.requestedAt || null,
         details: d,
         nicNumber: d.nicNumber || 'Not provided'
       });
@@ -111,7 +111,7 @@ export default function AdminApplications({
           ? `Provider: ${r.application?.details?.categoryName || r.application?.details?.category || 'General Services'}`
           : 'Driver & Delivery Network',
         status: r.status || 'pending',
-        appliedAt: r.requestedAt || r.application?.requestedAt || new Date().toISOString(),
+        appliedAt: r.requestedAt || r.application?.requestedAt || null,
         details: r.application?.details || {},
         nicNumber: r.application?.details?.nicNumber || 'Not provided'
       });
@@ -132,7 +132,7 @@ export default function AdminApplications({
             email: u.email,
             serviceNetwork: `Provider Registration (${u.categoryName || u.category || 'General'})`,
             status: 'pending',
-            appliedAt: u.createdAt || new Date().toISOString(),
+            appliedAt: u.createdAt || null,
             details: {
               location: u.location,
               categoryName: u.categoryName || u.category,
@@ -286,12 +286,16 @@ export default function AdminApplications({
       </Card>
 
       {/* 2. Applications Queue List */}
-      {unifiedList.length === 0 ? (
+      {loading ? (
+        <Card style={{ padding: '32px', textAlign: 'center', color: 'var(--color-neutral-600, #475569)' }}>
+          Loading application queue…
+        </Card>
+      ) : unifiedList.length === 0 ? (
         <Card style={{ padding: '40px', textAlign: 'center' }}>
           <EmptyState
             icon={ShieldCheck}
-            title="Application queue is clear"
-            description="No pending contractor or driver applications require review under the selected criteria."
+            title={searchQuery || statusFilter !== 'pending' || typeFilter !== 'all' ? 'No matching applications' : 'Application queue is clear'}
+            description={searchQuery || statusFilter !== 'pending' || typeFilter !== 'all' ? 'Try changing the search or filters to see other applications.' : 'No pending contractor or driver applications require review.'}
           />
         </Card>
       ) : (
@@ -343,7 +347,7 @@ export default function AdminApplications({
                       <div style={{ display: 'flex', alignItems: 'center', gap: 14, fontSize: '0.78rem', color: 'var(--color-neutral-500, #64748b)', marginTop: 6, flexWrap: 'wrap' }}>
                         <span>Phone: <b>{item.phone}</b></span>
                         <span>NIC: <b>{item.nicNumber}</b></span>
-                        <span>Applied: {new Date(item.appliedAt).toLocaleDateString()}</span>
+                        <span>Applied: {item.appliedAt && Number.isFinite(Date.parse(item.appliedAt)) ? new Date(item.appliedAt).toLocaleDateString() : 'Date unavailable'}</span>
                       </div>
                     </div>
                   </div>
