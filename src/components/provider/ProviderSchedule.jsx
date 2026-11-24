@@ -12,23 +12,48 @@ import {
 } from 'lucide-react';
 import { Card, Badge, Button, StatusPill, EmptyState, SegmentedControl } from '../../design-system';
 
+function parseLocalBookingDate(value, timeValue) {
+  if (typeof value !== 'string') return null;
+  const match = /^(\\d{4})-(\\d{2})-(\\d{2})/.exec(value);
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(year, month - 1, day);
+  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return null;
+
+  const timeText = typeof timeValue === 'string' ? timeValue : '';
+  const timeMatch = /(\\d{1,2})(?::(\\d{2}))?\\s*(AM|PM)?/i.exec(timeText);
+  let hours = 12;
+  let minutes = 0;
+  if (timeMatch) {
+    hours = Number(timeMatch[1]);
+    minutes = Number(timeMatch[2] || 0);
+    const meridiem = (timeMatch[3] || '').toUpperCase();
+    if (minutes > 59 || hours > 23 || (meridiem && (hours < 1 || hours > 12))) return null;
+    if (meridiem === 'PM' && hours < 12) hours += 12;
+    if (meridiem === 'AM' && hours === 12) hours = 0;
+  }
+  date.setHours(hours, minutes, 0, 0);
+  return date;
+}
+
 export default function ProviderSchedule({
   bookings = [],
   onNavigateTab,
   onDecideReschedule
 }) {
   const [filter, setFilter] = useState('upcoming'); // 'upcoming' | 'completed' | 'all'
+  const safeBookings = Array.isArray(bookings) ? bookings.filter(booking => booking && typeof booking === 'object') : [];
 
-  // Sort bookings chronologically by date and time
+  // Sort using local calendar dates so date-only API values do not shift by timezone.
   const sortedBookings = useMemo(() => {
-    return [...bookings].sort((a, b) => {
-      const dateA = a.bookingDate ? Date.parse(`${a.bookingDate}T${(a.bookingTime || '12:00').replace(/[^0-9:]/g, '') || '12:00'}`) : NaN;
-      const dateB = b.bookingDate ? Date.parse(`${b.bookingDate}T${(b.bookingTime || '12:00').replace(/[^0-9:]/g, '') || '12:00'}`) : NaN;
-      if (!Number.isFinite(dateA)) return Number.isFinite(dateB) ? 1 : 0;
-      if (!Number.isFinite(dateB)) return -1;
+    return [...safeBookings].sort((a, b) => {
+      const dateA = parseLocalBookingDate(a.bookingDate, a.bookingTime)?.getTime() ?? Number.POSITIVE_INFINITY;
+      const dateB = parseLocalBookingDate(b.bookingDate, b.bookingTime)?.getTime() ?? Number.POSITIVE_INFINITY;
       return dateA - dateB;
     });
-  }, [bookings]);
+  }, [safeBookings]);
 
   const filteredBookings = useMemo(() => {
     switch (filter) {
@@ -61,17 +86,12 @@ export default function ProviderSchedule({
     };
 
     filteredBookings.forEach(b => {
-      if (!b.bookingDate) {
+      const parsedDate = parseLocalBookingDate(b.bookingDate, '12:00');
+      if (!parsedDate) {
         groups.Later.push(b);
         return;
       }
-      const parsedDate = Date.parse(b.bookingDate);
-      if (!Number.isFinite(parsedDate)) {
-        groups.Later.push(b);
-        return;
-      }
-      const bDate = new Date(parsedDate);
-      bDate.setHours(0, 0, 0, 0);
+      const bDate = new Date(parsedDate.getFullYear(), parsedDate.getMonth(), parsedDate.getDate());
 
       if (bDate.getTime() === today.getTime()) {
         groups.Today.push(b);
@@ -155,7 +175,7 @@ export default function ProviderSchedule({
                             {b.categoryName || 'Service Appointment'}
                           </b>
                           <span style={{ fontSize: '0.75rem', color: 'var(--color-neutral-500, #64748b)' }}>
-                            #{b.id.slice(-6)}
+                            #{String(b.id || '—').slice(-6)}
                           </span>
                           <StatusPill status={b.status} />
                         </div>
