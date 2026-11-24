@@ -19,17 +19,17 @@ export default function ProviderQuotes({
   // Extract all bookings that have quotes
   const quotesList = useMemo(() => {
     return bookings
-      .filter(b => b.quote && b.quote.amount)
+      .filter(b => b.quote && typeof b.quote === 'object')
       .map(b => ({
         bookingId: b.id,
         categoryName: b.categoryName || 'Service Request',
-        customerName: b.customerName,
-        bookingDate: b.bookingDate,
-        amount: Number(b.quote.amount),
+        customerName: b.customerName || 'Customer details unavailable',
+        bookingDate: b.bookingDate || 'Schedule unavailable',
+        amount: b.quote.amount !== null && b.quote.amount !== undefined && b.quote.amount !== '' && Number.isFinite(Number(b.quote.amount)) && Number(b.quote.amount) >= 0 ? Number(b.quote.amount) : null,
         description: b.quote.description,
         status: b.quote.status || 'pending',
         validUntil: b.quote.validUntil,
-        isExpired: b.quote.validUntil && Date.parse(b.quote.validUntil) <= Date.now()
+        isExpired: Boolean(b.quote.validUntil && Number.isFinite(Date.parse(b.quote.validUntil)) && Date.parse(b.quote.validUntil) <= Date.now())
       }));
   }, [bookings]);
 
@@ -47,7 +47,8 @@ export default function ProviderQuotes({
     }
   }, [filter, pendingQuotes, acceptedQuotes, expiredOrDeclined, quotesList]);
 
-  const totalQuotedValue = quotesList.reduce((sum, q) => sum + q.amount, 0);
+  const totalQuotedValue = quotesList.reduce((sum, q) => sum + (q.amount ?? 0), 0);
+  const quotesWithAmounts = quotesList.filter(q => q.amount !== null).length;
   const acceptanceRate = quotesList.length > 0
     ? Math.round((acceptedQuotes.length / quotesList.length) * 100)
     : 0;
@@ -83,7 +84,7 @@ export default function ProviderQuotes({
             <DollarSign size={15} color="#d97706" /> Total Quoted Volume
           </span>
           <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--color-warning-700, #b45309)', marginTop: 4 }}>
-            LKR {totalQuotedValue.toLocaleString()}
+            {quotesWithAmounts > 0 ? `LKR ${totalQuotedValue.toLocaleString('en-LK')}` : 'Not available'}
           </div>
         </Card>
       </div>
@@ -115,7 +116,7 @@ export default function ProviderQuotes({
                         {q.categoryName}
                       </b>
                       <span style={{ fontSize: '0.75rem', color: 'var(--color-neutral-500, #64748b)' }}>
-                        #{q.bookingId.slice(-6)}
+                        #{q.bookingId ? String(q.bookingId).slice(-6) : '—'}
                       </span>
                     </div>
                     <span style={{ fontSize: '0.8rem', color: 'var(--color-neutral-500, #64748b)' }}>
@@ -147,14 +148,14 @@ export default function ProviderQuotes({
                     <b>Scope of Work:</b> {q.description}
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, fontSize: '0.85rem' }}>
-                    <span>Total Quoted: <b style={{ fontSize: '1rem', color: 'var(--text-primary, #f8fafc)' }}>LKR {q.amount.toLocaleString()}</b></span>
+                    <span>Total Quoted: <b style={{ fontSize: '1rem', color: 'var(--text-primary, #f8fafc)' }}>{q.amount === null ? 'Amount unavailable' : `LKR ${q.amount.toLocaleString('en-LK')}`}</b></span>
 
                   </div>
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
                   <small style={{ color: 'var(--color-neutral-400, #94a3b8)', fontSize: '0.75rem' }}>
-                    {q.validUntil && Number.isFinite(Date.parse(q.validUntil)) ? `Valid until ${new Date(q.validUntil).toLocaleDateString()}` : 'Validity period not specified'}
+                    {q.validUntil && Number.isFinite(Date.parse(q.validUntil)) ? `Valid until ${new Date(q.validUntil).toLocaleDateString()}` : 'Validity period not available'}
                   </small>
                   <Button
                     variant="ghost"
