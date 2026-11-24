@@ -38,6 +38,7 @@ export default function AdminUsers({
   onDeleteUser,
   onResetPassword
 }) {
+  const users = Array.isArray(adminUsers) ? adminUsers.filter(user => user && typeof user === 'object') : [];
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
 
   useEffect(() => {
@@ -59,15 +60,12 @@ export default function AdminUsers({
 
   // Filter and sort logic
   const filteredUsers = useMemo(() => {
-    let result = adminUsers.filter(u => {
-      const q = searchQuery.toLowerCase().trim();
-      const matchQuery =
-        !q ||
-        u.fullName?.toLowerCase().includes(q) ||
-        u.email?.toLowerCase().includes(q) ||
-        u.phone?.toLowerCase().includes(q) ||
-        u.location?.toLowerCase().includes(q) ||
-        String(u.id).includes(q);
+    let result = users.filter(u => {
+      const q = String(searchQuery ?? '').toLowerCase().trim();
+      const searchable = [u.fullName, u.email, u.phone, u.location, u.id]
+        .filter(value => value !== null && value !== undefined)
+        .map(value => String(value).toLowerCase());
+      const matchQuery = !q || searchable.some(value => value.includes(q));
 
       const matchRole = roleFilter === 'all' || u.accountType === roleFilter || (Array.isArray(u.roles) && u.roles.includes(roleFilter));
       const matchStatus = statusFilter === 'all' || u.status === statusFilter;
@@ -88,10 +86,13 @@ export default function AdminUsers({
     });
 
     return result;
-  }, [adminUsers, searchQuery, roleFilter, statusFilter, sortField, sortDirection]);
+  }, [users, searchQuery, roleFilter, statusFilter, sortField, sortDirection]);
 
   // Pagination calculation
   const totalPages = Math.max(1, Math.ceil(filteredUsers.length / pageSize));
+  useEffect(() => {
+    setCurrentPage(page => Math.min(Math.max(1, page), totalPages));
+  }, [totalPages]);
   const paginatedUsers = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
     return filteredUsers.slice(start, start + pageSize);
@@ -107,7 +108,7 @@ export default function AdminUsers({
   }
 
   const roleOptions = [
-    { id: 'all', value: 'all', label: `All (${adminUsers.length})` },
+    { id: 'all', value: 'all', label: `All (${users.length})` },
     { id: 'customer', value: 'customer', label: 'Customers' },
     { id: 'provider', value: 'provider', label: 'Providers' },
     { id: 'driver', value: 'driver', label: 'Drivers' },
@@ -144,7 +145,7 @@ export default function AdminUsers({
           {/* Quick Stats Pill & Refresh */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <span style={{ fontSize: '0.82rem', color: 'var(--color-neutral-500, #64748b)' }}>
-              Showing <b>{filteredUsers.length}</b> of <b>{adminUsers.length}</b> accounts
+              Showing <b>{filteredUsers.length}</b> of <b>{users.length}</b> accounts
             </span>
             <Button variant="ghost" size="sm" onClick={onRefresh} loading={isLoadingUsers}>
               <RefreshCw size={14} /> Refresh
@@ -258,11 +259,11 @@ export default function AdminUsers({
                             fontSize: '0.88rem',
                             flexShrink: 0
                           }}>
-                            {user.fullName?.slice(0, 2).toUpperCase() || 'U'}
+                            {typeof user.fullName === 'string' ? user.fullName.slice(0, 2).toUpperCase() : 'U'}
                           </div>
                           <div>
                             <b style={{ color: 'var(--color-text, #0f172a)', fontSize: '0.92rem', display: 'block' }}>
-                              {user.fullName}
+                              {typeof user.fullName === 'string' && user.fullName.trim() ? user.fullName : 'Unnamed account'}
                             </b>
                             <span style={{ fontSize: '0.74rem', color: 'var(--color-neutral-400, #94a3b8)' }}>
                               #{user.id} · {user.email || 'No email registered'}
@@ -277,7 +278,7 @@ export default function AdminUsers({
                           variant={user.accountType === 'admin' ? 'warning' : user.accountType === 'provider' ? 'brand' : user.accountType === 'driver' ? 'accent' : 'neutral'}
                           dot={false}
                         >
-                          {[...new Set([user.accountType, ...(Array.isArray(user.roles) ? user.roles : [])])].filter(Boolean).map(role => role.toUpperCase()).join(' / ')}
+                          {[...new Set([user.accountType, ...(Array.isArray(user.roles) ? user.roles : [])])].filter(Boolean).map(role => String(role).toUpperCase()).join(' / ')}
                         </Badge>
                       </td>
 
@@ -285,7 +286,7 @@ export default function AdminUsers({
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600, color: 'var(--color-text, #1e293b)' }}>
                           <Phone size={13} color="#64748b" />
-                          <span>{user.phone}</span>
+                          <span>{user.phone || 'Phone not provided'}</span>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.75rem', color: 'var(--color-neutral-500, #64748b)', marginTop: 2 }}>
                           <MapPin size={12} color="#94a3b8" />
@@ -330,7 +331,7 @@ export default function AdminUsers({
                           {(isPending || isRejected) && (
                             <button
                               type="button"
-                              onClick={() => onUpdateStatus(user.id, 'active', user.fullName)}
+                              onClick={() => onUpdateStatus?.(user.id, 'active', user.fullName)}
                               style={{
                                 padding: '5px 8px',
                                 borderRadius: 'var(--radius-sm, 6px)',
@@ -491,7 +492,7 @@ export default function AdminUsers({
         isOpen={Boolean(deleteUser)}
         onClose={() => setDeleteUser(null)}
         onConfirm={(id, name) => {
-          onDeleteUser(id, name);
+          onDeleteUser?.(id, name);
           setDeleteUser(null);
         }}
       />
@@ -502,7 +503,7 @@ export default function AdminUsers({
         onClose={() => setSuspendConfirmUser(null)}
         onConfirm={() => {
           if (suspendConfirmUser) {
-            onUpdateStatus(suspendConfirmUser.id, 'rejected', suspendConfirmUser.fullName);
+            onUpdateStatus?.(suspendConfirmUser.id, 'rejected', suspendConfirmUser.fullName);
             setSuspendConfirmUser(null);
           }
         }}
