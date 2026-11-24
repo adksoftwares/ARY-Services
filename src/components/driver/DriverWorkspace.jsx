@@ -159,7 +159,7 @@ export default function DriverWorkspace({ onNotice }) {
     setPresenceBusy(true);
     setError('');
     try {
-      if (!navigator.geolocation) throw new Error('This device does not support GPS location.');
+      if (typeof navigator === 'undefined' || !navigator.geolocation) throw new Error('This device does not support GPS location.');
 
       const position = await new Promise((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(resolve, reject, {
@@ -190,7 +190,7 @@ export default function DriverWorkspace({ onNotice }) {
 
   // Live GPS tracking watcher while online (pings every 12-15 seconds)
   useEffect(() => {
-    if (!presence.online || !currentUser?.token || !navigator.geolocation) return undefined;
+    if (!presence.online || !currentUser?.token || typeof navigator === 'undefined' || !navigator.geolocation) return undefined;
     let lastSentAt = 0;
 
     const watchId = navigator.geolocation.watchPosition(async position => {
@@ -638,7 +638,13 @@ export default function DriverWorkspace({ onNotice }) {
       )}
 
       {/* Job Feed List */}
-      {availableJobs.length === 0 ? (
+      {loading && jobs.length === 0 ? (
+        <div role="status" aria-live="polite" style={{ display: 'grid', gap: 12, marginBottom: 24 }}>
+          <Skeleton height={132} />
+          <Skeleton height={132} />
+          <span style={{ color: 'var(--color-neutral-500, #64748b)', fontSize: '0.85rem' }}>Loading nearby dispatches…</span>
+        </div>
+      ) : availableJobs.length === 0 ? (
         <EmptyState
           icon={MapPin}
           title="No dispatches nearby right now"
@@ -650,7 +656,10 @@ export default function DriverWorkspace({ onNotice }) {
         <div style={{ display: 'grid', gap: '14px', marginBottom: '24px' }}>
           {availableJobs.map(job => {
             const Icon = job.serviceType === 'food_delivery' ? PackageCheck : job.serviceType === 'parcel_delivery' ? Package : Bike;
-            const fare = Number(job.fare) || Number(job.baseCharge) || 650;
+            const rawFare = job.fare ?? job.baseCharge;
+            const fare = rawFare !== null && rawFare !== undefined && rawFare !== '' && Number.isFinite(Number(rawFare)) && Number(rawFare) >= 0
+              ? Number(rawFare)
+              : null;
 
             return (
               <Card key={job.id} style={{ padding: '18px' }}>
@@ -677,8 +686,8 @@ export default function DriverWorkspace({ onNotice }) {
                     </div>
                   </div>
 
-                  <b style={{ fontSize: '1.05rem', color: 'var(--color-success-700, #047857)' }}>
-                    LKR {fare.toLocaleString()}
+                  <b style={{ fontSize: '1.05rem', color: fare === null ? 'var(--color-neutral-500, #64748b)' : 'var(--color-success-700, #047857)' }}>
+                    {fare === null ? 'Fare not provided' : `LKR ${fare.toLocaleString()}`}
                   </b>
                 </div>
 
@@ -738,7 +747,16 @@ export default function DriverWorkspace({ onNotice }) {
             return (
               <div
                 key={option.value}
+                role="checkbox"
+                aria-checked={isChecked}
+                tabIndex={0}
                 onClick={() => toggleService(option.value)}
+                onKeyDown={event => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    toggleService(option.value);
+                  }
+                }}
                 style={{
                   display: 'flex',
                   alignItems: 'flex-start',
