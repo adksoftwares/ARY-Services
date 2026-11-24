@@ -79,7 +79,7 @@ export default function MyBookingsList({
 
   const emptyTabDescriptions = {
     upcoming: 'You have no pending or accepted upcoming service appointments.',
-    in_progress: 'No technicians or trade specialists currently on-site or in transit.',
+    in_progress: 'No active service is currently marked as in progress.',
     completed: 'You haven\'t completed any service appointments yet.',
     cancelled: 'No cancelled or rejected service requests.',
     all: 'No booking history found.'
@@ -160,7 +160,7 @@ export default function MyBookingsList({
                 <div className="booking-details-grid">
                   <div className="detail-item">
                     <span className="detail-label">Provider</span>
-                    <span className="detail-val">{b.providerName || 'Assigned Provider'}</span>
+                    <span className="detail-val">{b.providerName || 'Awaiting provider assignment'}</span>
                   </div>
 
                   <div className="detail-item">
@@ -265,11 +265,6 @@ export default function MyBookingsList({
 
                 {/* Booking Footer Actions */}
                 <div className="booking-card-footer">
-                  <div className="booking-warranty-indicator">
-                    <ShieldCheck size={14} />
-                    <span>14-Day ARY Workmanship Protection</span>
-                  </div>
-
                   <div className="booking-action-buttons">
                     {/* Reschedule button for active bookings */}
                     {['requested', 'accepted'].includes(b.status) && (
@@ -343,7 +338,7 @@ export default function MyBookingsList({
         isOpen={Boolean(cancelTargetId)}
         onClose={() => setCancelTargetId(null)}
         title="Cancel Service Booking"
-        message="Are you sure you want to cancel this booking? The assigned provider will be notified immediately."
+        message="Are you sure you want to cancel this booking? The booking status will be updated if the cancellation is accepted."
         confirmLabel="Yes, Cancel Booking"
         isDanger={true}
         onConfirm={async () => {

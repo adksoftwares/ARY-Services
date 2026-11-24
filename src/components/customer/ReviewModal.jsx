@@ -77,7 +77,7 @@ export default function ReviewModal({ isOpen, onClose, booking, onSuccess, onRev
         <div>
           <b>Booking #{booking.id.slice(-6)} · {booking.providerName}</b>
           <p style={{ margin: '4px 0 0', fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
-            Your honest rating helps fellow Sri Lankan customers and rewards verified providers.
+            Your honest rating helps other customers understand the service experience.
           </p>
         </div>
 

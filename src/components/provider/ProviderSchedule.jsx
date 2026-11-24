@@ -22,8 +22,10 @@ export default function ProviderSchedule({
   // Sort bookings chronologically by date and time
   const sortedBookings = useMemo(() => {
     return [...bookings].sort((a, b) => {
-      const dateA = new Date(`${a.bookingDate || '2099-01-01'}T${(a.bookingTime || '12:00').replace(/[^0-9:]/g, '') || '12:00'}`);
-      const dateB = new Date(`${b.bookingDate || '2099-01-01'}T${(b.bookingTime || '12:00').replace(/[^0-9:]/g, '') || '12:00'}`);
+      const dateA = a.bookingDate ? Date.parse(`${a.bookingDate}T${(a.bookingTime || '12:00').replace(/[^0-9:]/g, '') || '12:00'}`) : NaN;
+      const dateB = b.bookingDate ? Date.parse(`${b.bookingDate}T${(b.bookingTime || '12:00').replace(/[^0-9:]/g, '') || '12:00'}`) : NaN;
+      if (!Number.isFinite(dateA)) return Number.isFinite(dateB) ? 1 : 0;
+      if (!Number.isFinite(dateB)) return -1;
       return dateA - dateB;
     });
   }, [bookings]);
@@ -63,7 +65,12 @@ export default function ProviderSchedule({
         groups.Later.push(b);
         return;
       }
-      const bDate = new Date(b.bookingDate);
+      const parsedDate = Date.parse(b.bookingDate);
+      if (!Number.isFinite(parsedDate)) {
+        groups.Later.push(b);
+        return;
+      }
+      const bDate = new Date(parsedDate);
       bDate.setHours(0, 0, 0, 0);
 
       if (bDate.getTime() === today.getTime()) {
@@ -91,7 +98,7 @@ export default function ProviderSchedule({
             Service Schedule & Appointments
           </h2>
           <p style={{ margin: '2px 0 0', fontSize: '0.82rem', color: 'var(--color-neutral-500, #64748b)' }}>
-            Chronological view of all assigned client appointments across Sri Lanka
+            A chronological view of appointments assigned to your provider account.
           </p>
         </div>
 
@@ -178,27 +185,31 @@ export default function ProviderSchedule({
                     }}>
                       <div>
                         <span style={{ color: 'var(--color-neutral-500, #64748b)', display: 'block', fontSize: '0.75rem' }}>Customer</span>
-                        <b>{b.customerName}</b>
+                        <b>{b.customerName || 'Customer details unavailable'}</b>
                       </div>
                       <div>
                         <span style={{ color: 'var(--color-neutral-500, #64748b)', display: 'block', fontSize: '0.75rem' }}>Phone</span>
-                        <a
-                          href={`tel:${b.customerPhone}`}
-                          style={{ color: 'var(--color-brand-600, #174d3d)', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}
-                        >
-                          <Phone size={12} /> {b.customerPhone}
-                        </a>
+                        {b.customerPhone ? (
+                          <a
+                            href={`tel:${b.customerPhone}`}
+                            style={{ color: 'var(--color-brand-600, #174d3d)', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                          >
+                            <Phone size={12} /> {b.customerPhone}
+                          </a>
+                        ) : <span style={{ color: 'var(--color-neutral-500, #64748b)' }}>Not provided</span>}
                       </div>
                       <div style={{ gridColumn: 'span 2' }}>
                         <span style={{ color: 'var(--color-neutral-500, #64748b)', display: 'block', fontSize: '0.75rem' }}>Service Address</span>
-                        <a
-                          href={`https://maps.google.com/?q=${encodeURIComponent(b.serviceAddress || 'Sri Lanka')}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{ color: 'var(--color-brand-700, #174d3d)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}
-                        >
-                          <MapPin size={12} /> {b.serviceAddress} <ExternalLink size={10} />
-                        </a>
+                        {b.serviceAddress ? (
+                          <a
+                            href={`https://maps.google.com/?q=${encodeURIComponent(b.serviceAddress)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ color: 'var(--color-brand-700, #174d3d)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                          >
+                            <MapPin size={12} /> {b.serviceAddress} <ExternalLink size={10} />
+                          </a>
+                        ) : <span style={{ color: 'var(--color-neutral-500, #64748b)' }}>Address not provided</span>}
                       </div>
                     </div>
 
@@ -243,7 +254,7 @@ export default function ProviderSchedule({
         <EmptyState
           icon={Calendar}
           title="No scheduled appointments found"
-          description="Your upcoming confirmed bookings will appear on this calendar timeline."
+          description="Appointments matching this filter will appear here when they are assigned to your account."
         />
       )}
     </div>
