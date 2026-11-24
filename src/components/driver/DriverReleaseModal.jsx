@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AlertTriangle, ArrowRight, X } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import { Modal, Button } from '../../design-system';
 
 const STANDARD_REASONS = [
@@ -17,13 +17,20 @@ export default function DriverReleaseModal({
 }) {
   const [selectedReason, setSelectedReason] = useState(STANDARD_REASONS[0]);
   const [customReason, setCustomReason] = useState('');
+  const [error, setError] = useState('');
 
   if (!isOpen) return null;
 
   async function handleConfirm() {
+    if (isReleasing || typeof onConfirm !== 'function') return;
     const finalReason = customReason.trim() ? `${selectedReason} - ${customReason.trim()}` : selectedReason;
-    await onConfirm(finalReason);
-    setCustomReason('');
+    setError('');
+    try {
+      await onConfirm(finalReason);
+      setCustomReason('');
+    } catch (err) {
+      setError(err?.message || 'The job could not be released. Please try again.');
+    }
   }
 
   return (
@@ -49,9 +56,9 @@ export default function DriverReleaseModal({
         }}>
           <AlertTriangle size={20} color="#d97706" style={{ flexShrink: 0, marginTop: 2 }} />
           <div>
-            <b>Immediate Re-Dispatch Notice</b>
+            <b>Release job confirmation</b>
             <p style={{ margin: '3px 0 0', fontSize: '0.8rem', color: 'var(--color-warning-800, #92400e)' }}>
-              Releasing this trip will immediately return it to the broadcast dispatch pool so another nearby driver can attend to the customer.
+              Releasing this job will submit the selected reason to ARY. Any reassignment or further dispatch action depends on the server workflow and job availability.
             </p>
           </div>
         </div>
@@ -102,12 +109,15 @@ export default function DriverReleaseModal({
           />
         </div>
 
+        {error && <div role="alert" style={{ color: 'var(--color-danger-700, #b91c1c)', fontSize: '0.82rem', marginBottom: 12 }}>{error}</div>}
+
         <div style={{ display: 'flex', gap: 10 }}>
           <Button
             variant="danger"
             size="lg"
             onClick={handleConfirm}
             loading={isReleasing}
+            disabled={isReleasing || typeof onConfirm !== 'function'}
             style={{ flex: 1, minHeight: 48, fontWeight: 700 }}
           >
             Confirm Release
