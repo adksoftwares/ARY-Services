@@ -20,6 +20,11 @@ import {
 } from 'lucide-react';
 import { Button, Badge, StatusPill, Tabs, Stepper, ConfirmDialog, Modal, Skeleton, EmptyState } from '../../design-system';
 
+function getLocalDateInputValue(date = new Date()) {
+  const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return localDate.toISOString().slice(0, 10);
+}
+
 export default function MyBookingsList({
   bookings = [],
   isLoading,
@@ -38,6 +43,7 @@ export default function MyBookingsList({
   const [newDate, setNewDate] = useState('');
   const [newTime, setNewTime] = useState('Morning (9 AM - 12 PM)');
   const [rescheduleBusy, setRescheduleBusy] = useState(false);
+  const [rescheduleError, setRescheduleError] = useState('');
 
   const TABS = [
     { id: 'upcoming', label: 'Upcoming', badge: bookings.filter(b => ['requested', 'accepted'].includes(b.status)).length },
@@ -67,11 +73,19 @@ export default function MyBookingsList({
   };
 
   async function handleConfirmReschedule() {
-    if (!rescheduleTarget || !newDate || !onRescheduleBooking) return;
+    if (rescheduleBusy || !rescheduleTarget || !onRescheduleBooking) return;
+    const today = getLocalDateInputValue();
+    if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(newDate) || newDate < today || !newTime) {
+      setRescheduleError('Choose a valid date from today onward and a time slot.');
+      return;
+    }
     setRescheduleBusy(true);
+    setRescheduleError('');
     try {
       await onRescheduleBooking(rescheduleTarget.id, newDate, newTime);
       setRescheduleTarget(null);
+    } catch (error) {
+      setRescheduleError(error?.message || 'Could not update the booking schedule. Please try again.');
     } finally {
       setRescheduleBusy(false);
     }
@@ -352,7 +366,7 @@ export default function MyBookingsList({
       {/* Reschedule Modal */}
       <Modal
         isOpen={Boolean(rescheduleTarget)}
-        onClose={() => setRescheduleTarget(null)}
+        onClose={() => { if (!rescheduleBusy) { setRescheduleTarget(null); setRescheduleError(''); } }}
         title="Reschedule Booking"
         isBottomSheet={true}
         footer={
@@ -360,21 +374,22 @@ export default function MyBookingsList({
             <Button variant="ghost" onClick={() => setRescheduleTarget(null)} disabled={rescheduleBusy} style={{ flex: 1 }}>
               Cancel
             </Button>
-            <Button variant="primary" onClick={handleConfirmReschedule} loading={rescheduleBusy} style={{ flex: 2 }}>
+            <Button variant="primary" onClick={handleConfirmReschedule} loading={rescheduleBusy} disabled={!newDate || rescheduleBusy} style={{ flex: 2 }}>
               Confirm New Schedule
             </Button>
           </div>
         }
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+          {rescheduleError && <div role="alert" aria-live="assertive" className="wizard-error-banner">{rescheduleError}</div>}
           <label className="wizard-form-label">
             <span>New Service Date *</span>
             <input
               type="date"
               className="ds-input"
               value={newDate}
-              onChange={e => setNewDate(e.target.value)}
-              min={new Date().toISOString().split('T')[0]}
+              onChange={e => { setNewDate(e.target.value); setRescheduleError(''); }}
+              min={getLocalDateInputValue()}
               required
             />
           </label>
