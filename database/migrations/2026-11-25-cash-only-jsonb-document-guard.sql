@@ -23,7 +23,11 @@ BEGIN
     END IF;
   ELSIF NEW.collection = 'grocery_orders' THEN
     new_items := CASE WHEN jsonb_typeof(NEW.payload) = 'array' THEN NEW.payload ELSE '[]'::jsonb END;
-    old_items := CASE WHEN TG_OP = 'UPDATE' AND jsonb_typeof(OLD.payload) = 'array' THEN OLD.payload ELSE '[]'::jsonb END;
+    IF TG_OP = 'UPDATE' THEN
+      old_items := CASE WHEN jsonb_typeof(OLD.payload) = 'array' THEN OLD.payload ELSE '[]'::jsonb END;
+    ELSE
+      old_items := '[]'::jsonb;
+    END IF;
     FOR item IN SELECT value FROM jsonb_array_elements(new_items) AS rows(value) LOOP
       SELECT value INTO previous_item
       FROM jsonb_array_elements(old_items) AS rows(value)
@@ -39,7 +43,11 @@ BEGIN
     END LOOP;
   ELSIF NEW.collection = 'driver-services' THEN
     new_items := CASE WHEN jsonb_typeof(NEW.payload->'jobs') = 'array' THEN NEW.payload->'jobs' ELSE '[]'::jsonb END;
-    old_items := CASE WHEN TG_OP = 'UPDATE' AND jsonb_typeof(OLD.payload->'jobs') = 'array' THEN OLD.payload->'jobs' ELSE '[]'::jsonb END;
+    IF TG_OP = 'UPDATE' THEN
+      old_items := CASE WHEN jsonb_typeof(OLD.payload->'jobs') = 'array' THEN OLD.payload->'jobs' ELSE '[]'::jsonb END;
+    ELSE
+      old_items := '[]'::jsonb;
+    END IF;
     FOR item IN SELECT value FROM jsonb_array_elements(new_items) AS rows(value) LOOP
       SELECT value INTO previous_item
       FROM jsonb_array_elements(old_items) AS rows(value)
