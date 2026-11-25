@@ -342,8 +342,8 @@ app.patch('/api/notifications/:id/read', requireAuth, async (req, res) => {
   }
 });
 
-registerDriverServiceRoutes(app, { requireAuth, requireAdmin, broadcastEvent: publishEvent, getBookings, getUsers, updateUser });
-registerRoleAccessRoutes(app, { requireAuth, requireAdmin, getUsers, updateUser, generateToken, broadcastEvent: publishEvent });
+registerDriverServiceRoutes(app, { requireAuth, requireAdmin, broadcastEvent: publishEvent, getBookings, getUsers, updateUser, recordAdminAudit });
+registerRoleAccessRoutes(app, { requireAuth, requireAdmin, getUsers, updateUser, generateToken, broadcastEvent: publishEvent, recordAdminAudit });
 registerGroceryRoutes(app, { requireAuth, broadcastEvent: publishEvent, getUsers, createGroceryOrderDeliveryJob, cancelGroceryOrderDeliveryJob, isAdminAuthorized: isDesignatedSuperAdmin });
 
 // Initialize atomic file storage on boot
