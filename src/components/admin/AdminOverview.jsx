@@ -76,9 +76,9 @@ export default function AdminOverview({
   const areaD = `${pathD} L ${coordinates[coordinates.length - 1].x} ${svgHeight - padding} L ${coordinates[0].x} ${svgHeight - padding} Z`;
 
   return (
-    <div style={{ display: 'grid', gap: '20px' }}>
+    <div className="admin-overview-workspace" style={{ display: 'grid', gap: '20px' }}>
       {/* 1. KPI Metric Cards Grid */}
-      <div className="admin-kpi-grid">
+      <div className="admin-kpi-grid admin-overview-kpis">
         {/* Total Users */}
         <div
           className="admin-kpi-card interactive"
