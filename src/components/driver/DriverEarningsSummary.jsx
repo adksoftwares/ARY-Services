@@ -8,6 +8,7 @@ import {
   Clock,
   MapPin,
   Calendar,
+  Search,
   Navigation,
   ArrowUpRight
 } from 'lucide-react';
@@ -18,6 +19,7 @@ export default function DriverEarningsSummary({
   presence
 }) {
   const [historyFilter, setHistoryFilter] = useState('all'); // 'all' | 'ride' | 'food_delivery' | 'parcel_delivery'
+  const [historySearch, setHistorySearch] = useState('');
 
   const safeCompletedJobs = useMemo(() => (Array.isArray(completedJobs) ? completedJobs : []).filter(job =>
     job && typeof job === 'object' && job.id !== null && job.id !== undefined && String(job.id).trim() !== ''
@@ -28,9 +30,14 @@ export default function DriverEarningsSummary({
     return sum + (Number.isFinite(fare) && fare >= 0 ? fare : 0);
   }, 0), [safeCompletedJobs]);
   const filteredHistory = useMemo(() => {
-    if (historyFilter === 'all') return safeCompletedJobs;
-    return safeCompletedJobs.filter(job => job.serviceType === historyFilter);
-  }, [safeCompletedJobs, historyFilter]);
+    const query = historySearch.trim().toLocaleLowerCase();
+    return safeCompletedJobs.filter(job => {
+      const matchesType = historyFilter === 'all' || job.serviceType === historyFilter;
+      const searchable = [job.id, job.pickupAddress, job.destinationAddress, job.serviceType, job.createdAt, job.updatedAt]
+        .filter(value => value !== null && value !== undefined).join(' ').toLocaleLowerCase();
+      return matchesType && (!query || searchable.includes(query));
+    });
+  }, [safeCompletedJobs, historyFilter, historySearch]);
 
   return (
     <div className="driver-earnings-container" style={{ display: 'grid', gap: '16px', marginBottom: '20px' }}>
@@ -148,6 +155,15 @@ export default function DriverEarningsSummary({
                 onChange={setHistoryFilter}
               />
             </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, flex: '1 1 220px', minWidth: 0, minHeight: 42, padding: '0 11px', border: '1px solid var(--color-border, #cbd5e1)', borderRadius: 9, background: 'var(--color-surface, #fff)' }}>
+              <Search size={15} aria-hidden="true" style={{ color: 'var(--color-neutral-500, #64748b)', flexShrink: 0 }} />
+              <input type="search" value={historySearch} onChange={event => setHistorySearch(event.target.value)} placeholder="Search trip, route or reference" aria-label="Search completed trip history" style={{ width: '100%', minWidth: 0, border: 0, outline: 0, background: 'transparent', color: 'var(--color-neutral-900, #0f172a)', font: 'inherit', fontSize: '0.84rem' }} />
+            </label>
+            {historySearch && <button type="button" onClick={() => setHistorySearch('')} style={{ minHeight: 38, border: 0, borderRadius: 8, padding: '7px 10px', background: 'var(--color-brand-50, #edf7f2)', color: 'var(--color-brand-700, #174d3d)', fontWeight: 700, cursor: 'pointer' }}>Clear</button>}
+            <span aria-live="polite" style={{ color: 'var(--color-neutral-500, #64748b)', fontSize: '0.76rem' }}>{filteredHistory.length} matching trips</span>
           </div>
 
           {filteredHistory.length > 0 ? (
