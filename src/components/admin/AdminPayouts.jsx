@@ -29,6 +29,8 @@ export default function AdminPayouts({
   const [previewLoading, setPreviewLoading] = useState(true);
   const [previewError, setPreviewError] = useState('');
   const [recordingProviderId, setRecordingProviderId] = useState(null);
+  const [payoutSearch, setPayoutSearch] = useState('');
+  const [payoutFilter, setPayoutFilter] = useState('all');
   const minThreshold = 1000;
 
   async function loadPayoutPreview() {
@@ -67,6 +69,14 @@ export default function AdminPayouts({
   const pendingSettlements = preview.candidates || [];
   const eligibleSettlements = pendingSettlements.filter(item => item.balance >= minThreshold && item.bankDetailsComplete);
   const totalEligibleAmount = eligibleSettlements.reduce((sum, item) => sum + item.balance, 0);
+  const normalizedPayoutSearch = payoutSearch.trim().toLowerCase();
+  const visibleSettlements = pendingSettlements.filter(item => {
+    const searchable = [item.providerId, item.fullName, item.phone, item.bankName, item.bankBranch, item.accountHolderName, item.accountNumber, item.status, item.balance]
+      .filter(value => value !== null && value !== undefined).join(' ').toLowerCase();
+    const matchesSearch = !normalizedPayoutSearch || searchable.includes(normalizedPayoutSearch);
+    const matchesFilter = payoutFilter === 'all' || (payoutFilter === 'ready' ? item.balance >= minThreshold && item.bankDetailsComplete : payoutFilter === 'missing' ? !item.bankDetailsComplete : item.bankDetailsComplete && item.balance < minThreshold);
+    return matchesSearch && matchesFilter;
+  });
 
   // Client-side CSV Export for manual bank transfer instructions
   function handleExportCsv() {
@@ -284,6 +294,17 @@ export default function AdminPayouts({
           </span>
         </div>
 
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(220px, 1fr) minmax(170px, 220px) auto', gap: 10, alignItems: 'end', padding: '14px 20px', borderBottom: '1px solid var(--color-border-subtle, #e2e8f0)' }}>
+          <label style={{ display: 'grid', gap: 5, fontSize: '0.75rem', color: 'var(--color-neutral-600, #475569)' }}>Search provider or bank details
+            <input value={payoutSearch} onChange={event => setPayoutSearch(event.target.value)} placeholder="Name, phone, bank, account, reference…" aria-label="Search provider wallet balances" style={{ width: '100%', minWidth: 0, boxSizing: 'border-box', padding: '9px 11px', border: '1px solid var(--color-border, #cbd5e1)', borderRadius: 8, background: 'var(--color-surface, #fff)', color: 'var(--color-text, #0f172a)' }} />
+          </label>
+          <label style={{ display: 'grid', gap: 5, fontSize: '0.75rem', color: 'var(--color-neutral-600, #475569)' }}>Wallet status
+            <select value={payoutFilter} onChange={event => setPayoutFilter(event.target.value)} aria-label="Filter provider wallets" style={{ width: '100%', padding: '9px 11px', border: '1px solid var(--color-border, #cbd5e1)', borderRadius: 8, background: 'var(--color-surface, #fff)', color: 'var(--color-text, #0f172a)' }}>
+              <option value="all">All wallets</option><option value="ready">Ready for transfer</option><option value="missing">Missing bank details</option><option value="below">Below minimum balance</option>
+            </select>
+          </label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-end' }}><span aria-live="polite" style={{ fontSize: '0.78rem', color: 'var(--color-neutral-600, #475569)', whiteSpace: 'nowrap' }}>{visibleSettlements.length} of {pendingSettlements.length} shown</span>{(payoutSearch || payoutFilter !== 'all') && <Button size="sm" variant="ghost" onClick={() => { setPayoutSearch(''); setPayoutFilter('all'); }}>Clear</Button>}</div>
+        </div>
         <div style={{ overflowX: 'auto' }}>
           <table className="admin-table">
             <thead>
@@ -303,8 +324,10 @@ export default function AdminPayouts({
                     {previewLoading ? 'Loading provider wallet balances…' : previewError ? 'Wallet balances could not be loaded. Retry the preview above.' : 'No contractor balances currently eligible for payout.'}
                   </td>
                 </tr>
+              ) : visibleSettlements.length === 0 ? (
+                <tr><td colSpan={6} style={{ padding: '32px', textAlign: 'center', color: '#64748b' }}>No wallets match this search or status filter. <button type="button" onClick={() => { setPayoutSearch(''); setPayoutFilter('all'); }} style={{ marginLeft: 6, border: 0, background: 'transparent', color: 'var(--color-brand-700, #174d3d)', cursor: 'pointer', fontWeight: 700 }}>Clear filters</button></td></tr>
               ) : (
-                pendingSettlements.map((item, index) => (
+                visibleSettlements.map((item, index) => (
                   <tr key={item.providerId ?? `provider-${index}`}>
                     <td>
                       <b style={{ color: 'var(--color-text, #0f172a)', display: 'block' }}>{item.fullName}</b>
