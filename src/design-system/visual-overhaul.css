@@ -1190,3 +1190,98 @@ button { -webkit-tap-highlight-color: transparent; }
 @media (max-width: 390px) {
   .driver-earnings-container > div:first-child { grid-template-columns: 1fr; }
 }
+
+
+/* Field-work refinement — driver dispatch clarity and touch ergonomics */
+.driver-workspace-container { width: min(100%, 1180px); }
+.driver-master-switch-card {
+  position: relative; isolation: isolate; overflow: hidden;
+  display: flex; flex-direction: column; gap: 4px;
+  padding: clamp(19px, 3vw, 28px);
+  border: 1px solid #dfe8df; border-radius: 20px;
+  background: linear-gradient(135deg,#fff 0%,#f2f7f1 100%);
+  box-shadow: 0 10px 28px rgba(23,55,39,.055);
+}
+.driver-master-switch-card::after {
+  content: ""; position: absolute; z-index: -1; width: 220px; height: 220px;
+  right: -95px; top: -125px; border: 1px solid rgba(42,111,69,.12);
+  border-radius: 50%; box-shadow: 0 0 0 25px rgba(42,111,69,.035),0 0 0 52px rgba(42,111,69,.025);
+}
+.driver-master-switch-card.online {
+  background: linear-gradient(125deg,#174d3d 0%,#1e6446 65%,#2b7651 100%);
+  border-color: #245e43; box-shadow: 0 14px 32px rgba(20,77,48,.17);
+}
+.driver-master-switch-card.online::after { border-color: rgba(255,255,255,.18); box-shadow: 0 0 0 25px rgba(255,255,255,.035),0 0 0 52px rgba(255,255,255,.025); }
+.driver-giant-power-btn {
+  width: 100%; min-height: 58px; display: inline-flex; align-items: center;
+  justify-content: center; gap: 10px; border: 1px solid transparent;
+  border-radius: 13px; font-size: 14px; font-weight: 800; letter-spacing: .015em;
+  transition: transform .18s,box-shadow .18s,background .18s;
+}
+.driver-giant-power-btn.go-online { color: #fff; background: #174d3d; box-shadow: 0 8px 18px rgba(23,77,61,.18); }
+.driver-giant-power-btn.go-offline { color: #174d3d; background: #fff; border-color: rgba(255,255,255,.35); }
+.driver-giant-power-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 11px 22px rgba(15,55,31,.18); }
+.driver-giant-power-btn:disabled { opacity: .62; cursor: wait; }
+.driver-switch-beacon { width: 9px; height: 9px; flex: 0 0 9px; border-radius: 50%; background: #a5adb0; }
+.driver-switch-beacon.online { background: #8ce0a7; box-shadow: 0 0 0 5px rgba(140,224,167,.15); }
+.driver-switch-beacon.offline { background: #a1aaa3; }
+.gps-status-chip { display: inline-flex; align-items: center; gap: 7px; padding: 7px 10px; border: 1px solid #e0e9e0; border-radius: 999px; background: #fff; color: #52675a; font-size: 11px; font-weight: 750; }
+.gps-status-chip.good, .gps-status-chip.fresh { color: #1f7044; background: #edf7ef; border-color: #d4e9d8; }
+.gps-status-chip.stale, .gps-status-chip.warning { color: #94621c; background: #fff8e9; border-color: #f0e1bd; }
+.driver-active-hud-card { display: grid; gap: 16px; margin-top: 18px; }
+.driver-active-top-bar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.driver-route-container { display: grid; gap: 15px; }
+.driver-route-point { display: grid; grid-template-columns: 20px minmax(0,1fr); align-items: start; gap: 10px; min-width: 0; }
+.driver-route-point > div { min-width: 0; overflow-wrap: anywhere; }
+.driver-quick-actions-bar { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
+.driver-quick-icon-btn {
+  min-width: 0; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 11px 13px; border: 1px solid #dfe8df; border-radius: 11px;
+  background: #fff; color: #28553a; font-size: 12px; font-weight: 750;
+  text-decoration: none; transition: border-color .18s,background .18s,transform .18s;
+}
+.driver-quick-icon-btn:hover:not(.is-unavailable) { border-color: #a9c8ae; background: #f3f8f2; transform: translateY(-1px); }
+.driver-quick-icon-btn.is-unavailable { color: #89958c; background: #f3f5f2; cursor: not-allowed; }
+.driver-field-action-btn { display: inline-flex; align-items: center; justify-content: center; gap: 9px; padding: 12px 16px; font-weight: 800; }
+.driver-field-action-btn:disabled { opacity: .6; cursor: wait; }
+.driver-workspace-container button:focus-visible,
+.driver-workspace-container a:focus-visible,
+.provider-layout-body button:focus-visible,
+.admin-layout button:focus-visible,
+.admin-layout a:focus-visible {
+  outline: 3px solid rgba(64,139,83,.48); outline-offset: 3px;
+}
+.driver-workspace-container button:disabled { cursor: not-allowed; }
+.driver-workspace-container [role="alert"] { border-radius: 12px; }
+.driver-workspace-container .ds-card,
+.driver-workspace-container .driver-job-card { min-width: 0; }
+.driver-workspace-container .driver-job-card { border: 1px solid #e1e9e0; border-radius: 15px; box-shadow: 0 5px 17px rgba(23,55,39,.04); }
+[data-theme="dark"] .driver-master-switch-card:not(.online) { background: linear-gradient(135deg,#142219,#182b1e); border-color: #304535; }
+[data-theme="dark"] .driver-route-container,
+[data-theme="dark"] .driver-quick-icon-btn { background: #17251b; border-color: #304434; color: #dce9de; }
+[data-theme="dark"] .driver-quick-icon-btn.is-unavailable { background: #111b14; color: #849487; }
+[data-theme="dark"] .gps-status-chip { background: #17251b; border-color: #304434; color: #c8d9ca; }
+[data-theme="dark"] .gps-status-chip.good,
+[data-theme="dark"] .gps-status-chip.fresh { background: #183322; border-color: #315a3b; color: #a9ddb4; }
+@media (max-width: 640px) {
+  .driver-master-switch-card { padding: 17px; border-radius: 16px; }
+  .driver-giant-power-btn { min-height: 56px; }
+  .driver-active-hud-card { gap: 13px; }
+  .driver-quick-actions-bar { grid-template-columns: 1fr 1fr; }
+  .driver-quick-icon-btn { min-height: 46px; padding: 9px 7px; font-size: 11px; }
+  .driver-field-action-btn { min-height: 50px; }
+}
+@media (max-width: 360px) {
+  .driver-quick-actions-bar { grid-template-columns: 1fr; }
+}
+
+/* Consistent keyboard focus and readable controls across all ARY workspaces */
+:where(button,a,input,select,textarea,[tabindex]):focus-visible {
+  outline: 3px solid rgba(55,126,76,.42);
+  outline-offset: 2px;
+}
+:where(button,input,select,textarea):disabled { cursor: not-allowed; }
+:where(input,select,textarea) { accent-color: #28734a; }
+@media (forced-colors: active) {
+  :where(button,a,input,select,textarea,[tabindex]):focus-visible { outline: 2px solid Highlight; }
+}
