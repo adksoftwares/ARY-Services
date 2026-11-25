@@ -31,7 +31,7 @@ export default function AdminCashPayments({ records = [], summary = {}, isLoadin
   }, [safeRecords, query, filter]);
 
   return (
-    <div style={{ display: 'grid', gap: 18 }}>
+    <div className="admin-cash-reconciliation-view" style={{ display: 'grid', gap: 18 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
         <div>
           <h2 style={{ margin: 0, fontSize: '1.2rem', color: 'var(--color-neutral-900, #0f172a)' }}>Cash Payment Reconciliation</h2>
