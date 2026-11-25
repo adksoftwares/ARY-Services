@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { API_BASE } from '../../config';
+import { useAuth } from '../../context/AuthContext';
 import {
   ShieldCheck,
   FileText,
@@ -26,10 +28,40 @@ export default function AdminKycModal({
   onClose,
   onUpdateStatus
 }) {
+  const { currentUser } = useAuth();
   const [selectedDoc, setSelectedDoc] = useState('');
+  const [kycDocuments, setKycDocuments] = useState({ nicDocument: null, tradeCertificate: null });
+  const [documentsLoading, setDocumentsLoading] = useState(false);
+  const [documentsError, setDocumentsError] = useState('');
   const [rejectReasonOpen, setRejectReasonOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen || !user?.id || !currentUser?.token) {
+      setKycDocuments({ nicDocument: null, tradeCertificate: null });
+      setDocumentsError('');
+      return undefined;
+    }
+    const controller = new AbortController();
+    setDocumentsLoading(true);
+    setDocumentsError('');
+    setKycDocuments({ nicDocument: null, tradeCertificate: null });
+    fetch(`${API_BASE}/admin/users/${encodeURIComponent(user.id)}/kyc-documents`, {
+      headers: { Authorization: `Bearer ${currentUser.token}` },
+      signal: controller.signal,
+      cache: 'no-store'
+    }).then(async response => {
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Could not load applicant documents.');
+      setKycDocuments({ nicDocument: data.nicDocument || null, tradeCertificate: data.tradeCertificate || null });
+    }).catch(error => {
+      if (error.name !== 'AbortError') setDocumentsError(error.message || 'Could not load applicant documents.');
+    }).finally(() => {
+      if (!controller.signal.aborted) setDocumentsLoading(false);
+    });
+    return () => controller.abort();
+  }, [isOpen, user?.id, currentUser?.token]);
 
   if (!isOpen || !user) return null;
 
@@ -38,19 +70,19 @@ export default function AdminKycModal({
   const isRejected = user.status === 'rejected';
 
   const documents = [
-    ...(user.nicDocument ? [{
+    ...(kycDocuments.nicDocument ? [{
       id: 'nic_document',
       title: 'NIC Document',
       category: 'Identity',
       icon: CreditCard,
-      data: user.nicDocument
+      data: kycDocuments.nicDocument
     }] : []),
-    ...(user.tradeCertificate ? [{
+    ...(kycDocuments.tradeCertificate ? [{
       id: 'trade_certificate',
       title: user.accountType === 'driver' ? 'Driving / Professional Licence' : 'Trade Certificate / Qualification',
       category: user.accountType === 'driver' ? 'Driver Credential' : 'Professional Credential',
       icon: user.accountType === 'driver' ? Truck : Award,
-      data: user.tradeCertificate
+      data: kycDocuments.tradeCertificate
     }] : [])
   ];
   const currentDoc = documents.find(document => document.id === selectedDoc) || documents[0] || null;
@@ -164,6 +196,7 @@ export default function AdminKycModal({
               Submitted Documents ({documents.length})
             </span>
 
+            {documentsLoading ? <p role="status">Loading private documents…</p> : documentsError ? <p role="alert" style={{ color: 'var(--color-danger-700, #b91c1c)' }}>{documentsError}</p> : documents.length === 0 ? <p style={{ color: 'var(--color-neutral-500, #64748b)' }}>No identity or professional documents were submitted.</p> : null}
             {documents.map((doc) => {
               const Icon = doc.icon;
               const isSelected = currentDoc?.id === doc.id;
