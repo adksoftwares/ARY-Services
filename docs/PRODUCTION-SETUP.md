@@ -15,6 +15,7 @@ Configure these values in the backend hosting provider's secret/environment sett
 | `PGSSL` | Provider-dependent | Set `true` when the database requires TLS |
 | `CLIENT_ORIGIN` | Yes | Exact HTTPS origin(s) of the deployed browser app, comma-separated |
 | `JWT_SECRET` | Yes | Unique random secret, minimum 32 bytes |
+| `SESSION_TTL_DAYS` | Optional | Session lifetime in days (1–30, default 30) |
 | `OTP_SHIELD_SECRET` | Yes | Separate unique random secret, minimum 32 bytes |
 | `ADMIN_NAME` | Recommended | Initial Super Admin display name |
 | `ADMIN_EMAIL` | Yes for bootstrap | Initial Super Admin email |
