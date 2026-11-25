@@ -80,9 +80,9 @@ export default function AdminNotifications({
   const eventIcons = { kyc: ShieldCheck, dispute: Scale, payout: Wallet, account: UserRound };
 
   return (
-    <div style={{ display: 'grid', gap: '16px' }}>
+    <div className="admin-audit-workspace" style={{ display: 'grid', gap: '16px' }}>
       {/* 1. Header Card */}
-      <Card style={{ padding: '16px 20px' }}>
+      <Card className="admin-audit-header" style={{ padding: '16px 20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14 }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -96,7 +96,7 @@ export default function AdminNotifications({
             </p>
           </div>
 
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          <div className="admin-audit-filter-bar" style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             <Button size="sm" variant="outline" onClick={() => setRefreshCount(value => value + 1)} loading={auditLoading}>Refresh audit log</Button>
             {[
               { id: 'all', label: 'ALL EVENTS' },
@@ -130,7 +130,7 @@ export default function AdminNotifications({
 
       {auditError && <div role="alert" style={{ padding: '10px 12px', borderRadius: 8, background: 'var(--color-danger-50, #fef2f2)', color: 'var(--color-danger-700, #b91c1c)' }}>{auditError}</div>}
       {auditLoading && <p role="status" style={{ color: 'var(--color-neutral-500, #64748b)', fontSize: '0.82rem' }}>Loading persistent audit events…</p>}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+      <div className="admin-audit-search-row" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
         <label style={{ display: 'flex', alignItems: 'center', gap: 8, flex: '1 1 260px', minWidth: 0, minHeight: 44, padding: '0 12px', border: '1px solid var(--color-border, #cbd5e1)', borderRadius: 10, background: 'var(--color-surface, #fff)' }}>
           <Search size={16} aria-hidden="true" style={{ color: 'var(--color-neutral-500, #64748b)', flexShrink: 0 }} />
           <input type="search" value={searchQuery} onChange={event => setSearchQuery(event.target.value)} placeholder="Search activity, description or destination" aria-label="Search admin session activity" style={{ width: '100%', minWidth: 0, border: 0, outline: 0, background: 'transparent', color: 'var(--color-neutral-900, #0f172a)', font: 'inherit', fontSize: '0.88rem' }} />
@@ -140,7 +140,7 @@ export default function AdminNotifications({
       </div>
 
       {/* 2. Audit Trail Feed */}
-      <Card style={{ padding: '20px' }}>
+      <Card className="admin-audit-feed" style={{ padding: '20px' }}>
         {filteredEvents.length === 0 ? (
           <EmptyState
             icon={Bell}
