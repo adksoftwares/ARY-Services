@@ -19,3 +19,16 @@
 - Integrated 62 upstream pull requests covering provider catalog, admin dispatch/payout/dispute hardening, customer booking validation, grocery marketplace cart/order reliability, and driver workspace safeguards.
 - Synchronized `upgrade/10-phase-platform-hardening` with `main` and pushed to remote `origin`.
 - Passed all unit tests (`vitest run`: 23/23 passed), security regression check, and builds for all 4 monorepo apps (`customer`, `provider`, `driver`, `admin-dashboard`).
+
+## 2026-11-25 — Synced 48 Upstream Commits from GitHub (PRs #134–#167 & Upstream Hardening)
+- Fetched and pulled latest updates from `origin/main` (commits up to `1709ec0`).
+- Integrated 48 upstream pull requests and security/architecture enhancements:
+  - Role dashboard page redesigns (Customer, Provider, Driver, Admin) with visual overhaul and human refinements (#134-#149).
+  - Cash-only service booking settlement, ledger transitions, and payment guards (#150-#155, #160).
+  - Atomic PostgreSQL / persistent storage transactions for grocery stock reservation, order creation, cancellation, and driver cash receipts (#159, #165, #166).
+  - Persistent Admin audit logging (`/api/admin/audit-log`) for sensitive governance operations (#162).
+  - Secure KYC document retrieval endpoint (`/api/admin/users/:id/kyc-documents`) protecting sensitive credentials (#157).
+  - Session TTL enforcement and multi-instance distributed OTP / security rate limiting (#154, #158).
+  - Android network security configuration hardening across all mobile targets (#167).
+- Reconciled React 18.3.1 peer dependency alignment in `package.json`.
+- Verified quality gates: Vitest 23/23 tests passed, security regression check passed, root Vite build passed, all 4 monorepo app builds passed, and backend persistence/security tests passed.

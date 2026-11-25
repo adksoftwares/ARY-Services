@@ -4,7 +4,7 @@
 
 ### Active Git Branch
 - Branch: `upgrade/10-phase-platform-hardening`
-- Synced With: `origin/upgrade/10-phase-platform-hardening` and merged with `origin/main`
+- Synced With: `origin/main` (commit `1709ec0`) and `origin/upgrade/10-phase-platform-hardening`
 
 ### Completed Milestones
 1. **Network Error Resilience**: Resolved Capacitor `Failed to fetch` by ensuring all client endpoints use `${API_BASE}`, eliminating bare `/api` and double `/api/api` calls.
@@ -15,3 +15,7 @@
    - `npm run ci:quality` (Vitest 23 passed, Security regression passed, Vite build passed).
    - Sub-app builds: `@ary/customer`, `@ary/provider`, `@ary/driver`, `@ary/admin-dashboard` all built cleanly.
    - Server integration & security suites passed.
+6. **Synced Upstream Commits (PRs #134–#167)**:
+   - Fast-forwarded and merged 48 commits from `origin/main` into local branches.
+   - Verified atomic grocery stock mutations, persistent admin audit trail, isolated KYC documents, cash-only settlement guards, and Android network security hardening.
+   - Re-verified all builds and backend test suites cleanly.
