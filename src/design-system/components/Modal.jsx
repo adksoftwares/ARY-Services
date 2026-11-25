@@ -4,6 +4,7 @@ import { IconButton } from './IconButton';
 
 let bodyLockCount = 0;
 let previousBodyOverflow = '';
+const modalStack = [];
 
 function lockBodyScroll() {
   if (typeof document === 'undefined') return;
@@ -49,6 +50,7 @@ export function Modal({
     const dialog = dialogRef.current;
     const previouslyFocused = document.activeElement;
     lockBodyScroll();
+    modalStack.push(dialog);
 
     const focusableElements = () => dialog
       ? Array.from(dialog.querySelectorAll(FOCUSABLE_SELECTOR))
@@ -56,6 +58,7 @@ export function Modal({
       : [];
 
     const handleKeyDown = (event) => {
+      if (modalStack[modalStack.length - 1] !== dialog) return;
       if (event.key === 'Escape') {
         event.preventDefault();
         onCloseRef.current?.();
@@ -89,6 +92,8 @@ export function Modal({
 
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
+      const stackIndex = modalStack.lastIndexOf(dialog);
+      if (stackIndex !== -1) modalStack.splice(stackIndex, 1);
       unlockBodyScroll();
       if (previouslyFocused && typeof previouslyFocused.focus === 'function' && document.contains(previouslyFocused)) {
         previouslyFocused.focus();
