@@ -36,7 +36,7 @@ export default function AdminDisputes({
     const searchable = [booking.id, booking.categoryName, booking.customerName, booking.customerPhone, booking.providerName, booking.providerPhone, booking.serviceAddress, booking.bookingDate, booking.bookingTime, booking.disputeReason, booking.dispute?.reason, booking.disputeEvidence, booking.paymentStatus]
       .filter(value => value !== null && value !== undefined).join(' ').toLowerCase();
     const matchesSearch = !normalizedDisputeSearch || searchable.includes(normalizedDisputeSearch);
-    const matchesCash = cashFilter === 'all' || (cashFilter === 'collected' ? booking.paymentStatus === 'cash_collected' : booking.paymentStatus !== 'cash_collected');
+    const matchesCash = cashFilter === 'all' || (cashFilter === 'collected' ? booking.paymentStatus === 'cash_collected' : ['pending_cash', 'pending_quote'].includes(booking.paymentStatus));
     return matchesSearch && matchesCash;
   });
 
