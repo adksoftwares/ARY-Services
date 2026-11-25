@@ -1531,3 +1531,33 @@ textarea { min-height: 96px; }
 @media(max-width:380px){.driver-quick-actions-bar{grid-template-columns:1fr}}
 [data-theme="dark"] .driver-active-dispatch{background:linear-gradient(145deg,#17251d 0%,#1b2b21 100%);border-color:#385444}
 [data-theme="dark"] .driver-route-point,[data-theme="dark"] .driver-quick-icon-btn{background:#1b2a21;border-color:#3a4d40;color:#d7e9dc}
+
+
+/* Admin audit activity: readable event hierarchy and practical filtering on mobile. */
+.admin-audit-workspace{min-width:0}
+.admin-audit-header,.admin-audit-feed{min-width:0;border:1px solid var(--ary-line);border-radius:17px;background:var(--ary-surface);box-shadow:var(--ary-shadow-card)}
+.admin-audit-header h3{letter-spacing:-.02em}
+.admin-audit-filter-bar{max-width:100%;align-items:center}
+.admin-audit-filter-bar button{min-height:34px;white-space:nowrap;transition:background .15s ease,border-color .15s ease}
+.admin-audit-search-row{min-width:0}
+.admin-audit-search-row label:focus-within{border-color:var(--ary-green)!important;box-shadow:0 0 0 3px rgba(35,126,91,.1)}
+.admin-audit-feed [role="log"]{gap:10px!important}
+.admin-audit-event{min-width:0;align-items:center!important;border-radius:13px!important;padding:14px 15px!important;transition:border-color .15s ease,transform .15s ease}
+.admin-audit-event:hover{border-color:var(--ary-line-strong)!important}
+.admin-audit-event p{overflow-wrap:anywhere}
+.admin-audit-event button{min-height:30px;padding:5px 8px!important;border-radius:8px!important}
+@media(max-width:640px){
+ .admin-audit-header,.admin-audit-feed{border-radius:14px}
+ .admin-audit-header{padding:15px!important}
+ .admin-audit-filter-bar{display:flex;flex-wrap:nowrap!important;overflow-x:auto;padding:2px 1px 7px;scrollbar-width:thin;overscroll-behavior-x:contain}
+ .admin-audit-filter-bar button{flex:0 0 auto}
+ .admin-audit-search-row{align-items:stretch!important}
+ .admin-audit-search-row label{flex-basis:100%!important}
+ .admin-audit-search-row>span{margin-left:auto}
+ .admin-audit-feed{padding:13px!important}
+ .admin-audit-event{align-items:flex-start!important;flex-direction:column;gap:10px!important;padding:13px!important}
+ .admin-audit-event>div:last-child{width:100%;display:flex;align-items:center;justify-content:space-between;text-align:left!important}
+ .admin-audit-event>div:first-child{width:100%}
+}
+[data-theme="dark"] .admin-audit-event{background:#17251d!important;border-color:var(--ary-line)!important}
+[data-theme="dark"] .admin-audit-event:hover{border-color:var(--ary-line-strong)!important}
