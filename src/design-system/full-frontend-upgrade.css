@@ -1561,3 +1561,23 @@ textarea { min-height: 96px; }
 }
 [data-theme="dark"] .admin-audit-event{background:#17251d!important;border-color:var(--ary-line)!important}
 [data-theme="dark"] .admin-audit-event:hover{border-color:var(--ary-line-strong)!important}
+
+
+/* Admin overview: KPI, trend charts and operational shortcuts. */
+.admin-overview-workspace{min-width:0}
+.admin-overview-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}
+.admin-overview-kpis .admin-kpi-card{min-width:0;min-height:132px;padding:17px;border:1px solid var(--ary-line);border-radius:15px;background:var(--ary-surface);box-shadow:var(--ary-shadow-card);transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease}
+.admin-overview-kpis .admin-kpi-card.interactive{cursor:pointer}
+.admin-overview-kpis .admin-kpi-card.interactive:hover{transform:translateY(-2px);border-color:var(--ary-line-strong);box-shadow:0 9px 24px rgba(24,47,36,.08)}
+.admin-overview-kpis .admin-kpi-card:focus-visible,.admin-overview-shortcuts [role="button"]:focus-visible{outline:3px solid rgba(35,126,91,.28);outline-offset:3px}
+.admin-overview-kpis .admin-kpi-value{font-variant-numeric:tabular-nums;letter-spacing:-.04em;overflow-wrap:anywhere}
+.admin-overview-charts{min-width:0}
+.admin-overview-charts>div{min-width:0;border:1px solid var(--ary-line);border-radius:16px;background:var(--ary-surface);box-shadow:var(--ary-shadow-card)}
+.admin-overview-charts svg{max-width:100%}
+.admin-overview-shortcuts{min-width:0}
+.admin-overview-shortcuts>[role="button"]{min-width:0;min-height:76px;border-radius:13px!important;background:var(--ary-surface)!important;border-color:var(--ary-line)!important;transition:transform .15s ease,border-color .15s ease,box-shadow .15s ease!important}
+.admin-overview-shortcuts>[role="button"]:hover{transform:translateY(-2px);border-color:var(--ary-line-strong)!important;box-shadow:var(--ary-shadow-card)}
+@media(max-width:900px){.admin-overview-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:640px){.admin-overview-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.admin-overview-kpis .admin-kpi-card{min-height:116px;padding:13px;border-radius:13px}.admin-overview-kpis .admin-kpi-value{font-size:1.55rem!important}.admin-overview-charts{grid-template-columns:minmax(0,1fr)!important}.admin-overview-charts>div{padding:15px!important}.admin-overview-shortcuts{grid-template-columns:minmax(0,1fr)!important;gap:9px!important}}
+@media(max-width:360px){.admin-overview-kpis{grid-template-columns:minmax(0,1fr)}}
+[data-theme="dark"] .admin-overview-kpis .admin-kpi-card,[data-theme="dark"] .admin-overview-charts>div,[data-theme="dark"] .admin-overview-shortcuts>[role="button"]{background:var(--ary-surface)!important;border-color:var(--ary-line)!important;color:var(--ary-ink)}
