@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 
 export function Avatar({
   src,
@@ -9,11 +9,7 @@ export function Avatar({
   className = '',
   ...props
 }) {
-  const [imageFailed, setImageFailed] = useState(false);
-
-  useEffect(() => {
-    setImageFailed(false);
-  }, [src]);
+  const [failedSrc, setFailedSrc] = useState(null);
 
   const getInitials = (value) => {
     const normalized = typeof value === 'string' ? value.trim() : '';
@@ -34,7 +30,7 @@ export function Avatar({
     return `hsl(${hue}, 45%, 38%)`;
   };
 
-  const showImage = Boolean(src) && !imageFailed;
+  const showImage = Boolean(src) && failedSrc !== src;
   const accessibleName = alt || name || 'User avatar';
 
   return (
@@ -52,12 +48,11 @@ export function Avatar({
           aria-hidden="true"
           loading="lazy"
           decoding="async"
-          onError={() => setImageFailed(true)}
+          onError={() => setFailedSrc(src)}
         />
       ) : (
         <span aria-hidden="true">{getInitials(name)}</span>
       )}
-      {isOnline && <span className="ds-avatar-presence-label" aria-hidden="true" />}
     </div>
   );
 }
