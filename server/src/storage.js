@@ -1219,6 +1219,34 @@ export async function mutatePersistentState(collection, fallbackFile, fallbackVa
 
 // Mutate several JSONB-backed state collections in one transaction.
 // Locks are acquired in stable order to avoid cross-collection deadlocks.
+export async function recordAdminAuditEvent(event) {
+  const fallbackFile = path.join(dataDir, 'admin-audit-logs.json');
+  const record = {
+    id: `audit-${crypto.randomUUID()}`,
+    createdAt: new Date().toISOString(),
+    actorId: String(event?.actorId || 'unknown').slice(0, 120),
+    actorRole: String(event?.actorRole || 'unknown').slice(0, 40),
+    action: String(event?.action || 'unknown').slice(0, 120),
+    targetType: String(event?.targetType || 'unknown').slice(0, 80),
+    targetId: String(event?.targetId || '').slice(0, 160),
+    requestId: String(event?.requestId || '').slice(0, 100),
+    details: event?.details && typeof event.details === 'object' && !Array.isArray(event.details) ? event.details : {}
+  };
+  await mutatePersistentState('admin_audit_logs', fallbackFile, [], records => {
+    if (!Array.isArray(records)) throw new Error('Admin audit log storage is invalid.');
+    records.unshift(record);
+    if (records.length > 10000) records.length = 10000;
+    return record;
+  });
+  return record;
+}
+
+export async function listAdminAuditEvents(limit = 100) {
+  const fallbackFile = path.join(dataDir, 'admin-audit-logs.json');
+  const records = await readPersistentState('admin_audit_logs', fallbackFile, []);
+  return Array.isArray(records) ? records.slice(0, Math.max(1, Math.min(200, Number(limit) || 100))) : [];
+}
+
 export async function mutatePersistentStates(operations) {
   if (!Array.isArray(operations) || !operations.length) throw new Error('At least one state mutation is required.');
   const collections = new Set();
