@@ -1,3 +1,15 @@
+-- Ensure the document store exists even when this migration runs before the API's first startup.
+CREATE TABLE IF NOT EXISTS public.ary_documents (
+  collection VARCHAR(80) NOT NULL,
+  record_id VARCHAR(160) NOT NULL,
+  position BIGINT NOT NULL,
+  payload JSONB NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (collection, record_id)
+);
+CREATE INDEX IF NOT EXISTS ary_documents_collection_position_idx
+  ON public.ary_documents (collection, position);
+
 -- Enforce cash-only payment methods in the JSONB collections used by the live API.
 -- Existing historical non-cash values are preserved unless a write attempts to introduce or change them.
 CREATE OR REPLACE FUNCTION public.enforce_ary_cash_only_document_payment()
