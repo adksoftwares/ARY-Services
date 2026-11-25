@@ -71,7 +71,8 @@ export default function DriverWorkspace({ onNotice }) {
     title: '',
     subtitle: '',
     error: '',
-    isVerifying: false
+    isVerifying: false,
+    expectedCashAmount: null
   });
 
   const [releaseModal, setReleaseModal] = useState({
@@ -352,7 +353,7 @@ export default function DriverWorkspace({ onNotice }) {
     }
   }
 
-  function openPinModal(jobId, endpoint, title, subtitle) {
+  function openPinModal(jobId, endpoint, title, subtitle, expectedCashAmount = null) {
     setPinModal({
       isOpen: true,
       jobId,
@@ -360,24 +361,25 @@ export default function DriverWorkspace({ onNotice }) {
       title,
       subtitle,
       error: '',
-      isVerifying: false
+      isVerifying: false,
+      expectedCashAmount
     });
   }
 
-  async function handleVerifyPin(pin) {
+  async function handleVerifyPin(pin, paymentDetails = null) {
     if (pinModal.isVerifying || pinModal.jobId === null || pinModal.jobId === undefined || !pinModal.endpoint || !currentUser?.token) return;
     setPinModal(prev => ({ ...prev, isVerifying: true, error: '' }));
     try {
       const response = await fetch(`${API_BASE}/driver-jobs/${encodeURIComponent(pinModal.jobId)}/${pinModal.endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${currentUser.token}` },
-        body: JSON.stringify({ pin })
+        body: JSON.stringify({ pin, ...(paymentDetails || {}) })
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || 'PIN verification failed.');
       setPinModal(prev => ({ ...prev, isOpen: false, isVerifying: false }));
       await refresh();
-      onNotice?.('PIN verified successfully! Trip progress updated.');
+      onNotice?.(paymentDetails?.cashReceived ? 'Cash received and delivery verified successfully.' : 'PIN verified successfully! Trip progress updated.');
     } catch (err) {
       setPinModal(prev => ({ ...prev, isVerifying: false, error: err.message || 'Incorrect PIN.' }));
       throw err;
@@ -612,7 +614,8 @@ export default function DriverWorkspace({ onNotice }) {
                   activeTrip.id,
                   'verify-delivery',
                   'Enter Ride Completion PIN',
-                  'Ask the passenger for the 4-digit completion PIN to finish trip'
+                  'Ask the passenger for the 6-digit completion PIN, collect the agreed cash fare, then confirm both below',
+                  activeTrip.cashAmount ?? null
                 )}
               >
                 <KeyRound size={18} /> Complete Ride · Verify PIN
@@ -627,7 +630,8 @@ export default function DriverWorkspace({ onNotice }) {
                   activeTrip.id,
                   'verify-delivery',
                   'Enter Recipient Delivery PIN',
-                  'Ask the recipient at destination for their 4-digit PIN'
+                  'Ask the recipient for the 6-digit PIN, collect the full cash amount, then confirm both below',
+                  activeTrip.cashAmount ?? null
                 )}
               >
                 <KeyRound size={18} /> Verify Recipient Delivery PIN
@@ -904,6 +908,8 @@ export default function DriverWorkspace({ onNotice }) {
         subtitle={pinModal.subtitle}
         error={pinModal.error}
         isVerifying={pinModal.isVerifying}
+        requireCashReceipt={pinModal.endpoint === 'verify-delivery'}
+        expectedCashAmount={pinModal.expectedCashAmount}
         onSubmit={handleVerifyPin}
       />
 
