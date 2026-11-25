@@ -52,7 +52,7 @@ export default function BookingModal({
   });
   const [bookingTimeSlot, setBookingTimeSlot] = useState('Morning (9 AM - 12 PM)');
   const [bookingProblem, setBookingProblem] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState('cash');
+  const paymentMethod = 'cash';
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
   const [error, setError] = useState('');
@@ -366,7 +366,7 @@ export default function BookingModal({
                   <Banknote size={18} />
                   <div>
                     <b>Cash on Completion</b>
-                    <small>Payment is arranged directly with the provider after the service. Online payments are not available in this booking flow yet.</small>
+                    <small>Pay the provider directly in cash after the service is completed. ARY currently supports cash payments only — no card or online payments.</small>
                   </div>
                 </div>
               </div>
