@@ -65,7 +65,7 @@ export default function DriverPinKeypadModal({
           {subtitle}
         </p>
 
-        {/* 4-Digit Display Boxes */}
+        {/* 6-Digit Display Boxes */}
         <div style={{
           display: 'flex',
           justifyContent: 'center',
@@ -161,7 +161,7 @@ export default function DriverPinKeypadModal({
             type="button"
             className="keypad-digit-btn"
             onClick={() => handleDigit('0')}
-            disabled={isLockedOut || pin.length >= 4 || isVerifying}
+            disabled={isLockedOut || pin.length >= 6 || isVerifying}
             aria-label="Digit 0"
           >
             0
