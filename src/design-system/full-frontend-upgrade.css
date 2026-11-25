@@ -1423,3 +1423,90 @@ textarea { min-height: 96px; }
 @media(prefers-reduced-motion:reduce) {
  .customer-category-discovery .service-card,.customer-provider-catalog .provider-card-item { transition:none; }
 }
+
+
+/* Grocery operations, provider wallet and customer shop refinement */
+.grocery-inventory-view,
+.grocery-orders-view,
+.provider-wallet-container,
+.provider-reviews-container,
+.grocery-marketplace-section { width:min(100%,1240px); margin-inline:auto; min-width:0; }
+.grocery-inventory-view .inventory-toolbar {
+  display:flex; flex-wrap:wrap; align-items:center; gap:12px;
+}
+.grocery-inventory-view .inventory-search-wrap { flex:1 1 260px; min-width:0; }
+.grocery-inventory-view .inventory-search-input { width:100%; min-width:0; min-height:46px; }
+.grocery-inventory-view .inventory-card-grid {
+  display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px;
+}
+.grocery-inventory-view .inventory-card-grid > * {
+  min-width:0; border:1px solid var(--ary-line); border-radius:16px;
+  box-shadow:var(--ary-shadow-card); overflow:hidden;
+}
+.grocery-inventory-view .stock-stepper-wrap { display:flex; align-items:center; gap:8px; }
+.grocery-inventory-view .stock-stepper-btn { min-width:40px; min-height:40px; border-radius:10px; }
+.grocery-orders-view .grocery-board-container {
+  display:grid; grid-template-columns:repeat(3,minmax(260px,1fr)); gap:14px;
+  overflow-x:auto; align-items:start; padding-bottom:8px; overscroll-behavior-x:contain;
+}
+.grocery-orders-view .grocery-column-header {
+  position:sticky; top:0; z-index:2; background:var(--ary-canvas);
+}
+.grocery-orders-view .grocery-order-card {
+  min-width:0; border:1px solid var(--ary-line); border-radius:15px;
+  box-shadow:var(--ary-shadow-card); overflow-wrap:anywhere;
+}
+.grocery-orders-view .grocery-item-row { min-width:0; }
+.provider-wallet-container > * { min-width:0; }
+.provider-wallet-container table { width:100%; min-width:760px; }
+.provider-wallet-container > div { max-width:100%; }
+.provider-reviews-container > * { min-width:0; }
+.provider-reviews-container [class*="review"] { overflow-wrap:anywhere; }
+.grocery-marketplace-section .grocery-toolbar {
+  display:flex; flex-wrap:wrap; align-items:center; gap:10px;
+}
+.grocery-marketplace-section .grocery-search-input { flex:1 1 240px; min-width:0; }
+.grocery-marketplace-section .category-scroll-pills {
+  display:flex; gap:8px; overflow-x:auto; overscroll-behavior-x:contain;
+  padding:5px 2px 12px; scrollbar-width:thin; -webkit-overflow-scrolling:touch;
+}
+.grocery-marketplace-section .category-scroll-pills > * { flex:0 0 auto; }
+.grocery-marketplace-section .product-catalog-grid {
+  display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px;
+}
+.grocery-marketplace-section .product-item-card {
+  min-width:0; border:1px solid var(--ary-line); border-radius:16px;
+  overflow:hidden; box-shadow:var(--ary-shadow-card);
+  transition:transform .16s ease,box-shadow .16s ease;
+}
+.grocery-marketplace-section .product-item-card:not(.skeleton-card):hover {
+  transform:translateY(-2px); box-shadow:0 10px 26px rgba(24,47,36,.08);
+}
+.grocery-marketplace-section .product-name { overflow-wrap:anywhere; line-height:1.35; }
+.grocery-marketplace-section .qty-stepper-box { min-height:40px; }
+.grocery-marketplace-section .persistent-cart-bar {
+  position:sticky; bottom:calc(10px + env(safe-area-inset-bottom)); z-index:15;
+  max-width:100%; border:1px solid var(--ary-line); border-radius:16px;
+  box-shadow:0 12px 34px rgba(16,45,31,.16);
+  background:rgba(255,255,255,.97); backdrop-filter:blur(12px);
+}
+@media(max-width:1000px) {
+ .grocery-inventory-view .inventory-card-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+ .grocery-marketplace-section .product-catalog-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+}
+@media(max-width:680px) {
+ .grocery-inventory-view,.grocery-orders-view,.provider-wallet-container,.provider-reviews-container { padding-inline:10px; }
+ .grocery-inventory-view .inventory-card-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+ .grocery-orders-view .grocery-board-container { grid-template-columns:repeat(3,minmax(82vw,1fr)); gap:10px; }
+ .provider-wallet-container table { min-width:700px; }
+ .grocery-marketplace-section { padding-inline:12px; }
+ .grocery-marketplace-section .product-catalog-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+ .grocery-marketplace-section .product-item-card { border-radius:13px; }
+ .grocery-marketplace-section .persistent-cart-bar { bottom:calc(6px + env(safe-area-inset-bottom)); }
+}
+@media(max-width:360px) {
+ .grocery-marketplace-section .product-catalog-grid { grid-template-columns:minmax(0,1fr); }
+}
+@media(prefers-reduced-motion:reduce) {
+ .grocery-marketplace-section .product-item-card { transition:none; }
+}
