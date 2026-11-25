@@ -38,7 +38,7 @@ import {
 import { sendOtp, verifyOtp, normalizePhone, setOtpStoragePool } from './otpService.js';
 import { subscribeToEvents, broadcastEvent } from './eventHub.js';
 import { calculateDistanceKm, estimateEtaMinutes, resolveCoordinatesFromLocation, searchSriLankaLocations, reverseGeocodeLocation } from './geoService.js';
-import { issueSecurityChallenge, verifySecurityChallenge } from './securityShield.js';
+import { issueSecurityChallenge, verifySecurityChallenge, setSecurityChallengeStoragePool } from './securityShield.js';
 import { registerDriverServiceRoutes, createGroceryOrderDeliveryJob, cancelGroceryOrderDeliveryJob } from './driverServiceRoutes.js';
 import { registerGroceryRoutes } from './groceryRoutes.js';
 import { registerRoleAccessRoutes } from './roleAccessRoutes.js';
@@ -153,6 +153,7 @@ if (process.env.DATABASE_URL) {
   });
   setActivePostgresPool(pool);
   setOtpStoragePool(pool);
+  setSecurityChallengeStoragePool(pool);
   // Schema must exist before storage initialization performs any database reads.
   await initPostgresTables(pool);
 }
@@ -399,7 +400,7 @@ app.post('/api/auth/otp/send', otpLimiter, async (req, res) => {
     }
 
     // Every OTP request must present a valid, single-use anti-abuse challenge.
-    if (!shieldToken || !verifySecurityChallenge(shieldToken)) {
+    if (!shieldToken || !(await verifySecurityChallenge(shieldToken))) {
       return res.status(400).json({ error: 'Security verification failed. Please refresh the verification challenge and try again.' });
     }
 
