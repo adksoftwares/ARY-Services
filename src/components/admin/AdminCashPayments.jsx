@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Banknote, Search, RefreshCw, ReceiptText, Clock3, CheckCircle2, Info } from 'lucide-react';
+import { Banknote, Search, RefreshCw, ReceiptText, Clock3, Info } from 'lucide-react';
 import { Card, Badge, Button, EmptyState, Skeleton, SegmentedControl } from '../../design-system';
 
 function money(value) {
