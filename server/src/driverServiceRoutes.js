@@ -350,6 +350,69 @@ export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadc
     broadcastEvent?.('driver:job_updated',{job:safeMobilityJob(result.job),customerId:result.job.customerId,driverId:result.job.driverId});return res.json({job:safeMobilityJob(result.job,req.user.id),message:'Cash received and delivery completion recorded.'});
   });
 
+  // Admin-only unified cash collection ledger across service bookings, grocery orders and driver jobs.
+  app.get('/api/admin/cash-payments',requireAdmin,async(_req,res)=>{
+    try{
+      const [bookings,users,driverState,groceryOrders]=await Promise.all([
+        getBookings(),getUsers(),readJobs(),readPersistentState('grocery_orders',groceryOrdersFile,[])
+      ]);
+      const userNames=new Map(users.map(user=>[user.id,user.fullName||user.name||'Platform user']));
+      const records=[];
+      for(const booking of bookings||[]){
+        const amount=Number(booking.baseAmount);
+        const cancelled=['cancelled','rejected','refunded'].includes(booking.status);
+        records.push({
+          id:booking.id,reference:booking.id,source:'service_booking',serviceType:booking.serviceName||booking.categoryName||'Service booking',
+          customerName:booking.customerName||'Customer',collectorName:userNames.get(booking.cashCollectedBy)||null,
+          providerName:booking.providerName||'Provider',amount:Number.isFinite(amount)&&amount>0?amount:null,currency:'LKR',
+          paymentMethod:'cash',paymentStatus:booking.paymentStatus||(amount>0?'pending_cash':'pending_quote'),
+          status:booking.status||'unknown',createdAt:booking.createdAt||booking.bookingDate||null,
+          collectedAt:booking.cashCollectedAt||null,collectorRole:booking.cashCollectedByRole||null
+        });
+        if(cancelled&&records[records.length-1].paymentStatus!=='cash_collected')records[records.length-1].paymentStatus='not_due';
+      }
+      for(const order of groceryOrders||[]){
+        const cancelled=order.status==='cancelled';
+        records.push({
+          id:order.id,reference:order.id,source:'grocery_order',serviceType:'Grocery order',
+          customerName:order.customerName||'Customer',collectorName:userNames.get(order.cashCollectedBy)||null,
+          providerName:order.providerName||'Grocery provider',amount:Number.isFinite(Number(order.total))&&Number(order.total)>0?Number(order.total):null,currency:order.currency||'LKR',
+          paymentMethod:'cash_on_delivery',paymentStatus:order.paymentStatus||'unpaid',status:order.status||'unknown',
+          createdAt:order.createdAt||null,collectedAt:order.cashCollectedAt||null,collectorRole:order.cashCollectedBy?'provider_or_driver':null
+        });
+        if(cancelled&&records[records.length-1].paymentStatus!=='cash_collected')records[records.length-1].paymentStatus='not_due';
+      }
+      for(const job of driverState.jobs||[]){
+        if(String(job.orderReference||'').startsWith('gord-'))continue;
+        const cancelled=['cancelled','failed_attempt','returned'].includes(job.status);
+        const amount=Number(job.cashCollectedAmount??job.cashAmount);
+        records.push({
+          id:job.id,reference:job.id,source:'driver_job',serviceType:job.serviceType==='ride'?'Passenger ride':job.serviceType==='parcel_delivery'?'Parcel delivery':'Food delivery',
+          customerName:job.customerName||'Customer',collectorName:job.driverName||userNames.get(job.cashCollectedBy)||null,
+          providerName:job.driverName||'Assigned driver',amount:Number.isFinite(amount)&&amount>0?amount:null,currency:'LKR',
+          paymentMethod:job.paymentMethod||'cash',paymentStatus:job.paymentStatus||'pending_cash',status:job.status||'unknown',
+          createdAt:job.createdAt||null,collectedAt:job.cashCollectedAt||null,collectorRole:'driver'
+        });
+        if(cancelled&&records[records.length-1].paymentStatus!=='cash_collected')records[records.length-1].paymentStatus='not_due';
+      }
+      records.sort((a,b)=>Date.parse(b.createdAt||'')-Date.parse(a.createdAt||''));
+      const collected=records.filter(item=>item.paymentStatus==='cash_collected');
+      const pending=records.filter(item=>['pending_cash','unpaid'].includes(item.paymentStatus)&&Number(item.amount)>0);
+      return res.json({
+        policy:'cash_only',currency:'LKR',records,
+        summary:{
+          totalCollected:collected.reduce((sum,item)=>sum+Number(item.amount||0),0),
+          totalPending:pending.reduce((sum,item)=>sum+Number(item.amount||0),0),
+          collectedCount:collected.length,pendingCount:pending.length,
+          totalRecords:records.length
+        }
+      });
+    }catch(error){
+      console.error('Admin cash payment report error:',error);
+      return res.status(500).json({error:'Could not load cash collection records.'});
+    }
+  });
+
   // Admin-only reliability summaries aggregate completed jobs and pre-pickup driver releases.
   app.get('/api/admin/driver-reliability',requireAdmin,async(_req,res)=>{
     const d=await readJobs();
