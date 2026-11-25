@@ -42,7 +42,7 @@ export default function DriverEarningsSummary({
   return (
     <div className="driver-earnings-container" style={{ display: 'grid', gap: '16px', marginBottom: '20px' }}>
       {/* 1. Summary Metric Cards */}
-      <div style={{
+      <div className="driver-earnings-metrics" style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
         gap: '12px'
@@ -137,7 +137,7 @@ export default function DriverEarningsSummary({
 
       {/* 2. Completed Trip History Feed */}
       {safeCompletedJobs.length > 0 && (
-        <Card style={{ padding: '18px' }}>
+        <Card className="driver-trip-history-card" style={{ padding: '18px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 14 }}>
             <h2 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--color-neutral-900, #0f172a)' }}>
               Completed Trip History ({safeCompletedJobs.length})
