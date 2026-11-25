@@ -41,6 +41,7 @@ export default function ProviderJobs({
   claimingJobId = null
 }) {
   const [filterTab, setFilterTab] = useState('all'); // 'all' | 'pending' | 'active' | 'completed' | 'broadcast'
+  const [jobSearch, setJobSearch] = useState('');
   const [quoteDrafts, setQuoteDrafts] = useState({});
   const [quoteNotes, setQuoteNotes] = useState({});
   const [quoteBusy, setQuoteBusy] = useState('');
@@ -56,20 +57,31 @@ export default function ProviderJobs({
   const directBookings = useMemo(() => safeBookings.filter(b => b.status !== 'broadcast_pool'), [safeBookings]);
 
   const filteredBookings = useMemo(() => {
+    let result;
     switch (filterTab) {
       case 'pending':
-        return directBookings.filter(b => b.status === 'requested');
+        result = directBookings.filter(b => b.status === 'requested');
+        break;
       case 'active':
-        return directBookings.filter(b => ['accepted', 'in_progress'].includes(b.status));
+        result = directBookings.filter(b => ['accepted', 'in_progress'].includes(b.status));
+        break;
       case 'completed':
-        return directBookings.filter(b => b.status === 'completed');
+        result = directBookings.filter(b => b.status === 'completed');
+        break;
       case 'broadcast':
-        return broadcastJobs;
+        result = broadcastJobs;
+        break;
       case 'all':
       default:
-        return directBookings;
+        result = directBookings;
     }
-  }, [filterTab, directBookings, broadcastJobs]);
+    const query = jobSearch.trim().toLocaleLowerCase();
+    if (!query) return result;
+    return result.filter(job => [
+      job.id, job.categoryName, job.customerName, job.customerPhone,
+      job.serviceAddress, job.bookingDate, job.bookingTime, job.status
+    ].filter(value => value !== null && value !== undefined).some(value => String(value).toLocaleLowerCase().includes(query)));
+  }, [filterTab, directBookings, broadcastJobs, jobSearch]);
 
   async function runBookingAction(bookingId, action, ...args) {
     if (bookingId === null || bookingId === undefined || String(bookingId).trim() === '') return false;
@@ -238,6 +250,15 @@ export default function ProviderJobs({
           </div>
         </Card>
       )}
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, flex: '1 1 260px', minWidth: 0, minHeight: 44, padding: '0 12px', border: '1px solid var(--color-border, #cbd5e1)', borderRadius: 10, background: 'var(--color-surface, #fff)' }}>
+          <Filter size={16} aria-hidden="true" style={{ color: 'var(--color-neutral-500, #64748b)', flexShrink: 0 }} />
+          <input type="search" value={jobSearch} onChange={event => setJobSearch(event.target.value)} placeholder="Search jobs by reference, service, customer or area" aria-label="Search provider jobs" style={{ width: '100%', minWidth: 0, border: 0, outline: 0, background: 'transparent', color: 'var(--color-neutral-900, #0f172a)', font: 'inherit', fontSize: '0.88rem' }} />
+        </label>
+        {jobSearch && <button type="button" onClick={() => setJobSearch('')} style={{ minHeight: 40, border: 0, borderRadius: 8, padding: '8px 12px', background: 'var(--color-brand-50, #edf7f2)', color: 'var(--color-brand-700, #174d3d)', fontWeight: 700, cursor: 'pointer' }}>Clear search</button>}
+        <span aria-live="polite" style={{ color: 'var(--color-neutral-500, #64748b)', fontSize: '0.78rem' }}>{filteredBookings.length} matching job{filteredBookings.length === 1 ? '' : 's'}</span>
+      </div>
 
       {/* 2. Filter Tabs */}
       <div style={{ maxWidth: 640 }}>
