@@ -260,22 +260,13 @@ function CustomerMobileBottomNav({ bookingsCount = 0, onOpenProfile, onOpenAlert
         <span>Orders</span>
       </button>
 
-      {/* 4. Super Admin (Always accessible for easy administrator login & access) */}
-      <button
-        type="button"
-        className={`mob-nav-item ${isAdminPath ? 'active' : ''}`}
-        style={isAdminPath || currentUser?.accountType === 'admin' ? { color: '#ef4444' } : {}}
-        onClick={() => {
-          if (currentUser?.accountType === 'admin') {
-            navigate('/admin');
-          } else {
-            openAuthModal('admin');
-          }
-        }}
-      >
-        <ShieldCheck size={20} color={isAdminPath || currentUser?.accountType === 'admin' ? '#ef4444' : 'currentColor'} />
-        <span style={currentUser?.accountType === 'admin' ? { color: '#ef4444', fontWeight: 700 } : {}}>Admin</span>
-      </button>
+      {/* Admin navigation is shown only inside an authenticated admin session. */}
+      {currentUser?.accountType === 'admin' && (
+        <Link to="/admin" className={`mob-nav-item ${isAdminPath ? 'active' : ''}`}>
+          <ShieldCheck size={20} />
+          <span>Admin</span>
+        </Link>
+      )}
 
       {/* 5. Alerts / Notifications */}
       <button
