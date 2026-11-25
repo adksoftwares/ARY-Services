@@ -87,7 +87,7 @@ export default function AdminCashPayments({ records = [], summary = {}, isLoadin
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 920, fontSize: '0.82rem' }}>
               <thead><tr style={{ textAlign: 'left', color: 'var(--color-neutral-500, #64748b)', background: 'var(--color-surface-subtle, #f8fafc)' }}>
-                {['Reference / Type', 'Customer', 'Provider / Driver', 'Amount', 'Payment', 'Service status', 'Collected at'].map(label => <th key={label} style={{ padding: '12px 14px', fontWeight: 700 }}>{label}</th>)}
+                {['Reference / Type', 'Customer', 'Provider / Driver', 'Amount', 'Payment', 'Service status', 'Collected / created'].map(label => <th key={label} style={{ padding: '12px 14px', fontWeight: 700 }}>{label}</th>)}
               </tr></thead>
               <tbody>
                 {visibleRecords.map(item => (
