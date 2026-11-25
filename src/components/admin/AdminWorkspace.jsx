@@ -606,6 +606,7 @@ export default function AdminWorkspace({
               adminUsers={adminUsers}
               bookings={allBookings}
               dispatchSnapshot={dispatchSnapshot}
+              cashSummary={cashPayments.summary}
               onNavigateTab={setActiveTab}
             />
           )}
