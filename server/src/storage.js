@@ -1237,6 +1237,76 @@ export async function mutatePersistentState(collection, fallbackFile, fallbackVa
   return task;
 }
 
+// Mutate several JSONB-backed state collections in one transaction.
+// Locks are acquired in stable order to avoid cross-collection deadlocks.
+export async function mutatePersistentStates(operations) {
+  if (!Array.isArray(operations) || !operations.length) throw new Error('At least one state mutation is required.');
+  const collections = new Set();
+  for (const operation of operations) {
+    if (!operation?.collection || typeof operation.mutator !== 'function' || !operation.fallbackFile) {
+      throw new Error('Each state mutation requires a collection, fallback file and mutator.');
+    }
+    if (collections.has(operation.collection)) throw new Error('A collection may only be mutated once per transaction.');
+    collections.add(operation.collection);
+  }
+
+  if (activePostgresPool) {
+    const client = await activePostgresPool.connect();
+    try {
+      await client.query('BEGIN');
+      const ordered = [...operations].sort((a, b) => a.collection.localeCompare(b.collection));
+      for (const operation of ordered) {
+        await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [operation.collection]);
+      }
+      const states = new Map();
+      for (const operation of operations) {
+        const result = await client.query(
+          'SELECT payload FROM ary_documents WHERE collection = $1 AND record_id = $2 FOR UPDATE',
+          [operation.collection, 'state']
+        );
+        states.set(operation.collection, result.rows[0]?.payload ?? structuredClone(operation.fallbackValue));
+      }
+      const outcomes = [];
+      for (const operation of operations) {
+        const state = states.get(operation.collection);
+        outcomes.push(await operation.mutator(state));
+      }
+      for (const operation of operations) {
+        await client.query(
+          `INSERT INTO ary_documents (collection, record_id, position, payload, updated_at)
+           VALUES ($1, $2, 0, $3::jsonb, NOW())
+           ON CONFLICT (collection, record_id)
+           DO UPDATE SET payload = EXCLUDED.payload, updated_at = NOW()`,
+          [operation.collection, 'state', JSON.stringify(states.get(operation.collection))]
+        );
+      }
+      await client.query('COMMIT');
+      return outcomes;
+    } catch (error) {
+      await client.query('ROLLBACK').catch(() => {});
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  const task = persistentStateQueue.then(async () => {
+    const states = new Map();
+    for (const operation of operations) {
+      try { states.set(operation.collection, JSON.parse(await fs.readFile(operation.fallbackFile, 'utf-8'))); }
+      catch { states.set(operation.collection, structuredClone(operation.fallbackValue)); }
+    }
+    const outcomes = [];
+    for (const operation of operations) outcomes.push(await operation.mutator(states.get(operation.collection)));
+    for (const operation of operations) {
+      await atomicWriteText(operation.fallbackFile, JSON.stringify(states.get(operation.collection), null, 2));
+    }
+    return outcomes;
+  });
+  persistentStateQueue = task.catch(() => {});
+  return task;
+}
+
 export async function getLedgerByBooking(bookingId) {
   const all = await getLedgerEntries();
   return all.filter(e => e.bookingId === bookingId);
