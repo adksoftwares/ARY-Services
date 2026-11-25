@@ -1496,6 +1496,24 @@ app.post('/api/bookings/:id/cash-payment', requireAuth, async (req, res) => {
       return res.json({ booking, message: 'Cash payment was already recorded for this booking.' });
     }
     const updated = await updateBooking(booking.id, current => {
+      // Re-check all financial preconditions against the row locked by the storage layer.
+      // This prevents a stale preflight read from collecting cash after cancellation,
+      // provider reassignment, or a concurrent quote/amount change.
+      if (current.status !== 'completed') {
+        const error = new Error('Complete the service before recording cash received.');
+        error.status = 409;
+        throw error;
+      }
+      if (!isAdmin && (current.providerId !== req.user.id || current.providerId !== booking.providerId)) {
+        const error = new Error('Only the currently assigned provider can record cash received.');
+        error.status = 403;
+        throw error;
+      }
+      if (Number(current.baseAmount) !== expectedAmount || Number(current.baseAmount) !== receivedAmount) {
+        const error = new Error('The agreed booking amount changed. Refresh the booking before recording cash.');
+        error.status = 409;
+        throw error;
+      }
       if (current.paymentStatus === 'cash_collected') return current;
       current.paymentMethod = 'cash';
       current.paymentStatus = 'cash_collected';
@@ -1511,9 +1529,11 @@ app.post('/api/bookings/:id/cash-payment', requireAuth, async (req, res) => {
       current.lifecycleHistory.push({ event: 'cash_payment_collected', amount: receivedAmount, currency: 'LKR', actorId: req.user.id, actorRole: req.user.accountType, at: current.cashCollectedAt });
       return current;
     });
+    if (!updated) return res.status(404).json({ error: 'Booking not found.' });
     publishEvent('booking:cash_collected', { bookingId: booking.id, customerId: booking.customerId, providerId: booking.providerId, booking: updated });
-    return res.json({ booking: updated, message: 'Cash payment recorded successfully.' });
+    return res.json({ booking: updated, message: updated.paymentStatus === 'cash_collected' ? 'Cash payment recorded or already confirmed.' : 'Cash payment status updated.' });
   } catch (error) {
+    if ([400, 403, 409].includes(error.status)) return res.status(error.status).json({ error: error.message });
     console.error('Record booking cash payment error:', error);
     return res.status(500).json({ error: 'Could not record cash payment.' });
   }
