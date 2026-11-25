@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { KeyRound, Delete, X, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Modal, Button, Badge } from '../../design-system';
 
@@ -9,14 +9,19 @@ export default function DriverPinKeypadModal({
   subtitle = 'Enter the handoff verification code provided for this job',
   onSubmit,
   isVerifying = false,
-  error = ''
+  error = '',
+  requireCashReceipt = false,
+  expectedCashAmount = null
 }) {
   const [pin, setPin] = useState('');
+  const [cashAmount, setCashAmount] = useState(expectedCashAmount === null ? '' : String(expectedCashAmount));
+  const [cashConfirmed, setCashConfirmed] = useState(false);
+  useEffect(() => { if (isOpen) { setPin(''); setCashAmount(expectedCashAmount === null ? '' : String(expectedCashAmount)); setCashConfirmed(false); } }, [isOpen, expectedCashAmount]);
 
   if (!isOpen) return null;
 
   function handleDigit(d) {
-    if (pin.length >= 4) return;
+    if (pin.length >= 6) return;
     if (typeof navigator !== 'undefined' && navigator.vibrate) {
       try { navigator.vibrate(30); } catch (e) {}
     }
@@ -37,9 +42,10 @@ export default function DriverPinKeypadModal({
   }
 
   async function handleVerify() {
-    if (pin.length !== 4 || isVerifying || typeof onSubmit !== 'function') return;
+    if (pin.length !== 6 || isVerifying || typeof onSubmit !== 'function') return;
+    if (requireCashReceipt && (!cashConfirmed || !Number.isFinite(Number(cashAmount)) || Number(cashAmount) <= 0)) return;
     try {
-      await onSubmit(pin);
+      await onSubmit(pin, requireCashReceipt ? { cashReceived: true, cashAmount: Number(cashAmount) } : null);
       setPin('');
     } catch (err) {
       // The parent owns the actionable verification error; network failures must not consume local attempts.
@@ -63,17 +69,17 @@ export default function DriverPinKeypadModal({
         <div style={{
           display: 'flex',
           justifyContent: 'center',
-          gap: '12px',
+          gap: '8px',
           marginBottom: '16px'
         }}>
-          {[0, 1, 2, 3].map(idx => {
+          {[0, 1, 2, 3, 4, 5].map(idx => {
             const digit = pin[idx];
             return (
               <div
                 key={idx}
                 style={{
-                  width: '56px',
-                  height: '64px',
+                  width: '44px',
+                  height: '56px',
                   borderRadius: 'var(--radius-md, 8px)',
                   border: digit ? '2.5px solid var(--color-brand-600, #174d3d)' : '2px dashed var(--color-border, #cbd5e1)',
                   background: digit ? 'var(--color-brand-50, #edf7f2)' : 'var(--color-surface, #fff)',
@@ -92,6 +98,19 @@ export default function DriverPinKeypadModal({
             );
           })}
         </div>
+
+        {requireCashReceipt && (
+          <div style={{ display: 'grid', gap: 10, textAlign: 'left', margin: '0 0 16px', padding: 12, borderRadius: 10, background: 'var(--color-warning-50, #fffbeb)', border: '1px solid var(--color-warning-200, #fde68a)' }}>
+            <label style={{ display: 'grid', gap: 5, fontSize: '0.8rem', fontWeight: 700, color: 'var(--color-warning-900, #78350f)' }}>
+              Cash received (LKR)
+              <input type="number" min="0.01" step="0.01" required value={expectedCashAmount === null ? cashAmount : String(expectedCashAmount)} readOnly={expectedCashAmount !== null} onChange={event => setCashAmount(event.target.value)} placeholder="Enter agreed fare received" style={{ width: '100%', boxSizing: 'border-box', minHeight: 44, padding: '9px 11px', borderRadius: 8, border: '1px solid var(--color-border, #cbd5e1)', background: 'var(--color-surface, #fff)', color: 'var(--color-text, #0f172a)' }} />
+            </label>
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: '0.78rem', color: 'var(--color-warning-900, #78350f)', cursor: 'pointer' }}>
+              <input type="checkbox" checked={cashConfirmed} onChange={event => setCashConfirmed(event.target.checked)} style={{ marginTop: 2 }} />
+              I confirm that I physically received the full cash amount from the customer
+            </label>
+          </div>
+        )}
 
         {/* Error message & Lockout State */}
         {error && (
@@ -113,7 +132,7 @@ export default function DriverPinKeypadModal({
           </div>
         )}
 
-        <div style={{ marginBottom: '16px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>Enter the 4-digit code provided for this handoff.</div>
+        <div style={{ marginBottom: '16px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>Enter the 6-digit code provided for this handoff.</div>
 
         {/* Numeric Keypad Grid */}
         <div className="keypad-grid">
@@ -123,7 +142,7 @@ export default function DriverPinKeypadModal({
               type="button"
               className="keypad-digit-btn"
               onClick={() => handleDigit(String(n))}
-              disabled={isLockedOut || pin.length >= 4 || isVerifying}
+              disabled={isLockedOut || pin.length >= 6 || isVerifying}
               aria-label={`Digit ${n}`}
             >
               {n}
@@ -164,7 +183,7 @@ export default function DriverPinKeypadModal({
             variant="primary"
             size="lg"
             onClick={handleVerify}
-            disabled={pin.length !== 4 || isLockedOut || isVerifying}
+            disabled={pin.length !== 6 || isLockedOut || isVerifying}
             loading={isVerifying}
             style={{ width: '100%', minHeight: 52, fontSize: '1rem', fontWeight: 800 }}
           >
