@@ -24,7 +24,7 @@ function publicUser(user, token, activeRole = user.accountType) {
   };
 }
 
-export function registerRoleAccessRoutes(app, { requireAuth, requireAdmin, getUsers, updateUser, generateToken, broadcastEvent }) {
+export function registerRoleAccessRoutes(app, { requireAuth, requireAdmin, getUsers, updateUser, generateToken, broadcastEvent, recordAdminAudit }) {
   // Return the roles currently approved for this account and the status of pending requests.
   app.get('/api/auth/roles', requireAuth, async (req, res) => {
     const users = await getUsers();
@@ -240,6 +240,7 @@ export function registerRoleAccessRoutes(app, { requireAuth, requireAdmin, getUs
       return user;
     });
 
+    await recordAdminAudit?.(req, 'role.application_reviewed', 'user', userId, { role, decision, reasonProvided: Boolean(String(req.body?.reason || '').trim()) });
     broadcastEvent?.('user:role_application_reviewed', { userId, role, status: decision });
     broadcastEvent?.('user:status_changed', { userId, status: updated.status });
     res.json({ status: 'ok', user: publicUser(updated), application: updated.roleApplications[role] });
