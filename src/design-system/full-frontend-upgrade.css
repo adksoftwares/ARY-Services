@@ -1581,3 +1581,77 @@ textarea { min-height: 96px; }
 @media(max-width:640px){.admin-overview-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.admin-overview-kpis .admin-kpi-card{min-height:116px;padding:13px;border-radius:13px}.admin-overview-kpis .admin-kpi-value{font-size:1.55rem!important}.admin-overview-charts{grid-template-columns:minmax(0,1fr)!important}.admin-overview-charts>div{padding:15px!important}.admin-overview-shortcuts{grid-template-columns:minmax(0,1fr)!important;gap:9px!important}}
 @media(max-width:360px){.admin-overview-kpis{grid-template-columns:minmax(0,1fr)}}
 [data-theme="dark"] .admin-overview-kpis .admin-kpi-card,[data-theme="dark"] .admin-overview-charts>div,[data-theme="dark"] .admin-overview-shortcuts>[role="button"]{background:var(--ary-surface)!important;border-color:var(--ary-line)!important;color:var(--ary-ink)}
+
+
+/* Provider workspace: profile, compliance, service approvals and appointment rhythm. */
+.provider-profile-view,
+.provider-services-manager-view,
+.provider-schedule-view { width:min(100%,1180px); margin-inline:auto; min-width:0; }
+.provider-profile-view > *,
+.provider-services-manager-view > *,
+.provider-schedule-view > * { min-width:0; }
+.provider-profile-view form { width:100%; }
+.provider-profile-view input,
+.provider-profile-view select,
+.provider-profile-view textarea,
+.provider-services-manager-view input,
+.provider-services-manager-view select,
+.provider-services-manager-view textarea {
+  min-height:44px; max-width:100%; border-radius:10px;
+  transition:border-color .16s ease,box-shadow .16s ease;
+}
+.provider-profile-view input:focus-visible,
+.provider-services-manager-view input:focus-visible,
+.provider-services-manager-view textarea:focus-visible {
+  outline:0; border-color:var(--ary-green,#237e5b)!important;
+  box-shadow:0 0 0 3px rgba(35,126,91,.13);
+}
+.provider-profile-view form label { line-height:1.45; }
+.provider-profile-view form button,
+.provider-services-manager-view button,
+.provider-schedule-view button { min-height:40px; }
+.provider-profile-view [role="status"],
+.provider-profile-view [role="alert"],
+.provider-services-manager-view [role="status"],
+.provider-services-manager-view [role="alert"] {
+  overflow-wrap:anywhere; border-radius:12px!important;
+}
+.provider-profile-view > div > div[style*="border-radius"],
+.provider-profile-view > div > section { min-width:0; }
+.provider-services-manager-view > div:first-child { align-items:flex-start!important; }
+.provider-services-manager-view > div:first-child > div:first-child { flex:1 1 320px; }
+.provider-services-manager-view > div:first-child > div:last-child { display:flex; flex-wrap:wrap; gap:8px; }
+.provider-services-manager-view > div:first-child > div:last-child > * { flex:0 0 auto; }
+.provider-services-manager-view h2,
+.provider-services-manager-view h3,
+.provider-schedule-view h2 { letter-spacing:-.025em; }
+.provider-schedule-view > div[style*="grid"] { min-width:0; }
+.provider-schedule-view a { overflow-wrap:anywhere; }
+.provider-schedule-view [role="status"] { white-space:nowrap; }
+@media(max-width:680px) {
+  .provider-profile-view,.provider-services-manager-view,.provider-schedule-view { padding-inline:10px; }
+  .provider-profile-view > div,
+  .provider-services-manager-view > div:first-child { gap:12px!important; }
+  .provider-profile-view form { max-width:100%!important; }
+  .provider-profile-view form > div:last-child { display:flex; }
+  .provider-profile-view form > div:last-child button { width:100%; }
+  .provider-services-manager-view > div:first-child > div:last-child { width:100%; }
+  .provider-services-manager-view > div:first-child > div:last-child > * { flex:1 1 145px; }
+  .provider-schedule-view > div:first-child { align-items:stretch!important; }
+  .provider-schedule-view > div:first-child > div:last-child { min-width:0!important; width:100%; }
+  .provider-schedule-view [style*="grid-column: span 2"] { grid-column:span 1!important; }
+}
+@media(max-width:380px) {
+  .provider-services-manager-view > div:first-child > div:last-child > * { flex:1 1 100%; }
+  .provider-profile-view form input { font-size:16px; }
+}
+[data-theme="dark"] .provider-profile-view input,
+[data-theme="dark"] .provider-services-manager-view input,
+[data-theme="dark"] .provider-services-manager-view textarea {
+  background:var(--ary-surface)!important; color:var(--ary-ink)!important;
+  border-color:var(--ary-line-strong)!important;
+}
+@media(prefers-reduced-motion:reduce) {
+  .provider-profile-view input,.provider-services-manager-view input,
+  .provider-services-manager-view textarea { transition:none; }
+}
