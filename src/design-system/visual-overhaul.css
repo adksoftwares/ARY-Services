@@ -607,3 +607,145 @@ button { -webkit-tap-highlight-color: transparent; }
   .driver-quick-actions-bar { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); }
   .driver-field-action-btn { min-width: 0; width: 100%; }
 }
+
+
+/* Grocery marketplace — storefront, catalog and persistent basket */
+.grocery-marketplace-section {
+  max-width: 1320px; margin: 0 auto; padding: 34px clamp(14px,3vw,36px) 110px;
+}
+.grocery-marketplace-section > .section-heading {
+  display: flex; justify-content: space-between; align-items: flex-end; gap: 18px;
+  padding-bottom: 20px; border-bottom: 1px solid #e3ebe1;
+}
+.grocery-marketplace-section .section-heading h2 {
+  margin: 7px 0 0; color: #1b3829; font: 800 clamp(25px,3vw,34px)/1.12 var(--font-heading);
+  letter-spacing: -.045em;
+}
+.grocery-marketplace-section .section-desc { max-width: 620px; color: #78867b; font-size: 13px; line-height: 1.65; }
+.grocery-header-actions { display: flex; flex-wrap: wrap; gap: 9px; }
+.grocery-toolbar {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 12px;
+  margin: 21px 0 14px; padding: 12px; border: 1px solid #e3ebe1;
+  border-radius: 15px; background: #fff; box-shadow: 0 5px 17px rgba(23,55,39,.035);
+}
+.grocery-search-input { min-width: min(100%,260px); min-height: 44px; flex: 1 1 260px; border: 1px solid #e0e9df; border-radius: 11px; background: #fafcf9; }
+.category-scroll-pills { display: flex; gap: 8px; overflow-x: auto; padding: 5px 0 10px; scrollbar-width: thin; }
+.category-scroll-pills > * { flex: 0 0 auto; }
+.single-shop-rule-card {
+  display: flex; align-items: center; gap: 12px; margin: 13px 0 20px;
+  padding: 13px 15px; border: 1px solid #dce9dc; border-radius: 13px;
+  background: #f2f7f1; color: #43604a; font-size: 12px; line-height: 1.5;
+}
+.single-shop-rule-card .rule-icon { width: 36px; height: 36px; flex: 0 0 36px; display: grid; place-items: center; border-radius: 11px; background: #e0eddf; color: #28613d; }
+.product-catalog-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(min(100%,225px),1fr)); gap: 15px; }
+.product-item-card {
+  min-width: 0; overflow: hidden; border: 1px solid #e2eae1; border-radius: 16px;
+  background: #fff; box-shadow: 0 5px 17px rgba(23,55,39,.04);
+  transition: transform .2s,border-color .2s,box-shadow .2s;
+}
+.product-item-card:hover { transform: translateY(-3px); border-color: #bfd4c0; box-shadow: 0 14px 28px rgba(23,55,39,.08); }
+.product-img-box {
+  position: relative; min-height: 145px; display: grid; place-items: center; overflow: hidden;
+  background: linear-gradient(145deg,#f3f7f0,#eaf1e7); border-bottom: 1px solid #e8eee6;
+}
+.product-img-box img { width: 100%; height: 100%; min-height: 145px; object-fit: cover; transition: transform .35s; }
+.product-item-card:hover .product-img-box img { transform: scale(1.035); }
+.product-icon { color: #6e9275; }
+.low-stock-tag, .out-of-stock-tag { position: absolute; top: 10px; left: 10px; padding: 5px 8px; border-radius: 7px; font-size: 9px; font-weight: 800; letter-spacing: .04em; }
+.low-stock-tag { color: #855d24; background: #fff4df; border: 1px solid #f1dfbd; }
+.out-of-stock-tag { color: #a23e35; background: #fff0ed; border: 1px solid #f0d4ce; }
+.product-card-body { display: grid; gap: 8px; padding: 14px; }
+.product-cat-label { color: #829087; font-size: 9px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.product-name { color: #203a2b; font-size: 14px; font-weight: 800; line-height: 1.4; }
+.product-spec { color: #839087; font-size: 11px; line-height: 1.45; }
+.product-price-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; padding-top: 9px; border-top: 1px solid #edf1eb; }
+.product-price { color: #1b5736; font: 800 17px/1.15 var(--font-heading); }
+.product-shop { max-width: 110px; color: #8a968d; font-size: 10px; text-align: right; }
+.qty-stepper-box { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 3px; padding: 5px; border: 1px solid #e0e9df; border-radius: 10px; background: #f7faf6; }
+.qty-stepper-box button { width: 32px; height: 32px; display: grid; place-items: center; border: 0; border-radius: 8px; background: #e8f1e7; color: #245d39; font-weight: 800; }
+.qty-counter { min-width: 25px; color: #23432e; font-size: 13px; font-weight: 800; text-align: center; }
+.subtotal-label { color: #849087; font-size: 10px; }
+.persistent-cart-bar {
+  position: sticky; z-index: 20; bottom: 14px; display: flex; align-items: center; justify-content: space-between; gap: 18px;
+  max-width: 980px; margin: 24px auto 0; padding: 15px 18px;
+  border: 1px solid #d4e3d5; border-radius: 17px; background: rgba(255,255,255,.96);
+  box-shadow: 0 16px 42px rgba(18,51,29,.16); backdrop-filter: blur(15px);
+}
+.persistent-cart-left { display: flex; align-items: center; gap: 11px; min-width: 0; }
+.cart-count-badge { width: 38px; height: 38px; flex: 0 0 38px; display: grid; place-items: center; border-radius: 12px; background: #eaf3eb; color: #245d39; font-weight: 850; }
+.cart-pricing-details { display: grid; gap: 3px; }
+.cart-total-amount { color: #183e29; font: 850 20px/1.15 var(--font-heading); }
+.cart-shop-name, .cod-label { color: #829087; font-size: 10px; }
+.cart-checkout-cta { min-height: 46px; border-radius: 11px; white-space: nowrap; }
+.checkout-modal-form { display: grid; gap: 15px; }
+.cart-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.cart-total-badge { color: #1d5838; background: #eaf4eb; border-radius: 10px; padding: 7px 10px; font-weight: 800; }
+.cart-items-preview { display: grid; gap: 8px; max-height: 260px; overflow: auto; }
+.cart-item-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #edf1eb; }
+.cart-form-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+.cod-security-callout { padding: 13px; border: 1px solid #dce9dc; border-radius: 12px; background: #f4f8f2; color: #4b6850; font-size: 12px; line-height: 1.55; }
+
+/* Provider inventory and order fulfilment surfaces */
+.grocery-inventory-view, .grocery-orders-view { max-width: 1320px; margin: 0 auto; }
+.inventory-toolbar {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 12px;
+  margin: 18px 0; padding: 13px; border: 1px solid #e2eae1;
+  border-radius: 15px; background: #fff; box-shadow: 0 5px 17px rgba(23,55,39,.035);
+}
+.inventory-search-wrap { min-width: min(100%,260px); flex: 1 1 260px; }
+.inventory-search-input, .provider-form-input, .provider-form-select, .provider-form-textarea {
+  border: 1px solid #dce6dc; border-radius: 10px; background: #fbfcfa; color: #253d2d;
+}
+.inventory-card-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(min(100%,270px),1fr)); gap: 14px; }
+.inventory-card-grid > * { min-width: 0; border: 1px solid #e1e9e0; border-radius: 15px; background: #fff; box-shadow: 0 5px 17px rgba(23,55,39,.035); }
+.stock-stepper-wrap { display: inline-flex; align-items: center; gap: 6px; padding: 4px; border: 1px solid #e0e9df; border-radius: 10px; background: #f7faf6; }
+.stock-stepper-btn { width: 31px; height: 31px; display: grid; place-items: center; border: 0; border-radius: 8px; background: #e7f0e6; color: #245d39; }
+.provider-form-group { display: grid; gap: 6px; }
+.provider-form-label { color: #68796d; font-size: 11px; font-weight: 750; }
+.provider-form-input, .provider-form-select { min-height: 43px; padding: 9px 11px; }
+.provider-form-textarea { min-height: 95px; padding: 11px; resize: vertical; }
+.grocery-board-container {
+  display: grid; grid-template-columns: repeat(3,minmax(250px,1fr)); align-items: start; gap: 14px;
+  overflow-x: auto; padding: 4px 2px 16px;
+}
+.grocery-board-container > * { min-width: 0; padding: 13px; border: 1px solid #e2eae1; border-radius: 15px; background: #f4f7f2; }
+.grocery-column-header { display: flex; align-items: center; justify-content: space-between; gap: 9px; padding: 5px 4px 13px; border-bottom: 1px solid #e2eae1; }
+.grocery-column-title { color: #294331; font-size: 13px; font-weight: 850; }
+.grocery-order-card {
+  margin-top: 11px; padding: 14px; border: 1px solid #e2e9e0; border-radius: 12px;
+  background: #fff; box-shadow: 0 4px 13px rgba(23,55,39,.035);
+}
+.grocery-order-card:hover { border-color: #bfd4c0; box-shadow: 0 9px 20px rgba(23,55,39,.065); }
+.grocery-item-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 9px; padding: 7px 0; border-bottom: 1px solid #eff2ed; color: #5f7064; font-size: 11px; }
+[data-theme="dark"] .grocery-marketplace-section .section-heading h2,
+[data-theme="dark"] .product-name, [data-theme="dark"] .cart-total-amount { color: #e5f0e6; }
+[data-theme="dark"] .grocery-toolbar, [data-theme="dark"] .product-item-card,
+[data-theme="dark"] .inventory-toolbar, [data-theme="dark"] .inventory-card-grid > *,
+[data-theme="dark"] .grocery-order-card, [data-theme="dark"] .persistent-cart-bar {
+  background: #121e16 !important; border-color: #2a3d2e !important; color: #e4eee5;
+}
+[data-theme="dark"] .product-img-box, [data-theme="dark"] .grocery-board-container > * { background: #17251b; border-color: #2a3d2e; }
+[data-theme="dark"] .product-price { color: #9ed0a8; }
+[data-theme="dark"] .inventory-search-input, [data-theme="dark"] .provider-form-input,
+[data-theme="dark"] .provider-form-select, [data-theme="dark"] .provider-form-textarea {
+  background: #17251b; border-color: #304434; color: #e6f0e7;
+}
+@media (max-width: 760px) {
+  .grocery-marketplace-section { padding: 20px 12px 100px; }
+  .grocery-marketplace-section > .section-heading { align-items: flex-start; flex-direction: column; }
+  .product-catalog-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; }
+  .product-img-box, .product-img-box img { min-height: 112px; }
+  .product-card-body { padding: 10px; gap: 6px; }
+  .product-name { font-size: 12px; }
+  .product-price { font-size: 15px; }
+  .persistent-cart-bar { bottom: 8px; padding: 12px; border-radius: 14px; }
+  .cart-total-amount { font-size: 17px; }
+  .cart-checkout-cta { padding-inline: 12px !important; }
+  .cart-form-grid { grid-template-columns: 1fr; }
+  .grocery-board-container { grid-template-columns: repeat(3,minmax(265px,1fr)); }
+  .inventory-card-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; }
+}
+@media (max-width: 380px) {
+  .product-catalog-grid, .inventory-card-grid { grid-template-columns: 1fr; }
+  .persistent-cart-bar { align-items: stretch; flex-direction: column; }
+}
