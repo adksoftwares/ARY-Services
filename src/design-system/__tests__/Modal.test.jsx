@@ -71,11 +71,11 @@ describe('Modal & BottomSheet primitives', () => {
     const last = screen.getByRole('button', { name: 'Last action' });
     last.focus();
     fireEvent.keyDown(last, { key: 'Tab' });
-    expect(first).toHaveFocus();
+    expect(document.activeElement).toBe(first);
 
     first.focus();
     fireEvent.keyDown(first, { key: 'Tab', shiftKey: true });
-    expect(last).toHaveFocus();
+    expect(document.activeElement).toBe(last);
     getRects.mockRestore();
   });
 
