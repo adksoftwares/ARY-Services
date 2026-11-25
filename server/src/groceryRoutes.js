@@ -241,6 +241,8 @@ export function registerGroceryRoutes(app, { requireAuth, broadcastEvent, getUse
 
   app.post('/api/grocery/orders', requireAuth, async (req, res) => {
     if (req.user?.accountType !== 'customer' || req.user?.status !== 'active') return res.status(403).json({ error: 'An active customer account is required.' });
+    const requestedPaymentMethod = String(req.body?.paymentMethod || 'cash_on_delivery').trim().toLowerCase();
+    if (!['cash', 'cash_on_delivery'].includes(requestedPaymentMethod)) return res.status(400).json({ error: 'ARY Services currently accepts cash on delivery only. Card and online payments are disabled.' });
     const lines = Array.isArray(req.body?.items) ? req.body.items : [];
     const deliveryAddress = String(req.body?.deliveryAddress || '').trim().slice(0, 500);
     const phone = String(req.body?.phone || req.user.phone || '').trim().slice(0, 30);
@@ -266,7 +268,7 @@ export function registerGroceryRoutes(app, { requireAuth, broadcastEvent, getUse
         const items = selected.map(({ product, quantity }) => ({ productId: product.id, name: product.name, brand: product.brand, category: product.category, unit: product.unit, packSize: product.packSize, quantity, unitPrice: product.price, lineTotal: Number((product.price * quantity).toFixed(2)) }));
         const total = Number(items.reduce((sum, item) => sum + item.lineTotal, 0).toFixed(2));
         selected.forEach(({ product, quantity }) => { product.stock -= quantity; product.updatedAt = new Date().toISOString(); reserved.push({ productId: product.id, quantity }); });
-        return { id: 'gord-' + crypto.randomUUID(), customerId: req.user.id, customerName: req.user.fullName, customerPhone: phone, providerId: providerIds[0], providerName: selected[0].product.providerName, items, subtotal: total, deliveryFee: 0, total, currency: 'LKR', deliveryAddress, notes: String(req.body?.notes || '').trim().slice(0, 500), paymentMethod: 'cash_on_delivery', paymentStatus: 'unpaid', status: 'pending', statusHistory: [{ status: 'pending', at: new Date().toISOString(), by: req.user.id }], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), deliveryStatus: 'pending_dispatch', destinationLat: Number.isFinite(Number(req.body?.destinationLat)) ? Number(req.body.destinationLat) : null, destinationLng: Number.isFinite(Number(req.body?.destinationLng)) ? Number(req.body.destinationLng) : null };
+        return { id: 'gord-' + crypto.randomUUID(), customerId: req.user.id, customerName: req.user.fullName, customerPhone: phone, providerId: providerIds[0], providerName: selected[0].product.providerName, items, subtotal: total, deliveryFee: 0, total, currency: 'LKR', deliveryAddress, notes: String(req.body?.notes || '').trim().slice(0, 500), paymentMethod: 'cash_on_delivery', paymentStatus: 'unpaid', cashCollectionStatus: 'pending', status: 'pending', statusHistory: [{ status: 'pending', at: new Date().toISOString(), by: req.user.id }], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), deliveryStatus: 'pending_dispatch', destinationLat: Number.isFinite(Number(req.body?.destinationLat)) ? Number(req.body.destinationLat) : null, destinationLng: Number.isFinite(Number(req.body?.destinationLng)) ? Number(req.body.destinationLng) : null };
       });
       await mutatePersistentState('grocery_orders', ordersFile, EMPTY_ORDERS, stored => { if (!Array.isArray(stored)) throw new Error('Grocery order storage is invalid.'); stored.unshift(order); return true; });
       try {
@@ -324,6 +326,37 @@ export function registerGroceryRoutes(app, { requireAuth, broadcastEvent, getUse
     const orders = await readPersistentState('grocery_orders', ordersFile, EMPTY_ORDERS);
     return res.json({ orders: orders.filter(order => order.providerId === req.user.id).map(({ deliveryPickupPin, deliveryPin, ...order }) => order) });
   });
+  app.post('/api/grocery/orders/:id/cash-payment', requireAuth, async (req, res) => {
+    if (!isGroceryProvider(req.user)) return res.status(403).json({ error: 'Only the assigned Grocery Products provider can record pickup cash.' });
+    const receivedAmount = Number(req.body?.amount);
+    const result = await mutatePersistentState('grocery_orders', ordersFile, EMPTY_ORDERS, stored => {
+      const order = stored.find(item => item.id === req.params.id && item.providerId === req.user.id);
+      if (!order) return { missing: true };
+      if (order.deliveryJobId) return { conflict: 'This order has a driver assigned. The driver must confirm cash at delivery.' };
+      if (order.status !== 'ready_for_pickup') return { conflict: 'The order must be ready for customer pickup before cash can be recorded.' };
+      if (!Number.isFinite(receivedAmount) || receivedAmount <= 0 || Number(receivedAmount.toFixed(2)) !== Number(Number(order.total).toFixed(2))) return { invalidAmount: true, expected: Number(order.total) };
+      if (order.paymentStatus === 'cash_collected') return { order, alreadyCollected: true };
+      const now = new Date().toISOString();
+      order.paymentMethod = 'cash_on_delivery';
+      order.paymentStatus = 'cash_collected';
+      order.cashCollectionStatus = 'collected';
+      order.cashCollectedAmount = Number(receivedAmount.toFixed(2));
+      order.cashCollectedAt = now;
+      order.cashCollectedBy = req.user.id;
+      order.status = 'delivered';
+      order.deliveryStatus = 'customer_pickup';
+      order.updatedAt = now;
+      order.statusHistory = Array.isArray(order.statusHistory) ? order.statusHistory : [];
+      order.statusHistory.push({ status: 'delivered', deliveryStatus: 'customer_pickup', paymentStatus: 'cash_collected', at: now, by: req.user.id });
+      return { order };
+    });
+    if (result.missing) return res.status(404).json({ error: 'Order not found.' });
+    if (result.conflict) return res.status(409).json({ error: result.conflict });
+    if (result.invalidAmount) return res.status(400).json({ error: `Cash received must exactly match the order total of LKR ${Number(result.expected || 0).toLocaleString('en-LK')}.` });
+    broadcastEvent('grocery:order_updated', { orderId: result.order.id, providerId: result.order.providerId, customerId: result.order.customerId, status: result.order.status, paymentStatus: result.order.paymentStatus });
+    return res.json({ order: result.order, message: result.alreadyCollected ? 'Cash was already recorded for this order.' : 'Customer pickup and cash payment recorded.' });
+  });
+
   app.get('/api/grocery/orders/admin', requireAuth, async (req, res) => {
     if (req.user?.accountType !== 'admin' || !isAdminAuthorized(req.user)) return res.status(403).json({ error: 'Super Admin access required.' });
     const orders = await readPersistentState('grocery_orders', ordersFile, EMPTY_ORDERS);

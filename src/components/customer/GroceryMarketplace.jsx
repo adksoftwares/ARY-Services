@@ -352,8 +352,8 @@ export default function GroceryMarketplace() {
 
                     <div className="order-total-bar">
                       <span>Total: <b>{money(o.total)}</b></span>
-                      <Badge variant="neutral" dot={false} className="cod-badge">
-                        Cash on Delivery
+                      <Badge variant={o.paymentStatus === 'cash_collected' ? 'success' : 'neutral'} dot={false} className="cod-badge">
+                        {o.paymentStatus === 'cash_collected' ? 'Cash received' : 'Cash on Delivery'}
                       </Badge>
                     </div>
 
@@ -614,7 +614,7 @@ export default function GroceryMarketplace() {
             <ShieldCheck size={18} />
             <div>
               <b>Cash on Delivery (COD)</b>
-              <p>Pay cash directly to the delivery driver upon receiving and inspecting your items. 4-digit verification PIN provided.</p>
+              <p>Pay the full order total in cash when your items arrive. The driver records cash received after verifying the delivery PIN. No card or online payments.</p>
             </div>
           </div>
         </form>

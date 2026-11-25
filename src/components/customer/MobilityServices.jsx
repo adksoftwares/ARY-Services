@@ -473,6 +473,11 @@ export default function MobilityServices({ onNotice }) {
                     </div>
                   )}
 
+                  <div role="status" style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center', flexWrap: 'wrap', margin: '10px 0', padding: '9px 11px', borderRadius: 9, background: 'var(--color-surface-subtle, #f8fafc)', border: '1px solid var(--color-border-subtle, #e2e8f0)' }}>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--color-neutral-700, #334155)' }}>Cash only · Pay the driver at trip/delivery completion</span>
+                    <Badge variant={job.paymentStatus === 'cash_collected' ? 'success' : 'warning'} dot={false}>{job.paymentStatus === 'cash_collected' ? `Cash received · LKR ${Number(job.cashCollectedAmount || 0).toLocaleString('en-LK')}` : 'Cash due'}</Badge>
+                  </div>
+
                   {/* Big Copyable PIN Card (Shown only when PINs exist and relevant) */}
                   {(job.startPin || job.pickupPin || job.deliveryPin) && job.status !== 'completed' && (
                     <div className="pin-handoff-card">

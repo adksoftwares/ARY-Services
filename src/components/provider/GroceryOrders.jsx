@@ -101,6 +101,28 @@ export default function GroceryOrders() {
     }
   }
 
+  async function confirmPickupCash(order) {
+    if (!order?.id || busyId || !currentUser?.token) return false;
+    setBusyId(order.id);
+    setError('');
+    try {
+      const res = await fetch(`${API_BASE}/grocery/orders/${encodeURIComponent(order.id)}/cash-payment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${currentUser.token}` },
+        body: JSON.stringify({ amount: Number(order.total) })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Could not record pickup cash.');
+      await load();
+      return true;
+    } catch (error) {
+      setError(error.message || 'Could not record pickup cash.');
+      return false;
+    } finally {
+      setBusyId('');
+    }
+  }
+
   // Group orders into columns
   const groupedOrders = useMemo(() => {
     return {
@@ -233,7 +255,7 @@ export default function GroceryOrders() {
                     </div>
 
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', color: 'var(--color-neutral-400, #94a3b8)' }}>
-                      <span>Cash on Delivery</span>
+                      <span>{o.paymentStatus === 'cash_collected' ? 'Cash received' : 'Cash on Delivery'}</span>
                       <span>{o.createdAt && Number.isFinite(Date.parse(o.createdAt)) ? new Date(o.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Time unavailable'}</span>
                     </div>
 
@@ -298,18 +320,15 @@ export default function GroceryOrders() {
                       )}
 
                       {o.status === 'ready_for_pickup' && (
-                        <div style={{
-                          width: '100%',
-                          textAlign: 'center',
-                          padding: '6px',
-                          background: 'var(--color-brand-50, #edf7f2)',
-                          borderRadius: 'var(--radius-sm, 6px)',
-                          fontSize: '0.78rem',
-                          color: 'var(--color-brand-800, #154636)',
-                          fontWeight: 700
-                        }}>
-                          ⏳ Awaiting Driver Pickup
-                        </div>
+                        o.deliveryJobId ? (
+                          <div style={{ width: '100%', textAlign: 'center', padding: '8px', background: 'var(--color-brand-50, #edf7f2)', borderRadius: 'var(--radius-sm, 6px)', fontSize: '0.78rem', color: 'var(--color-brand-800, #154636)', fontWeight: 700 }}>
+                            ⏳ Awaiting Driver Pickup · Cash due on delivery
+                          </div>
+                        ) : (
+                          <Button variant="primary" size="sm" loading={busyId === o.id} disabled={Boolean(busyId)} onClick={() => confirmPickupCash(o)} style={{ width: '100%' }}>
+                            <CheckCheck size={14} /> Confirm Customer Pickup & Cash Received · LKR {Number(o.total || 0).toLocaleString('en-LK')}
+                          </Button>
+                        )
                       )}
 
                       {['delivered', 'completed'].includes(o.status) && (
