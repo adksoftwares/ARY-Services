@@ -248,7 +248,7 @@ async function mutatePostgresArray(filePath, mutator) {
   const client = await activePostgresPool.connect();
   try {
     await client.query('BEGIN');
-    await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`ary_documents:${collection}`]);
+    await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [collection]);
     const result = await client.query(
       'SELECT payload FROM ary_documents WHERE collection = $1 ORDER BY position ASC',
       [collection]
@@ -530,6 +530,23 @@ export async function getReviews() {
 }
 
 export async function addReview(newReview) {
+  if (activePostgresPool) {
+    return reviewsLock.acquire(async () => {
+      const { data, value } = await mutatePostgresArray(reviewsFile, current => ({ next: [newReview, ...current], value: newReview }));
+      cachedReviews = data;
+      if (newReview.providerId) {
+        const providerReviews = data.filter(review => review.providerId === newReview.providerId);
+        const totalScore = providerReviews.reduce((sum, review) => sum + Number(review.rating || 0), 0);
+        const avgRating = providerReviews.length ? Number((totalScore / providerReviews.length).toFixed(1)) : 5.0;
+        await updateUser(newReview.providerId, provider => {
+          provider.rating = avgRating;
+          provider.reviewCount = providerReviews.length;
+          return provider;
+        });
+      }
+      return value;
+    });
+  }
   return reviewsLock.acquire(async () => {
     const current = activePostgresPool ? await readJsonArray(reviewsFile) : cachedReviews !== null ? cachedReviews : await (async () => {
       try {
@@ -593,6 +610,13 @@ export async function getLedgerEntries() {
 }
 
 export async function addLedgerEntries(entries) {
+  if (activePostgresPool) {
+    return ledgerLock.acquire(async () => {
+      const { data, value } = await mutatePostgresArray(ledgerFile, current => ({ next: [...entries, ...current], value: entries }));
+      cachedLedger = data;
+      return value;
+    });
+  }
   return ledgerLock.acquire(async () => {
     const current = activePostgresPool ? await readJsonArray(ledgerFile) : cachedLedger !== null ? cachedLedger : await (async () => {
       try {
@@ -611,93 +635,64 @@ export async function addLedgerEntries(entries) {
 
 async function recordBalancedLedgerTransaction(transactionId, entries) {
   return ledgerLock.acquire(async () => {
-    if (!Array.isArray(entries) || entries.length < 2) {
-      throw new Error('Financial transactions require at least two entries.');
-    }
-
-    const bookingId = entries[0]?.bookingId;
-    const entryIds = new Set();
-    for (const entry of entries) {
-      const amount = Number(entry.amount);
-      if (
-        !Number.isSafeInteger(amount) || amount <= 0 ||
-        !['debit', 'credit'].includes(entry.type) ||
-        !entry.account || !entry.id || !bookingId ||
-        entry.bookingId !== bookingId || entry.currency !== 'LKR' ||
-        entry.transactionId !== transactionId || entryIds.has(entry.id)
-      ) {
-        throw new Error('Invalid ledger entry.');
-      }
-      entryIds.add(entry.id);
-    }
-
-    const debits = entries
-      .filter(entry => entry.type === 'debit')
-      .reduce((sum, entry) => sum + Number(entry.amount), 0);
-    const credits = entries
-      .filter(entry => entry.type === 'credit')
-      .reduce((sum, entry) => sum + Number(entry.amount), 0);
-    if (debits !== credits) {
-      throw new Error('Financial transaction is unbalanced.');
-    }
-
-    const current = activePostgresPool
-      ? await readJsonArray(ledgerFile)
-      : cachedLedger !== null
-        ? cachedLedger
-        : await (async () => {
-            try { return await readJsonArray(ledgerFile); }
-            catch { return []; }
-          })();
-
-    const existing = current.filter(entry => entry.transactionId === transactionId);
-    if (existing.length) {
-      if (existing.length !== entries.length) {
-        throw new Error('Incomplete transaction exists; reconciliation required.');
-      }
-      const expected = new Map(entries.map(entry => [
-        entry.id,
-        JSON.stringify({
-          bookingId: entry.bookingId,
-          account: entry.account,
-          type: entry.type,
-          amount: Number(entry.amount),
-          currency: entry.currency
-        })
-      ]));
-      const savedIds = new Set();
-      for (const saved of existing) {
-        const expectedPayload = expected.get(saved.id);
-        const savedPayload = JSON.stringify({
-          bookingId: saved.bookingId,
-          account: saved.account,
-          type: saved.type,
-          amount: Number(saved.amount),
-          currency: saved.currency
-        });
-        if (!expectedPayload || expectedPayload !== savedPayload || savedIds.has(saved.id)) {
-          throw new Error('Idempotency key conflict: transaction payload differs from the original.');
+    const apply = current => {
+      if (!Array.isArray(entries) || entries.length < 2) throw new Error('Financial transactions require at least two entries.');
+      const bookingId = entries[0]?.bookingId;
+      const entryIds = new Set();
+      for (const entry of entries) {
+        const amount = Number(entry.amount);
+        if (!Number.isSafeInteger(amount) || amount <= 0 || !['debit', 'credit'].includes(entry.type) ||
+          !entry.account || !entry.id || !bookingId || entry.bookingId !== bookingId ||
+          entry.currency !== 'LKR' || entry.transactionId !== transactionId || entryIds.has(entry.id)) {
+          throw new Error('Invalid ledger entry.');
         }
-        savedIds.add(saved.id);
+        entryIds.add(entry.id);
       }
-      return { transactionId, entries: existing, duplicate: true };
-    }
+      const debits = entries.filter(entry => entry.type === 'debit').reduce((sum, entry) => sum + Number(entry.amount), 0);
+      const credits = entries.filter(entry => entry.type === 'credit').reduce((sum, entry) => sum + Number(entry.amount), 0);
+      if (debits !== credits) throw new Error('Financial transaction is unbalanced.');
 
-    // A vault debit represents a final settlement. Detect legacy timestamp-based
-    // transaction IDs as well as new stable IDs so a booking cannot be paid twice.
-    const competingSettlement = current.find(entry =>
-      entry.bookingId === bookingId &&
-      entry.account === 'vault:ary_escrow_holding' &&
-      entry.type === 'debit'
-    );
-    if (competingSettlement) {
-      throw new Error('Booking already has a different financial settlement recorded.');
-    }
+      const existing = current.filter(entry => entry.transactionId === transactionId);
+      if (existing.length) {
+        if (existing.length !== entries.length) throw new Error('Incomplete transaction exists; reconciliation required.');
+        const expected = new Map(entries.map(entry => [entry.id, JSON.stringify({
+          bookingId: entry.bookingId, account: entry.account, type: entry.type,
+          amount: Number(entry.amount), currency: entry.currency
+        })]));
+        const savedIds = new Set();
+        for (const saved of existing) {
+          const expectedPayload = expected.get(saved.id);
+          const savedPayload = JSON.stringify({
+            bookingId: saved.bookingId, account: saved.account, type: saved.type,
+            amount: Number(saved.amount), currency: saved.currency
+          });
+          if (!expectedPayload || expectedPayload !== savedPayload || savedIds.has(saved.id)) {
+            throw new Error('Idempotency key conflict: transaction payload differs from the original.');
+          }
+          savedIds.add(saved.id);
+        }
+        return { next: current, value: { transactionId, entries: existing, duplicate: true } };
+      }
 
-    const next = [...entries, ...current];
+      const competingSettlement = current.find(entry =>
+        entry.bookingId === bookingId && entry.account === 'vault:ary_escrow_holding' && entry.type === 'debit'
+      );
+      if (competingSettlement) throw new Error('Booking already has a different financial settlement recorded.');
+      return { next: [...entries, ...current], value: { transactionId, entries, duplicate: false } };
+    };
+
+    if (activePostgresPool) {
+      const { data, value } = await mutatePostgresArray(ledgerFile, apply);
+      cachedLedger = data;
+      return value;
+    }
+    const current = cachedLedger !== null ? cachedLedger : await (async () => {
+      try { return await readJsonArray(ledgerFile); } catch { return []; }
+    })();
+    const { next, value } = apply(current);
     cachedLedger = next;
     await atomicWriteJson(ledgerFile, next);
-    return { transactionId, entries, duplicate: false };
+    return value;
   });
 }
 
@@ -946,75 +941,60 @@ export async function recordPayoutSettlement({ batchId, providerId, amount, bank
       throw new Error('Payout batch and provider identifiers are required.');
     }
     const payoutAmount = Number(amount);
-    if (!Number.isSafeInteger(payoutAmount) || payoutAmount <= 0) {
-      throw new Error('Payout amount must be a positive whole-number LKR amount.');
-    }
+    if (!Number.isSafeInteger(payoutAmount) || payoutAmount <= 0) throw new Error('Payout amount must be a positive whole-number LKR amount.');
 
-    const current = activePostgresPool
-      ? await readJsonArray(ledgerFile)
-      : cachedLedger !== null
-        ? cachedLedger
-        : await (async () => {
-            try { return await readJsonArray(ledgerFile); }
-            catch { return []; }
-          })();
-    const account = `provider:${providerId}:wallet`;
-    const transactionId = `tx-payout-${batchId}`;
-    const existing = current.filter(entry => entry.transactionId === transactionId);
-    if (existing.length) {
-      const expectedBankReference = bankReference ? `Bank reference ${bankReference}` : '';
-      const validReplay = existing.length === 2 &&
-        existing.some(entry => entry.account === account && entry.type === 'debit' && Number(entry.amount) === payoutAmount && String(entry.description || '').includes(`batch #${batchId.slice(-8)}`)) &&
-        existing.some(entry => entry.account === 'bank:external_provider_settlement' && entry.type === 'credit' && Number(entry.amount) === payoutAmount && String(entry.description || '').includes(`provider #${providerId}`)) &&
-        existing.every(entry => expectedBankReference
-          ? String(entry.description || '').includes(expectedBankReference)
-          : !String(entry.description || '').includes('Bank reference '));
-      if (!validReplay) {
-        throw new Error('Payout idempotency key conflict: batch payload differs from the original.');
+    const apply = current => {
+      const account = `provider:${providerId}:wallet`;
+      const transactionId = `tx-payout-${batchId}`;
+      const existing = current.filter(entry => entry.transactionId === transactionId);
+      if (existing.length) {
+        const expectedBankReference = bankReference ? `Bank reference ${bankReference}` : '';
+        const validReplay = existing.length === 2 &&
+          existing.some(entry => entry.account === account && entry.type === 'debit' && Number(entry.amount) === payoutAmount && String(entry.description || '').includes(`batch #${batchId.slice(-8)}`)) &&
+          existing.some(entry => entry.account === 'bank:external_provider_settlement' && entry.type === 'credit' && Number(entry.amount) === payoutAmount && String(entry.description || '').includes(`provider #${providerId}`)) &&
+          existing.every(entry => expectedBankReference
+            ? String(entry.description || '').includes(expectedBankReference)
+            : !String(entry.description || '').includes('Bank reference '));
+        if (!validReplay) throw new Error('Payout idempotency key conflict: batch payload differs from the original.');
+        return { next: current, value: { transactionId, entries: existing, duplicate: true } };
       }
-      return { transactionId, entries: existing, duplicate: true };
-    }
-    if (bankReference && current.some(entry =>
-      entry.account === account &&
-      String(entry.description || '').includes(`Bank reference ${bankReference}`)
-    )) {
-      throw new Error('This bank transfer reference has already been recorded.');
-    }
-
-    const balance = current
-      .filter(entry => entry.account === account)
-      .reduce((total, entry) => total + (entry.type === 'credit' ? Number(entry.amount) : -Number(entry.amount)), 0);
-    if (payoutAmount > balance) {
-      throw new Error('The payout amount is invalid or exceeds the current wallet balance.');
-    }
-
-    const timestamp = new Date().toISOString();
-    const entries = [
-      {
-        id: `entry-payout-${batchId}-debit`,
-        transactionId,
-        account,
-        type: 'debit',
-        amount: payoutAmount,
-        currency: 'LKR',
-        description: `Confirmed bank transfer batch #${batchId.slice(-8)}${bankReference ? ` | Bank reference ${bankReference}` : ''}`,
-        timestamp
-      },
-      {
-        id: `entry-payout-${batchId}-credit`,
-        transactionId,
-        account: 'bank:external_provider_settlement',
-        type: 'credit',
-        amount: payoutAmount,
-        currency: 'LKR',
-        description: `External bank transfer recorded for provider #${providerId}${bankReference ? ` | Bank reference ${bankReference}` : ''}`,
-        timestamp
+      if (bankReference && current.some(entry => entry.account === account && String(entry.description || '').includes(`Bank reference ${bankReference}`))) {
+        throw new Error('This bank transfer reference has already been recorded.');
       }
-    ];
-    const next = [...entries, ...current];
+      const balance = current.filter(entry => entry.account === account)
+        .reduce((total, entry) => total + (entry.type === 'credit' ? Number(entry.amount) : -Number(entry.amount)), 0);
+      if (payoutAmount > balance) throw new Error('The payout amount is invalid or exceeds the current wallet balance.');
+
+      const timestamp = new Date().toISOString();
+      const entries = [
+        {
+          id: `entry-payout-${batchId}-debit`, transactionId, account, type: 'debit',
+          amount: payoutAmount, currency: 'LKR',
+          description: `Confirmed bank transfer batch #${batchId.slice(-8)}${bankReference ? ` | Bank reference ${bankReference}` : ''}`,
+          timestamp
+        },
+        {
+          id: `entry-payout-${batchId}-credit`, transactionId, account: 'bank:external_provider_settlement', type: 'credit',
+          amount: payoutAmount, currency: 'LKR',
+          description: `External bank transfer recorded for provider #${providerId}${bankReference ? ` | Bank reference ${bankReference}` : ''}`,
+          timestamp
+        }
+      ];
+      return { next: [...entries, ...current], value: { transactionId, entries, duplicate: false } };
+    };
+
+    if (activePostgresPool) {
+      const { data, value } = await mutatePostgresArray(ledgerFile, apply);
+      cachedLedger = data;
+      return value;
+    }
+    const current = cachedLedger !== null ? cachedLedger : await (async () => {
+      try { return await readJsonArray(ledgerFile); } catch { return []; }
+    })();
+    const { next, value } = apply(current);
     cachedLedger = next;
     await atomicWriteJson(ledgerFile, next);
-    return { transactionId, entries, duplicate: false };
+    return value;
   });
 }
 
