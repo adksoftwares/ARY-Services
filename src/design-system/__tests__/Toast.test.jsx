@@ -15,7 +15,7 @@ describe('Toast lifecycle', () => {
     vi.useFakeTimers();
     render(<ToastProvider><ToastControls /></ToastProvider>);
     fireEvent.click(screen.getByRole('button', { name: 'Show toast' }));
-    expect(screen.getByRole('status')).toHaveTextContent('Saved successfully');
+    expect(screen.getByRole('status').textContent).toContain('Saved successfully');
     act(() => vi.advanceTimersByTime(1000));
     expect(screen.queryByText('Saved successfully')).toBeNull();
   });
