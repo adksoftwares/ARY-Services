@@ -425,9 +425,9 @@ export default function DriverWorkspace({ onNotice }) {
   const gpsInfo = getGpsFreshness(presence.updatedAt, presence.accuracyM);
 
   return (
-    <main className="driver-workspace-container">
+    <main className="driver-workspace-container driver-field-workspace">
       {/* 1. Giant Glanceable Online / Offline Switch */}
-      <div className={`driver-master-switch-card ${presence.online ? 'online' : 'offline'}`}>
+      <div className={`driver-master-switch-card driver-shift-panel ${presence.online ? 'online' : 'offline'}`}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
@@ -465,7 +465,7 @@ export default function DriverWorkspace({ onNotice }) {
 
       {/* 2. Active Trip Dedicated Field HUD */}
       {activeTrip && (
-        <div className="driver-active-hud-card">
+        <div className="driver-active-hud-card driver-active-dispatch">
           <div className="driver-active-top-bar">
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <div style={{
@@ -667,7 +667,7 @@ export default function DriverWorkspace({ onNotice }) {
       </div>
 
       {error && (
-        <div role="alert" aria-live="assertive" style={{
+        <div className="driver-workspace-error" role="alert" aria-live="assertive" style={{
           background: 'var(--color-danger-50, #fef2f2)',
           border: '1px solid var(--color-danger-200, #fecaca)',
           borderRadius: 'var(--radius-md, 8px)',
