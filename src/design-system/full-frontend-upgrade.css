@@ -737,3 +737,84 @@ textarea { min-height: 96px; }
   .product-catalog-grid { grid-template-columns: minmax(0, 1fr); }
 }
 [data-theme="dark"] .product-img-box { background: linear-gradient(145deg, #1d3024, #17231c); }
+
+/* Operational views: provider jobs, quotes, schedule, wallet and admin review tables. */
+.job-card, .quote-composer-card, .dispute-decision-option {
+  border: 1px solid var(--ary-line);
+  border-radius: 14px;
+  background: var(--ary-surface);
+  box-shadow: var(--ary-shadow-card);
+}
+.job-card { padding: clamp(14px, 2vw, 20px); }
+.job-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.job-actions-row { display: flex; flex-wrap: wrap; gap: 9px; }
+.job-actions-row > button { min-height: 44px; border-radius: 10px; }
+.quote-composer-card { padding: 18px; }
+.provider-form-group { display: grid; gap: 7px; min-width: 0; }
+.provider-form-label { color: var(--ary-muted); font-size: .82rem; font-weight: 700; }
+.provider-form-input { width: 100%; min-height: 44px; border-radius: 10px; }
+.provider-quotes-view, .provider-schedule-view, .provider-wallet-container,
+.admin-applications-view, .admin-disputes-view { min-width: 0; }
+.provider-quotes-view > *, .provider-schedule-view > *, .provider-wallet-container > *,
+.admin-applications-view > *, .admin-disputes-view > * { min-width: 0; }
+.admin-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: var(--ary-surface);
+}
+.admin-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #f4f7f3;
+  color: #52645a;
+  font-size: .76rem;
+  letter-spacing: .035em;
+  text-transform: uppercase;
+}
+.admin-table th, .admin-table td { border-bottom: 1px solid var(--ary-line); }
+.admin-table tbody tr:last-child td { border-bottom: 0; }
+.admin-table tbody tr:hover { background: #f8fbf8; }
+.admin-table .sortable {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 34px;
+  color: inherit;
+  font: inherit;
+}
+.admin-table-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; }
+.admin-table-actions button { min-height: 36px; border-radius: 9px; }
+.dispute-decision-option {
+  padding: 13px 14px;
+  box-shadow: none;
+  transition: border-color .15s ease, background .15s ease;
+}
+.dispute-decision-option.selected {
+  border-color: #6da886;
+  background: var(--ary-green-soft);
+}
+.gps-status-chip { border-radius: 999px; font-weight: 700; }
+.driver-route-container {
+  padding: 12px 14px;
+  border: 1px solid var(--ary-line);
+  border-radius: 13px;
+  background: var(--ary-surface);
+}
+.driver-route-point { min-width: 0; }
+@media (max-width: 760px) {
+  .job-detail-grid { grid-template-columns: minmax(0, 1fr); }
+  .job-actions-row { display: grid; grid-template-columns: 1fr 1fr; }
+  .job-actions-row > button { min-width: 0; }
+  .quote-composer-card { padding: 14px; }
+  .admin-table { min-width: 720px; }
+  .admin-table-actions { min-width: 145px; }
+}
+[data-theme="dark"] .admin-table thead th { background: #1c2a21; color: #bdc9c0; }
+[data-theme="dark"] .admin-table tbody tr:hover { background: #1b2a21; }
+[data-theme="dark"] .driver-route-container { background: var(--ary-surface); border-color: var(--ary-line); }
