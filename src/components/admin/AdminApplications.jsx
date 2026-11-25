@@ -168,9 +168,14 @@ export default function AdminApplications({
     // Filter
     return list.filter(item => {
       const q = String(searchQuery ?? '').toLowerCase().trim();
-      const searchable = [item.applicantName, item.phone, item.serviceNetwork, item.email, item.nicNumber]
+      const searchable = [
+        item.id, item.rawId, item.applicantName, item.phone, item.serviceNetwork,
+        item.email, item.nicNumber, item.role, item.kind, item.status, item.appliedAt,
+        item.details?.location, item.details?.categoryName, item.details?.nsnNumber,
+        item.details?.nicNumber, item.details?.operatingMode
+      ]
         .filter(value => value !== null && value !== undefined)
-        .map(value => String(value).toLowerCase());
+        .map(value => String(value).toLocaleLowerCase());
       const matchQuery = !q || searchable.some(value => value.includes(q));
 
       const matchType =
