@@ -152,8 +152,6 @@ export default function AdminApplications({
             details: {
               location: u.location,
               categoryName: u.categoryName || u.category,
-              nicDocument: u.nicDocument,
-              tradeCertificate: u.tradeCertificate,
               nsnNumber: u.nsnNumber,
               operatingMode: u.operatingMode,
               nicNumber: u.nicNumber,
@@ -387,8 +385,6 @@ export default function AdminApplications({
                         accountType: item.kind === 'driver' ? 'driver' : 'provider',
                         status: item.status,
                         nicNumber: item.nicNumber || item.details?.nicNumber,
-                        nicDocument: item.details?.nicDocument,
-                        tradeCertificate: item.details?.tradeCertificate,
                         nsnNumber: item.details?.nsnNumber,
                         operatingMode: item.details?.operatingMode,
                         location: item.details?.location

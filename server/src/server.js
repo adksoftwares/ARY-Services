@@ -2285,6 +2285,25 @@ app.get('/api/ledger/booking/:bookingId', requireAuth, async (req, res) => {
   }
 });
 
+// Return sensitive KYC files only when an authorized Admin opens one applicant's review.
+// The account directory and application queue deliberately omit document payloads.
+app.get('/api/admin/users/:id/kyc-documents', requireAdmin, async (req, res) => {
+  try {
+    const user = (await getUsers()).find(item => item.id === req.params.id && ['provider', 'driver'].includes(item.accountType));
+    if (!user) return res.status(404).json({ error: 'Provider or driver account not found.' });
+    res.setHeader('Cache-Control', 'private, no-store, max-age=0');
+    res.setHeader('Pragma', 'no-cache');
+    return res.json({
+      userId: user.id,
+      nicDocument: user.nicDocument || null,
+      tradeCertificate: user.tradeCertificate || null
+    });
+  } catch (error) {
+    console.error('Fetch KYC documents error:', error);
+    return res.status(500).json({ error: 'Could not fetch applicant documents.' });
+  }
+});
+
 // Admin: Get all registered user accounts (PROTECTED BY REQUIRE_ADMIN)
 app.get('/api/admin/users', requireAdmin, async (_req, res) => {
   try {
@@ -2308,8 +2327,6 @@ app.get('/api/admin/users', requireAdmin, async (_req, res) => {
       nicNumber: u.nicNumber || null,
       nsnNumber: u.nsnNumber || null,
       operatingMode: u.operatingMode || null,
-      nicDocument: u.nicDocument || null,
-      tradeCertificate: u.tradeCertificate || null,
       kycStatus: u.kycStatus || (['provider', 'driver'].includes(u.accountType) ? 'unverified' : 'verified'),
       createdAt: u.createdAt || new Date().toISOString()
     }));
