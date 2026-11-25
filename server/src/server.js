@@ -1314,12 +1314,11 @@ app.post('/api/bookings', requireAuth, async (req, res) => {
     const baseAmount = Number.parseInt(rawDigits, 10) || 0;
     const platformFee = baseAmount > 0 ? Math.round(baseAmount * 0.10) : 0;
     const providerPayout = baseAmount > 0 ? baseAmount - platformFee : 0;
-    const paymentMethod = req.body.paymentMethod === 'escrow_online' ? 'escrow_online' : 'cash';
-    if (paymentMethod === 'escrow_online') {
-      return res.status(503).json({
-        error: 'Online escrow is temporarily unavailable until the ARY PayHere merchant account and verified payment callback are configured. Please choose Direct Cash.'
-      });
+    const requestedPaymentMethod = String(req.body?.paymentMethod || 'cash').trim().toLowerCase();
+    if (!['cash', 'cash_on_completion'].includes(requestedPaymentMethod)) {
+      return res.status(400).json({ error: 'ARY Services currently accepts cash payments only. Please choose cash on completion.' });
     }
+    const paymentMethod = 'cash';
     const paymentStatus = baseAmount > 0 ? 'pending_cash' : 'pending_quote';
 
     const newBooking = {
@@ -1345,6 +1344,7 @@ app.post('/api/bookings', requireAuth, async (req, res) => {
       providerPayout,
       paymentMethod,
       paymentStatus,
+      cashCollectionStatus: baseAmount > 0 ? 'pending' : 'awaiting_quote',
       workmanshipGuarantee: true,
       status: 'requested', // 'requested' | 'accepted' | 'in_progress' | 'completed' | 'cancelled' | 'rejected'
       createdAt: new Date().toISOString(),
@@ -1475,6 +1475,48 @@ app.patch('/api/bookings/:id/status', requireAuth, async (req, res) => {
   }
 });
 
+// Cash-only settlement: the assigned provider records receipt after the service is completed.
+app.post('/api/bookings/:id/cash-payment', requireAuth, async (req, res) => {
+  try {
+    const bookings = await getBookings();
+    const booking = bookings.find(item => item.id === req.params.id);
+    if (!booking) return res.status(404).json({ error: 'Booking not found.' });
+    const isProvider = req.user.accountType === 'provider' && booking.providerId === req.user.id;
+    const isAdmin = isDesignatedSuperAdmin(req.user);
+    if (!isProvider && !isAdmin) return res.status(403).json({ error: 'Only the assigned provider or Admin can record cash received.' });
+    if (booking.status !== 'completed') return res.status(409).json({ error: 'Complete the service before recording cash received.' });
+    const expectedAmount = Number(booking.baseAmount);
+    const receivedAmount = Number(req.body?.amount);
+    if (!Number.isSafeInteger(expectedAmount) || expectedAmount <= 0 || receivedAmount !== expectedAmount) {
+      return res.status(400).json({ error: 'Enter the exact agreed booking amount in LKR before confirming cash received.' });
+    }
+    if (booking.paymentStatus === 'cash_collected') {
+      return res.json({ booking, message: 'Cash payment was already recorded for this booking.' });
+    }
+    const updated = await updateBooking(booking.id, current => {
+      if (current.paymentStatus === 'cash_collected') return current;
+      current.paymentMethod = 'cash';
+      current.paymentStatus = 'cash_collected';
+      current.cashCollectionStatus = 'collected';
+      current.cashCollectedAmount = receivedAmount;
+      current.cashCollectedAt = new Date().toISOString();
+      current.cashCollectedBy = req.user.id;
+      current.cashCollectedByRole = req.user.accountType;
+      current.platformFeeDue = Number(current.platformFee || 0);
+      current.providerNetCash = Math.max(0, receivedAmount - Number(current.platformFee || 0));
+      current.updatedAt = current.cashCollectedAt;
+      current.lifecycleHistory = Array.isArray(current.lifecycleHistory) ? current.lifecycleHistory : [];
+      current.lifecycleHistory.push({ event: 'cash_payment_collected', amount: receivedAmount, currency: 'LKR', actorId: req.user.id, actorRole: req.user.accountType, at: current.cashCollectedAt });
+      return current;
+    });
+    publishEvent('booking:cash_collected', { bookingId: booking.id, customerId: booking.customerId, providerId: booking.providerId, booking: updated });
+    return res.json({ booking: updated, message: 'Cash payment recorded successfully.' });
+  } catch (error) {
+    console.error('Record booking cash payment error:', error);
+    return res.status(500).json({ error: 'Could not record cash payment.' });
+  }
+});
+
 // Provider sends a service quote; the customer explicitly accepts or declines it.
 app.post('/api/bookings/:id/quote', requireAuth, async (req, res) => {
   try {
@@ -1531,7 +1573,9 @@ app.patch('/api/bookings/:id/quote', requireAuth, async (req, res) => {
         current.quoteRequired = false;
         current.platformFee = Math.round(current.baseAmount * 0.10);
         current.providerPayout = current.baseAmount - current.platformFee;
+        current.paymentMethod = 'cash';
         current.paymentStatus = 'pending_cash';
+        current.cashCollectionStatus = 'pending';
       }
       current.updatedAt = new Date().toISOString();
       return current;

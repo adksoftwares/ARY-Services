@@ -112,6 +112,7 @@ export default function ProviderDashboard({
   isLoading = false,
   onRefresh,
   onUpdateStatus,
+  onConfirmCashPayment,
   onDecideReschedule,
   notice = '',
   onSetNotice
@@ -394,6 +395,7 @@ export default function ProviderDashboard({
             bookings={bookings}
             isLoading={isLoading}
             onUpdateStatus={onUpdateStatus}
+            onConfirmCashPayment={onConfirmCashPayment}
             onDecideReschedule={onDecideReschedule}
             onClaimJob={handleClaimJob}
             onSendQuote={handleSendQuote}

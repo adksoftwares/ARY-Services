@@ -335,6 +335,14 @@ export default function MyBookingsList({
 
                 {actionErrors[b.id] && <div role="alert" aria-live="assertive" className="wizard-error-banner">{actionErrors[b.id]}</div>}
 
+                <div className="booking-payment-status" role="status" aria-live="polite" style={{ marginTop: 12, padding: '11px 13px', borderRadius: 10, border: '1px solid var(--color-border-subtle, #e2e8f0)', background: 'var(--color-surface-subtle, #f8fafc)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                  <div>
+                    <b style={{ display: 'block', fontSize: '0.82rem', color: 'var(--color-neutral-800, #1e293b)' }}>Cash payment only</b>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--color-neutral-600, #64748b)' }}>{b.paymentStatus === 'cash_collected' ? 'Provider confirmed cash received' : b.status === 'completed' ? 'Please settle the agreed amount directly with your provider' : 'Pay your provider in cash after service completion'}</span>
+                  </div>
+                  <Badge variant={b.paymentStatus === 'cash_collected' ? 'success' : 'warning'} dot={false}>{b.paymentStatus === 'cash_collected' ? 'Cash received' : b.status === 'completed' ? 'Payment due' : 'Cash on completion'}</Badge>
+                </div>
+
                 {/* Booking Footer Actions */}
                 <div className="booking-card-footer">
                   <div className="booking-action-buttons">
