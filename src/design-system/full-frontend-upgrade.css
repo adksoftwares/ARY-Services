@@ -1353,3 +1353,33 @@ textarea { min-height: 96px; }
   .provider-jobs-container .job-detail-grid { grid-template-columns: minmax(0, 1fr); }
   .provider-jobs-container .job-actions-row > * { flex: 1 1 100%; }
 }
+
+
+/* Driver earnings and completed-work history */
+.driver-earnings-container {
+  width: min(100%, 1180px);
+  margin-inline: auto;
+}
+.driver-earnings-metrics > * {
+  min-width: 0;
+  border-radius: 16px;
+  box-shadow: var(--ary-shadow-card);
+}
+.driver-trip-history-card { min-width: 0; overflow: hidden; }
+.driver-trip-history-card > div { min-width: 0; }
+.driver-trip-history-card input[type="search"] {
+  width: 100%;
+  min-width: 0;
+}
+.driver-earnings-container table,
+.driver-trip-history-card table { width: 100%; }
+.driver-trip-history-card [role="group"] { max-width: 100%; }
+@media (max-width: 760px) {
+  .driver-earnings-container { padding-inline: 10px; }
+  .driver-earnings-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .driver-earnings-metrics > * { padding: 13px !important; }
+}
+@media (max-width: 420px) {
+  .driver-earnings-metrics { grid-template-columns: minmax(0, 1fr) !important; }
+  .driver-trip-history-card { padding: 13px !important; }
+}
