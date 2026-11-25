@@ -41,6 +41,7 @@ export default function AdminKycModal({
     if (!isOpen || !user?.id || !currentUser?.token) {
       setKycDocuments({ nicDocument: null, tradeCertificate: null });
       setDocumentsError('');
+      setDocumentsLoading(false);
       return undefined;
     }
     const controller = new AbortController();
