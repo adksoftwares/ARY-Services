@@ -311,23 +311,62 @@ export function registerGroceryRoutes(app, { requireAuth, broadcastEvent, getUse
       quantities.set(productId, (quantities.get(productId) || 0) + quantity);
     }
     if ([...quantities.values()].some(quantity => quantity > 100)) return res.status(400).json({ error: 'Maximum quantity per product is 100.' });
-    let reserved = [];
+    let order = null;
     try {
-      let order = await mutateProducts(products => {
-        const selected = [...quantities].map(([productId, quantity]) => {
-          const product = products.find(item => item.id === productId && item.isAvailable === true);
-          if (!product) throw new Error('A product is no longer available. Refresh your cart.');
-          if (product.stock < quantity) throw new Error('Not enough stock for ' + product.name + '. Available: ' + product.stock + '.');
-          return { product, quantity };
-        });
-        const providerIds = [...new Set(selected.map(item => item.product.providerId))];
-        if (providerIds.length !== 1) throw new Error('Please place separate orders for products from different shops.');
-        const items = selected.map(({ product, quantity }) => ({ productId: product.id, name: product.name, brand: product.brand, category: product.category, unit: product.unit, packSize: product.packSize, quantity, unitPrice: product.price, lineTotal: Number((product.price * quantity).toFixed(2)) }));
-        const total = Number(items.reduce((sum, item) => sum + item.lineTotal, 0).toFixed(2));
-        selected.forEach(({ product, quantity }) => { product.stock -= quantity; product.updatedAt = new Date().toISOString(); reserved.push({ productId: product.id, quantity }); });
-        return { id: 'gord-' + crypto.randomUUID(), customerId: req.user.id, customerName: req.user.fullName, customerPhone: phone, providerId: providerIds[0], providerName: selected[0].product.providerName, items, subtotal: total, deliveryFee: 0, total, currency: 'LKR', deliveryAddress, notes: String(req.body?.notes || '').trim().slice(0, 500), paymentMethod: 'cash_on_delivery', paymentStatus: 'unpaid', cashCollectionStatus: 'pending', status: 'pending', statusHistory: [{ status: 'pending', at: new Date().toISOString(), by: req.user.id }], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), deliveryStatus: 'pending_dispatch', destinationLat: Number.isFinite(Number(req.body?.destinationLat)) ? Number(req.body.destinationLat) : null, destinationLng: Number.isFinite(Number(req.body?.destinationLng)) ? Number(req.body.destinationLng) : null };
-      });
-      await mutatePersistentState('grocery_orders', ordersFile, EMPTY_ORDERS, stored => { if (!Array.isArray(stored)) throw new Error('Grocery order storage is invalid.'); stored.unshift(order); return true; });
+      // Reserve stock and persist the order together. A crash cannot leave stock
+      // decremented without the corresponding customer order in PostgreSQL.
+      await mutatePersistentStates([
+        {
+          collection: COLLECTION,
+          fallbackFile: dataFile,
+          fallbackValue: EMPTY_PRODUCTS,
+          mutator: products => {
+            if (!Array.isArray(products)) throw new Error('Grocery inventory storage is invalid.');
+            const selected = [...quantities].map(([productId, quantity]) => {
+              const product = products.find(item => item.id === productId && item.isAvailable === true);
+              if (!product) throw new Error('A product is no longer available. Refresh your cart.');
+              if (product.stock < quantity) throw new Error('Not enough stock for ' + product.name + '. Available: ' + product.stock + '.');
+              return { product, quantity };
+            });
+            const providerIds = [...new Set(selected.map(item => item.product.providerId))];
+            if (providerIds.length !== 1) throw new Error('Please place separate orders for products from different shops.');
+            const items = selected.map(({ product, quantity }) => ({
+              productId: product.id, name: product.name, brand: product.brand, category: product.category,
+              unit: product.unit, packSize: product.packSize, quantity, unitPrice: product.price,
+              lineTotal: Number((product.price * quantity).toFixed(2))
+            }));
+            const total = Number(items.reduce((sum, item) => sum + item.lineTotal, 0).toFixed(2));
+            selected.forEach(({ product, quantity }) => {
+              product.stock -= quantity;
+              product.updatedAt = new Date().toISOString();
+            });
+            const now = new Date().toISOString();
+            order = {
+              id: 'gord-' + crypto.randomUUID(), customerId: req.user.id, customerName: req.user.fullName,
+              customerPhone: phone, providerId: providerIds[0], providerName: selected[0].product.providerName,
+              items, subtotal: total, deliveryFee: 0, total, currency: 'LKR', deliveryAddress,
+              notes: String(req.body?.notes || '').trim().slice(0, 500),
+              paymentMethod: 'cash_on_delivery', paymentStatus: 'unpaid', cashCollectionStatus: 'pending',
+              status: 'pending', statusHistory: [{ status: 'pending', at: now, by: req.user.id }],
+              createdAt: now, updatedAt: now, deliveryStatus: 'pending_dispatch',
+              destinationLat: Number.isFinite(Number(req.body?.destinationLat)) ? Number(req.body.destinationLat) : null,
+              destinationLng: Number.isFinite(Number(req.body?.destinationLng)) ? Number(req.body.destinationLng) : null
+            };
+            return true;
+          }
+        },
+        {
+          collection: 'grocery_orders',
+          fallbackFile: ordersFile,
+          fallbackValue: EMPTY_ORDERS,
+          mutator: stored => {
+            if (!Array.isArray(stored)) throw new Error('Grocery order storage is invalid.');
+            if (!order) throw new Error('Grocery order could not be created.');
+            stored.unshift(order);
+            return true;
+          }
+        }
+      ]);
       try {
         const users = await getUsers();
         const provider = users.find(user => user.id === order.providerId && user.accountType === 'provider' && user.status === 'active');
@@ -366,10 +405,6 @@ export function registerGroceryRoutes(app, { requireAuth, broadcastEvent, getUse
       broadcastEvent('grocery:order_created', { orderId: order.id, providerId: order.providerId, customerId: order.customerId });
       return res.status(201).json({ order, message: order.deliveryStatus === 'driver_requested' ? 'Order placed and delivery driver requested. Pay cash on delivery.' : 'Order placed. The shop must confirm its pickup address before a driver can be requested. Pay cash on delivery.' });
     } catch (error) {
-      if (reserved.length) {
-        try { await mutateProducts(products => { for (const line of reserved) { const product = products.find(item => item.id === line.productId); if (product) { product.stock += line.quantity; product.updatedAt = new Date().toISOString(); } } return true; }); }
-        catch (restoreError) { console.error('Grocery stock compensation failed:', restoreError); }
-      }
       return res.status(409).json({ error: error.message || 'Could not place grocery order.' });
     }
   });
