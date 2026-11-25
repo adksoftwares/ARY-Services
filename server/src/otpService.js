@@ -2,6 +2,11 @@ import crypto from 'node:crypto';
 
 const activeOtpStore = new Map();
 const rateLimitStore = new Map();
+let otpStoragePool = null;
+
+export function setOtpStoragePool(pool) {
+  otpStoragePool = pool || null;
+}
 const OTP_TTL_MS = 5 * 60 * 1000;
 const SEND_COOLDOWN_MS = 10 * 1000;
 const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
@@ -28,8 +33,52 @@ function toE164(phone) {
   return '';
 }
 
-function rateLimitPhone(cleanPhone) {
+async function rateLimitPhone(cleanPhone) {
   const now = Date.now();
+  if (otpStoragePool) {
+    const phoneKey = crypto.createHash('sha256').update(cleanPhone).digest('hex');
+    const client = await otpStoragePool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query(
+        'INSERT INTO otp_rate_limits (phone_key, window_started_at, send_count, last_sent_at) VALUES ($1, $2, 0, 0) ON CONFLICT (phone_key) DO NOTHING',
+        [phoneKey, now]
+      );
+      const result = await client.query(
+        'SELECT window_started_at, send_count, last_sent_at FROM otp_rate_limits WHERE phone_key = $1 FOR UPDATE',
+        [phoneKey]
+      );
+      const record = result.rows[0];
+      if (now - Number(record.last_sent_at) < SEND_COOLDOWN_MS) {
+        await client.query('COMMIT');
+        const waitSeconds = Math.ceil((SEND_COOLDOWN_MS - (now - Number(record.last_sent_at))) / 1000);
+        return { success: false, error: `Please wait ${waitSeconds}s before requesting a new verification code.`, waitSeconds };
+      }
+      let windowStart = Number(record.window_started_at);
+      let sendCount = Number(record.send_count);
+      if (now - windowStart < RATE_LIMIT_WINDOW_MS) {
+        if (sendCount >= MAX_SENDS_PER_WINDOW) {
+          await client.query('COMMIT');
+          return { success: false, error: 'Too many OTP requests for this phone number. Please wait before trying again.' };
+        }
+        sendCount += 1;
+      } else {
+        windowStart = now;
+        sendCount = 1;
+      }
+      await client.query(
+        'UPDATE otp_rate_limits SET window_started_at = $2, send_count = $3, last_sent_at = $4 WHERE phone_key = $1',
+        [phoneKey, windowStart, sendCount, now]
+      );
+      await client.query('COMMIT');
+      return { success: true };
+    } catch (error) {
+      await client.query('ROLLBACK').catch(() => {});
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
   let record = rateLimitStore.get(cleanPhone);
   if (record) {
     if (now - record.lastSentAt < SEND_COOLDOWN_MS) {
@@ -81,7 +130,7 @@ export async function sendOtp(phone) {
     return { success: false, error: 'Enter a valid Sri Lankan mobile number, for example 0771234567.' };
   }
 
-  const limited = rateLimitPhone(cleanPhone);
+  const limited = await rateLimitPhone(cleanPhone);
   if (!limited.success) return limited;
 
   if (isProduction) {
