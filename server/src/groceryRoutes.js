@@ -2,7 +2,7 @@ import express from 'express';
 import crypto from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { mutatePersistentState, readPersistentState } from './storage.js';
+import { mutatePersistentState, mutatePersistentStates, readPersistentState } from './storage.js';
 
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -11,6 +11,8 @@ const COLLECTION = 'grocery_products';
 const EMPTY_PRODUCTS = [];
 const ordersFile = path.join(__dirname, '..', 'data', 'grocery-orders.json');
 const EMPTY_ORDERS = [];
+const driverServicesFile = path.join(__dirname, '..', 'data', 'driver-services.json');
+const EMPTY_DRIVER_STATE = { applications: [], jobs: [], presence: {} };
 
 function cleanProduct(body = {}) {
   const source = body && typeof body === 'object' && !Array.isArray(body) ? body : {};
@@ -73,6 +75,61 @@ async function mutateProducts(mutator) {
     }
     return mutator(stored);
   });
+}
+
+async function cancelOrderAndRestoreStock({ orderId, actorId, canCancel, allowedStatuses }) {
+  let cancelledOrder = null;
+  let cancelledDriverJob = null;
+  const outcomes = await mutatePersistentStates([
+    {
+      collection: 'grocery_orders', fallbackFile: ordersFile, fallbackValue: EMPTY_ORDERS,
+      mutator: orders => {
+        if (!Array.isArray(orders)) throw new Error('Grocery order storage is invalid.');
+        const order = orders.find(item => item.id === orderId);
+        if (!order || !canCancel(order)) return { missing: true };
+        if (!allowedStatuses.includes(order.status)) return { conflict: 'This order can no longer be cancelled.' };
+        order.status = 'cancelled';
+        order.deliveryStatus = 'cancelled';
+        order.updatedAt = new Date().toISOString();
+        order.statusHistory = Array.isArray(order.statusHistory) ? order.statusHistory : [];
+        order.statusHistory.push({ status: 'cancelled', at: order.updatedAt, by: actorId });
+        cancelledOrder = order;
+        return { order };
+      }
+    },
+    {
+      collection: 'driver-services', fallbackFile: driverServicesFile, fallbackValue: EMPTY_DRIVER_STATE,
+      mutator: state => {
+        if (!cancelledOrder?.deliveryJobId) return true;
+        state.jobs = Array.isArray(state.jobs) ? state.jobs : [];
+        const job = state.jobs.find(item => item.id === cancelledOrder.deliveryJobId);
+        if (!job) return true;
+        if (job.driverId || job.status !== 'requested') {
+          const error = new Error('A delivery driver has already accepted this order. Contact ARY support before cancelling.');
+          error.status = 409;
+          throw error;
+        }
+        job.status = 'cancelled';
+        job.cancelledAt = new Date().toISOString();
+        job.cancellationReason = 'grocery_order_cancelled';
+        cancelledDriverJob = job;
+        return true;
+      }
+    },
+    {
+      collection: COLLECTION, fallbackFile: dataFile, fallbackValue: EMPTY_PRODUCTS,
+      mutator: products => {
+        if (!cancelledOrder) return true;
+        if (!Array.isArray(products)) throw new Error('Grocery inventory storage is invalid.');
+        for (const line of cancelledOrder.items || []) {
+          const product = products.find(item => item.id === line.productId);
+          if (product) { product.stock += Number(line.quantity || 0); product.updatedAt = new Date().toISOString(); }
+        }
+        return true;
+      }
+    }
+  ]);
+  return { outcome: outcomes[0], order: cancelledOrder, driverJob: cancelledDriverJob };
 }
 
 function hasDuplicateSku(products, providerId, sku, exceptId = null) {
@@ -364,30 +421,21 @@ export function registerGroceryRoutes(app, { requireAuth, broadcastEvent, getUse
   });
   app.patch('/api/grocery/orders/:id/cancel', requireAuth, async (req, res) => {
     if (req.user?.accountType !== 'customer') return res.status(403).json({ error: 'Customer account required.' });
-    const existing = await readPersistentState('grocery_orders', ordersFile, EMPTY_ORDERS);
-    const target = existing.find(item => item.id === req.params.id && item.customerId === req.user.id);
-    if (!target) return res.status(404).json({ error: 'Order not found.' });
-    if (target.status !== 'pending') return res.status(409).json({ error: 'A grocery order can only be cancelled before the shop accepts it.' });
-    const order = await mutatePersistentState('grocery_orders', ordersFile, EMPTY_ORDERS, stored => {
-      const current = stored.find(item => item.id === req.params.id && item.customerId === req.user.id);
-      if (!current || current.status !== 'pending') return null;
-      current.status = 'cancelled';
-      current.deliveryStatus = 'cancelled';
-      current.updatedAt = new Date().toISOString();
-      current.statusHistory = Array.isArray(current.statusHistory) ? current.statusHistory : [];
-      current.statusHistory.push({ status: 'cancelled', at: current.updatedAt, by: req.user.id });
-      return current;
-    });
-    if (!order) return res.status(409).json({ error: 'The shop has already started processing this order.' });
-    if (order.deliveryJobId) await cancelGroceryOrderDeliveryJob(order.deliveryJobId);
-    await mutateProducts(products => {
-      for (const line of order.items) {
-        const product = products.find(item => item.id === line.productId);
-        if (product) { product.stock += line.quantity; product.updatedAt = new Date().toISOString(); }
-      }
-      return true;
-    });
-    if (order.deliveryJobId) broadcastEvent('driver:job_updated', { customerId: order.customerId, driverId: null, job: { id: order.deliveryJobId, status: 'cancelled', serviceType: 'food_delivery', customerId: order.customerId } });
+    let result;
+    try {
+      result = await cancelOrderAndRestoreStock({
+        orderId: req.params.id, actorId: req.user.id,
+        canCancel: order => order.customerId === req.user.id,
+        allowedStatuses: ['pending']
+      });
+    } catch (error) {
+      if (error.status === 409) return res.status(409).json({ error: error.message });
+      throw error;
+    }
+    if (result.outcome?.missing) return res.status(404).json({ error: 'Order not found.' });
+    if (result.outcome?.conflict) return res.status(409).json({ error: result.outcome.conflict });
+    const order = result.order;
+    if (result.driverJob) broadcastEvent('driver:job_updated', { customerId: order.customerId, driverId: null, job: { id: result.driverJob.id, status: 'cancelled', serviceType: 'food_delivery', customerId: order.customerId } });
     broadcastEvent('grocery:order_updated', { orderId: order.id, providerId: order.providerId, customerId: order.customerId, status: order.status });
     return res.json({ order, message: 'Grocery order cancelled and stock restored.' });
   });
@@ -399,17 +447,28 @@ export function registerGroceryRoutes(app, { requireAuth, broadcastEvent, getUse
     if (req.user?.accountType === 'admin' && !isAdmin) return res.status(403).json({ error: 'Super Admin access required.' });
     if (!isAdmin && !isProvider) return res.status(403).json({ error: 'Shop provider or Admin access required.' });
     if (next === 'cancelled') {
-      const existing = await readPersistentState('grocery_orders', ordersFile, EMPTY_ORDERS);
-      const target = existing.find(item => item.id === req.params.id && (isAdmin || item.providerId === req.user.id));
-      if (!target) return res.status(404).json({ error: 'Order not found.' });
-      if (target.deliveryJobId && !(await cancelGroceryOrderDeliveryJob(target.deliveryJobId))) {
-        return res.status(409).json({ error: 'A delivery driver has already accepted this order. Contact ARY support before cancelling.' });
+      let result;
+      try {
+        result = await cancelOrderAndRestoreStock({
+          orderId: req.params.id, actorId: req.user.id,
+          canCancel: order => isAdmin || order.providerId === req.user.id,
+          allowedStatuses: ['pending', 'accepted']
+        });
+      } catch (error) {
+        if (error.status === 409) return res.status(409).json({ error: error.message });
+        throw error;
       }
+      if (result.outcome?.missing) return res.status(404).json({ error: 'Order not found.' });
+      if (result.outcome?.conflict) return res.status(409).json({ error: result.outcome.conflict });
+      const order = result.order;
+      if (result.driverJob) broadcastEvent('driver:job_updated', { customerId: order.customerId, driverId: null, job: { id: result.driverJob.id, status: 'cancelled', serviceType: 'food_delivery', customerId: order.customerId } });
+      broadcastEvent('grocery:order_updated', { orderId: order.id, providerId: order.providerId, customerId: order.customerId, status: order.status });
+      return res.json({ order });
     }
     const result = await mutatePersistentState('grocery_orders', ordersFile, EMPTY_ORDERS, stored => {
       const order = stored.find(item => item.id === req.params.id && (isAdmin || item.providerId === req.user.id));
       if (!order) return { missing: true };
-      const transitions = { pending: ['accepted', 'cancelled'], accepted: ['preparing', 'cancelled'], preparing: ['ready_for_pickup'], ready_for_pickup: ['delivered'], delivered: [] };
+      const transitions = { pending: ['accepted'], accepted: ['preparing'], preparing: ['ready_for_pickup'], ready_for_pickup: ['delivered'], delivered: [] };
       if (!transitions[order.status]?.includes(next)) return { invalid: true };
       order.status = next; if (next === 'cancelled') order.deliveryStatus = 'cancelled'; order.updatedAt = new Date().toISOString(); order.statusHistory.push({ status: next, at: order.updatedAt, by: req.user.id });
       return { order };
