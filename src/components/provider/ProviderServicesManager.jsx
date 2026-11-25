@@ -139,7 +139,7 @@ export default function ProviderServicesManager() {
   const available = categories;
 
   return (
-    <div className="provider-services-manager-view" style={{ display: 'grid', gap: '20px' }}>
+    <div className="provider-services-manager-view" data-workspace="provider-services" style={{ display: 'grid', gap: '20px' }}>
       {/* 1. Header Toolbar */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
         <div>
