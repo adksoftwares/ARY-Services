@@ -138,6 +138,11 @@ if (!JWT_SECRET || Buffer.byteLength(JWT_SECRET) < 32) {
   throw new Error('JWT_SECRET must be configured with at least 32 characters.');
 }
 
+const SESSION_TTL_DAYS = Number(process.env.SESSION_TTL_DAYS || 30);
+if (!Number.isInteger(SESSION_TTL_DAYS) || SESSION_TTL_DAYS < 1 || SESSION_TTL_DAYS > 30) {
+  throw new Error('SESSION_TTL_DAYS must be a whole number between 1 and 30.');
+}
+
 let pool;
 if (process.env.NODE_ENV === 'production' && !process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL is required in production; file storage is not durable.');
@@ -161,7 +166,7 @@ if (process.env.DATABASE_URL) {
 // Token generation & verification using native Node.js crypto (HS256)
 function generateToken(payload) {
   const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
-  const body = Buffer.from(JSON.stringify({ ...payload, exp: payload.exp || Date.now() + 90 * 24 * 60 * 60 * 1000 })).toString('base64url');
+  const body = Buffer.from(JSON.stringify({ ...payload, exp: payload.exp || Date.now() + SESSION_TTL_DAYS * 24 * 60 * 60 * 1000 })).toString('base64url');
   const signature = crypto.createHmac('sha256', JWT_SECRET).update(`${header}.${body}`).digest('base64url');
   return `${header}.${body}.${signature}`;
 }
