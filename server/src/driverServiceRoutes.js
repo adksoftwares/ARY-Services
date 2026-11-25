@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { readPersistentState, mutatePersistentState } from './storage.js';
+import { readPersistentState, mutatePersistentState, mutatePersistentStates } from './storage.js';
 import { cleanSriLankaCoordinates, isDriverPresenceFresh, rankJobsForDriver, buildAdminDispatchSnapshot, summarizeDriverReliability, isDriverEligibleForRequeuedJob } from './mobilityDispatch.js';
 import { MOBILITY_PIN_TTL_MS, isMobilityPinExpired } from './mobilityPinSecurity.js';
 import { calculateDistanceKm, estimateEtaMinutes, getRoadRoute } from './geoService.js';
@@ -345,10 +345,99 @@ export function registerDriverServiceRoutes(app,{requireAuth,requireAdmin,broadc
       expectedCashAmount=Number(candidate.cashAmount);
     }
     if(expectedCashAmount!==null&&Number(cashAmount.toFixed(2))!==Number(expectedCashAmount.toFixed(2)))return res.status(400).json({error:`The cash amount must match the agreed fare/order total of LKR ${expectedCashAmount.toLocaleString('en-LK')}.`});
-    const result=await mutateJobs(state=>{const job=state.jobs.find(item=>item.id===req.params.id);if(!job)return {status:404,error:'Job not found.'};if(job.driverId!==req.user.id)return {status:403,error:'Only the assigned driver can verify delivery.'};const allowed=job.serviceType==='ride'?job.status==='in_progress':['picked_up','in_transit'].includes(job.status);if(!allowed)return {status:409,error:'Pickup must be verified before completing this job.'};if(isMobilityPinExpired(job))return {status:410,error:'Delivery PIN expired. Contact ARY support before continuing.'};if((job.deliveryPinAttempts||0)>=5)return {status:429,error:'Delivery PIN attempts exceeded. Contact ARY support.'};if(!pinMatches(req.body?.pin,job.deliveryPinHash)){job.deliveryPinAttempts=(job.deliveryPinAttempts||0)+1;return {status:400,error:'Incorrect delivery PIN.'};}job.status=job.serviceType==='ride'?'completed':'delivered';job.completedAt=new Date().toISOString();job.deliveryVerifiedAt=job.completedAt;job.deliveryPinAttempts=0;job.paymentMethod=job.serviceType==='food_delivery'?'cash_on_delivery':'cash';job.paymentStatus='cash_collected';job.cashCollectedAmount=Number(cashAmount.toFixed(2));job.cashCollectedAt=job.completedAt;job.cashCollectedBy=req.user.id;return {status:200,job};});
-    if(result.error)return res.status(result.status).json({error:result.error});
-    await updateGroceryDeliveryStatus(result.job,'delivered',broadcastEvent);
-    broadcastEvent?.('driver:job_updated',{job:safeMobilityJob(result.job),customerId:result.job.customerId,driverId:result.job.driverId});return res.json({job:safeMobilityJob(result.job,req.user.id),message:'Cash received and delivery completion recorded.'});
+    const isLinkedGroceryOrder = candidate.serviceType === 'food_delivery' && String(candidate.orderReference || '').startsWith('gord-');
+    let result = null;
+    let completedOrder = null;
+    const completeJob = state => {
+      const job = state.jobs.find(item => item.id === req.params.id);
+      if (!job) return { status: 404, error: 'Job not found.' };
+      if (job.driverId !== req.user.id) return { status: 403, error: 'Only the assigned driver can verify delivery.' };
+      const allowed = job.serviceType === 'ride' ? job.status === 'in_progress' : ['picked_up', 'in_transit'].includes(job.status);
+      if (!allowed) return { status: 409, error: 'Pickup must be verified before completing this job.' };
+      if (isMobilityPinExpired(job)) return { status: 410, error: 'Delivery PIN expired. Contact ARY support before continuing.' };
+      if ((job.deliveryPinAttempts || 0) >= 5) return { status: 429, error: 'Delivery PIN attempts exceeded. Contact ARY support.' };
+      if (!pinMatches(req.body?.pin, job.deliveryPinHash)) {
+        job.deliveryPinAttempts = (job.deliveryPinAttempts || 0) + 1;
+        return { status: 400, error: 'Incorrect delivery PIN.' };
+      }
+      job.status = job.serviceType === 'ride' ? 'completed' : 'delivered';
+      job.completedAt = new Date().toISOString();
+      job.deliveryVerifiedAt = job.completedAt;
+      job.deliveryPinAttempts = 0;
+      job.paymentMethod = job.serviceType === 'food_delivery' ? 'cash_on_delivery' : 'cash';
+      job.paymentStatus = 'cash_collected';
+      job.cashCollectedAmount = Number(cashAmount.toFixed(2));
+      job.cashCollectedAt = job.completedAt;
+      job.cashCollectedBy = req.user.id;
+      return { status: 200, job };
+    };
+
+    if (isLinkedGroceryOrder) {
+      try {
+        await mutatePersistentStates([
+          {
+            collection: 'driver-services', fallbackFile: dataFile, fallbackValue: emptyDriverState,
+            mutator: state => {
+              state.applications = Array.isArray(state.applications) ? state.applications : [];
+              state.jobs = Array.isArray(state.jobs) ? state.jobs : [];
+              state.presence = state.presence && typeof state.presence === 'object' ? state.presence : {};
+              result = completeJob(state);
+              return result;
+            }
+          },
+          {
+            collection: 'grocery_orders', fallbackFile: groceryOrdersFile, fallbackValue: [],
+            mutator: orders => {
+              if (result?.status !== 200) return true;
+              const order = orders.find(item => item.id === candidate.orderReference);
+              if (!order) {
+                const error = new Error('The linked grocery order could not be found.');
+                error.status = 404;
+                throw error;
+              }
+              if (order.status !== 'ready_for_pickup') {
+                const error = new Error('The linked grocery order is no longer ready for delivery.');
+                error.status = 409;
+                throw error;
+              }
+              const expected = Number(order.total);
+              if (!Number.isFinite(expected) || Number(cashAmount.toFixed(2)) !== Number(expected.toFixed(2))) {
+                const error = new Error('Cash amount must match the current grocery order total.');
+                error.status = 409;
+                throw error;
+              }
+              const now = result.job.completedAt;
+              order.status = 'delivered';
+              order.deliveryStatus = 'delivered';
+              order.paymentMethod = 'cash_on_delivery';
+              order.paymentStatus = 'cash_collected';
+              order.cashCollectionStatus = 'collected';
+              order.cashCollectedAmount = Number(cashAmount.toFixed(2));
+              order.cashCollectedAt = now;
+              order.cashCollectedBy = req.user.id;
+              order.updatedAt = now;
+              order.statusHistory = Array.isArray(order.statusHistory) ? order.statusHistory : [];
+              order.statusHistory.push({ status: 'delivered', deliveryStatus: 'delivered', paymentStatus: 'cash_collected', at: now, by: req.user.id });
+              completedOrder = order;
+              return true;
+            }
+          }
+        ]);
+      } catch (error) {
+        if ([404, 409].includes(error.status)) return res.status(error.status).json({ error: error.message });
+        throw error;
+      }
+    } else {
+      result = await mutateJobs(state => completeJob(state));
+    }
+    if (result?.error) return res.status(result.status).json({ error: result.error });
+    if (isLinkedGroceryOrder && completedOrder) {
+      broadcastEvent?.('grocery:order_updated', { orderId: completedOrder.id, providerId: completedOrder.providerId, customerId: completedOrder.customerId, status: completedOrder.status, deliveryStatus: completedOrder.deliveryStatus });
+    } else {
+      await updateGroceryDeliveryStatus(result.job, 'delivered', broadcastEvent);
+    }
+    broadcastEvent?.('driver:job_updated', { job: safeMobilityJob(result.job), customerId: result.job.customerId, driverId: result.job.driverId });
+    return res.json({ job: safeMobilityJob(result.job, req.user.id), message: 'Cash received and delivery completion recorded.' });
   });
 
   // Admin-only unified cash collection ledger across service bookings, grocery orders and driver jobs.
