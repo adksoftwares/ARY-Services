@@ -51,6 +51,7 @@ export default function MyBookingsList({
   onQuoteDecision
 }) {
   const [activeTab, setActiveTab] = useState('upcoming');
+  const [bookingSearch, setBookingSearch] = useState('');
   const [cancelTargetId, setCancelTargetId] = useState(null);
   const [rescheduleTarget, setRescheduleTarget] = useState(null);
   const [newDate, setNewDate] = useState('');
@@ -73,13 +74,20 @@ export default function MyBookingsList({
   ];
 
   const filteredBookings = useMemo(() => {
-    if (activeTab === 'all') return safeBookings;
-    if (activeTab === 'upcoming') return safeBookings.filter(b => ['requested', 'accepted'].includes(b.status));
-    if (activeTab === 'in_progress') return safeBookings.filter(b => b.status === 'in_progress');
-    if (activeTab === 'completed') return safeBookings.filter(b => b.status === 'completed');
-    if (activeTab === 'cancelled') return safeBookings.filter(b => ['cancelled', 'rejected'].includes(b.status));
-    return safeBookings;
-  }, [safeBookings, activeTab]);
+    let result = safeBookings;
+    if (activeTab === 'upcoming') result = result.filter(b => ['requested', 'accepted'].includes(b.status));
+    else if (activeTab === 'in_progress') result = result.filter(b => b.status === 'in_progress');
+    else if (activeTab === 'completed') result = result.filter(b => b.status === 'completed');
+    else if (activeTab === 'cancelled') result = result.filter(b => ['cancelled', 'rejected'].includes(b.status));
+
+    const query = bookingSearch.trim().toLocaleLowerCase();
+    if (!query) return result;
+    return result.filter(booking => [
+      booking.id, booking.categoryName, booking.providerName, booking.status,
+      booking.pickupAddress, booking.destinationAddress, booking.address,
+      booking.serviceAddress, booking.location
+    ].filter(value => value !== null && value !== undefined).some(value => String(value).toLocaleLowerCase().includes(query)));
+  }, [safeBookings, activeTab, bookingSearch]);
 
   const getStepIndex = (status) => {
     switch (status) {
@@ -149,6 +157,15 @@ export default function MyBookingsList({
         >
           Refresh
         </Button>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '0 0 12px', flexWrap: 'wrap' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, flex: '1 1 260px', minWidth: 0, border: '1px solid var(--color-border, #cbd5e1)', borderRadius: 10, padding: '0 12px', minHeight: 44, background: 'var(--color-surface, #fff)' }}>
+          <Search size={16} aria-hidden="true" style={{ color: 'var(--color-neutral-500, #64748b)', flexShrink: 0 }} />
+          <input type="search" value={bookingSearch} onChange={event => setBookingSearch(event.target.value)} placeholder="Search by booking, service, provider or address" aria-label="Search booking history" style={{ width: '100%', minWidth: 0, border: 0, outline: 0, background: 'transparent', color: 'var(--color-neutral-900, #0f172a)', font: 'inherit', fontSize: '0.88rem' }} />
+        </label>
+        {bookingSearch && <button type="button" onClick={() => setBookingSearch('')} style={{ minHeight: 40, border: 0, borderRadius: 8, padding: '8px 12px', background: 'var(--color-brand-50, #edf7f2)', color: 'var(--color-brand-700, #174d3d)', fontWeight: 700, cursor: 'pointer' }}>Clear search</button>}
+        <span aria-live="polite" style={{ color: 'var(--color-neutral-500, #64748b)', fontSize: '0.78rem' }}>{filteredBookings.length} result{filteredBookings.length === 1 ? '' : 's'}</span>
       </div>
 
       {/* Tabs navigation */}
