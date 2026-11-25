@@ -319,7 +319,7 @@ export default function AdminApplications({
           />
         </Card>
       ) : (
-        <div style={{ display: 'grid', gap: '12px' }}>
+        <div className="admin-application-cards" style={{ display: 'grid', gap: '12px' }}>
           {unifiedList.map(item => {
             const isPending = item.status === 'pending';
             const isBusy = busyId === item.id;

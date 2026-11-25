@@ -202,7 +202,7 @@ export default function AdminUsers({
 
       {/* 2. Registered Users DataTable */}
       <Card style={{ padding: '0', overflow: 'hidden' }}>
-        <div style={{ overflowX: 'auto' }}>
+        <div className="admin-users-table-scroll" style={{ overflowX: 'auto' }}>
           <table className="admin-table">
             <thead>
               <tr>
