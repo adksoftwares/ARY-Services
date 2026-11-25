@@ -356,3 +356,51 @@ textarea { min-height: 96px; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
+
+/* Role-specific shells: align the existing dedicated applications. */
+.provider-app-shell, .driver-app-shell {
+  background: var(--ary-canvas);
+  color: var(--ary-ink);
+}
+.provider-layout-body { max-width: 1480px; }
+.provider-sidebar, .admin-sidebar {
+  border-right: 1px solid var(--ary-line);
+  background: var(--ary-surface);
+}
+.provider-main-content, .admin-main-content, .admin-content {
+  min-width: 0;
+  padding: clamp(16px, 2.6vw, 30px);
+}
+.driver-workspace-container {
+  max-width: 1040px;
+  padding: clamp(16px, 2.5vw, 28px);
+  padding-bottom: calc(104px + env(safe-area-inset-bottom));
+}
+.admin-layout { background: var(--ary-canvas); color: var(--ary-ink); }
+.admin-main, .admin-main-content { min-width: 0; }
+.provider-header, .driver-header, .admin-header {
+  background: var(--ary-surface);
+  border-bottom: 1px solid var(--ary-line);
+}
+.provider-sidebar a, .admin-sidebar a {
+  border-radius: 10px;
+}
+.provider-sidebar a.active, .admin-sidebar a.active {
+  background: var(--ary-green-soft);
+  color: var(--ary-green);
+}
+.driver-job-card, .driver-active-job, .driver-earnings-card,
+.provider-job-card, .provider-quote-card, .admin-overview-card {
+  border: 1px solid var(--ary-line);
+  border-radius: var(--ary-radius-md);
+  background: var(--ary-surface);
+  box-shadow: var(--ary-shadow-card);
+}
+@media (max-width: 1023px) {
+  .provider-layout-body { display: block; }
+  .provider-main-content, .admin-main-content, .admin-content { padding: 16px; }
+}
+@media (max-width: 640px) {
+  .driver-workspace-container { padding: 14px 12px calc(108px + env(safe-area-inset-bottom)); }
+  .provider-main-content, .admin-main-content, .admin-content { padding: 14px 12px; }
+}
