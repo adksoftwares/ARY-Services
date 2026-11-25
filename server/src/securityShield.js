@@ -8,6 +8,11 @@ if (!SHIELD_SECRET || Buffer.byteLength(SHIELD_SECRET) < 32) {
 }
 
 const usedChallenges = new Set();
+let challengeStoragePool = null;
+
+export function setSecurityChallengeStoragePool(pool) {
+  challengeStoragePool = pool || null;
+}
 const CHALLENGE_TTL_MS = 5 * 60 * 1000;
 
 export function issueSecurityChallenge() {
@@ -24,7 +29,7 @@ export function issueSecurityChallenge() {
   };
 }
 
-export function verifySecurityChallenge(token) {
+export async function verifySecurityChallenge(token) {
   if (!token || typeof token !== 'string') return false;
   const parts = token.split('.');
   if (parts.length !== 3) return false;
@@ -42,6 +47,18 @@ export function verifySecurityChallenge(token) {
   try { supplied = Buffer.from(signature, 'hex'); } catch { return false; }
   if (supplied.length !== expected.length || !crypto.timingSafeEqual(supplied, expected)) return false;
 
+  if (challengeStoragePool) {
+    const result = await challengeStoragePool.query(
+      `INSERT INTO otp_used_challenges (challenge_id, expires_at)
+       VALUES ($1, $2)
+       ON CONFLICT (challenge_id) DO UPDATE
+       SET expires_at = EXCLUDED.expires_at
+       WHERE otp_used_challenges.expires_at < $3
+       RETURNING challenge_id`,
+      [challengeId, timestamp + CHALLENGE_TTL_MS, Date.now()]
+    );
+    return result.rowCount === 1;
+  }
   if (usedChallenges.has(challengeId)) return false;
   usedChallenges.add(challengeId);
   setTimeout(() => usedChallenges.delete(challengeId), CHALLENGE_TTL_MS * 2).unref?.();
