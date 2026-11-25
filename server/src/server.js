@@ -1803,6 +1803,18 @@ app.patch('/api/bookings/:id/cancel', requireAuth, async (req, res) => {
 
     const previousStatus = booking.status;
     const updated = await updateBooking(id, b => {
+      // Revalidate ownership and lifecycle state against the transaction's current row.
+      // This prevents a stale cancellation request from overwriting a concurrent completion.
+      if (b.status !== previousStatus || b.paymentStatus !== booking.paymentStatus) {
+        const error = new Error('This booking changed while cancellation was being processed. Refresh and try again.');
+        error.status = 409;
+        throw error;
+      }
+      if (!isAdmin && b.customerId !== userId && b.providerId !== userId) {
+        const error = new Error('You are no longer authorized to cancel this booking.');
+        error.status = 403;
+        throw error;
+      }
       b.lifecycleHistory = Array.isArray(b.lifecycleHistory) ? b.lifecycleHistory : [];
       b.status = 'cancelled';
       b.lifecycleHistory.push({ event: 'booking_cancelled', from: previousStatus, to: 'cancelled', actorId: userId, actorRole: accountType, reason: String(reason || '').slice(0, 300), at: new Date().toISOString() });
@@ -1826,6 +1838,7 @@ app.patch('/api/bookings/:id/cancel', requireAuth, async (req, res) => {
       booking: updated
     });
   } catch (err) {
+    if ([403, 409].includes(err.status)) return res.status(err.status).json({ error: err.message });
     console.error('Cancel booking error:', err);
     res.status(500).json({ error: 'Could not cancel booking.' });
   }
