@@ -1510,3 +1510,24 @@ textarea { min-height: 96px; }
 @media(prefers-reduced-motion:reduce) {
  .grocery-marketplace-section .product-item-card { transition:none; }
 }
+
+
+/* Driver field workflow refinement */
+.driver-shift-panel{position:relative;isolation:isolate;overflow:hidden;border:1px solid rgba(255,255,255,.14);border-radius:22px;padding:clamp(18px,3vw,28px);box-shadow:0 14px 34px rgba(15,45,31,.12)}
+.driver-shift-panel::after{content:"";position:absolute;z-index:-1;width:220px;height:220px;right:-100px;top:-120px;border:1px solid rgba(255,255,255,.13);border-radius:50%;box-shadow:0 0 0 24px rgba(255,255,255,.035),0 0 0 48px rgba(255,255,255,.025);pointer-events:none}
+.driver-giant-power-btn{width:100%;min-height:54px;border-radius:14px;font-size:.96rem;font-weight:800;letter-spacing:.015em;transition:transform .16s ease,box-shadow .16s ease}
+.driver-giant-power-btn:not(:disabled):active{transform:scale(.99)}
+.driver-active-dispatch{border:1px solid #cbded0;border-radius:20px;padding:clamp(16px,2.5vw,24px);background:linear-gradient(145deg,#fff 0%,#f6faf6 100%);box-shadow:0 12px 30px rgba(24,47,36,.07)}
+.driver-active-top-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:15px;border-bottom:1px solid var(--ary-line)}
+.driver-route-container{display:grid;gap:13px;margin-top:17px}
+.driver-route-point{display:grid;grid-template-columns:22px minmax(0,1fr);gap:10px;padding:12px 13px;border:1px solid var(--ary-line);border-radius:12px;background:rgba(255,255,255,.78);overflow-wrap:anywhere}
+.driver-quick-actions-bar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:15px}
+.driver-quick-icon-btn{min-height:46px;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 12px;border:1px solid var(--ary-line-strong);border-radius:12px;background:#fff;color:var(--ary-green);font-size:.86rem;font-weight:700;text-decoration:none}
+.driver-quick-icon-btn.is-unavailable{opacity:.55;cursor:not-allowed}
+.driver-field-action-btn{min-height:50px;border-radius:12px;font-size:.91rem;font-weight:750}
+.driver-workspace-error{border-radius:13px!important}
+.driver-giant-power-btn:focus-visible,.driver-field-action-btn:focus-visible,.driver-quick-icon-btn:focus-visible{outline:3px solid rgba(35,126,91,.35);outline-offset:3px}
+@media(max-width:640px){.driver-workspace-container{padding:14px 12px calc(96px + env(safe-area-inset-bottom))}.driver-shift-panel{border-radius:17px;padding:17px}.driver-active-dispatch{border-radius:16px;padding:15px}.driver-active-top-bar{align-items:flex-start}.driver-route-point{padding:11px}.driver-quick-actions-bar{grid-template-columns:1fr 1fr}.driver-quick-icon-btn{min-height:48px;padding-inline:8px;font-size:.8rem}.driver-field-action-btn{min-height:52px}}
+@media(max-width:380px){.driver-quick-actions-bar{grid-template-columns:1fr}}
+[data-theme="dark"] .driver-active-dispatch{background:linear-gradient(145deg,#17251d 0%,#1b2b21 100%);border-color:#385444}
+[data-theme="dark"] .driver-route-point,[data-theme="dark"] .driver-quick-icon-btn{background:#1b2a21;border-color:#3a4d40;color:#d7e9dc}
