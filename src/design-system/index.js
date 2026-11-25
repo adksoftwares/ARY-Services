@@ -2,6 +2,7 @@
 import './tokens.css';
 import './components.css';
 import './frontend-experience.css';
+import './visual-overhaul.css';
 
 // Hooks
 export { useTheme } from './hooks/useTheme';
