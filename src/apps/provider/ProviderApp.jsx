@@ -131,6 +131,25 @@ function ProviderWorkspace() {
     }
   }
 
+  async function confirmCashPayment(bookingId, amount) {
+    if (!currentUser?.token || !bookingId) return false;
+    try {
+      const response = await fetch(`${API_BASE}/bookings/${encodeURIComponent(bookingId)}/cash-payment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${currentUser.token}` },
+        body: JSON.stringify({ amount })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Could not record cash received.');
+      setNotice(data.message || 'Cash payment recorded.');
+      await fetchBookings();
+      return true;
+    } catch (error) {
+      setNotice(getFriendlyErrorMessage(error, 'Could not record cash received.'));
+      return false;
+    }
+  }
+
   async function decideReschedule(bookingId, decision) {
     if (!currentUser?.token) return;
     try {
@@ -206,6 +225,7 @@ function ProviderWorkspace() {
           isLoading={loading}
           onRefresh={fetchBookings}
           onUpdateStatus={updateBookingStatus}
+          onConfirmCashPayment={confirmCashPayment}
           onDecideReschedule={decideReschedule}
           notice={notice}
           onSetNotice={setNotice}
