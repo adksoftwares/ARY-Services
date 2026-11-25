@@ -86,7 +86,7 @@ CREATE TABLE IF NOT EXISTS booking_status_history (
 CREATE TABLE IF NOT EXISTS payment_transactions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   booking_id UUID NOT NULL REFERENCES bookings(id),
-  payment_method TEXT NOT NULL CHECK (payment_method IN ('cash','card','online')),
+  payment_method TEXT NOT NULL CHECK (payment_method IN ('cash','cash_on_delivery')),
   amount NUMERIC(12,2) NOT NULL CHECK (amount >= 0),
   currency CHAR(3) NOT NULL DEFAULT 'LKR',
   status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','processing','succeeded','failed','cash_reported','disputed','refunded')),
