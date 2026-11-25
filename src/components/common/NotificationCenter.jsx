@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useState, useMemo, useRef, useId } from 'react';
 import { Bell, CheckCheck, Clock, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE } from '../../config';
@@ -44,6 +44,8 @@ export default function NotificationCenter() {
   const [markingAllRead, setMarkingAllRead] = useState(false);
   const refreshRequestRef = useRef(0);
   const containerRef = useRef(null);
+  const triggerRef = useRef(null);
+  const panelId = useId();
 
   // Close notifications dropdown when clicking outside ("side la click pannuna") or pressing Escape
   useEffect(() => {
@@ -58,6 +60,7 @@ export default function NotificationCenter() {
     function handleKeyDown(event) {
       if (event.key === 'Escape') {
         setOpen(false);
+        triggerRef.current?.focus();
       }
     }
 
@@ -174,7 +177,11 @@ export default function NotificationCenter() {
   return (
     <div ref={containerRef} style={{ position: 'relative' }}>
       <button
+        ref={triggerRef}
         type="button"
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        aria-controls={panelId}
         onClick={() => {
           setOpen(prev => !prev);
           if (!open) refresh();
@@ -219,8 +226,11 @@ export default function NotificationCenter() {
 
       {open && (
         <div
+          id={panelId}
           role="dialog"
           aria-label="Notifications panel"
+          aria-busy={loading}
+          tabIndex={-1}
           style={{
             position: 'absolute',
             right: 0,

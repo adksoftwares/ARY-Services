@@ -56,4 +56,36 @@ describe('Modal & BottomSheet primitives', () => {
     expect(container.querySelector('.ds-bottom-sheet')).toBeDefined();
     expect(container.querySelector('.ds-sheet-handle')).toBeDefined();
   });
+
+  it('traps keyboard focus inside the dialog', () => {
+    const getRects = vi.spyOn(HTMLElement.prototype, 'getClientRects').mockReturnValue([{ width: 1, height: 1 }]);
+    render(
+      <Modal isOpen title="Focus trap">
+        <button type="button">First action</button>
+        <button type="button">Last action</button>
+      </Modal>
+    );
+
+    const dialog = screen.getByRole('dialog');
+    const first = screen.getByRole('button', { name: 'Close dialog' });
+    const last = screen.getByRole('button', { name: 'Last action' });
+    last.focus();
+    fireEvent.keyDown(last, { key: 'Tab' });
+    expect(document.activeElement).toBe(first);
+
+    first.focus();
+    fireEvent.keyDown(first, { key: 'Tab', shiftKey: true });
+    expect(document.activeElement).toBe(last);
+    getRects.mockRestore();
+  });
+
+  it('restores page scroll when the dialog unmounts', () => {
+    document.body.style.overflow = 'auto';
+    const { unmount } = render(<Modal isOpen title="Scroll lock"><p>Body</p></Modal>);
+    expect(document.body.style.overflow).toBe('hidden');
+    unmount();
+    expect(document.body.style.overflow).toBe('auto');
+    document.body.style.overflow = '';
+  });
+
 });
