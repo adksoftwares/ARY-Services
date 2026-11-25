@@ -404,3 +404,132 @@ textarea { min-height: 96px; }
   .driver-workspace-container { padding: 14px 12px calc(108px + env(safe-area-inset-bottom)); }
   .provider-main-content, .admin-main-content, .admin-content { padding: 14px 12px; }
 }
+
+/* Actual component-level refinements for the dedicated workspaces. */
+.admin-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  min-height: 66px;
+  padding: 12px clamp(14px, 2vw, 24px);
+  background: rgba(255,255,255,.96);
+  border-bottom: 1px solid var(--ary-line);
+  backdrop-filter: blur(12px);
+}
+.admin-breadcrumbs { min-width: 0; }
+.admin-search-wrapper {
+  min-width: min(260px, 30vw);
+  border: 1px solid var(--ary-line-strong);
+  border-radius: 11px;
+  background: #fbfcfa;
+}
+.admin-search-input { min-height: 40px; }
+.admin-page-container { padding: clamp(16px, 2.4vw, 28px); }
+.admin-nav-item { border-radius: 11px; transition: background .16s ease, color .16s ease; }
+.admin-nav-item.active { background: var(--ary-green-soft); color: var(--ary-green); }
+.provider-content-area {
+  min-width: 0;
+  padding: clamp(16px, 2.3vw, 28px);
+}
+.provider-bottom-nav {
+  background: rgba(255,255,255,.98);
+  border-top: 1px solid var(--ary-line);
+  box-shadow: 0 -8px 24px rgba(22,45,34,.06);
+  padding-bottom: max(8px, env(safe-area-inset-bottom));
+}
+.provider-bottom-tab {
+  min-height: 58px;
+  border-radius: 12px;
+}
+.provider-bottom-tab.active {
+  background: var(--ary-green-soft);
+  color: var(--ary-green);
+}
+.driver-master-switch-card {
+  border: 1px solid var(--ary-line-strong);
+  border-radius: 18px;
+  box-shadow: var(--ary-shadow-card);
+}
+.driver-master-switch-card.online {
+  border-color: #8fc3a0;
+  background: linear-gradient(135deg, #f0f8f1, #fff);
+}
+.driver-master-switch-card.offline { background: var(--ary-surface); }
+.driver-giant-power-btn {
+  min-height: 56px;
+  border-radius: 14px;
+  font-weight: 800;
+  letter-spacing: .01em;
+}
+.driver-active-hud-card {
+  border: 1px solid var(--ary-line-strong);
+  border-radius: 18px;
+  box-shadow: var(--ary-shadow-card);
+  overflow: hidden;
+}
+.driver-active-top-bar { padding: 14px 16px; }
+.driver-field-action-btn {
+  min-height: 50px;
+  border-radius: 12px;
+  font-weight: 750;
+}
+.driver-quick-icon-btn {
+  min-width: 48px;
+  min-height: 48px;
+  border-radius: 13px;
+}
+.catalog-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.catalog-filter-btn, .catalog-pill-btn {
+  min-height: 40px;
+  border-radius: 10px;
+}
+.catalog-sort-select { min-height: 40px; border-radius: 10px; }
+.provider-card-actions-row { display: flex; flex-wrap: wrap; gap: 9px; }
+.provider-card-actions-row > * { flex: 1 1 130px; min-height: 42px; border-radius: 10px; }
+.grocery-toolbar { gap: 12px; }
+.grocery-search-input { min-height: 46px; border-radius: 12px; }
+.product-item-card {
+  overflow: hidden;
+  border: 1px solid var(--ary-line);
+  border-radius: 15px;
+  background: var(--ary-surface);
+  box-shadow: var(--ary-shadow-card);
+}
+.qty-stepper-box { border-radius: 11px; }
+.persistent-cart-bar {
+  border: 1px solid #d2e2d5;
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 -10px 30px rgba(23,77,61,.12);
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+}
+.cart-checkout-cta { min-height: 48px; border-radius: 11px; }
+@media (max-width: 700px) {
+  .admin-topbar { position: sticky; top: 0; padding: 10px 12px; }
+  .admin-topbar-actions { min-width: 0; }
+  .admin-search-wrapper { min-width: 0; width: min(48vw, 210px); }
+  .admin-page-container { padding: 14px 12px; }
+  .provider-content-area { padding: 14px 12px calc(92px + env(safe-area-inset-bottom)); }
+  .provider-bottom-nav { gap: 4px; }
+  .provider-bottom-tab { min-width: 0; padding-inline: 5px; }
+  .driver-master-switch-card { padding: 16px; }
+  .driver-active-hud-card { border-radius: 14px; }
+  .driver-field-action-btn { min-height: 54px; }
+  .catalog-toolbar { align-items: stretch; }
+  .catalog-filter-group, .catalog-sort-group { width: 100%; }
+  .catalog-sort-select { width: 100%; }
+  .provider-card-actions-row { display: grid; grid-template-columns: 1fr 1fr; }
+}
+[data-theme="dark"] .admin-topbar,
+[data-theme="dark"] .provider-bottom-nav {
+  background: rgba(23,35,28,.97);
+  border-color: var(--ary-line);
+}
+[data-theme="dark"] .admin-search-wrapper { background: #111c16; border-color: var(--ary-line-strong); }
+[data-theme="dark"] .driver-master-switch-card.online { background: linear-gradient(135deg, #183526, #17231c); }
+[data-theme="dark"] .persistent-cart-bar { background: #172c20; border-color: #355d43; }
