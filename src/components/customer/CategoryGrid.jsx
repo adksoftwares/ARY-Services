@@ -9,7 +9,7 @@ export default function CategoryGrid({
   const safeServices = Array.isArray(services) ? services.filter(service => service && typeof service === 'object' && service.id !== null && service.id !== undefined) : [];
 
   return (
-    <section className="services-section">
+    <section className="services-section customer-category-discovery">
       <div className="section-heading">
         <div>
           <span className="eyebrow">WHAT DO YOU NEED TODAY?</span>

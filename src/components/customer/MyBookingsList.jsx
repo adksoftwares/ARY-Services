@@ -142,7 +142,7 @@ export default function MyBookingsList({
   };
 
   return (
-    <section className="my-bookings-container" aria-labelledby="bookings-main-title">
+    <section className="my-bookings-container customer-bookings-workspace" aria-labelledby="bookings-main-title">
       <div className="section-heading">
         <div>
           <div className="eyebrow">YOUR ACTIVE REQUESTS</div>

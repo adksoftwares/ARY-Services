@@ -1383,3 +1383,43 @@ textarea { min-height: 96px; }
   .driver-earnings-metrics { grid-template-columns: minmax(0, 1fr) !important; }
   .driver-trip-history-card { padding: 13px !important; }
 }
+
+/* Customer discovery, bookings and admin reconciliation */
+.customer-category-discovery .service-grid,
+.customer-provider-catalog .providers-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
+.customer-category-discovery .service-card { min-width:0; min-height:108px; display:flex; align-items:center; gap:13px; padding:15px; border:1px solid var(--ary-line); border-radius:16px; background:var(--ary-surface); text-align:left; transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease; }
+.customer-category-discovery .service-card:hover,
+.customer-category-discovery .service-card.active-category-card { border-color:#b8d2c0; box-shadow:var(--ary-shadow-card); transform:translateY(-2px); }
+.customer-category-discovery .service-card-copy { min-width:0; display:grid; gap:5px; }
+.customer-category-discovery .service-card-copy b { line-height:1.3; }
+.customer-category-discovery .service-card-copy small { color:var(--ary-muted); line-height:1.45; }
+.customer-category-discovery .service-icon { flex:0 0 48px; width:48px; height:48px; display:grid; place-items:center; border-radius:14px; }
+.customer-provider-catalog .provider-card-item { min-width:0; border:1px solid var(--ary-line); border-radius:17px; box-shadow:var(--ary-shadow-card); overflow:hidden; transition:transform .16s ease,box-shadow .16s ease; }
+.customer-provider-catalog .provider-card-item:hover { transform:translateY(-2px); box-shadow:0 12px 30px rgba(24,47,36,.09); }
+.customer-provider-catalog .catalog-toolbar { display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
+.customer-bookings-workspace .bookings-feed { display:grid; gap:14px; }
+.customer-bookings-workspace .booking-card-item { border:1px solid var(--ary-line); border-radius:17px; overflow:hidden; box-shadow:var(--ary-shadow-card); }
+.customer-bookings-workspace .booking-details-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.customer-bookings-workspace .booking-card-footer { display:flex; flex-wrap:wrap; gap:9px; justify-content:flex-end; }
+.provider-schedule-view { width:min(100%,1180px); margin-inline:auto; }
+.provider-schedule-view > :first-child { align-items:flex-start !important; }
+.provider-schedule-view > :first-child > div:last-child { min-width:min(100%,280px); }
+.admin-disputes-view,.admin-cash-reconciliation-view { min-width:0; }
+.admin-disputes-view > *, .admin-cash-reconciliation-view > * { min-width:0; }
+.admin-disputes-view input,.admin-cash-reconciliation-view input { max-width:100%; }
+.admin-cash-reconciliation-view table { min-width:900px; }
+@media(max-width:980px) {
+ .customer-category-discovery .service-grid,.customer-provider-catalog .providers-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media(max-width:680px) {
+ .customer-category-discovery .service-grid,.customer-provider-catalog .providers-grid { grid-template-columns:minmax(0,1fr); }
+ .customer-category-discovery .service-card { min-height:88px; padding:13px; }
+ .customer-provider-catalog .catalog-toolbar > * { min-width:0; max-width:100%; }
+ .customer-bookings-workspace .booking-details-grid { grid-template-columns:minmax(0,1fr); }
+ .customer-bookings-workspace .booking-card-footer > * { flex:1 1 100%; }
+ .provider-schedule-view > :first-child > div:last-child { width:100%; min-width:0; }
+ .admin-disputes-view > div,.admin-cash-reconciliation-view > div { max-width:100%; }
+}
+@media(prefers-reduced-motion:reduce) {
+ .customer-category-discovery .service-card,.customer-provider-catalog .provider-card-item { transition:none; }
+}
