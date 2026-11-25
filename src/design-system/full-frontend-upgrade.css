@@ -533,3 +533,119 @@ textarea { min-height: 96px; }
 [data-theme="dark"] .admin-search-wrapper { background: #111c16; border-color: var(--ary-line-strong); }
 [data-theme="dark"] .driver-master-switch-card.online { background: linear-gradient(135deg, #183526, #17231c); }
 [data-theme="dark"] .persistent-cart-bar { background: #172c20; border-color: #355d43; }
+
+/* Dashboard metrics, booking history and account setup. */
+.admin-kpi-grid, .provider-kpi-grid {
+  gap: 14px;
+  align-items: stretch;
+}
+.admin-kpi-card, .provider-kpi-card {
+  min-width: 0;
+  border: 1px solid var(--ary-line);
+  border-radius: 15px;
+  background: var(--ary-surface);
+  box-shadow: var(--ary-shadow-card);
+  transition: border-color .16s ease, transform .16s ease, box-shadow .16s ease;
+}
+.admin-kpi-card.interactive:hover, .provider-kpi-card:hover {
+  transform: translateY(-2px);
+  border-color: #c4d9c9;
+  box-shadow: var(--ary-shadow-pop);
+}
+.admin-kpi-label, .kpi-label { color: var(--ary-muted); font-weight: 650; }
+.admin-kpi-value, .kpi-val { color: var(--ary-ink); font-variant-numeric: tabular-nums; }
+.provider-profile-summary {
+  padding: 18px;
+  border: 1px solid var(--ary-line);
+  border-radius: 16px;
+  background: var(--ary-surface);
+}
+.provider-urgent-banner {
+  border: 1px solid #ead9b9;
+  border-radius: 14px;
+  background: #fffaf0;
+}
+.bookings-tabs-bar {
+  display: flex;
+  gap: 8px;
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 4px 1px 9px;
+  scrollbar-width: thin;
+}
+.bookings-tabs-bar button {
+  min-height: 40px;
+  padding-inline: 14px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+.booking-card-item {
+  padding: clamp(15px, 2vw, 21px);
+  margin-bottom: 14px;
+}
+.booking-card-header { gap: 12px; }
+.booking-service-title { color: var(--ary-ink); font-size: 1.05rem; }
+.booking-ref-tag { color: var(--ary-muted); font-variant-numeric: tabular-nums; }
+.booking-details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.detail-item {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--ary-line);
+  border-radius: 11px;
+  background: #fafcf9;
+}
+.detail-label {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--ary-muted);
+  font-size: .75rem;
+  font-weight: 700;
+}
+.detail-val { overflow-wrap: anywhere; color: var(--ary-ink); }
+.booking-action-buttons { display: flex; flex-wrap: wrap; gap: 9px; }
+.booking-action-buttons > * { min-height: 42px; border-radius: 10px; }
+.account-section-card {
+  border: 1px solid var(--ary-line);
+  border-radius: 16px;
+  background: var(--ary-surface);
+  box-shadow: var(--ary-shadow-card);
+  padding: clamp(16px, 2.5vw, 24px);
+}
+.role-choice-grid { gap: 12px; }
+.role-choice-card {
+  border: 1px solid var(--ary-line-strong);
+  border-radius: 13px;
+  background: var(--ary-surface);
+  transition: border-color .16s ease, background .16s ease;
+}
+.role-choice-card.active {
+  border-color: #6da886;
+  background: var(--ary-green-soft);
+  box-shadow: inset 0 0 0 1px #6da886;
+}
+.upgrade-step-box, .upgrade-summary-card, .security-notice-box {
+  border-radius: 13px;
+}
+@media (max-width: 640px) {
+  .admin-kpi-grid, .provider-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .admin-kpi-card, .provider-kpi-card { border-radius: 12px; }
+  .booking-details-grid { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .booking-card-item { padding: 14px; }
+  .booking-action-buttons { display: grid; grid-template-columns: 1fr 1fr; }
+  .booking-action-buttons > * { min-width: 0; }
+  .role-choice-grid { grid-template-columns: minmax(0, 1fr); }
+  .account-section-card { padding: 15px; border-radius: 13px; }
+}
+[data-theme="dark"] .provider-profile-summary,
+[data-theme="dark"] .provider-urgent-banner,
+[data-theme="dark"] .detail-item,
+[data-theme="dark"] .role-choice-card {
+  background: var(--ary-surface);
+  border-color: var(--ary-line);
+  color: var(--ary-ink);
+}
+[data-theme="dark"] .provider-urgent-banner { background: #332b1b; border-color: #5a4b2b; }
