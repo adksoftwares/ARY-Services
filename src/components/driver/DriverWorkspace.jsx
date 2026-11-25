@@ -587,7 +587,7 @@ export default function DriverWorkspace({ onNotice }) {
                   activeTrip.id,
                   'verify-pickup',
                   'Enter Pickup PIN',
-                  'Ask the customer or store merchant for their 4-digit pickup PIN'
+                  'Ask the customer or store merchant for their 6-digit pickup PIN'
                 )}
               >
                 <KeyRound size={18} /> Enter Pickup PIN
