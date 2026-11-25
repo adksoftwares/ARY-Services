@@ -56,6 +56,8 @@ export default function DriverWorkspace({ onNotice }) {
   const [presenceBusy, setPresenceBusy] = useState(false);
   const [jobActionBusy, setJobActionBusy] = useState(false);
   const [busyJobId, setBusyJobId] = useState(null);
+  const [jobFilter, setJobFilter] = useState('all');
+  const [jobSearch, setJobSearch] = useState('');
   const refreshRequestRef = useRef(0);
 
   // GPS Permission Modal
@@ -404,6 +406,15 @@ export default function DriverWorkspace({ onNotice }) {
       });
   }, [jobs]);
 
+  const filteredAvailableJobs = useMemo(() => {
+    const query = jobSearch.trim().toLocaleLowerCase();
+    return availableJobs.filter(job => {
+      const matchesType = jobFilter === 'all' || job.serviceType === jobFilter;
+      const searchable = [job.id, job.pickupAddress, job.destinationAddress, job.serviceType].filter(Boolean).join(' ').toLocaleLowerCase();
+      return matchesType && (!query || searchable.includes(query));
+    });
+  }, [availableJobs, jobFilter, jobSearch]);
+
   const completedJobs = useMemo(() => {
     return (Array.isArray(jobs) ? jobs : []).filter(j => j && ['completed', 'delivered'].includes(j.status));
   }, [jobs]);
@@ -686,6 +697,21 @@ export default function DriverWorkspace({ onNotice }) {
         </div>
       )}
 
+      <section aria-label="Dispatch search and filters" style={{ display: 'grid', gap: 10, marginBottom: 16 }}>
+        <label style={{ display: 'grid', gap: 5, color: 'var(--color-neutral-600, #475569)', fontSize: '0.78rem', fontWeight: 700 }}>
+          Search dispatches
+          <input type="search" value={jobSearch} onChange={event => setJobSearch(event.target.value)} placeholder="Search pickup, destination or job number" aria-label="Search available dispatches by address or job number" style={{ width: '100%', minHeight: 46, boxSizing: 'border-box', padding: '10px 13px', borderRadius: 10, border: '1px solid var(--color-border, #cbd5e1)', background: 'var(--color-surface, #fff)', color: 'var(--color-neutral-900, #0f172a)', font: 'inherit' }} />
+        </label>
+        <div role="group" aria-label="Filter dispatches by service" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {[{ value: 'all', label: 'All jobs' }, { value: 'ride', label: 'Rides' }, { value: 'food_delivery', label: 'Shop & grocery' }, { value: 'parcel_delivery', label: 'Parcels' }].map(filter => {
+            const count = filter.value === 'all' ? availableJobs.length : availableJobs.filter(job => job.serviceType === filter.value).length;
+            const selected = jobFilter === filter.value;
+            return <button key={filter.value} type="button" aria-pressed={selected} onClick={() => setJobFilter(filter.value)} style={{ minHeight: 40, borderRadius: 999, padding: '8px 13px', border: selected ? '1px solid var(--color-brand-600, #174d3d)' : '1px solid var(--color-border, #cbd5e1)', background: selected ? 'var(--color-brand-50, #edf7f2)' : 'var(--color-surface, #fff)', color: selected ? 'var(--color-brand-700, #174d3d)' : 'var(--color-neutral-700, #334155)', fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer' }}>{filter.label} ({count})</button>;
+          })}
+        </div>
+        {(jobSearch || jobFilter !== 'all') && <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, color: 'var(--color-neutral-500, #64748b)', fontSize: '0.78rem' }}><span>{filteredAvailableJobs.length} matching dispatch{filteredAvailableJobs.length === 1 ? '' : 'es'}</span><button type="button" onClick={() => { setJobSearch(''); setJobFilter('all'); }} style={{ border: 0, background: 'transparent', color: 'var(--color-brand-700, #174d3d)', fontWeight: 700, cursor: 'pointer', padding: 6 }}>Clear filters</button></div>}
+      </section>
+
       {/* Job Feed List */}
       {loading && jobs.length === 0 ? (
         <div role="status" aria-live="polite" style={{ display: 'grid', gap: 12, marginBottom: 24 }}>
@@ -701,9 +727,11 @@ export default function DriverWorkspace({ onNotice }) {
             ? "You are online! When customers request rides or deliveries in your area, they will appear here with 1-tap accept."
             : "You are currently offline. Tap 'Go Online Now' above to start receiving trips."}
         />
+      ) : filteredAvailableJobs.length === 0 ? (
+        <EmptyState icon={Search} title="No matching dispatches" description="Try another service filter or a shorter pickup or destination search." />
       ) : (
         <div style={{ display: 'grid', gap: '14px', marginBottom: '24px' }}>
-          {availableJobs.map(job => {
+          {filteredAvailableJobs.map(job => {
             const Icon = job.serviceType === 'food_delivery' ? PackageCheck : job.serviceType === 'parcel_delivery' ? Package : Bike;
             const rawFare = job.fare ?? job.baseCharge;
             const fare = rawFare !== null && rawFare !== undefined && rawFare !== '' && Number.isFinite(Number(rawFare)) && Number(rawFare) >= 0
