@@ -1429,3 +1429,83 @@ button { -webkit-tap-highlight-color: transparent; }
 @media (prefers-reduced-motion: reduce) {
   .provider-schedule-view *, .provider-reviews-container *, .provider-wallet-container *, .admin-layout .admin-table * { transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
+
+
+/* Grocery fulfilment board — operational clarity for busy shop counters */
+.grocery-orders-view { width: min(100%, 1280px); margin-inline: auto; min-width: 0; }
+.grocery-orders-view > div:first-child h2,
+.grocery-inventory-view > div:first-child h2 { font-weight: 850; letter-spacing: -.025em; }
+.grocery-orders-view > div:nth-of-type(3) { max-width: 100% !important; overflow-x: auto; }
+.grocery-orders-view .grocery-board-container {
+  display: grid; grid-template-columns: repeat(5,minmax(220px,1fr));
+  align-items: start; gap: 12px; min-width: 0;
+}
+.grocery-orders-view .grocery-column {
+  min-width: 0; display: flex; flex-direction: column; gap: 10px;
+  padding: 11px; border: 1px solid #e2eae0; border-radius: 15px;
+  background: #f7faf6;
+}
+.grocery-orders-view .grocery-column-header {
+  position: sticky; top: 0; z-index: 1; display: flex; align-items: center;
+  justify-content: space-between; gap: 8px; padding: 9px 8px;
+  border-bottom: 1px solid #e2eae0; background: #f7faf6;
+}
+.grocery-orders-view .grocery-column-title { display: inline-flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 850; color: #365542; letter-spacing: .035em; }
+.grocery-orders-view .grocery-order-card {
+  min-width: 0; display: grid; gap: 11px; padding: 13px;
+  border: 1px solid #e1e9df; border-radius: 12px; background: #fff;
+  box-shadow: 0 3px 12px rgba(23,55,39,.035);
+  transition: border-color .16s,box-shadow .16s,transform .16s;
+}
+.grocery-orders-view .grocery-order-card:hover { border-color: #bdd5bd; box-shadow: 0 8px 18px rgba(23,55,39,.07); transform: translateY(-1px); }
+.grocery-orders-view .grocery-order-card > div { min-width: 0; overflow-wrap: anywhere; }
+.grocery-orders-view .grocery-order-card a { text-decoration: none; overflow-wrap: anywhere; }
+.grocery-orders-view .grocery-order-card a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.grocery-orders-view .grocery-item-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; padding: 3px 0; }
+.grocery-orders-view .grocery-item-row > span { min-width: 0; overflow-wrap: anywhere; }
+.grocery-orders-view .grocery-item-row > span:last-child { flex-shrink: 0; text-align: right; }
+.grocery-orders-view .grocery-column .mobile-hidden { display: none; }
+
+/* Inventory catalogue — keep product discovery and stock controls legible */
+.grocery-inventory-view { width: min(100%, 1280px); margin-inline: auto; min-width: 0; }
+.grocery-inventory-view .inventory-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.grocery-inventory-view .inventory-search-wrap { min-width: min(100%,260px); flex: 1; }
+.grocery-inventory-view .inventory-search-input { width: 100%; min-height: 44px; border-radius: 10px; }
+.grocery-inventory-view .inventory-card-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(min(100%,250px),1fr)); gap: 14px; }
+.grocery-inventory-view .inventory-card-grid > * { min-width: 0; }
+.grocery-inventory-view .stock-stepper-wrap { display: inline-flex; align-items: center; gap: 7px; padding: 4px; border: 1px solid #e1e9df; border-radius: 10px; background: #f8faf7; }
+.grocery-inventory-view .stock-stepper-btn { width: 34px; height: 34px; min-height: 34px; display: grid; place-items: center; border: 1px solid #dfe8dc; border-radius: 8px; background: #fff; color: #28553a; }
+.grocery-inventory-view .stock-stepper-btn:hover { border-color: #a9c9ad; background: #edf6ed; }
+.grocery-inventory-view .provider-form-group { min-width: 0; display: grid; gap: 6px; }
+.grocery-inventory-view .provider-form-label { font-size: 11px; font-weight: 800; color: #52675a; }
+.grocery-inventory-view .provider-form-input,
+.grocery-inventory-view .provider-form-select,
+.grocery-inventory-view .provider-form-textarea { width: 100%; min-width: 0; min-height: 43px; border: 1px solid #dce6da; border-radius: 9px; padding: 10px 12px; background: #fff; color: #253d2c; }
+.grocery-inventory-view .provider-form-textarea { min-height: 84px; resize: vertical; line-height: 1.5; }
+.grocery-inventory-view .provider-form-input:focus,
+.grocery-inventory-view .provider-form-select:focus,
+.grocery-inventory-view .provider-form-textarea:focus { border-color: #43865a; box-shadow: 0 0 0 3px rgba(67,134,90,.12); outline: none; }
+.grocery-inventory-view button { min-height: 40px; }
+[data-theme="dark"] .grocery-orders-view .grocery-column { background: #142119; border-color: #304435; }
+[data-theme="dark"] .grocery-orders-view .grocery-column-header { background: #142119; border-color: #304435; }
+[data-theme="dark"] .grocery-orders-view .grocery-column-title { color: #d2e3d4; }
+[data-theme="dark"] .grocery-orders-view .grocery-order-card { background: #19271e; border-color: #304435; }
+[data-theme="dark"] .grocery-inventory-view .stock-stepper-wrap { background: #17251b; border-color: #304435; }
+[data-theme="dark"] .grocery-inventory-view .stock-stepper-btn,
+[data-theme="dark"] .grocery-inventory-view .provider-form-input,
+[data-theme="dark"] .grocery-inventory-view .provider-form-select,
+[data-theme="dark"] .grocery-inventory-view .provider-form-textarea { background: #142119; border-color: #3a5040; color: #e0ece1; }
+[data-theme="dark"] .grocery-inventory-view .provider-form-label { color: #c2d5c5; }
+@media (max-width: 1199px) {
+  .grocery-orders-view .grocery-board-container { display: block; }
+  .grocery-orders-view .grocery-column { display: none !important; }
+  .grocery-orders-view .grocery-column:not(.mobile-hidden) { display: flex !important; }
+}
+@media (max-width: 640px) {
+  .grocery-orders-view > div:first-child { align-items: stretch !important; }
+  .grocery-orders-view > div:nth-of-type(3) { width: 100%; }
+  .grocery-orders-view .grocery-order-card { padding: 12px; }
+  .grocery-inventory-view .inventory-toolbar { align-items: stretch; flex-direction: column; }
+  .grocery-inventory-view .inventory-search-wrap { width: 100%; }
+  .grocery-inventory-view .inventory-card-grid { grid-template-columns: 1fr; }
+}
