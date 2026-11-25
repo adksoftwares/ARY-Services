@@ -238,6 +238,49 @@ async function readJsonArray(filePath) {
   return Array.isArray(parsed) ? parsed : [];
 }
 
+
+// Execute a collection read-modify-write under one PostgreSQL transaction.
+// The advisory transaction lock is shared across API instances, so a write cannot
+// overwrite another instance's update after reading the same stale collection.
+async function mutatePostgresArray(filePath, mutator) {
+  if (!activePostgresPool) throw new Error('PostgreSQL storage is not configured.');
+  const collection = path.basename(filePath, '.json');
+  const client = await activePostgresPool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`ary_documents:${collection}`]);
+    const result = await client.query(
+      'SELECT payload FROM ary_documents WHERE collection = $1 ORDER BY position ASC',
+      [collection]
+    );
+    const current = result.rows.map(row => row.payload);
+    const outcome = await mutator(current);
+    const next = Array.isArray(outcome?.next) ? outcome.next : current;
+    if (next !== current) {
+      await client.query('DELETE FROM ary_documents WHERE collection = $1', [collection]);
+      if (next.length) {
+        const values = [];
+        const placeholders = next.map((item, index) => {
+          const offset = index * 4;
+          values.push(collection, String(item.id ?? index), index, JSON.stringify(item));
+          return `(${offset + 1}, ${offset + 2}, ${offset + 3}, ${offset + 4}::jsonb)`;
+        });
+        await client.query(
+          `INSERT INTO ary_documents (collection, record_id, position, payload) VALUES ${placeholders.join(', ')}`,
+          values
+        );
+      }
+    }
+    await client.query('COMMIT');
+    return { data: next, value: outcome?.value };
+  } catch (error) {
+    await client.query('ROLLBACK').catch(() => {});
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
 export async function getUsers() {
   return usersLock.acquire(async () => {
     if (cachedUsers !== null && !activePostgresPool) {
@@ -297,6 +340,13 @@ export async function findUser(predicate) {
 }
 
 export async function addUser(newUser) {
+  if (activePostgresPool) {
+    return usersLock.acquire(async () => {
+      const { data, value } = await mutatePostgresArray(usersFile, current => ({ next: [...current, newUser], value: newUser }));
+      cachedUsers = data;
+      return value;
+    });
+  }
   return usersLock.acquire(async () => {
     const current = activePostgresPool ? await readJsonArray(usersFile) : cachedUsers !== null ? cachedUsers : await (async () => {
       try {
@@ -314,6 +364,20 @@ export async function addUser(newUser) {
 }
 
 export async function updateUser(id, updater) {
+  if (activePostgresPool) {
+    return usersLock.acquire(async () => {
+      const { data, value } = await mutatePostgresArray(usersFile, current => {
+        const index = current.findIndex(user => user.id === id);
+        if (index === -1) return { next: current, value: null };
+        const next = [...current];
+        const updated = typeof updater === 'function' ? updater(next[index]) : { ...next[index], ...updater };
+        next[index] = updated;
+        return { next, value: updated };
+      });
+      cachedUsers = data;
+      return value;
+    });
+  }
   return usersLock.acquire(async () => {
     const current = activePostgresPool ? await readJsonArray(usersFile) : cachedUsers !== null ? cachedUsers : await (async () => {
       try {
@@ -335,6 +399,13 @@ export async function updateUser(id, updater) {
 }
 
 export async function deleteUser(id) {
+  if (activePostgresPool) {
+    return usersLock.acquire(async () => {
+      const { data } = await mutatePostgresArray(usersFile, current => ({ next: current.filter(user => user.id !== id), value: true }));
+      cachedUsers = data;
+      return true;
+    });
+  }
   return usersLock.acquire(async () => {
     const current = activePostgresPool ? await readJsonArray(usersFile) : cachedUsers !== null ? cachedUsers : await (async () => {
       try {
@@ -381,6 +452,13 @@ export async function saveBookings(bookings) {
 }
 
 export async function addBooking(newBooking) {
+  if (activePostgresPool) {
+    return bookingsLock.acquire(async () => {
+      const { data, value } = await mutatePostgresArray(bookingsFile, current => ({ next: [newBooking, ...current], value: newBooking }));
+      cachedBookings = data;
+      return value;
+    });
+  }
   return bookingsLock.acquire(async () => {
     const current = activePostgresPool ? await readJsonArray(bookingsFile) : cachedBookings !== null ? cachedBookings : await (async () => {
       try {
@@ -397,6 +475,20 @@ export async function addBooking(newBooking) {
 }
 
 export async function updateBooking(id, updater) {
+  if (activePostgresPool) {
+    return bookingsLock.acquire(async () => {
+      const { data, value } = await mutatePostgresArray(bookingsFile, current => {
+        const index = current.findIndex(booking => booking.id === id);
+        if (index === -1) return { next: current, value: null };
+        const next = [...current];
+        const updated = typeof updater === 'function' ? updater(next[index]) : { ...next[index], ...updater };
+        next[index] = updated;
+        return { next, value: updated };
+      });
+      cachedBookings = data;
+      return value;
+    });
+  }
   return bookingsLock.acquire(async () => {
     const current = activePostgresPool ? await readJsonArray(bookingsFile) : cachedBookings !== null ? cachedBookings : await (async () => {
       try {
