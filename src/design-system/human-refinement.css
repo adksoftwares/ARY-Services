@@ -653,3 +653,17 @@ input::placeholder, textarea::placeholder {
 @media (prefers-reduced-motion: reduce) {
   .ds-skeleton { animation: none; }
 }
+
+/* Mobile touch target minimum sizing (WCAG 2.5.8 & Human ergonomics) */
+@media (max-width: 768px) {
+  button:not(.inline-icon-btn), .ds-btn, .quick-chip-btn, .category-chip, .filter-chip-btn, .nav-item, .nav-link-btn {
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+  
+  /* Ensure tactile feedback on mobile tap */
+  button:active, .ds-btn:active, .category-card:active {
+    transform: scale(0.98);
+    transition: transform 0.08s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+}
