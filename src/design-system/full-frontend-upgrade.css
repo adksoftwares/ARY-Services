@@ -1655,3 +1655,32 @@ textarea { min-height: 96px; }
   .provider-profile-view input,.provider-services-manager-view input,
   .provider-services-manager-view textarea { transition:none; }
 }
+
+
+/* Provider trust and earnings surfaces */
+.provider-wallet-container,.provider-reviews-container{width:min(100%,1180px);margin-inline:auto;min-width:0}
+.provider-wallet-container>* ,.provider-reviews-container>*{min-width:0}
+.provider-wallet-container table{border-collapse:separate;border-spacing:0}
+.provider-wallet-container th{font-size:.74rem;font-weight:750;letter-spacing:.035em;text-transform:uppercase;color:var(--ary-muted);background:var(--ary-canvas);white-space:nowrap}
+.provider-wallet-container td{font-variant-numeric:tabular-nums;vertical-align:middle}
+.provider-wallet-container tr:hover td{background:rgba(234,243,237,.48)}
+.provider-wallet-container [role="tablist"],.provider-wallet-container [role="group"]{max-width:100%;flex-wrap:wrap}
+.provider-wallet-container button,.provider-reviews-container button{min-height:40px}
+.provider-reviews-container>div:first-child{align-items:center}
+.provider-reviews-container>div:first-child>div:first-child{flex:0 0 auto}
+.provider-reviews-container>div:first-child>div:last-child{min-width:min(100%,260px)}
+.provider-reviews-container [class*="review"]{overflow-wrap:anywhere}
+.provider-reviews-container p{line-height:1.6}
+@media(max-width:680px){
+ .provider-wallet-container,.provider-reviews-container{padding-inline:10px}
+ .provider-wallet-container>div{max-width:100%;overflow-x:auto}
+ .provider-wallet-container table{min-width:680px}
+ .provider-wallet-container [role="tablist"]{display:flex;flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;padding-bottom:6px}
+ .provider-wallet-container [role="tablist"]>*{flex:0 0 auto}
+ .provider-reviews-container>div:first-child{gap:16px!important;padding:17px!important}
+ .provider-reviews-container>div:first-child>div:first-child{width:100%;padding:0 0 14px!important;border-right:0!important;border-bottom:1px solid var(--ary-line)}
+ .provider-reviews-container>div:first-child>div:last-child{width:100%;min-width:0}
+}
+[data-theme="dark"] .provider-wallet-container th{background:#1b2a21;color:#b9c9be}
+[data-theme="dark"] .provider-wallet-container tr:hover td{background:rgba(66,110,83,.12)}
+@media(prefers-reduced-motion:reduce){.provider-wallet-container tr,.provider-reviews-container *{scroll-behavior:auto!important;transition:none!important}}

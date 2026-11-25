@@ -52,7 +52,7 @@ export default function ProviderWallet({
 
 
   return (
-    <div className="provider-wallet-container" style={{ display: 'grid', gap: '20px' }}>
+    <div className="provider-wallet-container" data-workspace="provider-wallet" style={{ display: 'grid', gap: '20px' }}>
       {/* 1. Financial Overview Cards */}
       <div style={{
         display: 'grid',

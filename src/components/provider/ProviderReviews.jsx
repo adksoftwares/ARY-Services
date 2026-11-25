@@ -22,7 +22,7 @@ export default function ProviderReviews({
   }
 
   return (
-    <div className="provider-reviews-container" style={{ display: 'grid', gap: '20px' }}>
+    <div className="provider-reviews-container" data-workspace="provider-reviews" style={{ display: 'grid', gap: '20px' }}>
       {/* 1. Score Summary Header */}
       <Card style={{
         padding: '24px',
