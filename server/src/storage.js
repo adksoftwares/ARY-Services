@@ -263,7 +263,7 @@ async function mutatePostgresArray(filePath, mutator) {
         const placeholders = next.map((item, index) => {
           const offset = index * 4;
           values.push(collection, String(item.id ?? index), index, JSON.stringify(item));
-          return `(${offset + 1}, ${offset + 2}, ${offset + 3}, ${offset + 4}::jsonb)`;
+          return `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}::jsonb)`;
         });
         await client.query(
           `INSERT INTO ary_documents (collection, record_id, position, payload) VALUES ${placeholders.join(', ')}`,
