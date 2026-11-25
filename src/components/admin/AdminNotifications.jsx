@@ -50,7 +50,7 @@ export default function AdminNotifications({
 
   const persistentEvents = auditRecords.map(record => {
     const action = String(record.action || '');
-    const type = action.startsWith('kyc.') ? 'kyc' : action.startsWith('dispute.') ? 'dispute' : action.startsWith('provider.payout') ? 'payout' : action.startsWith('account.') ? 'account' : 'account';
+    const type = action.startsWith('kyc.') || action.startsWith('role.') || action.startsWith('driver.application') ? 'kyc' : action.startsWith('dispute.') ? 'dispute' : action.startsWith('provider.payout') ? 'payout' : action.startsWith('account.') ? 'account' : 'account';
     const details = record.details && typeof record.details === 'object' ? record.details : {};
     const summary = Object.entries(details).filter(([key, value]) => !/token|document|password|secret/i.test(key) && value !== null && typeof value !== 'object')
       .map(([key, value]) => `${key}: ${String(value)}`).join(' · ');
