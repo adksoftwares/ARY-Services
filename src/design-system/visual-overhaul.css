@@ -1135,3 +1135,58 @@ button { -webkit-tap-highlight-color: transparent; }
 [data-theme="dark"] .payment-option-btn.active, [data-theme="dark"] .time-slots-grid > button.active {
   background: #1c3524; border-color: #49764f; color: #d8f0dc;
 }
+
+
+/* Provider live job queue and quote composer */
+.provider-jobs-container { max-width: 1320px; margin: 0 auto; gap: 18px !important; }
+.provider-jobs-container .job-card {
+  padding: 19px !important; border: 1px solid #e0e9df !important; border-radius: 16px !important;
+  background: #fff !important; box-shadow: 0 5px 18px rgba(23,55,39,.04) !important;
+  transition: border-color .18s,box-shadow .18s,transform .18s;
+}
+.provider-jobs-container .job-card:hover { transform: translateY(-2px); border-color: #c1d6c2 !important; box-shadow: 0 12px 25px rgba(23,55,39,.07) !important; }
+.provider-jobs-container .job-detail-grid {
+  display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px;
+  margin: 14px 0; padding: 13px; border: 1px solid #edf1eb; border-radius: 12px; background: #f8faf7;
+}
+.provider-jobs-container .quote-composer-card {
+  padding: 16px; border: 1px solid #dfe9df; border-radius: 13px; background: #f6faf5;
+}
+.provider-jobs-container .job-actions-row { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 14px; margin-top: 13px; border-top: 1px solid #edf1eb; }
+.provider-jobs-container .provider-form-group { display: grid; gap: 6px; }
+.provider-jobs-container .provider-form-label { color: #627569; font-size: 11px; font-weight: 800; }
+.provider-jobs-container .provider-form-input { min-height: 42px; padding: 9px 11px; border: 1px solid #dce6dc; border-radius: 10px; background: #fff; color: #253d2d; }
+.provider-jobs-container .provider-form-input:focus { border-color: #7fae87; outline: 0; box-shadow: 0 0 0 3px rgba(58,127,78,.12); }
+
+/* Driver earnings summary: separate activity and recorded payout context */
+.driver-earnings-container { max-width: 1240px; margin: 0 auto 22px; gap: 15px !important; }
+.driver-earnings-container > div:first-child { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px !important; }
+.driver-earnings-container > div:first-child > .ds-card {
+  min-width: 0; padding: 18px !important; border: 1px solid #e0e9df !important;
+  border-radius: 15px !important; background: linear-gradient(145deg,#fff,#f5f8f3) !important;
+  box-shadow: 0 5px 17px rgba(23,55,39,.04) !important;
+}
+.driver-earnings-container > div:first-child > .ds-card > div:nth-child(2) {
+  color: #1d4930 !important; font: 850 clamp(22px,2.6vw,29px)/1.15 var(--font-heading) !important;
+  letter-spacing: -.04em;
+}
+.driver-earnings-container > div:not(:first-child) { min-width: 0; }
+.driver-earnings-container .admin-table { width: 100%; }
+[data-theme="dark"] .provider-jobs-container .job-card,
+[data-theme="dark"] .provider-jobs-container .quote-composer-card,
+[data-theme="dark"] .driver-earnings-container > div:first-child > .ds-card {
+  background: #121e16 !important; border-color: #2a3d2e !important; color: #e4eee5;
+}
+[data-theme="dark"] .provider-jobs-container .job-detail-grid { background: #17251b; border-color: #2a3d2e; }
+[data-theme="dark"] .provider-jobs-container .provider-form-input { background: #17251b; border-color: #304434; color: #e6f0e7; }
+[data-theme="dark"] .driver-earnings-container > div:first-child > .ds-card > div:nth-child(2) { color: #e5f0e6 !important; }
+@media (max-width: 700px) {
+  .provider-jobs-container .job-card { padding: 14px !important; }
+  .provider-jobs-container .job-detail-grid { grid-template-columns: 1fr; }
+  .provider-jobs-container .job-actions-row > * { flex: 1 1 130px; }
+  .driver-earnings-container > div:first-child { grid-template-columns: 1fr 1fr; gap: 9px !important; }
+  .driver-earnings-container > div:first-child > .ds-card { padding: 13px !important; }
+}
+@media (max-width: 390px) {
+  .driver-earnings-container > div:first-child { grid-template-columns: 1fr; }
+}
