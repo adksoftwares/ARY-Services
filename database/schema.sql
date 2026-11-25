@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS users (
   phone TEXT UNIQUE NOT NULL,
   email TEXT UNIQUE,
   password_hash TEXT NOT NULL,
-  account_type TEXT NOT NULL CHECK (account_type IN ('customer','provider','admin')),
+  account_type TEXT NOT NULL CHECK (account_type IN ('customer','provider','driver','admin')),
   status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('pending','active','suspended','rejected')),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
