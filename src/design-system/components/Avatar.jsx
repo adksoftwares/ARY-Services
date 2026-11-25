@@ -1,50 +1,63 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 export function Avatar({
   src,
   alt = '',
   name = '',
-  size = 'md', // 'sm' | 'md' | 'lg' | 'xl'
+  size = 'md',
   isOnline = false,
   className = '',
   ...props
 }) {
-  const getInitials = (str) => {
-    if (!str) return '?';
-    const parts = str.trim().split(/\s+/);
+  const [imageFailed, setImageFailed] = useState(false);
+
+  useEffect(() => {
+    setImageFailed(false);
+  }, [src]);
+
+  const getInitials = (value) => {
+    const normalized = typeof value === 'string' ? value.trim() : '';
+    if (!normalized) return '?';
+    const parts = normalized.split(/\s+/);
     if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
-    return str.slice(0, 2).toUpperCase();
+    return normalized.slice(0, 2).toUpperCase();
   };
 
-  // Deterministic pastel color from name
-  const getBgColor = (str) => {
-    if (!str) return '#174d3d';
+  const getBgColor = (value) => {
+    if (!value) return '#174d3d';
     let hash = 0;
-    for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    for (let index = 0; index < value.length; index++) {
+      hash = value.charCodeAt(index) + ((hash << 5) - hash);
+    }
     const hues = [160, 28, 200, 280, 40, 185];
     const hue = hues[Math.abs(hash) % hues.length];
     return `hsl(${hue}, 45%, 38%)`;
   };
 
+  const showImage = Boolean(src) && !imageFailed;
+  const accessibleName = alt || name || 'User avatar';
+
   return (
     <div
       className={`ds-avatar ds-avatar-${size} ${isOnline ? 'ds-avatar-online' : ''} ${className}`}
-      style={{ backgroundColor: !src ? getBgColor(name) : undefined, color: '#ffffff' }}
-      aria-label={alt || name}
+      style={{ backgroundColor: showImage ? undefined : getBgColor(name), color: '#ffffff' }}
+      aria-label={accessibleName}
       role="img"
       {...props}
     >
-      {src ? (
+      {showImage ? (
         <img
           src={src}
-          alt={alt || name}
-          onError={(e) => {
-            e.currentTarget.style.display = 'none';
-          }}
+          alt=""
+          aria-hidden="true"
+          loading="lazy"
+          decoding="async"
+          onError={() => setImageFailed(true)}
         />
       ) : (
-        <span>{getInitials(name)}</span>
+        <span aria-hidden="true">{getInitials(name)}</span>
       )}
+      {isOnline && <span className="ds-avatar-presence-label" aria-hidden="true" />}
     </div>
   );
 }
