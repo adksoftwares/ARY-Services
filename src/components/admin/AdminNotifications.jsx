@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Bell,
   Search,
@@ -8,18 +8,66 @@ import {
   Wallet
 } from 'lucide-react';
 import { Card, Badge, Button, EmptyState } from '../../design-system';
+import { API_BASE } from '../../config';
+import { useAuth } from '../../context/AuthContext';
 
 export default function AdminNotifications({
   events = [],
   onClear,
   onNavigateTab
 }) {
+  const { currentUser } = useAuth();
+  const [auditRecords, setAuditRecords] = useState([]);
+  const [auditLoading, setAuditLoading] = useState(false);
+  const [auditError, setAuditError] = useState('');
+  const [refreshCount, setRefreshCount] = useState(0);
   const [filter, setFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const displayEvents = Array.isArray(events)
-    ? events.filter(event => event && typeof event === 'object' && !Array.isArray(event))
-    : [];
+  useEffect(() => {
+    if (!currentUser?.token || currentUser.accountType !== 'admin') {
+      setAuditRecords([]);
+      return undefined;
+    }
+    const controller = new AbortController();
+    setAuditLoading(true);
+    setAuditError('');
+    fetch(`${API_BASE}/admin/audit-log?limit=150`, {
+      headers: { Authorization: `Bearer ${currentUser.token}` },
+      signal: controller.signal,
+      cache: 'no-store'
+    }).then(async response => {
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Could not load persistent audit events.');
+      setAuditRecords(Array.isArray(data.events) ? data.events : []);
+    }).catch(error => {
+      if (error.name !== 'AbortError') setAuditError(error.message || 'Could not load persistent audit events.');
+    }).finally(() => {
+      if (!controller.signal.aborted) setAuditLoading(false);
+    });
+    return () => controller.abort();
+  }, [currentUser?.token, currentUser?.accountType, refreshCount]);
+
+  const persistentEvents = auditRecords.map(record => {
+    const action = String(record.action || '');
+    const type = action.startsWith('kyc.') ? 'kyc' : action.startsWith('dispute.') ? 'dispute' : action.startsWith('provider.payout') ? 'payout' : action.startsWith('account.') ? 'account' : 'account';
+    const details = record.details && typeof record.details === 'object' ? record.details : {};
+    const summary = Object.entries(details).filter(([key, value]) => !/token|document|password|secret/i.test(key) && value !== null && typeof value !== 'object')
+      .map(([key, value]) => `${key}: ${String(value)}`).join(' · ');
+    return {
+      id: record.id,
+      type,
+      title: action.replace(/[._]/g, ' ').replace(/\b\w/g, letter => letter.toUpperCase()),
+      description: `${record.actorRole || 'Unknown role'} ${record.actorId || 'unknown actor'} · ${record.targetType || 'record'} ${record.targetId || ''}${summary ? ` · ${summary}` : ''}`,
+      createdAt: record.createdAt,
+      targetTab: action.startsWith('dispute.') ? 'disputes' : action.startsWith('provider.payout') ? 'payouts' : action.startsWith('kyc.') || action.startsWith('account.') ? 'applications' : ''
+    };
+  });
+
+  const displayEvents = [
+    ...persistentEvents,
+    ...(Array.isArray(events) ? events.filter(event => event && typeof event === 'object' && !Array.isArray(event)) : [])
+  ];
   const filteredEvents = useMemo(() => {
     const query = searchQuery.trim().toLocaleLowerCase();
     return displayEvents.filter(event => {
@@ -40,15 +88,16 @@ export default function AdminNotifications({
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <Bell size={22} color="var(--color-brand-600, #174d3d)" />
               <h3 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--color-brand-900, #173b2f)' }}>
-                Admin Session Activity
+                Admin Audit & Session Activity
               </h3>
             </div>
             <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: 'var(--color-neutral-600, #475569)' }}>
-              Session activity received while this admin workspace is open. This feed is temporary and is not a persistent audit record.
+              Persistent records of sensitive Admin actions, combined with live session activity from this workspace.
             </p>
           </div>
 
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            <Button size="sm" variant="outline" onClick={() => setRefreshCount(value => value + 1)} loading={auditLoading}>Refresh audit log</Button>
             {[
               { id: 'all', label: 'ALL EVENTS' },
               { id: 'payout', label: 'PAYOUTS' },
@@ -79,6 +128,8 @@ export default function AdminNotifications({
         </div>
       </Card>
 
+      {auditError && <div role="alert" style={{ padding: '10px 12px', borderRadius: 8, background: 'var(--color-danger-50, #fef2f2)', color: 'var(--color-danger-700, #b91c1c)' }}>{auditError}</div>}
+      {auditLoading && <p role="status" style={{ color: 'var(--color-neutral-500, #64748b)', fontSize: '0.82rem' }}>Loading persistent audit events…</p>}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
         <label style={{ display: 'flex', alignItems: 'center', gap: 8, flex: '1 1 260px', minWidth: 0, minHeight: 44, padding: '0 12px', border: '1px solid var(--color-border, #cbd5e1)', borderRadius: 10, background: 'var(--color-surface, #fff)' }}>
           <Search size={16} aria-hidden="true" style={{ color: 'var(--color-neutral-500, #64748b)', flexShrink: 0 }} />
