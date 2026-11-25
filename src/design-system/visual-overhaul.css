@@ -1285,3 +1285,78 @@ button { -webkit-tap-highlight-color: transparent; }
 @media (forced-colors: active) {
   :where(button,a,input,select,textarea,[tabindex]):focus-visible { outline: 2px solid Highlight; }
 }
+
+
+/* Customer booking history — clearer status scanning and compact detail hierarchy */
+.my-bookings-container { width: min(100%, 1180px); margin-inline: auto; }
+.my-bookings-container .section-heading { align-items: flex-end; gap: 14px; }
+.my-bookings-container .bookings-feed { display: grid; gap: 15px; }
+.my-bookings-container .booking-card-item {
+  min-width: 0; padding: clamp(16px,2.2vw,22px);
+  border: 1px solid #e1e9df; border-radius: 17px; background: #fff;
+  box-shadow: 0 5px 18px rgba(23,55,39,.04);
+  transition: border-color .18s,box-shadow .18s,transform .18s;
+}
+.my-bookings-container .booking-card-item:hover { border-color: #c6d9c5; box-shadow: 0 12px 26px rgba(23,55,39,.065); }
+.my-bookings-container .booking-card-header {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+}
+.my-bookings-container .booking-card-title-col { min-width: 0; }
+.my-bookings-container .booking-service-title { overflow-wrap: anywhere; color: #1d392a; letter-spacing: -.025em; }
+.my-bookings-container .booking-ref-tag { display: inline-block; margin-top: 4px; color: #839087; font-size: 10px; font-weight: 750; letter-spacing: .04em; }
+.my-bookings-container .booking-stepper-box { margin: 17px 0; padding: 13px 14px; border: 1px solid #edf1eb; border-radius: 12px; background: #f8faf7; }
+.my-bookings-container .booking-details-grid {
+  display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px;
+  margin-top: 14px; padding: 14px; border: 1px solid #edf1eb; border-radius: 12px; background: #fbfcfa;
+}
+.my-bookings-container .detail-item { min-width: 0; display: grid; align-content: start; gap: 5px; }
+.my-bookings-container .detail-label { color: #829087; font-size: 10px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
+.my-bookings-container .detail-val, .my-bookings-container .detail-phone-link { min-width: 0; color: #314638; font-size: 13px; font-weight: 650; overflow-wrap: anywhere; }
+.my-bookings-container .detail-phone-link { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
+.my-bookings-container .detail-phone-link:hover { color: #1d7042; text-decoration: underline; }
+.my-bookings-container .booking-card-item button { min-height: 40px; border-radius: 10px; }
+.my-bookings-container .booking-card-item [role="alert"] { margin-top: 10px; border-radius: 10px; }
+.my-bookings-container .bookings-tabs-bar { margin: 18px 0; }
+.my-bookings-container .skeleton-card { overflow: hidden; }
+[data-theme="dark"] .my-bookings-container .booking-card-item { background: #121e16; border-color: #2a3d2e; }
+[data-theme="dark"] .my-bookings-container .booking-service-title,
+[data-theme="dark"] .my-bookings-container .detail-val,
+[data-theme="dark"] .my-bookings-container .detail-phone-link { color: #e2eee3; }
+[data-theme="dark"] .my-bookings-container .booking-stepper-box,
+[data-theme="dark"] .my-bookings-container .booking-details-grid { background: #17251b; border-color: #2a3d2e; }
+
+/* Admin session activity feed — make temporary event context easy to scan */
+.admin-layout [role="log"] { min-width: 0; }
+.admin-layout [role="log"] > div {
+  min-width: 0; border-radius: 13px !important;
+  transition: border-color .16s,background .16s,transform .16s;
+}
+.admin-layout [role="log"] > div:hover { border-color: #c4d8c5 !important; background: #fbfdf9 !important; }
+.admin-layout [role="log"] > div > div:first-child { min-width: 0; flex: 1; }
+.admin-layout [role="log"] > div > div:first-child > div:last-child { min-width: 0; }
+.admin-layout [role="log"] > div p { overflow-wrap: anywhere; }
+.admin-layout [role="log"] > div > div:last-child { display: grid; justify-items: end; gap: 5px; }
+.admin-layout [role="log"] button { min-height: 30px; padding: 4px 7px !important; border-radius: 7px !important; }
+.admin-layout [aria-pressed="true"] { box-shadow: inset 0 0 0 1px rgba(35,103,60,.12); }
+[data-theme="dark"] .admin-layout [role="log"] > div { background: #121e16 !important; border-color: #2a3d2e !important; }
+[data-theme="dark"] .admin-layout [role="log"] > div:hover { background: #17251b !important; border-color: #3b6042 !important; }
+
+/* Review and dispute dialogs — readable forms and safer action spacing */
+.modal-card form .wizard-form-label { display: grid; gap: 8px; color: #43594a; font-size: 12px; font-weight: 750; }
+.modal-card form .wizard-form-label textarea { min-height: 94px; resize: vertical; line-height: 1.55; }
+.modal-card form .security-notice-box { display: flex; align-items: flex-start; gap: 11px; padding: 14px; border: 1px solid #dce9dc; border-radius: 12px; background: #f3f8f2; color: #31553b; }
+.modal-card form .security-notice-box > svg { flex: 0 0 auto; margin-top: 2px; }
+.modal-card form .ds-toast-error { padding: 11px 13px; border-radius: 10px; line-height: 1.5; }
+.modal-card form .rating-stars, .modal-card form [role="radiogroup"] { justify-content: center; }
+.modal-card form button[type="submit"] { min-height: 46px; }
+[data-theme="dark"] .modal-card form .wizard-form-label { color: #c7d8c9; }
+[data-theme="dark"] .modal-card form .security-notice-box { background: #182b1e; border-color: #31533a; color: #cce4cf; }
+@media (max-width: 640px) {
+  .my-bookings-container .section-heading { align-items: stretch; flex-direction: column; }
+  .my-bookings-container .booking-card-header { align-items: flex-start; }
+  .my-bookings-container .booking-details-grid { grid-template-columns: 1fr; gap: 10px; padding: 12px; }
+  .my-bookings-container .booking-stepper-box { overflow-x: auto; }
+  .admin-layout [role="log"] > div { flex-direction: column; }
+  .admin-layout [role="log"] > div > div:last-child { width: 100%; display: flex; align-items: center; justify-content: space-between; }
+  .modal-card form > div:last-child { position: sticky; bottom: 0; padding: 10px 0 max(8px,env(safe-area-inset-bottom)); background: inherit; }
+}
