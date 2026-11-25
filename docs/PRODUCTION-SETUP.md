@@ -43,6 +43,8 @@ ARY submits normalized Sri Lankan mobile numbers to Twilio in E.164 format (`+94
 - Configure the connection string and TLS policy supplied by the database host.
 - Restrict database network access to the API deployment where possible.
 - Keep credentials out of source control.
+- Read [DATABASE-STORAGE.md](./DATABASE-STORAGE.md) before applying SQL files. The runtime source of truth is the `ary_documents` JSONB store initialized by the API; `database/schema.sql` is a relational reference, not a drop-in production bootstrap.
+- Apply the dated migrations in the documented order after a backup. The repository does not automatically apply these manual migrations to an existing hosted database.
 - Before migrating an existing installation, take a full database and JSON-data backup and prepare a separately reviewed migration plan. Do not overwrite existing customer/provider data with seed data.
 
 ## 4. Browser application

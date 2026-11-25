@@ -1,3 +1,8 @@
+-- NOTE: This file describes the normalized relational reference model.
+-- The current API runtime persists its authoritative marketplace state in the
+-- ary_documents JSONB collections initialized by server/src/storage.js.
+-- Do not use this file as a drop-in production bootstrap for an existing ARY
+-- installation. Read docs/DATABASE-STORAGE.md and plan a dedicated data migration.
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 CREATE TABLE IF NOT EXISTS users (
