@@ -1,0 +1,406 @@
+/**
+ * ARY Services — unified role experience upgrade
+ * A cohesive, restrained interface system for customer, provider, driver and admin.
+ * Existing workflows and component contracts are intentionally preserved.
+ */
+:root {
+  --ary-ink: #172d25;
+  --ary-muted: #68766e;
+  --ary-green: #174d3d;
+  --ary-green-strong: #103b2e;
+  --ary-green-soft: #eaf3ed;
+  --ary-canvas: #f7f8f4;
+  --ary-surface: #fff;
+  --ary-line: #e4e9e2;
+  --ary-line-strong: #d5ded5;
+  --ary-radius-sm: 10px;
+  --ary-radius-md: 15px;
+  --ary-radius-lg: 21px;
+  --ary-shadow-card: 0 2px 8px rgba(24, 47, 36, .045), 0 12px 30px rgba(24, 47, 36, .035);
+  --ary-shadow-pop: 0 14px 34px rgba(24, 47, 36, .12);
+  --ary-content-width: 1240px;
+}
+html { scroll-padding-top: 88px; }
+body {
+  color: var(--ary-ink);
+  background: var(--ary-canvas);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+#root { min-height: 100vh; min-height: 100dvh; }
+.app-shell, .customer-app, .provider-app, .driver-app, .admin-app {
+  min-width: 0;
+}
+.app-shell {
+  width: min(100% - 40px, var(--ary-content-width));
+  margin-inline: auto;
+}
+main, section, article, aside, header, footer { min-width: 0; }
+h1, h2, h3, h4 { color: var(--ary-ink); text-wrap: balance; }
+p { color: var(--ary-muted); }
+a { text-underline-offset: 3px; }
+button, input, select, textarea { font: inherit; }
+button:not(:disabled) { cursor: pointer; }
+button:disabled { opacity: .58; }
+:where(button, a, input, select, textarea, [role="button"], [tabindex]):focus-visible {
+  outline: 3px solid rgba(35, 126, 91, .24);
+  outline-offset: 2px;
+}
+
+/* Shared application chrome */
+.topbar {
+  min-height: 72px;
+  padding: 12px clamp(16px, 3vw, 34px);
+  background: rgba(255,255,255,.96);
+  border-bottom: 1px solid var(--ary-line);
+  gap: 14px;
+}
+.brand-mark { border-radius: 13px; }
+.header-nav-links { gap: 5px; }
+.nav-link-btn {
+  min-height: 42px;
+  padding: 9px 13px;
+  border-radius: 11px;
+  font-weight: 600;
+}
+.nav-link-btn.active { background: var(--ary-green-soft); border-color: transparent; }
+.user-badge { border-radius: 11px; }
+.header-guest-actions, .guest-card-actions { gap: 9px; }
+.sign-in, .prompt-sign-in-btn, .sign-out-btn { min-height: 42px; border-radius: 11px; }
+.mobile-bottom-nav {
+  background: rgba(255,255,255,.97);
+  border-top: 1px solid var(--ary-line);
+  box-shadow: 0 -8px 24px rgba(22, 45, 34, .055);
+  padding: 8px 10px max(9px, env(safe-area-inset-bottom));
+}
+.mob-nav-item {
+  min-width: 54px;
+  min-height: 56px;
+  border-radius: 13px;
+}
+.mob-nav-item.active { background: var(--ary-green-soft); color: var(--ary-green); }
+
+/* Customer discovery */
+.hero-concise, .hero {
+  width: min(100%, var(--ary-content-width));
+  margin-inline: auto;
+}
+.hero-concise { padding: clamp(28px, 5vw, 58px) clamp(16px, 3vw, 30px) 28px; }
+.hero-content { max-width: 100%; }
+.hero-title, .hero h1 {
+  max-width: 17ch;
+  color: var(--ary-ink);
+  font-size: clamp(2.25rem, 5.3vw, 4.25rem);
+  line-height: 1.055;
+  letter-spacing: -.052em;
+  font-weight: 780;
+}
+.hero-subtext, .hero-copy > p {
+  max-width: 66ch;
+  color: #5d6c63;
+  font-size: clamp(1rem, 1.6vw, 1.2rem);
+  line-height: 1.72;
+}
+.hero-trust-badge {
+  width: fit-content;
+  max-width: 100%;
+  min-height: 38px;
+  border: 1px solid #d9e6dc;
+  border-radius: 999px;
+  background: #f0f7f1;
+  color: #245c46;
+  padding: 8px 14px;
+  font-size: .72rem;
+  font-weight: 750;
+  letter-spacing: .065em;
+}
+.search-panel-elevated, .search-panel {
+  border: 1px solid var(--ary-line-strong);
+  border-radius: var(--ary-radius-lg);
+  background: var(--ary-surface);
+  box-shadow: var(--ary-shadow-card);
+  padding: clamp(12px, 2vw, 19px);
+}
+.search-input-field {
+  min-width: 0;
+  border-bottom-color: var(--ary-line);
+}
+.search-text-input {
+  min-width: 0;
+  min-height: 48px;
+  color: var(--ary-ink);
+  font-size: 1rem;
+}
+.search-text-input::placeholder { color: #89958d; opacity: 1; }
+.gps-detect-btn, .location-change-btn {
+  min-height: 42px;
+  border: 1px solid var(--ary-line-strong);
+  border-radius: 11px;
+  background: #f7f9f5;
+  color: #285b45;
+  font-weight: 650;
+}
+.hero-search-action-btn, .search-button {
+  min-height: 52px;
+  border-radius: 12px;
+  font-size: .98rem;
+  font-weight: 750;
+}
+.quick-category-chips { margin-top: 18px; }
+.chips-label {
+  color: #59685f;
+  font-size: .78rem;
+  font-weight: 750;
+  letter-spacing: .075em;
+  text-transform: uppercase;
+}
+.chips-scroll-container {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 10px 1px 8px;
+  scrollbar-width: thin;
+  overscroll-behavior-x: contain;
+}
+.category-chip, .quick-chip-btn {
+  min-height: 46px;
+  flex: 0 0 auto;
+  padding: 10px 16px;
+  border: 1px solid var(--ary-line);
+  border-radius: 12px;
+  background: #fff;
+  color: #34483d;
+  font-weight: 650;
+  box-shadow: none;
+}
+.category-chip.active, .quick-chip-btn.active {
+  background: var(--ary-green-soft);
+  border-color: #bcd3c3;
+  color: var(--ary-green);
+}
+.hero-trust-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 22px;
+  margin-top: 18px;
+}
+.trust-item { display: flex; align-items: center; gap: 9px; color: #53635a; font-size: .9rem; }
+.trust-icon { color: #27634a; flex: 0 0 auto; }
+.guest-welcome-card {
+  margin-top: 24px;
+  padding: 18px;
+  border: 1px solid var(--ary-line);
+  border-radius: var(--ary-radius-md);
+  background: #fff;
+  box-shadow: var(--ary-shadow-card);
+}
+.hero-carousel-section { margin-top: 30px; }
+.carousel-heading { color: var(--ary-ink); font-size: 1.15rem; font-weight: 750; }
+.popular-provider-card, .provider-card-item, .service-card, .booking-card-item {
+  border: 1px solid var(--ary-line);
+  border-radius: var(--ary-radius-md);
+  background: #fff;
+  box-shadow: var(--ary-shadow-card);
+}
+
+/* Consistent workspaces for every role */
+.admin-workspace, .provider-workspace, .driver-workspace,
+.admin-dashboard, .provider-dashboard, .driver-dashboard,
+.dashboard-content, .workspace-content {
+  min-width: 0;
+}
+.admin-panel, .dash-card, .stat-card, .dashboard-card,
+.provider-section, .driver-section, .workspace-panel,
+.admin-users-toolbar, .admin-users-table-container {
+  border: 1px solid var(--ary-line);
+  border-radius: var(--ary-radius-md);
+  background: var(--ary-surface);
+  box-shadow: var(--ary-shadow-card);
+}
+.stat-card { min-height: 112px; }
+.stat-card h2, .stat-card h3, .stat-card strong { color: var(--ary-ink); }
+.stat-card p, .stat-card span { color: var(--ary-muted); }
+.admin-nav-tabs, .customer-nav-tabs, .provider-nav-tabs, .driver-nav-tabs {
+  display: flex;
+  gap: 7px;
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 3px 2px 8px;
+  scrollbar-width: thin;
+  overscroll-behavior-x: contain;
+}
+.admin-nav-tab, .customer-tab-btn, .provider-nav-item, .driver-nav-item {
+  min-height: 42px;
+  border-radius: 11px;
+  white-space: nowrap;
+}
+.admin-nav-tab.active, .customer-tab-btn.active,
+.provider-nav-item.active, .driver-nav-item.active {
+  background: var(--ary-green-soft);
+  color: var(--ary-green);
+  box-shadow: none;
+}
+table { border-collapse: separate; border-spacing: 0; }
+th { color: #59695f; font-weight: 700; }
+td, th { padding: 12px 14px; }
+input, select, textarea {
+  min-height: 42px;
+  border-color: var(--ary-line-strong);
+  border-radius: 10px;
+  color: var(--ary-ink);
+}
+textarea { min-height: 96px; }
+.ds-btn, .action-btn, .modal-submit-btn {
+  min-height: 42px;
+  border-radius: 11px;
+  font-weight: 700;
+}
+.modal-card {
+  border: 1px solid rgba(255,255,255,.6);
+  border-radius: 18px;
+  box-shadow: var(--ary-shadow-pop);
+}
+.empty-state, .empty-state-card, .error-state, .loading-state {
+  border: 1px dashed var(--ary-line-strong);
+  border-radius: var(--ary-radius-md);
+  background: #fbfcfa;
+  padding: 24px;
+}
+.status-badge, .status-pill { border-radius: 999px; }
+
+/* Dense admin data remains usable on narrow screens */
+.admin-users-table-container, .table-responsive, .data-table-wrap { overflow-x: auto; }
+.admin-users-table-container table, .table-responsive table, .data-table-wrap table { min-width: 620px; }
+
+/* Dark theme keeps the same contrast and surface hierarchy. */
+[data-theme="dark"] {
+  --ary-ink: #e7eee9;
+  --ary-muted: #a7b5ac;
+  --ary-canvas: #101a15;
+  --ary-surface: #17231c;
+  --ary-line: #2a3a30;
+  --ary-line-strong: #3a4d40;
+  --ary-green-soft: #203b2d;
+  --ary-shadow-card: none;
+  --ary-shadow-pop: 0 18px 48px rgba(0,0,0,.4);
+}
+[data-theme="dark"] body,
+[data-theme="dark"] .app-shell { background: var(--ary-canvas); color: var(--ary-ink); }
+[data-theme="dark"] .topbar,
+[data-theme="dark"] .mobile-bottom-nav,
+[data-theme="dark"] .search-panel-elevated,
+[data-theme="dark"] .search-panel,
+[data-theme="dark"] .guest-welcome-card,
+[data-theme="dark"] .popular-provider-card,
+[data-theme="dark"] .provider-card-item,
+[data-theme="dark"] .service-card,
+[data-theme="dark"] .booking-card-item,
+[data-theme="dark"] .admin-panel,
+[data-theme="dark"] .dash-card,
+[data-theme="dark"] .stat-card,
+[data-theme="dark"] .dashboard-card,
+[data-theme="dark"] .workspace-panel,
+[data-theme="dark"] .admin-users-toolbar,
+[data-theme="dark"] .admin-users-table-container,
+[data-theme="dark"] .modal-card {
+  background: var(--ary-surface);
+  border-color: var(--ary-line);
+  color: var(--ary-ink);
+}
+[data-theme="dark"] h1, [data-theme="dark"] h2, [data-theme="dark"] h3,
+[data-theme="dark"] .hero-title, [data-theme="dark"] .hero h1 { color: var(--ary-ink); }
+[data-theme="dark"] p, [data-theme="dark"] .hero-subtext { color: var(--ary-muted); }
+[data-theme="dark"] input, [data-theme="dark"] select, [data-theme="dark"] textarea {
+  background: #111c16; color: var(--ary-ink); border-color: var(--ary-line-strong);
+}
+[data-theme="dark"] .category-chip, [data-theme="dark"] .quick-chip-btn,
+[data-theme="dark"] .gps-detect-btn, [data-theme="dark"] .location-change-btn {
+  background: #1c2b22; border-color: var(--ary-line-strong); color: #c7dfce;
+}
+
+/* Tablet and mobile ergonomics */
+@media (max-width: 900px) {
+  .app-shell { width: min(100% - 32px, var(--ary-content-width)); }
+  .topbar { flex-wrap: wrap; }
+  .header-nav-links { order: 4; width: 100%; overflow-x: auto; }
+  .hero-title, .hero h1 { font-size: clamp(2.2rem, 7vw, 3.35rem); }
+}
+@media (max-width: 640px) {
+  .app-shell { width: min(100% - 24px, var(--ary-content-width)); padding-inline: 0; }
+  .topbar { padding: 10px 14px; gap: 9px; }
+  .header-nav-links { gap: 4px; padding-bottom: 3px; }
+  .nav-link-btn { min-height: 40px; padding: 8px 11px; }
+  .hero-concise { padding: 28px 16px 22px; }
+  .hero-title, .hero h1 {
+    max-width: 15ch;
+    font-size: clamp(2.05rem, 9.2vw, 2.8rem);
+    line-height: 1.07;
+  }
+  .hero-subtext, .hero-copy > p { font-size: 1rem; line-height: 1.62; }
+  .search-panel-elevated, .search-panel { padding: 12px; border-radius: 16px; }
+  .location-input-row { min-width: 0; }
+  .location-input-row input { width: 100%; min-width: 0; }
+  .location-actions-wrap { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+  .gps-detect-btn, .location-change-btn { min-height: 40px; padding: 8px 10px; }
+  .hero-search-action-btn, .search-button { width: 100%; min-height: 50px; }
+  .hero-trust-row { display: grid; grid-template-columns: 1fr; gap: 11px; }
+  .guest-welcome-card { padding: 15px; }
+  .guest-card-left { align-items: flex-start; }
+  .guest-card-actions { flex-wrap: wrap; }
+  .admin-panel, .dash-card, .stat-card, .dashboard-card, .workspace-panel { border-radius: 13px; }
+  .stat-card { min-height: 96px; padding: 14px; }
+  .modal-backdrop { align-items: flex-end; padding: 12px 10px max(12px, env(safe-area-inset-bottom)); }
+  .modal-card { width: 100%; max-height: calc(100dvh - 24px); border-radius: 18px 18px 12px 12px; padding: 19px; }
+  .empty-state, .empty-state-card, .error-state, .loading-state { padding: 19px 15px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+
+/* Role-specific shells: align the existing dedicated applications. */
+.provider-app-shell, .driver-app-shell {
+  background: var(--ary-canvas);
+  color: var(--ary-ink);
+}
+.provider-layout-body { max-width: 1480px; }
+.provider-sidebar, .admin-sidebar {
+  border-right: 1px solid var(--ary-line);
+  background: var(--ary-surface);
+}
+.provider-main-content, .admin-main-content, .admin-content {
+  min-width: 0;
+  padding: clamp(16px, 2.6vw, 30px);
+}
+.driver-workspace-container {
+  max-width: 1040px;
+  padding: clamp(16px, 2.5vw, 28px);
+  padding-bottom: calc(104px + env(safe-area-inset-bottom));
+}
+.admin-layout { background: var(--ary-canvas); color: var(--ary-ink); }
+.admin-main, .admin-main-content { min-width: 0; }
+.provider-header, .driver-header, .admin-header {
+  background: var(--ary-surface);
+  border-bottom: 1px solid var(--ary-line);
+}
+.provider-sidebar a, .admin-sidebar a {
+  border-radius: 10px;
+}
+.provider-sidebar a.active, .admin-sidebar a.active {
+  background: var(--ary-green-soft);
+  color: var(--ary-green);
+}
+.driver-job-card, .driver-active-job, .driver-earnings-card,
+.provider-job-card, .provider-quote-card, .admin-overview-card {
+  border: 1px solid var(--ary-line);
+  border-radius: var(--ary-radius-md);
+  background: var(--ary-surface);
+  box-shadow: var(--ary-shadow-card);
+}
+@media (max-width: 1023px) {
+  .provider-layout-body { display: block; }
+  .provider-main-content, .admin-main-content, .admin-content { padding: 16px; }
+}
+@media (max-width: 640px) {
+  .driver-workspace-container { padding: 14px 12px calc(108px + env(safe-area-inset-bottom)); }
+  .provider-main-content, .admin-main-content, .admin-content { padding: 14px 12px; }
+}
