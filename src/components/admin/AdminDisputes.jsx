@@ -24,7 +24,7 @@ export default function AdminDisputes({
   const [selectedAction, setSelectedAction] = useState('split_50_50'); // 'refund_customer' | 'split_50_50' | 'release_provider'
   const [arbitrationNotes, setArbitrationNotes] = useState('');
   const [disputeSearch, setDisputeSearch] = useState('');
-  const [escrowFilter, setEscrowFilter] = useState('all');
+  const [cashFilter, setCashFilter] = useState('all');
 
   const disputedBookings = (Array.isArray(bookings) ? bookings : []).filter(
     booking => booking && typeof booking === 'object' && booking.id !== null && booking.id !== undefined &&
@@ -36,8 +36,8 @@ export default function AdminDisputes({
     const searchable = [booking.id, booking.categoryName, booking.customerName, booking.customerPhone, booking.providerName, booking.providerPhone, booking.serviceAddress, booking.bookingDate, booking.bookingTime, booking.disputeReason, booking.dispute?.reason, booking.disputeEvidence, booking.paymentStatus]
       .filter(value => value !== null && value !== undefined).join(' ').toLowerCase();
     const matchesSearch = !normalizedDisputeSearch || searchable.includes(normalizedDisputeSearch);
-    const matchesEscrow = escrowFilter === 'all' || (escrowFilter === 'held' ? booking.paymentStatus === 'escrow_held' : booking.paymentStatus !== 'escrow_held');
-    return matchesSearch && matchesEscrow;
+    const matchesCash = cashFilter === 'all' || (cashFilter === 'collected' ? booking.paymentStatus === 'cash_collected' : booking.paymentStatus !== 'cash_collected');
+    return matchesSearch && matchesCash;
   });
 
   function openArbitrationModal(booking) {
@@ -102,10 +102,10 @@ export default function AdminDisputes({
           </div>
           <div>
             <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#7f1d1d' }}>
-              Disputes & Escrow Arbitration Console ({disputedBookings.length})
+              Disputes & Cash Payment Review Console ({disputedBookings.length})
             </h3>
             <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: 'var(--color-neutral-600, #475569)' }}>
-              Review disputed bookings and record an administrative ruling. Confirm payment and escrow status before making any financial decision.
+              Review disputed bookings, confirm cash collection records and coordinate offline resolutions. Customer payments are exchanged directly with providers; ARY does not hold customer cash.
             </p>
           </div>
         </div>
@@ -120,14 +120,14 @@ export default function AdminDisputes({
               <input value={disputeSearch} onChange={event => setDisputeSearch(event.target.value)} placeholder="Booking, customer, provider, reason…" aria-label="Search disputed bookings" style={{ width: '100%', minWidth: 0, boxSizing: 'border-box', padding: '9px 11px', border: '1px solid var(--color-border, #cbd5e1)', borderRadius: 8, background: 'var(--color-surface, #fff)', color: 'var(--color-text, #0f172a)' }} />
             </label>
             <label style={{ display: 'grid', gap: 5, fontSize: '0.75rem', color: 'var(--color-neutral-600, #475569)' }}>
-              Payment review
-              <select value={escrowFilter} onChange={event => setEscrowFilter(event.target.value)} aria-label="Filter disputes by escrow status" style={{ width: '100%', padding: '9px 11px', border: '1px solid var(--color-border, #cbd5e1)', borderRadius: 8, background: 'var(--color-surface, #fff)', color: 'var(--color-text, #0f172a)' }}>
-                <option value="all">All payment states</option><option value="held">Escrow held</option><option value="review">Verify payment status</option>
+              Cash collection
+              <select value={cashFilter} onChange={event => setCashFilter(event.target.value)} aria-label="Filter disputes by cash collection status" style={{ width: '100%', padding: '9px 11px', border: '1px solid var(--color-border, #cbd5e1)', borderRadius: 8, background: 'var(--color-surface, #fff)', color: 'var(--color-text, #0f172a)' }}>
+                <option value="all">All cash states</option><option value="collected">Cash received</option><option value="pending">Cash not yet confirmed</option>
               </select>
             </label>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-end' }}>
               <span aria-live="polite" style={{ fontSize: '0.78rem', color: 'var(--color-neutral-600, #475569)', whiteSpace: 'nowrap' }}>{visibleDisputes.length} of {disputedBookings.length} shown</span>
-              {(disputeSearch || escrowFilter !== 'all') && <Button size="sm" variant="ghost" onClick={() => { setDisputeSearch(''); setEscrowFilter('all'); }}>Clear</Button>}
+              {(disputeSearch || cashFilter !== 'all') && <Button size="sm" variant="ghost" onClick={() => { setDisputeSearch(''); setCashFilter('all'); }}>Clear</Button>}
             </div>
           </div>
         </Card>
@@ -145,7 +145,7 @@ export default function AdminDisputes({
           {visibleDisputes.length === 0 ? (
             <Card style={{ padding: '28px', textAlign: 'center' }}>
               <EmptyState icon={FileText} title="No matching disputes" description="Try another booking reference, participant, dispute reason, or payment filter." />
-              <div style={{ marginTop: 12 }}><Button size="sm" variant="outline" onClick={() => { setDisputeSearch(''); setEscrowFilter('all'); }}>Clear filters</Button></div>
+              <div style={{ marginTop: 12 }}><Button size="sm" variant="outline" onClick={() => { setDisputeSearch(''); setCashFilter('all'); }}>Clear filters</Button></div>
             </Card>
           ) : visibleDisputes.map(b => {
             const rawCharge = Number(b.baseAmount ?? String(b.baseCharge || '').replace(/[^0-9]/g, '')) || 0;
@@ -257,7 +257,7 @@ export default function AdminDisputes({
 
             return (
               <div style={{ padding: '4px 0', display: 'grid', gap: 16 }}>
-                {/* Booking & Escrow Summary */}
+                {/* Booking & Cash Payment Summary */}
                 <div style={{
                   padding: '14px',
                   background: 'var(--color-surface-raised, #f8fafc)',
@@ -279,9 +279,9 @@ export default function AdminDisputes({
                   </div>
                 </div>
 
-                {!hasFundedEscrow && <div role="alert" style={{ padding: 12, borderRadius: 8, background: 'var(--color-warning-50, #fffbeb)', border: '1px solid var(--color-warning-200, #fde68a)', color: 'var(--color-warning-900, #78350f)', fontSize: '0.82rem' }}>This booking does not have the expected escrow-held status and a positive recorded amount. Financial arbitration is disabled here; verify the payment record before proceeding.</div>}
+                {!hasFundedEscrow && <div role="alert" style={{ padding: 12, borderRadius: 8, background: 'var(--color-warning-50, #fffbeb)', border: '1px solid var(--color-warning-200, #fde68a)', color: 'var(--color-warning-900, #78350f)', fontSize: '0.82rem' }}>ARY receives no customer cash for this booking. Automatic refund or payout actions are unavailable for direct-cash payments; review the collection record and coordinate any offline adjustment with both parties.</div>}
 
-                {/* Arbitration Decision Options */}
+                {/* Legacy held-fund options — unavailable for direct cash bookings */}
                 <div style={{ opacity: hasFundedEscrow ? 1 : 0.45, pointerEvents: hasFundedEscrow ? 'auto' : 'none' }}>
                   <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: 'var(--color-neutral-700, #334155)', marginBottom: 8 }}>
                     Select proposed administrative outcome:
