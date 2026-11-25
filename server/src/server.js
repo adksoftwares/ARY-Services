@@ -35,7 +35,7 @@ import {
   hashPassword
 } from './storage.js';
 
-import { sendOtp, verifyOtp, normalizePhone } from './otpService.js';
+import { sendOtp, verifyOtp, normalizePhone, setOtpStoragePool } from './otpService.js';
 import { subscribeToEvents, broadcastEvent } from './eventHub.js';
 import { calculateDistanceKm, estimateEtaMinutes, resolveCoordinatesFromLocation, searchSriLankaLocations, reverseGeocodeLocation } from './geoService.js';
 import { issueSecurityChallenge, verifySecurityChallenge } from './securityShield.js';
@@ -152,6 +152,7 @@ if (process.env.DATABASE_URL) {
     ...(process.env.PGSSL === 'true' ? { ssl: { rejectUnauthorized: true } } : {})
   });
   setActivePostgresPool(pool);
+  setOtpStoragePool(pool);
   // Schema must exist before storage initialization performs any database reads.
   await initPostgresTables(pool);
 }
