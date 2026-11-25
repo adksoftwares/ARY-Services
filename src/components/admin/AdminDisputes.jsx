@@ -23,11 +23,22 @@ export default function AdminDisputes({
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [selectedAction, setSelectedAction] = useState('split_50_50'); // 'refund_customer' | 'split_50_50' | 'release_provider'
   const [arbitrationNotes, setArbitrationNotes] = useState('');
+  const [disputeSearch, setDisputeSearch] = useState('');
+  const [escrowFilter, setEscrowFilter] = useState('all');
 
   const disputedBookings = (Array.isArray(bookings) ? bookings : []).filter(
     booking => booking && typeof booking === 'object' && booking.id !== null && booking.id !== undefined &&
       (booking.status === 'disputed' || booking.paymentStatus === 'disputed_frozen' || Boolean(booking.dispute))
   );
+
+  const normalizedDisputeSearch = disputeSearch.trim().toLowerCase();
+  const visibleDisputes = disputedBookings.filter(booking => {
+    const searchable = [booking.id, booking.categoryName, booking.customerName, booking.customerPhone, booking.providerName, booking.providerPhone, booking.serviceAddress, booking.bookingDate, booking.bookingTime, booking.disputeReason, booking.dispute?.reason, booking.disputeEvidence, booking.paymentStatus]
+      .filter(value => value !== null && value !== undefined).join(' ').toLowerCase();
+    const matchesSearch = !normalizedDisputeSearch || searchable.includes(normalizedDisputeSearch);
+    const matchesEscrow = escrowFilter === 'all' || (escrowFilter === 'held' ? booking.paymentStatus === 'escrow_held' : booking.paymentStatus !== 'escrow_held');
+    return matchesSearch && matchesEscrow;
+  });
 
   function openArbitrationModal(booking) {
     setSelectedBooking(booking);
@@ -101,6 +112,26 @@ export default function AdminDisputes({
       </Card>
 
       {/* 2. Disputed Bookings Feed */}
+      {disputedBookings.length > 0 && (
+        <Card style={{ padding: '14px 16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(220px, 1fr) minmax(170px, 220px) auto', gap: 10, alignItems: 'center' }}>
+            <label style={{ display: 'grid', gap: 5, fontSize: '0.75rem', color: 'var(--color-neutral-600, #475569)' }}>
+              Search disputes
+              <input value={disputeSearch} onChange={event => setDisputeSearch(event.target.value)} placeholder="Booking, customer, provider, reason…" aria-label="Search disputed bookings" style={{ width: '100%', minWidth: 0, boxSizing: 'border-box', padding: '9px 11px', border: '1px solid var(--color-border, #cbd5e1)', borderRadius: 8, background: 'var(--color-surface, #fff)', color: 'var(--color-text, #0f172a)' }} />
+            </label>
+            <label style={{ display: 'grid', gap: 5, fontSize: '0.75rem', color: 'var(--color-neutral-600, #475569)' }}>
+              Payment review
+              <select value={escrowFilter} onChange={event => setEscrowFilter(event.target.value)} aria-label="Filter disputes by escrow status" style={{ width: '100%', padding: '9px 11px', border: '1px solid var(--color-border, #cbd5e1)', borderRadius: 8, background: 'var(--color-surface, #fff)', color: 'var(--color-text, #0f172a)' }}>
+                <option value="all">All payment states</option><option value="held">Escrow held</option><option value="review">Verify payment status</option>
+              </select>
+            </label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-end' }}>
+              <span aria-live="polite" style={{ fontSize: '0.78rem', color: 'var(--color-neutral-600, #475569)', whiteSpace: 'nowrap' }}>{visibleDisputes.length} of {disputedBookings.length} shown</span>
+              {(disputeSearch || escrowFilter !== 'all') && <Button size="sm" variant="ghost" onClick={() => { setDisputeSearch(''); setEscrowFilter('all'); }}>Clear</Button>}
+            </div>
+          </div>
+        </Card>
+      )}
       {disputedBookings.length === 0 ? (
         <Card style={{ padding: '40px', textAlign: 'center' }}>
           <EmptyState
@@ -111,7 +142,12 @@ export default function AdminDisputes({
         </Card>
       ) : (
         <div style={{ display: 'grid', gap: '16px' }}>
-          {disputedBookings.map(b => {
+          {visibleDisputes.length === 0 ? (
+            <Card style={{ padding: '28px', textAlign: 'center' }}>
+              <EmptyState icon={FileText} title="No matching disputes" description="Try another booking reference, participant, dispute reason, or payment filter." />
+              <div style={{ marginTop: 12 }}><Button size="sm" variant="outline" onClick={() => { setDisputeSearch(''); setEscrowFilter('all'); }}>Clear filters</Button></div>
+            </Card>
+          ) : visibleDisputes.map(b => {
             const rawCharge = Number(b.baseAmount ?? String(b.baseCharge || '').replace(/[^0-9]/g, '')) || 0;
 
             return (
