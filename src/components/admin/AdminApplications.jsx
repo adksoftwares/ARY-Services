@@ -245,7 +245,7 @@ export default function AdminApplications({
   const pendingCount = unifiedList.filter(i => i.status === 'pending').length;
 
   return (
-    <div style={{ display: 'grid', gap: '16px' }}>
+    <div className="admin-applications-view" style={{ display: 'grid', gap: '16px' }}>
       {/* 1. Header & Filter Card */}
       <Card style={{ padding: '16px 20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14 }}>

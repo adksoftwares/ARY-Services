@@ -78,7 +78,7 @@ export default function AdminServiceRequests({ onNotice }) {
   }
 
   return (
-    <div style={{ display: 'grid', gap: '16px' }}>
+    <div className="admin-service-requests-view" style={{ display: 'grid', gap: '16px' }}>
       {/* 1. Header Card */}
       <Card style={{ padding: '16px 20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14 }}>

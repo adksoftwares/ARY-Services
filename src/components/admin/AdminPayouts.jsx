@@ -121,7 +121,7 @@ export default function AdminPayouts({
   }
 
   return (
-    <div style={{ display: 'grid', gap: '16px' }}>
+    <div className="admin-payouts-view" style={{ display: 'grid', gap: '16px' }}>
       {/* 1. Manual Bank Transfer Control */}
       <Card style={{ padding: '22px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
