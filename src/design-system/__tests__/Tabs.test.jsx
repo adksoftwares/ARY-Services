@@ -21,11 +21,11 @@ describe('Tabs accessibility and keyboard navigation', () => {
 
     overview.focus();
     fireEvent.keyDown(overview, { key: 'ArrowRight' });
-    expect(jobs).toHaveFocus();
+    expect(document.activeElement).toBe(jobs);
     expect(onChange).toHaveBeenCalledWith('jobs');
 
     fireEvent.keyDown(jobs, { key: 'End' });
-    expect(wallet).toHaveFocus();
+    expect(document.activeElement).toBe(wallet);
     expect(onChange).toHaveBeenLastCalledWith('wallet');
   });
 
@@ -42,7 +42,7 @@ describe('Tabs accessibility and keyboard navigation', () => {
     const pending = screen.getByRole('radio', { name: 'Pending' });
     all.focus();
     fireEvent.keyDown(all, { key: 'ArrowRight' });
-    expect(pending).toHaveFocus();
+    expect(document.activeElement).toBe(pending);
     expect(onChange).toHaveBeenCalledWith('pending');
   });
 });
