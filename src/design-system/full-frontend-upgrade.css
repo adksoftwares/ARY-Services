@@ -1288,3 +1288,68 @@ textarea { min-height: 96px; }
   .provider-nav-item, .driver-quick-icon-btn, .driver-field-action-btn,
   .admin-nav-list button, .admin-nav-list a { transition: none; }
 }
+
+
+/* Admin account directory and application queue */
+.admin-users-table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  border-radius: 0 0 var(--ary-radius-md) var(--ary-radius-md);
+}
+.admin-users-table-scroll .admin-table { min-width: 760px; width: 100%; }
+.admin-users-table-scroll .admin-table th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #f7faf7;
+  white-space: nowrap;
+}
+.admin-users-table-scroll .admin-table tbody tr { transition: background .15s ease; }
+.admin-users-table-scroll .admin-table tbody tr:hover { background: #f5f9f5; }
+.admin-application-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.admin-applications-view > :first-child { min-width: 0; }
+.admin-applications-view input[type="search"],
+.admin-applications-view input[type="text"] { min-width: 0; }
+.provider-jobs-container {
+  width: min(100%, 1180px);
+  margin-inline: auto;
+  display: grid;
+  gap: 16px;
+}
+.provider-jobs-container .job-card {
+  min-width: 0;
+  border: 1px solid var(--ary-line);
+  border-radius: 17px;
+  box-shadow: var(--ary-shadow-card);
+  overflow: hidden;
+  transition: border-color .18s ease, box-shadow .18s ease;
+}
+.provider-jobs-container .job-card:hover {
+  border-color: #c7d9cb;
+  box-shadow: 0 8px 24px rgba(24,47,36,.075);
+}
+.provider-jobs-container .job-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.provider-jobs-container .quote-composer-card {
+  border: 1px solid var(--ary-line);
+  border-radius: 14px;
+  background: #fbfcfa;
+}
+.provider-jobs-container .job-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.provider-jobs-container .job-actions-row > * { flex: 1 1 150px; }
+@media (max-width: 760px) {
+  .admin-application-cards { grid-template-columns: minmax(0, 1fr); }
+  .admin-users-table-scroll .admin-table { min-width: 720px; }
+  .provider-jobs-container { padding-inline: 10px; }
+  .provider-jobs-container .job-detail-grid { grid-template-columns: minmax(0, 1fr); }
+  .provider-jobs-container .job-actions-row > * { flex: 1 1 100%; }
+}
