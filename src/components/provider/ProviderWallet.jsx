@@ -34,13 +34,13 @@ export default function ProviderWallet({
     ? Number(walletBalance)
     : null;
   const completedBookings = useMemo(() => safeBookings.filter(b => b.status === 'completed'), [safeBookings]);
-  const pendingEscrowPayout = useMemo(() => safeBookings
-    .filter(b => b.paymentStatus === 'escrow_held' && b.status !== 'completed')
+  const pendingCashCollection = useMemo(() => safeBookings
+    .filter(b => b.status === 'completed' && b.paymentStatus !== 'cash_collected')
     .reduce((sum, b) => {
-      const amount = Number(b.providerPayout);
-      return sum + (Number.isFinite(amount) && amount >= 0 ? amount : 0);
+      const amount = Number(b.baseAmount);
+      return sum + (Number.isFinite(amount) && amount > 0 ? amount : 0);
     }, 0), [safeBookings]);
-  const totalPlatformFees = useMemo(() => completedBookings.reduce((sum, b) => {
+  const totalPlatformFees = useMemo(() => completedBookings.filter(b => b.paymentStatus === 'cash_collected').reduce((sum, b) => {
     const fee = Number(b.platformFee);
     return sum + (Number.isFinite(fee) && fee >= 0 ? fee : 0);
   }, 0), [completedBookings]);
@@ -81,10 +81,10 @@ export default function ProviderWallet({
           padding: '18px 20px'
         }}>
           <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-warning-900, #92400e)', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <ShieldCheck size={16} color="#d97706" /> Escrow Balance (Pending)
+            <Banknote size={16} color="#d97706" /> Cash Collection Pending
           </span>
           <div style={{ fontSize: '1.9rem', fontWeight: 800, color: 'var(--color-warning-700, #b45309)', marginTop: 6, letterSpacing: '-0.02em' }}>
-            LKR {pendingEscrowPayout.toLocaleString()}
+            LKR {pendingCashCollection.toLocaleString()}
           </div>
           <small style={{ fontSize: '0.75rem', color: 'var(--color-warning-800, #78350f)' }}>
             Pending amount includes only provider payout values supplied by the booking records; release timing is not guaranteed here.
@@ -97,13 +97,13 @@ export default function ProviderWallet({
           padding: '18px 20px'
         }}>
           <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-neutral-600, #475569)', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Banknote size={16} color="#64748b" /> Recorded Platform Fees
+            <Banknote size={16} color="#64748b" /> Platform Commission on Collected Cash
           </span>
           <div style={{ fontSize: '1.9rem', fontWeight: 800, color: 'var(--color-neutral-800, #1e293b)', marginTop: 6, letterSpacing: '-0.02em' }}>
             LKR {totalPlatformFees.toLocaleString()}
           </div>
           <small style={{ fontSize: '0.75rem', color: 'var(--color-neutral-500, #64748b)' }}>
-            Shows platform fees recorded on completed booking records.
+            Calculated from bookings where the provider confirmed cash received.
           </small>
         </Card>
       </div>
@@ -146,7 +146,7 @@ export default function ProviderWallet({
             <b style={{ fontSize: '1.05rem', color: '#ffffff', letterSpacing: '0.02em' }}>Bank Transfer Information</b>
           </div>
           <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: '#e2e8f0', opacity: 0.9 }}>
-            View your available earnings. Bank transfers are prepared by ARY administrators after your bank details are recorded.
+            Customers pay you directly in cash after the service. Confirm cash received on completed jobs so ARY can reconcile platform commission.
           </p>
         </div>
         <Button
@@ -155,7 +155,7 @@ export default function ProviderWallet({
           onClick={() => setRequestPayoutOpen(true)}
           disabled={normalizedWalletBalance === null || normalizedWalletBalance <= 0}
         >
-          <ArrowUpRight size={16} /> Payout Information
+          <ArrowUpRight size={16} /> Cash Settlement Guide
         </Button>
       </Card>
 
@@ -167,10 +167,10 @@ export default function ProviderWallet({
           background: 'var(--color-surface, #fff)'
         }}>
           <h4 style={{ margin: '0 0 10px', color: 'var(--text-primary, #0f172a)' }}>
-            Bank Transfer Information
+            Cash Settlement Guide
           </h4>
           <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary, #64748b)', marginBottom: 14 }}>
-            Your available wallet balance is <b>{normalizedWalletBalance === null ? 'unavailable' : `LKR ${normalizedWalletBalance.toLocaleString('en-LK')}`}</b>. This information panel does not submit a payout request or trigger a bank transfer.
+            Customers pay the agreed service amount directly to you in cash. ARY does not process card or online payments and this screen does not initiate a transfer.
           </p>
           <div style={{
             background: 'var(--surface-secondary, #f8fafc)',
@@ -180,9 +180,9 @@ export default function ProviderWallet({
             marginBottom: 16,
             color: 'var(--text-primary, #0f172a)'
           }}>
-            <div><b>Beneficiary Name:</b> {currentUser?.fullName}</div>
-            <div><b>Bank Details:</b> Contact ARY support to add or update verified bank details.</div>
-            <div><b>Transfer Status:</b> No transfer has been initiated from this screen.</div>
+            <div><b>Cash collection:</b> Confirm the full amount after completing each service.</div>
+            <div><b>Platform commission:</b> The commission amount is shown against each cash-collected booking.</div>
+            <div><b>Record keeping:</b> Keep your cash receipts and reconcile commission with ARY Admin.</div>
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
             <Button variant="primary" onClick={() => setRequestPayoutOpen(false)}>Close</Button>
@@ -204,11 +204,11 @@ export default function ProviderWallet({
                   <th style={{ padding: '10px 12px' }}>Job Ref</th>
                   <th style={{ padding: '10px 12px' }}>Customer</th>
                   <th style={{ padding: '10px 12px' }}>Date</th>
-                  <th style={{ padding: '10px 12px' }}>Payment</th>
+                  <th style={{ padding: '10px 12px' }}>Payment method</th>
                   <th style={{ padding: '10px 12px' }}>Gross Fee</th>
                   <th style={{ padding: '10px 12px' }}>Recorded Fee</th>
                   <th style={{ padding: '10px 12px' }}>Recorded Provider Payout</th>
-                  <th style={{ padding: '10px 12px' }}>Payout Status</th>
+                  <th style={{ padding: '10px 12px' }}>Cash status</th>
                 </tr>
               </thead>
               <tbody>
@@ -228,9 +228,7 @@ export default function ProviderWallet({
                       <td style={{ padding: '12px' }}>{b.customerName}</td>
                       <td style={{ padding: '12px', color: 'var(--color-neutral-500, #64748b)' }}>{b.bookingDate}</td>
                       <td style={{ padding: '12px' }}>
-                        <Badge variant={b.paymentMethod === 'cash' ? 'neutral' : 'brand'} dot={false}>
-                          {b.paymentMethod === 'cash' ? 'Cash' : b.paymentStatus === 'escrow_held' || b.paymentStatus === 'released_to_provider' ? 'Escrow' : 'Not recorded'}
-                        </Badge>
+                        <Badge variant="neutral" dot={false}>Cash only</Badge>
                       </td>
                       <td style={{ padding: '12px', fontWeight: 600 }}>{base === null ? '—' : `LKR ${base.toLocaleString('en-LK')}`}</td>
                       <td style={{ padding: '12px', color: 'var(--color-danger-600, #dc2626)' }}>{fee === null ? '—' : `- LKR ${fee.toLocaleString('en-LK')}`}</td>
@@ -239,14 +237,10 @@ export default function ProviderWallet({
                       </td>
                       <td style={{ padding: '12px' }}>
                         <Badge
-                          variant={
-                            b.paymentStatus === 'released_to_provider' ? 'success' :
-                            b.paymentStatus === 'escrow_held' ? 'warning' : 'neutral'
-                          }
+                          variant={b.paymentStatus === 'cash_collected' ? 'success' : 'warning'}
                           dot={false}
                         >
-                          {b.paymentStatus === 'released_to_provider' ? '✓ Payout Released' :
-                           b.paymentStatus === 'escrow_held' ? '⏳ Held in Escrow' : 'Direct Cash'}
+                          {b.paymentStatus === 'cash_collected' ? '✓ Cash received' : 'Cash collection pending'}
                         </Badge>
                       </td>
                     </tr>

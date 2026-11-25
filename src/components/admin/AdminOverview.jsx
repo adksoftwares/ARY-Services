@@ -20,6 +20,7 @@ export default function AdminOverview({
   adminUsers = [],
   bookings = [],
   dispatchSnapshot = { drivers: [], activeJobs: [] },
+  cashSummary = {},
   onNavigateTab
 }) {
   const users = Array.isArray(adminUsers) ? adminUsers.filter(user => user && typeof user === 'object') : [];
@@ -40,13 +41,6 @@ export default function AdminOverview({
   const totalBookings = bookingRecords.length;
   const inProgressBookings = bookingRecords.filter(b => ['accepted', 'in_progress'].includes(b.status)).length;
   const disputedBookings = bookingRecords.filter(b => b.status === 'disputed' || b.paymentStatus === 'disputed_frozen' || Boolean(b.dispute)).length;
-
-  const releasedToProviders = bookingRecords
-    .filter(b => b.paymentStatus === 'released_to_provider')
-    .reduce((sum, b) => {
-      const amount = Number(b.providerPayout);
-      return Number.isFinite(amount) && amount > 0 ? sum + amount : sum;
-    }, 0);
 
   // Derive the last-seven-day booking trend from actual booking timestamps.
   const lastSevenDays = Array.from({ length: 7 }, (_, index) => {
@@ -191,25 +185,25 @@ export default function AdminOverview({
           </div>
         </div>
 
-        {/* Released to Providers */}
+        {/* Cash Collection Overview */}
         <div
           className="admin-kpi-card interactive"
-          onClick={() => onNavigateTab?.('payouts')}
+          onClick={() => onNavigateTab?.('cash_payments')}
           role="button"
           tabIndex={0}
-          onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onNavigateTab?.('payouts'); } }}
+          onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onNavigateTab?.('cash_payments'); } }}
         >
           <div className="admin-kpi-header">
-            <span className="admin-kpi-label">Released to Providers</span>
+            <span className="admin-kpi-label">Cash Collected</span>
             <div className="admin-kpi-icon-box brand">
               <Banknote size={18} />
             </div>
           </div>
           <div className="admin-kpi-value" style={{ fontSize: '1.65rem', color: 'var(--color-brand-700, #174d3d)' }}>
-            LKR {releasedToProviders.toLocaleString()}
+            LKR {Number(cashSummary.totalCollected || 0).toLocaleString('en-LK')}
           </div>
           <div className="admin-kpi-subtext">
-            <span>Recorded provider releases · LKR</span>
+            <span>{Number(cashSummary.pendingCount || 0)} pending · LKR {Number(cashSummary.totalPending || 0).toLocaleString('en-LK')} outstanding</span>
           </div>
         </div>
       </div>

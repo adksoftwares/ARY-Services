@@ -206,7 +206,7 @@ export default function MobilityServices({ onNotice }) {
 
           <div className="fare-estimate-notice">
             <Info size={14} />
-            <span>A fare estimate is not available in this form. Confirm the fare shown in your request or with the assigned service provider before proceeding.</span>
+            <span>A final fare is confirmed with the assigned driver. Pay the agreed amount in cash when the trip or delivery is complete. Card and online payments are not accepted.</span>
           </div>
 
           {mode === 'food' && (

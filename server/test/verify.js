@@ -701,9 +701,9 @@ try {
     })
   });
   const escrowBookData = await escrowBookRes.json();
-  assert.equal(escrowBookRes.status, 503, 'Online escrow must not be simulated as paid before a verified payment gateway callback exists');
-  assert.match(escrowBookData.error, /PayHere merchant account/i);
-  console.log('✓ Payment safety: unconfigured online escrow is rejected; no fake escrow hold or provider payout is recorded');
+  assert.equal(escrowBookRes.status, 400, 'Card and online payment methods must be rejected by the cash-only booking API');
+  assert.match(escrowBookData.error, /cash payments only/i);
+  console.log('✓ Payment safety: online/card booking requests are rejected under the cash-only policy');
 
   // Test 5: Provider KYC Validation (Sri Lankan NIC Format)
   const invalidNicRes = await fetch(`${API_URL}/auth/register`, {
@@ -990,7 +990,7 @@ try {
       paymentMethod: 'escrow_online'
     })
   });
-  assert.equal(cancelBookRes.status, 503, 'An escrow-dependent booking must not be created without real payment confirmation');
+  assert.equal(cancelBookRes.status, 400, 'A card/online booking must be rejected by the cash-only booking API');
   console.log('✓ Cancellation safety: no unpaid online escrow booking is created');
 
   // Test 3: Dispute workflows cannot freeze funds that were never collected.
@@ -1005,7 +1005,7 @@ try {
       paymentMethod: 'escrow_online'
     })
   });
-  assert.equal(disputeBookRes.status, 503, 'An escrow dispute cannot be opened before funds are actually held');
+  assert.equal(disputeBookRes.status, 400, 'A card/online booking must be rejected by the cash-only booking API');
   console.log('✓ Dispute safety: no fake escrow freeze or arbitration is recorded');
 
   // Test 5: Automated CEFT Bank Payout Settlement Run

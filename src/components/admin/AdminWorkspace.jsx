@@ -32,6 +32,7 @@ import AdminServiceRequests from './AdminServiceRequests';
 import AdminCategories from './AdminCategories';
 import AdminDisputes from './AdminDisputes';
 import AdminPayouts from './AdminPayouts';
+import AdminCashPayments from './AdminCashPayments';
 import AdminDispatch from './AdminDispatch';
 import AdminNotifications from './AdminNotifications';
 
@@ -60,6 +61,9 @@ export default function AdminWorkspace({
   const [dispatchLoading, setDispatchLoading] = useState(false);
   const [dispatchError, setDispatchError] = useState('');
   const [auditEvents, setAuditEvents] = useState([]);
+  const [cashPayments, setCashPayments] = useState({ records: [], summary: {} });
+  const [cashPaymentsLoading, setCashPaymentsLoading] = useState(false);
+  const [cashPaymentsError, setCashPaymentsError] = useState('');
 
   const isAdmin = currentUser?.accountType === 'admin';
 
@@ -83,6 +87,28 @@ export default function AdminWorkspace({
       setIsLoadingBookings(false);
     }
   }, [currentUser, isAdmin]);
+
+  // Cash-only reconciliation across bookings, grocery orders and driver jobs.
+  const fetchCashPayments = useCallback(async () => {
+    if (!currentUser?.token || !isAdmin) return;
+    setCashPaymentsLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/admin/cash-payments`, {
+        headers: { Authorization: `Bearer ${currentUser.token}` }
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Could not load cash payment records.');
+      setCashPayments({
+        records: Array.isArray(data.records) ? data.records.filter(record => record && typeof record === 'object') : [],
+        summary: data.summary && typeof data.summary === 'object' ? data.summary : {}
+      });
+      setCashPaymentsError('');
+    } catch (error) {
+      setCashPaymentsError(error.message || 'Could not load cash payment records.');
+    } finally {
+      setCashPaymentsLoading(false);
+    }
+  }, [currentUser?.token, isAdmin]);
 
   // 2. Fetch Dispatch Snapshot
   const fetchDispatchSnapshot = useCallback(async () => {
@@ -115,8 +141,9 @@ export default function AdminWorkspace({
       fetchAdminUsers?.();
       fetchBookings();
       fetchDispatchSnapshot();
+      fetchCashPayments();
     }
-  }, [isAdmin, fetchAdminUsers, fetchBookings, fetchDispatchSnapshot]);
+  }, [isAdmin, fetchAdminUsers, fetchBookings, fetchDispatchSnapshot, fetchCashPayments]);
 
   // Real-time SSE Event Subscription
   useEffect(() => {
@@ -126,6 +153,7 @@ export default function AdminWorkspace({
       fetchAdminUsers?.();
       fetchBookings();
       fetchDispatchSnapshot();
+      fetchCashPayments();
     };
 
     return subscribeToAppEvents(currentUser.token, {
@@ -172,6 +200,9 @@ export default function AdminWorkspace({
           targetTab: 'overview'
         }, ...prev]);
       },
+      'booking:cash_collected': refreshData,
+      'grocery:order_updated': refreshData,
+      'driver:job_updated': refreshData,
       'dispute:raised': (data) => {
         fetchBookings();
         setAuditEvents(prev => [{
@@ -185,7 +216,7 @@ export default function AdminWorkspace({
         }, ...prev]);
       }
     });
-  }, [isAdmin, currentUser?.token, fetchAdminUsers, fetchBookings, fetchDispatchSnapshot]);
+  }, [isAdmin, currentUser?.token, fetchAdminUsers, fetchBookings, fetchDispatchSnapshot, fetchCashPayments]);
 
   // Action: Update User Status
   async function handleUpdateUserStatus(userId, newStatus, userName, reason = '') {
@@ -356,6 +387,7 @@ export default function AdminWorkspace({
     { id: 'categories', label: 'Marketplace Categories', icon: Layers, count: services.length },
     { id: 'disputes', label: 'Disputes', icon: Scale, count: disputedCount, badgeType: 'danger' },
     { id: 'payouts', label: 'Manual Payouts', icon: Banknote },
+    { id: 'cash_payments', label: 'Cash Payments', icon: Banknote, count: cashPayments.summary?.pendingCount || 0, badgeType: 'warning' },
     { id: 'dispatch', label: 'Driver Dispatch', icon: Radio, count: dispatchSnapshot.summary?.onlineDrivers ?? dispatchSnapshot.drivers?.length ?? 0, badgeType: 'brand' },
     { id: 'notifications', label: 'System Audit Log', icon: Bell }
   ];
@@ -505,8 +537,9 @@ export default function AdminWorkspace({
                 fetchAdminUsers?.();
                 fetchBookings();
                 fetchDispatchSnapshot();
+                fetchCashPayments();
               }}
-              loading={isLoadingUsers || isLoadingBookings || dispatchLoading}
+              loading={isLoadingUsers || isLoadingBookings || dispatchLoading || cashPaymentsLoading}
               title="Refresh Platform Data"
             >
               <RefreshCw size={13} />
@@ -550,10 +583,16 @@ export default function AdminWorkspace({
 
         {/* 3. Page Content Area */}
         <main className="admin-page-container">
-          {(activeTab === 'overview' || activeTab === 'disputes' || activeTab === 'payouts') && bookingsError && (
+          {(activeTab === 'overview' || activeTab === 'disputes' || activeTab === 'payouts' || activeTab === 'cash_payments') && bookingsError && (
             <div role="alert" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', padding: '12px 14px', marginBottom: 14, border: '1px solid #fecaca', borderRadius: 10, background: '#fef2f2', color: '#991b1b' }}>
               <span>Booking data could not be refreshed: {bookingsError}. Previously loaded records may be shown.</span>
               <Button size="sm" variant="outline" onClick={fetchBookings}>Retry</Button>
+            </div>
+          )}
+          {activeTab === 'cash_payments' && cashPaymentsError && (
+            <div role="alert" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', padding: '12px 14px', marginBottom: 14, border: '1px solid #fecaca', borderRadius: 10, background: '#fef2f2', color: '#991b1b' }}>
+              <span>Cash records could not be refreshed: {cashPaymentsError}</span>
+              <Button size="sm" variant="outline" onClick={fetchCashPayments}>Retry</Button>
             </div>
           )}
           {(activeTab === 'overview' || activeTab === 'dispatch') && dispatchError && (
@@ -567,6 +606,7 @@ export default function AdminWorkspace({
               adminUsers={adminUsers}
               bookings={allBookings}
               dispatchSnapshot={dispatchSnapshot}
+              cashSummary={cashPayments.summary}
               onNavigateTab={setActiveTab}
             />
           )}
@@ -610,6 +650,16 @@ export default function AdminWorkspace({
               bookings={allBookings}
               onArbitrate={handleArbitrateDispute}
               arbitratingId={arbitratingId}
+            />
+          )}
+
+          {activeTab === 'cash_payments' && (
+            <AdminCashPayments
+              records={cashPayments.records}
+              summary={cashPayments.summary}
+              isLoading={cashPaymentsLoading}
+              error={cashPaymentsError}
+              onRefresh={fetchCashPayments}
             />
           )}
 
