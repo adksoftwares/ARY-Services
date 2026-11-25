@@ -818,3 +818,140 @@ textarea { min-height: 96px; }
 [data-theme="dark"] .admin-table thead th { background: #1c2a21; color: #bdc9c0; }
 [data-theme="dark"] .admin-table tbody tr:hover { background: #1b2a21; }
 [data-theme="dark"] .driver-route-container { background: var(--ary-surface); border-color: var(--ary-line); }
+
+/* Conversion flows: sign-in, location selection and service booking. */
+.auth-tabs {
+  padding: 4px;
+  border: 1px solid var(--ary-line);
+  border-radius: 12px;
+  background: #f5f8f4;
+}
+.auth-tab {
+  min-height: 42px;
+  border: 0;
+  border-radius: 9px;
+  color: var(--ary-muted);
+  font-weight: 700;
+}
+.auth-tab.active {
+  background: #fff;
+  color: var(--ary-green);
+  box-shadow: 0 1px 4px rgba(25,55,38,.09);
+}
+.auth-error-msg, .wizard-error-banner {
+  border: 1px solid #f0c7c2;
+  border-radius: 10px;
+  background: #fff5f3;
+  color: #9b3026;
+  padding: 11px 13px;
+  line-height: 1.45;
+}
+.account-type-selector {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.type-btn {
+  min-width: 0;
+  min-height: 74px;
+  padding: 10px 7px;
+  border: 1px solid var(--ary-line-strong);
+  border-radius: 11px;
+  background: var(--ary-surface);
+  color: var(--ary-muted);
+  font-weight: 650;
+}
+.type-btn.selected {
+  border-color: #6da886;
+  background: var(--ary-green-soft);
+  color: var(--ary-green);
+  box-shadow: inset 0 0 0 1px #6da886;
+}
+.quick-reg-banner, .provider-helper-note {
+  border: 1px solid var(--ary-line);
+  border-radius: 11px;
+  background: #f7faf6;
+  padding: 12px;
+  color: #53665a;
+  line-height: 1.5;
+}
+.password-input-wrapper, .input-with-icon { min-width: 0; }
+.password-toggle-btn { min-width: 40px; min-height: 40px; border-radius: 9px; }
+.location-picker-card { max-width: 560px; }
+.location-picker-card .modal-header { gap: 12px; }
+.booking-wizard-content { display: grid; gap: 17px; }
+.booking-stepper-container { overflow-x: auto; padding: 3px 1px 8px; }
+.wizard-step-pane { min-width: 0; }
+.provider-quick-card, .booking-summary-card, .trust-guarantee-note {
+  border: 1px solid var(--ary-line);
+  border-radius: 13px;
+  background: #fafcf9;
+  padding: 14px;
+}
+.wizard-form-label { display: grid; gap: 7px; color: #4c5e53; font-weight: 700; }
+.wizard-textarea { min-height: 104px; resize: vertical; }
+.time-slots-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.time-slot-btn {
+  min-height: 44px;
+  border: 1px solid var(--ary-line-strong);
+  border-radius: 10px;
+  background: var(--ary-surface);
+  color: var(--ary-ink);
+  font-weight: 650;
+}
+.time-slot-btn.active {
+  border-color: #6da886;
+  background: var(--ary-green-soft);
+  color: var(--ary-green);
+}
+.booking-summary-card { display: grid; gap: 10px; }
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--ary-line);
+}
+.summary-row:last-child { border-bottom: 0; padding-bottom: 0; }
+.sum-label { color: var(--ary-muted); font-size: .82rem; }
+.sum-val { max-width: 65%; text-align: right; overflow-wrap: anywhere; color: var(--ary-ink); }
+.payment-options-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.payment-option-btn {
+  min-height: 44px;
+  border: 1px solid var(--ary-line-strong);
+  border-radius: 10px;
+  background: var(--ary-surface);
+}
+.payment-option-btn.active { border-color: #6da886; background: var(--ary-green-soft); color: var(--ary-green); }
+.wizard-next-btn { min-height: 48px; border-radius: 11px; font-weight: 750; }
+.wizard-success-pane { text-align: center; padding: clamp(20px, 4vw, 36px) 14px; }
+.success-icon-badge { margin-inline: auto; }
+.success-heading { color: var(--ary-ink); }
+@media (max-width: 520px) {
+  .auth-tabs { gap: 3px; }
+  .auth-tab { min-height: 40px; padding-inline: 5px; font-size: .82rem; }
+  .account-type-selector { gap: 6px; }
+  .type-btn { min-height: 68px; font-size: .8rem; }
+  .time-slots-grid { grid-template-columns: minmax(0, 1fr); }
+  .summary-row { gap: 9px; }
+  .sum-val { max-width: 58%; }
+  .payment-options-grid { grid-template-columns: minmax(0, 1fr); }
+}
+[data-theme="dark"] .auth-tabs,
+[data-theme="dark"] .quick-reg-banner,
+[data-theme="dark"] .provider-helper-note,
+[data-theme="dark"] .provider-quick-card,
+[data-theme="dark"] .booking-summary-card,
+[data-theme="dark"] .trust-guarantee-note {
+  background: #1c2b22;
+  border-color: var(--ary-line);
+  color: var(--ary-muted);
+}
+[data-theme="dark"] .auth-tab.active { background: #26392d; color: #d8eadc; }
+[data-theme="dark"] .auth-error-msg,
+[data-theme="dark"] .wizard-error-banner { background: #382320; border-color: #68403a; color: #ffc5ba; }
