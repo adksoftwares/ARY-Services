@@ -147,8 +147,6 @@ export function registerRoleAccessRoutes(app, { requireAuth, requireAdmin, getUs
               nsnNumber: user.nsnNumber,
               operatingMode: user.operatingMode,
               baseCharge: user.baseCharge,
-              nicDocument: user.nicDocument,
-              tradeCertificate: user.tradeCertificate,
               driverServices: user.driverServices || []
             }
           }
@@ -196,8 +194,6 @@ export function registerRoleAccessRoutes(app, { requireAuth, requireAdmin, getUs
         nsnNumber: target.nsnNumber,
         operatingMode: target.operatingMode,
         baseCharge: target.baseCharge,
-        nicDocument: target.nicDocument,
-        tradeCertificate: target.tradeCertificate,
         driverServices: target.driverServices || []
       }
     };
