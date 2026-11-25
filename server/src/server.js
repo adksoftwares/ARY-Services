@@ -1420,6 +1420,29 @@ app.patch('/api/bookings/:id/status', requireAuth, async (req, res) => {
     const previousStatus = booking.status;
     let releasedTx = null;
     const updated = await updateBooking(id, b => {
+      // Re-check the state and actor against the locked current record. The earlier
+      // snapshot is only for fast feedback; it must not authorize a stale transition.
+      if (b.status !== previousStatus) {
+        const error = new Error('This booking changed while your request was being processed. Refresh and try again.');
+        error.status = 409;
+        throw error;
+      }
+      if (!isAdmin && accountType === 'provider' && b.providerId !== userId) {
+        const error = new Error('Only the currently assigned provider can update this booking.');
+        error.status = 403;
+        throw error;
+      }
+      if (!isAdmin && !allowedTransitions[b.status]?.includes(status)) {
+        const error = new Error(`Cannot move a ${b.status} booking to ${status}.`);
+        error.status = 409;
+        throw error;
+      }
+      if (status === 'completed' && b.paymentStatus === 'escrow_held' &&
+        (!Number.isSafeInteger(Number(b.baseAmount)) || Number(b.baseAmount) <= 0)) {
+        const error = new Error('Cannot release escrow because the booking has no valid recorded payment amount.');
+        error.status = 409;
+        throw error;
+      }
       b.lifecycleHistory = Array.isArray(b.lifecycleHistory) ? b.lifecycleHistory : [];
       // Cascading Dispatch: If contractor declines, cascade to broadcast pool so another contractor can claim it
       if (status === 'rejected') {
@@ -1472,6 +1495,7 @@ app.patch('/api/bookings/:id/status', requireAuth, async (req, res) => {
       booking: updated
     });
   } catch (err) {
+    if ([403, 409].includes(err.status)) return res.status(err.status).json({ error: err.message });
     console.error('Update booking status error:', err);
     res.status(500).json({ error: 'Could not update booking status.' });
   }
