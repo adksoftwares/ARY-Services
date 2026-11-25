@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Bell,
+  Search,
   ShieldCheck,
   Scale,
   UserRound,
@@ -14,11 +15,20 @@ export default function AdminNotifications({
   onNavigateTab
 }) {
   const [filter, setFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const displayEvents = Array.isArray(events)
     ? events.filter(event => event && typeof event === 'object' && !Array.isArray(event))
     : [];
-  const filteredEvents = filter === 'all' ? displayEvents : displayEvents.filter(event => event.type === filter);
+  const filteredEvents = useMemo(() => {
+    const query = searchQuery.trim().toLocaleLowerCase();
+    return displayEvents.filter(event => {
+      const matchesType = filter === 'all' || event.type === filter;
+      const searchable = [event.title, event.description, event.type, event.targetTab, event.createdAt, event.timestamp]
+        .filter(value => value !== null && value !== undefined).join(' ').toLocaleLowerCase();
+      return matchesType && (!query || searchable.includes(query));
+    });
+  }, [displayEvents, filter, searchQuery]);
   const eventIcons = { kyc: ShieldCheck, dispute: Scale, payout: Wallet, account: UserRound };
 
   return (
@@ -68,6 +78,15 @@ export default function AdminNotifications({
           </div>
         </div>
       </Card>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, flex: '1 1 260px', minWidth: 0, minHeight: 44, padding: '0 12px', border: '1px solid var(--color-border, #cbd5e1)', borderRadius: 10, background: 'var(--color-surface, #fff)' }}>
+          <Search size={16} aria-hidden="true" style={{ color: 'var(--color-neutral-500, #64748b)', flexShrink: 0 }} />
+          <input type="search" value={searchQuery} onChange={event => setSearchQuery(event.target.value)} placeholder="Search activity, description or destination" aria-label="Search admin session activity" style={{ width: '100%', minWidth: 0, border: 0, outline: 0, background: 'transparent', color: 'var(--color-neutral-900, #0f172a)', font: 'inherit', fontSize: '0.88rem' }} />
+        </label>
+        {searchQuery && <button type="button" onClick={() => setSearchQuery('')} style={{ minHeight: 40, border: 0, borderRadius: 8, padding: '8px 12px', background: 'var(--color-brand-50, #edf7f2)', color: 'var(--color-brand-700, #174d3d)', fontWeight: 700, cursor: 'pointer' }}>Clear search</button>}
+        <span aria-live="polite" style={{ color: 'var(--color-neutral-500, #64748b)', fontSize: '0.78rem' }}>{filteredEvents.length} of {displayEvents.length} events</span>
+      </div>
 
       {/* 2. Audit Trail Feed */}
       <Card style={{ padding: '20px' }}>
