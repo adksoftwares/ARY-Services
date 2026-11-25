@@ -46,7 +46,7 @@
     "@testsprite/testsprite-cli": "^0.16.0",
     "@vitejs/plugin-react": "^4.3.4",
     "jsdom": "^31.0.1",
-    "puppeteer-core": "^25.16.0",
+    "puppeteer-core": "^25.18.1",
     "vite": "^6.0.5",
     "vitest": "^5.1.1"
   },
