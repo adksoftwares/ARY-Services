@@ -1123,6 +1123,13 @@ export async function initPostgresTables(pool) {
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
       CREATE INDEX IF NOT EXISTS otp_rate_limits_updated_at_idx ON otp_rate_limits (updated_at);
+
+      CREATE TABLE IF NOT EXISTS otp_used_challenges (
+        challenge_id VARCHAR(120) PRIMARY KEY,
+        expires_at BIGINT NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS otp_used_challenges_expires_idx ON otp_used_challenges (expires_at);
       CREATE INDEX IF NOT EXISTS ary_documents_collection_position_idx
         ON ary_documents (collection, position);
     `);
