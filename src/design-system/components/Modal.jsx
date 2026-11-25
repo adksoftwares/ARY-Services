@@ -2,6 +2,33 @@ import React, { useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
 import { IconButton } from './IconButton';
 
+let bodyLockCount = 0;
+let previousBodyOverflow = '';
+
+function lockBodyScroll() {
+  if (typeof document === 'undefined') return;
+  if (bodyLockCount === 0) {
+    previousBodyOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+  }
+  bodyLockCount += 1;
+}
+
+function unlockBodyScroll() {
+  if (typeof document === 'undefined' || bodyLockCount === 0) return;
+  bodyLockCount -= 1;
+  if (bodyLockCount === 0) {
+    document.body.style.overflow = previousBodyOverflow;
+    previousBodyOverflow = '';
+  }
+}
+
+const FOCUSABLE_SELECTOR = [
+  'a[href]', 'area[href]', 'button:not([disabled])', 'input:not([disabled]):not([type="hidden"])',
+  'select:not([disabled])', 'textarea:not([disabled])', 'iframe', 'object', 'embed',
+  '[contenteditable="true"]', '[tabindex]:not([tabindex="-1"])'
+].join(',');
+
 export function Modal({
   isOpen,
   onClose,
@@ -13,37 +40,59 @@ export function Modal({
   className = ''
 }) {
   const dialogRef = useRef(null);
-  const wasOpenRef = useRef(false);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
 
   useEffect(() => {
-    if (!isOpen) {
-      wasOpenRef.current = false;
-      return;
-    }
+    if (!isOpen) return undefined;
 
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape') {
-        onCloseRef.current && onCloseRef.current();
+    const dialog = dialogRef.current;
+    const previouslyFocused = document.activeElement;
+    lockBodyScroll();
+
+    const focusableElements = () => dialog
+      ? Array.from(dialog.querySelectorAll(FOCUSABLE_SELECTOR))
+        .filter(element => element.getAttribute('aria-hidden') !== 'true' && element.getClientRects().length > 0)
+      : [];
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onCloseRef.current?.();
+        return;
+      }
+      if (event.key !== 'Tab' || !dialog) return;
+
+      const focusable = focusableElements();
+      if (!focusable.length) {
+        event.preventDefault();
+        dialog.focus();
+        return;
+      }
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && (document.activeElement === first || !dialog.contains(document.activeElement))) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && (document.activeElement === last || !dialog.contains(document.activeElement))) {
+        event.preventDefault();
+        first.focus();
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
-    const originalOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-
-    // Focus initial dialog ONLY on initial opening, NOT on subsequent renders/re-renders
-    if (!wasOpenRef.current && dialogRef.current) {
-      if (!dialogRef.current.contains(document.activeElement)) {
-        dialogRef.current.focus();
-      }
-      wasOpenRef.current = true;
+    if (dialog && !dialog.contains(document.activeElement)) {
+      const preferred = dialog.querySelector('[autofocus], [data-autofocus]');
+      (preferred || dialog).focus();
     }
 
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = originalOverflow;
+      unlockBodyScroll();
+      if (previouslyFocused && typeof previouslyFocused.focus === 'function' && document.contains(previouslyFocused)) {
+        previouslyFocused.focus();
+      }
     };
   }, [isOpen]);
 
@@ -52,8 +101,8 @@ export function Modal({
   return (
     <div
       className={`ds-modal-backdrop ${isBottomSheet ? 'ds-bottom-sheet' : ''}`}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose && onClose();
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onClose?.();
       }}
       role="presentation"
     >
@@ -67,28 +116,14 @@ export function Modal({
         style={{ maxWidth: isBottomSheet ? undefined : maxWidth }}
       >
         {isBottomSheet && <div className="ds-sheet-handle" aria-hidden="true" />}
-
         {title && (
           <div className="ds-modal-header">
             <h2 className="ds-modal-title">{title}</h2>
-            <IconButton
-              icon={X}
-              aria-label="Close dialog"
-              size="sm"
-              onClick={onClose}
-            />
+            <IconButton icon={X} aria-label="Close dialog" size="sm" onClick={onClose} />
           </div>
         )}
-
-        <div className="ds-modal-body">
-          {children}
-        </div>
-
-        {footer && (
-          <div className="ds-modal-footer">
-            {footer}
-          </div>
-        )}
+        <div className="ds-modal-body">{children}</div>
+        {footer && <div className="ds-modal-footer">{footer}</div>}
       </div>
     </div>
   );
