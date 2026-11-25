@@ -74,7 +74,7 @@ export default function AdminDisputes({
   }
 
   return (
-    <div style={{ display: 'grid', gap: '16px' }}>
+    <div className="admin-disputes-view" style={{ display: 'grid', gap: '16px' }}>
       {/* 1. Header Card */}
       <Card style={{ padding: '18px 20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
