@@ -74,7 +74,7 @@ export default function HeroSection({
         {/* Eyebrow Pill */}
         <div className="hero-trust-badge">
           <span className="live-dot" aria-hidden="true" />
-          <span>SERVICES & MOBILITY ACROSS SRI LANKA</span>
+          <span>LOCAL SERVICES. EVERYDAY ESSENTIALS. EASY RIDES.</span>
         </div>
 
         {/* Clean, Focused Heading */}
@@ -82,7 +82,7 @@ export default function HeroSection({
           {t('heroTitle', 'Good help is closer than you think.')}
         </h1>
         <p className="hero-subtext">
-          {t('heroSubtitle', 'Discover local service providers, grocery storefronts, rides, and parcel delivery options across Sri Lanka.')}
+          {t('heroSubtitle', 'Find nearby professionals, shop for everyday essentials, and explore ride or delivery services — all from one place.')}
         </p>
 
         {/* Prominent Dual Search Panel */}
@@ -198,15 +198,15 @@ export default function HeroSection({
         <div className="hero-trust-row" aria-label="Service information">
           <div className="trust-item">
             <ShieldCheck size={16} className="trust-icon" aria-hidden="true" />
-            <span>Provider applications reviewed by Admin</span>
+            <span>Provider applications reviewed before activation</span>
           </div>
           <div className="trust-item">
             <Lock size={16} className="trust-icon" aria-hidden="true" />
-            <span>Request-specific handoff details</span>
+            <span>Clear details before you send a request</span>
           </div>
           <div className="trust-item">
             <Clock size={16} className="trust-icon" aria-hidden="true" />
-            <span>Booking status updates</span>
+            <span>Track booking updates in your account</span>
           </div>
         </div>
 
