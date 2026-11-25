@@ -28,6 +28,8 @@ import {
   getLedgerEntries,
   getLedgerByBooking,
   getWalletBalance,
+  recordAdminAuditEvent,
+  listAdminAuditEvents,
   initStorage,
   initPostgresTables,
   setActivePostgresPool,
@@ -283,6 +285,33 @@ async function publishEvent(eventType, payload = {}) {
     console.error('Notification persistence failed:', error);
   });
 }
+
+async function recordAdminAudit(req, action, targetType, targetId, details = {}) {
+  try {
+    await recordAdminAuditEvent({
+      actorId: req.user?.id,
+      actorRole: req.user?.accountType,
+      action,
+      targetType,
+      targetId,
+      requestId: req.id,
+      details
+    });
+  } catch (error) {
+    console.error('Admin audit event persistence failed:', error.message);
+  }
+}
+
+app.get('/api/admin/audit-log', requireAdmin, async (req, res) => {
+  try {
+    const limit = Number.parseInt(req.query.limit, 10) || 100;
+    const events = await listAdminAuditEvents(limit);
+    return res.json({ events, total: events.length });
+  } catch (error) {
+    console.error('Admin audit log read failed:', error.message);
+    return res.status(500).json({ error: 'Could not load the persistent Admin audit log.' });
+  }
+});
 
 app.get('/api/notifications', requireAuth, async (req, res) => {
   try {
@@ -1483,6 +1512,8 @@ app.patch('/api/bookings/:id/status', requireAuth, async (req, res) => {
       await recordEscrowRelease(releasedTx);
     }
 
+    await recordAdminAudit(req, 'booking.status_changed', 'booking', id, { from: previousStatus, to: updated.status, requestedStatus: status });
+
     // Real-Time SSE Dispatch
     publishEvent('booking:status_updated', {
       bookingId: id,
@@ -1559,6 +1590,7 @@ app.post('/api/bookings/:id/cash-payment', requireAuth, async (req, res) => {
       return current;
     });
     if (!updated) return res.status(404).json({ error: 'Booking not found.' });
+    await recordAdminAudit(req, 'cash.collection_confirmed', 'booking', booking.id, { amount: receivedAmount, currency: 'LKR', collectorRole: req.user.accountType });
     publishEvent('booking:cash_collected', { bookingId: booking.id, customerId: booking.customerId, providerId: booking.providerId, booking: updated });
     return res.json({ booking: updated, message: updated.paymentStatus === 'cash_collected' ? 'Cash payment recorded or already confirmed.' : 'Cash payment status updated.' });
   } catch (error) {
@@ -1936,6 +1968,8 @@ app.post('/api/admin/bookings/:id/arbitrate', requireAdmin, async (req, res) => 
       return b;
     });
 
+    await recordAdminAudit(req, 'dispute.arbitrated', 'booking', id, { decision: action, from: booking.status, to: newStatus, paymentStatus: newPaymentStatus });
+
     publishEvent('booking:status_updated', {
       bookingId: id,
       status: newStatus,
@@ -2065,6 +2099,7 @@ app.post('/api/admin/payouts/confirm', requireAdmin, async (req, res) => {
     const balance = await getWalletBalance(account);
     if (amount > balance) return res.status(409).json({ error: 'The confirmed transfer amount exceeds the current available wallet balance.' });
     await recordPayoutSettlement({ batchId, providerId, amount, bankReference });
+    await recordAdminAudit(req, 'provider.payout_confirmed', 'provider', providerId, { batchId, amount, currency: 'LKR' });
     return res.json({ status: 'ok', providerId, amount, bankReference, message: 'External bank transfer recorded in the wallet ledger.' });
   } catch (err) {
     console.error('Confirm payout error:', err);
@@ -2298,6 +2333,7 @@ app.get('/api/admin/users/:id/kyc-documents', requireAdmin, async (req, res) => 
     if (!user) return res.status(404).json({ error: 'Provider or driver account not found.' });
     res.setHeader('Cache-Control', 'private, no-store, max-age=0');
     res.setHeader('Pragma', 'no-cache');
+    await recordAdminAudit(req, 'kyc.documents_viewed', 'user', user.id, { accountType: user.accountType, documentTypes: [user.nicDocument ? 'nic' : null, user.tradeCertificate ? 'trade_certificate' : null].filter(Boolean) });
     return res.json({
       userId: user.id,
       nicDocument: user.nicDocument || null,
@@ -2377,6 +2413,8 @@ app.patch('/api/admin/users/:id/status', requireAdmin, async (req, res) => {
     if (!updated) {
       return res.status(404).json({ error: 'User not found.' });
     }
+
+    await recordAdminAudit(req, 'account.status_changed', 'user', id, { accountType: updated.accountType, to: status });
 
     // Broadcast user status change so client sessions update/revoke immediately
     publishEvent('user:status_changed', {
