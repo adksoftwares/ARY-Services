@@ -35,6 +35,7 @@ export default function ProviderJobs({
   bookings = [],
   isLoading = false,
   onUpdateStatus,
+  onConfirmCashPayment,
   onDecideReschedule,
   onClaimJob,
   onSendQuote,
@@ -591,16 +592,27 @@ export default function ProviderJobs({
                       )}
 
                       {b.status === 'completed' && (
-                        <span style={{
-                          fontSize: '0.85rem',
-                          color: 'var(--color-success-700, #047857)',
-                          fontWeight: 700,
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 6
-                        }}>
-                          <CheckCircle2 size={16} /> Service Completed Successfully
-                        </span>
+                        <div style={{ display: 'grid', gap: 8, width: '100%' }}>
+                          <span style={{ fontSize: '0.85rem', color: 'var(--color-success-700, #047857)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <CheckCircle2 size={16} /> Service Completed Successfully
+                          </span>
+                          {b.paymentStatus === 'cash_collected' ? (
+                            <Badge variant="success" dot={false}>Cash received · LKR {Number(b.cashCollectedAmount || b.baseAmount || 0).toLocaleString('en-LK')}</Badge>
+                          ) : (
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', padding: '10px 12px', borderRadius: 9, background: 'var(--color-warning-50, #fffbeb)', border: '1px solid var(--color-warning-200, #fde68a)' }}>
+                              <div>
+                                <b style={{ display: 'block', fontSize: '0.82rem', color: 'var(--color-warning-900, #78350f)' }}>Cash collection pending</b>
+                                <span style={{ fontSize: '0.78rem', color: 'var(--color-warning-800, #92400e)' }}>Agreed amount: LKR {Number(b.baseAmount || 0).toLocaleString('en-LK')}</span>
+                              </div>
+                              <Button size="sm" variant="primary" disabled={actionBusyId === b.id || typeof onConfirmCashPayment !== 'function' || !(Number(b.baseAmount) > 0)} onClick={async () => {
+                                if (typeof onConfirmCashPayment !== 'function') return;
+                                setActionBusyId(b.id);
+                                try { await onConfirmCashPayment(b.id, Number(b.baseAmount)); }
+                                finally { setActionBusyId(''); }
+                              }}><CheckCheck size={14} /> Confirm Cash Received</Button>
+                            </div>
+                          )}
+                        </div>
                       )}
 
                       {['rejected', 'cancelled'].includes(b.status) && (
