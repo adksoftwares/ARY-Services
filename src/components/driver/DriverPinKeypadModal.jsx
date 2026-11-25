@@ -16,6 +16,7 @@ export default function DriverPinKeypadModal({
   const [pin, setPin] = useState('');
   const [cashAmount, setCashAmount] = useState(expectedCashAmount === null ? '' : String(expectedCashAmount));
   const [cashConfirmed, setCashConfirmed] = useState(false);
+  const isLockedOut = false;
   useEffect(() => { if (isOpen) { setPin(''); setCashAmount(expectedCashAmount === null ? '' : String(expectedCashAmount)); setCashConfirmed(false); } }, [isOpen, expectedCashAmount]);
 
   if (!isOpen) return null;
