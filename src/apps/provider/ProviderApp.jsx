@@ -168,7 +168,7 @@ function ProviderWorkspace() {
   const isProvider = currentUser?.accountType === 'provider';
 
   return (
-    <div className="provider-app-shell">
+    <div className="provider-app-shell ary-app-root ary-provider-root">
       <OfflineBanner />
       <header className="topbar">
         <Link to="/" className="brand" aria-label="ARY Services Provider home">
