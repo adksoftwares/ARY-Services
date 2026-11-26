@@ -104,7 +104,14 @@ export default function AdminServiceRequests({ onNotice }) {
         </div>
       </Card>
 
-      {error && <div role="alert" style={{ padding: '12px 14px', borderRadius: 8, background: 'var(--color-danger-50, #fef2f2)', color: 'var(--color-danger-700, #b91c1c)', fontSize: '0.85rem' }}>{error}</div>}
+      {error && (
+        <div role="alert" aria-live="assertive" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, padding: '12px 14px', borderRadius: 10, border: '1px solid var(--color-danger-200, #fecaca)', background: 'var(--color-danger-50, #fef2f2)', color: 'var(--color-danger-700, #b91c1c)', fontSize: '0.85rem' }}>
+          <span>{error}</span>
+          <Button type="button" size="sm" variant="outline" onClick={loadRequests} loading={loading} disabled={loading}>
+            <RefreshCw size={14} /> Retry
+          </Button>
+        </div>
+      )}
 
       {/* 2. Requests List */}
       {!loading && requests.length > 0 && (
