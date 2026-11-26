@@ -88,7 +88,7 @@ export default function AdminResetPasswordModal({
       title="Reset User Password"
       size="sm"
     >
-      <form onSubmit={handleSubmit} style={{ padding: '4px 0' }}>
+      <form className="admin-password-modal-form" onSubmit={handleSubmit} style={{ padding: '4px 0' }}>
         <p style={{ margin: '0 0 14px', fontSize: '0.85rem', color: 'var(--color-neutral-600, #475569)' }}>
           Reset account password for <b>{user.fullName}</b> ({user.phone || user.email}).
         </p>
