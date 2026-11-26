@@ -69,7 +69,7 @@ export default function HeroSection({
   ];
 
   return (
-    <section className="hero-concise customer-discovery-hero" aria-labelledby="hero-main-title">
+    <section className="hero-concise customer-discovery-hero ary-home-hero" aria-labelledby="hero-main-title">
       <div className="hero-content">
         {/* Eyebrow Pill */}
         <div className="hero-trust-badge customer-hero-eyebrow">
@@ -86,7 +86,7 @@ export default function HeroSection({
         </p>
 
         {/* Prominent Dual Search Panel */}
-        <div className="search-panel-elevated customer-search-panel customer-search-panel-v2" role="search" aria-label="Find services and tradespeople">
+        <div className="search-panel-elevated customer-search-panel customer-search-panel-v2 ary-home-search-panel" role="search" aria-label="Find services and tradespeople">
           {/* Location Field with GPS & Change Location Button */}
           <div className="search-input-field location-field">
             <div className="location-input-row">
@@ -157,7 +157,7 @@ export default function HeroSection({
         </div>
 
         {/* Quick Category Chips */}
-        <div className="quick-category-chips" role="group" aria-label="Quick Category Filters">
+        <div className="quick-category-chips ary-home-quick-filters" role="group" aria-label="Quick Category Filters">
           <span className="chips-label">Quick filter:</span>
           <div className="chips-scroll-container">
             {QUICK_CHIPS.map(chip => {
@@ -242,7 +242,7 @@ export default function HeroSection({
 
       {/* Popular Near You Carousel / Scroller */}
       {safePopularProviders.length > 0 && (
-        <div className="hero-carousel-section" aria-labelledby="popular-near-you-title">
+        <div className="hero-carousel-section ary-popular-providers" aria-labelledby="popular-near-you-title">
           <div className="carousel-header">
             <div className="carousel-title-group">
               <Sparkles size={16} className="carousel-title-icon" aria-hidden="true" />

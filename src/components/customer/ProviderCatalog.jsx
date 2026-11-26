@@ -126,7 +126,7 @@ export default function ProviderCatalog({
 
   return (
     <>
-      <section className="providers-section customer-provider-catalog" id="providers-catalog" aria-labelledby="catalog-title">
+      <section className="providers-section customer-provider-catalog ary-provider-catalog" id="providers-catalog" aria-labelledby="catalog-title">
         {/* Header */}
         <div className="providers-header">
           <div>
