@@ -13,7 +13,7 @@ export function PageHeader({
   style = {}
 }) {
   return (
-    <header className={`ds-page-header ${className}`} style={{
+    <header className={`ds-page-header ary-page-header ${className}`} style={{
       marginBottom: 'var(--space-6, 24px)',
       ...style
     }}>
