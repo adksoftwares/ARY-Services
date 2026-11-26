@@ -72,7 +72,7 @@ export default function HeroSection({
     <section className="hero-concise customer-discovery-hero" aria-labelledby="hero-main-title">
       <div className="hero-content">
         {/* Eyebrow Pill */}
-        <div className="hero-trust-badge">
+        <div className="hero-trust-badge customer-hero-eyebrow">
           <span className="live-dot" aria-hidden="true" />
           <span>LOCAL SERVICES. EVERYDAY ESSENTIALS. EASY RIDES.</span>
         </div>
@@ -86,7 +86,7 @@ export default function HeroSection({
         </p>
 
         {/* Prominent Dual Search Panel */}
-        <div className="search-panel-elevated customer-search-panel" role="search" aria-label="Find services and tradespeople">
+        <div className="search-panel-elevated customer-search-panel customer-search-panel-v2" role="search" aria-label="Find services and tradespeople">
           {/* Location Field with GPS & Change Location Button */}
           <div className="search-input-field location-field">
             <div className="location-input-row">
@@ -195,7 +195,7 @@ export default function HeroSection({
         </div>
 
         {/* Service information */}
-        <div className="hero-trust-row" aria-label="Service information">
+        <div className="hero-trust-row customer-trust-grid" aria-label="Service information">
           <div className="trust-item">
             <ShieldCheck size={16} className="trust-icon" aria-hidden="true" />
             <span>Provider applications reviewed before activation</span>
