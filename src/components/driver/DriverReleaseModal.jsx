@@ -41,7 +41,7 @@ export default function DriverReleaseModal({
       size="sm"
       isBottomSheet={true}
     >
-      <div style={{ padding: '6px 0 16px' }}>
+      <div className="driver-release-modal-content" style={{ padding: '6px 0 16px' }}>
         <div style={{
           display: 'flex',
           alignItems: 'flex-start',
