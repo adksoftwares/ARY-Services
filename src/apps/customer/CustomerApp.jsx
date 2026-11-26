@@ -714,7 +714,7 @@ function CustomerWorkspace() {
   const activeBookingsCount = bookings.filter(b => !['completed', 'cancelled', 'rejected'].includes(b.status)).length;
 
   return (
-    <div className="app-shell">
+    <div className="app-shell ary-app-root ary-customer-root">
       <OfflineBanner />
       <CustomerHeader
         address={address}

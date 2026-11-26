@@ -69,7 +69,7 @@ function AdminPortal() {
   }, [isAdmin, fetchAdminUsers, currentUser?.token]);
 
   return (
-    <div className="app-shell" style={{ background: 'var(--surface-canvas, #07080a)' }}>
+    <div className="app-shell ary-app-root ary-admin-root" style={{ background: 'var(--surface-canvas, #07080a)' }}>
       <OfflineBanner />
       {isAdmin ? (
         <AdminWorkspace

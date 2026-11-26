@@ -75,7 +75,7 @@ function DriverPortal() {
   }, [isDriver, currentUser?.token]);
 
   return (
-    <div className="driver-app-shell">
+    <div className="driver-app-shell ary-app-root ary-driver-root">
       <OfflineBanner />
       <header className="topbar">
         <Link to="/" className="brand" aria-label="ARY Services Driver home">

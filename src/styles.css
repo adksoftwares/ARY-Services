@@ -14,6 +14,7 @@
 @import './design-system/human-refinement.css';
 @import './design-system/frontend-experience.css';
 @import './design-system/full-frontend-upgrade.css';
+@import './design-system/frontend-foundation.css';
 
 
 /* Sign-in required prompt & Modal styles */
@@ -2095,4 +2096,3 @@ footer.site-footer-modern,
   }
 }
 
-@import './design-system/frontend-foundation.css';
