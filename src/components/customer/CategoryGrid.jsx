@@ -20,7 +20,7 @@ export default function CategoryGrid({
         </span>
       </div>
 
-      <div className="service-grid customer-category-grid">
+      <div className="service-grid customer-category-grid ary-category-grid">
         {safeServices.map(service => {
           const Icon = service.icon || Sparkles;
           const isSelected = selectedCategory?.id === service.id;
