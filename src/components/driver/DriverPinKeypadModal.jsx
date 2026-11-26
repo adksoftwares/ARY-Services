@@ -136,7 +136,7 @@ export default function DriverPinKeypadModal({
         <div style={{ marginBottom: '16px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>Enter the 6-digit code provided for this handoff.</div>
 
         {/* Numeric Keypad Grid */}
-        <div className="keypad-grid">
+        <div className="keypad-grid driver-pin-keypad-grid">
           {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (
             <button
               key={n}

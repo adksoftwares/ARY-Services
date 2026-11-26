@@ -77,7 +77,7 @@ export default function DisputeModal({ isOpen, onClose, booking, onSuccess, onDi
       isBottomSheet={true}
       size="md"
     >
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+      <form className="customer-dispute-modal-form" onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
         <div className="security-notice-box">
           <ShieldCheck size={18} />
           <div>

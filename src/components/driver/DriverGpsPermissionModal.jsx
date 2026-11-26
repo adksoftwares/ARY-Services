@@ -21,7 +21,7 @@ export default function DriverGpsPermissionModal({
       size="sm"
       isBottomSheet={true}
     >
-      <div style={{ padding: '8px 0 16px', textAlign: 'center' }}>
+      <div className="driver-gps-permission-content" style={{ padding: '8px 0 16px', textAlign: 'center' }}>
         <div style={{
           width: 56,
           height: 56,

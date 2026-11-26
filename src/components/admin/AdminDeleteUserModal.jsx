@@ -28,7 +28,7 @@ export default function AdminDeleteUserModal({
       title="Permanently Delete Account"
       maxWidth="460px"
     >
-      <div style={{ padding: '4px 0' }}>
+      <div className="admin-danger-modal-content" style={{ padding: '4px 0' }}>
         <div style={{
           display: 'flex',
           alignItems: 'flex-start',
