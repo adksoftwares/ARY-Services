@@ -1,0 +1,164 @@
+/*
+ * ARY Services — Frontend Foundation v1
+ * A coherent product layer for customer, provider, driver and admin workspaces.
+ * Feature-specific behavior remains in the existing React components.
+ */
+:root {
+  --ary-brand: #145b45;
+  --ary-brand-strong: #0d4535;
+  --ary-brand-soft: #eaf4ee;
+  --ary-ink: #172b24;
+  --ary-muted: #64746c;
+  --ary-canvas: #f7f8f5;
+  --ary-surface: #ffffff;
+  --ary-border: #e2e8e2;
+  --ary-border-strong: #cbd7ce;
+  --ary-radius-sm: 10px;
+  --ary-radius-md: 16px;
+  --ary-radius-lg: 22px;
+  --ary-shadow-soft: 0 8px 24px rgba(25, 48, 37, .055);
+  --ary-shadow-raised: 0 18px 48px rgba(25, 48, 37, .09);
+  --ary-focus: 0 0 0 3px rgba(20, 91, 69, .18);
+  color-scheme: light;
+}
+html { scroll-behavior: smooth; }
+body {
+  background: var(--ary-canvas);
+  color: var(--ary-ink);
+  font-family: Inter, "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+button, input, select, textarea { font: inherit; }
+button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+button { touch-action: manipulation; }
+:where(a,button,input,select,textarea,[tabindex]):focus-visible {
+  outline: none;
+  box-shadow: var(--ary-focus);
+}
+:where(h1,h2,h3,h4,p) { overflow-wrap: break-word; }
+:where(.topbar,.admin-topbar,.provider-topbar,.driver-topbar) {
+  background: rgba(255,255,255,.94);
+  border-bottom: 1px solid var(--ary-border);
+  box-shadow: 0 2px 12px rgba(20,45,32,.035);
+  backdrop-filter: blur(16px);
+}
+.topbar {
+  min-height: 76px;
+  padding: 12px clamp(16px, 4vw, 44px);
+  gap: 18px;
+}
+.brand { color: var(--ary-ink); letter-spacing: -.045em; font-weight: 750; }
+.brand-mark {
+  width: 46px; height: 46px; border-radius: 15px;
+  display: inline-grid; place-items: center;
+  background: var(--ary-brand); color: white;
+  box-shadow: 0 6px 14px rgba(20,91,69,.18);
+}
+.header-location-pill {
+  min-height: 40px; max-width: 250px;
+  background: #f2f7f3 !important; border-color: #dce9df !important;
+}
+.header-location-pill:hover { border-color: var(--ary-brand) !important; }
+.header-signin-btn, .hero-search-action-btn {
+  border-radius: 12px !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 10px rgba(20,91,69,.12);
+}
+.hero-concise {
+  width: min(100% - 48px, 1160px);
+  margin-inline: auto;
+}
+.hero-title {
+  color: var(--ary-ink);
+  font-weight: 780;
+  letter-spacing: -.055em;
+}
+.hero-subtext { color: #53645b; }
+.search-panel-elevated {
+  border: 1px solid var(--ary-border) !important;
+  border-radius: var(--ary-radius-lg) !important;
+  background: var(--ary-surface) !important;
+  box-shadow: var(--ary-shadow-raised) !important;
+}
+.search-input-field {
+  border-color: var(--ary-border) !important;
+  border-radius: 13px !important;
+  background: #fbfcfa !important;
+}
+.search-input-field:focus-within {
+  border-color: var(--ary-brand) !important;
+  box-shadow: var(--ary-focus) !important;
+}
+.category-chip {
+  border: 1px solid var(--ary-border) !important;
+  background: white !important;
+  color: #34483e !important;
+  font-weight: 650 !important;
+  transition: border-color .16s ease, background .16s ease, transform .16s ease;
+}
+.category-chip:hover { border-color: #9dbbaa !important; transform: translateY(-1px); }
+.category-chip.active {
+  background: var(--ary-brand-soft) !important;
+  border-color: #a9cbb6 !important;
+  color: var(--ary-brand-strong) !important;
+}
+.trust-item {
+  border-color: var(--ary-border) !important;
+  border-radius: 13px !important;
+}
+:where(.provider-card,.service-card,.booking-card,.admin-stat-card,.driver-job-card) {
+  border: 1px solid var(--ary-border);
+  border-radius: var(--ary-radius-md);
+  box-shadow: var(--ary-shadow-soft);
+}
+:where(.provider-card,.service-card,.booking-card,.driver-job-card) {
+  transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+:where(.provider-card,.service-card,.booking-card,.driver-job-card):hover {
+  border-color: var(--ary-border-strong);
+  box-shadow: var(--ary-shadow-raised);
+}
+.mobile-bottom-nav {
+  border-top: 1px solid var(--ary-border);
+  background: rgba(255,255,255,.97);
+  box-shadow: 0 -8px 28px rgba(22,44,32,.07);
+  backdrop-filter: blur(18px);
+  padding-bottom: max(8px, env(safe-area-inset-bottom));
+}
+.mob-nav-item { color: #748078; border-radius: 12px; }
+.mob-nav-item.active { background: var(--ary-brand-soft); color: var(--ary-brand-strong); }
+:where(.modal-card,.modal-content,.dialog-panel) {
+  border-radius: 20px;
+  box-shadow: 0 24px 70px rgba(13,36,25,.2);
+}
+[data-theme="dark"] {
+  --ary-ink: #e8f0eb;
+  --ary-muted: #a7b6ad;
+  --ary-canvas: #101a15;
+  --ary-surface: #18251e;
+  --ary-border: #2a3b31;
+  --ary-border-strong: #40594a;
+  --ary-brand-soft: #203d30;
+  --ary-shadow-soft: 0 8px 24px rgba(0,0,0,.16);
+  --ary-shadow-raised: 0 18px 48px rgba(0,0,0,.24);
+  color-scheme: dark;
+}
+[data-theme="dark"] body { background: var(--ary-canvas); color: var(--ary-ink); }
+[data-theme="dark"] .topbar,
+[data-theme="dark"] .mobile-bottom-nav { background: rgba(19,31,24,.96); border-color: var(--ary-border); }
+[data-theme="dark"] .hero-title { color: var(--ary-ink); }
+[data-theme="dark"] .hero-subtext { color: #b4c2b9; }
+[data-theme="dark"] .search-input-field,
+[data-theme="dark"] .category-chip { background: #1b2a22 !important; color: var(--ary-ink) !important; border-color: var(--ary-border) !important; }
+@media (max-width: 760px) {
+  .topbar { min-height: 64px; padding: 10px 14px; gap: 8px; }
+  .brand-mark { width: 40px; height: 40px; border-radius: 13px; }
+  .hero-concise { width: min(100% - 32px, 620px); }
+  body { padding-bottom: env(safe-area-inset-bottom); }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
