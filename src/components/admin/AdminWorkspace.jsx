@@ -67,6 +67,15 @@ export default function AdminWorkspace({
 
   const isAdmin = currentUser?.accountType === 'admin';
 
+  useEffect(() => {
+    if (!sidebarOpen) return undefined;
+    const handleEscape = event => {
+      if (event.key === 'Escape') setSidebarOpen(false);
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [sidebarOpen]);
+
   // 1. Fetch Bookings
   const fetchBookings = useCallback(async () => {
     if (!currentUser?.token || !isAdmin) return;
@@ -397,14 +406,17 @@ export default function AdminWorkspace({
   return (
     <div className="admin-layout">
       {/* Mobile Sidebar Overlay Backdrop */}
-      <div
+      <button
+        type="button"
         className={`admin-sidebar-backdrop ${sidebarOpen ? 'open' : ''}`}
         onClick={() => setSidebarOpen(false)}
-        aria-hidden="true"
+        aria-label="Close admin navigation"
+        tabIndex={sidebarOpen ? 0 : -1}
+        aria-hidden={!sidebarOpen}
       />
 
       {/* 1. Sidebar Navigation */}
-      <aside className={`admin-sidebar ${sidebarOpen ? 'open' : ''}`}>
+      <aside id="admin-sidebar" className={`admin-sidebar ${sidebarOpen ? 'open' : ''}`} aria-label="Admin workspace navigation">
         {/* Brand Header */}
         <div className="admin-sidebar-header">
           <div className="admin-brand">
@@ -419,6 +431,8 @@ export default function AdminWorkspace({
             className="admin-menu-toggle"
             onClick={() => setSidebarOpen(false)}
             aria-label="Close sidebar"
+            aria-expanded={sidebarOpen}
+            aria-controls="admin-sidebar"
             style={{ display: sidebarOpen ? 'flex' : 'none' }}
           >
             <X size={18} />
@@ -496,6 +510,8 @@ export default function AdminWorkspace({
               className="admin-menu-toggle"
               onClick={() => setSidebarOpen(true)}
               aria-label="Open sidebar menu"
+              aria-expanded={sidebarOpen}
+              aria-controls="admin-sidebar"
             >
               <Menu size={18} />
             </button>
@@ -518,7 +534,9 @@ export default function AdminWorkspace({
               <input
                 type="text"
                 className="admin-search-input"
-                placeholder="Search platform..."
+                type="search"
+                aria-label="Search platform users"
+                placeholder="Search platform users..."
                 value={globalSearch}
                 onChange={(e) => {
                   setGlobalSearch(e.target.value);
@@ -548,7 +566,7 @@ export default function AdminWorkspace({
             {/* Notification Bell */}
             <button
               type="button"
-              onClick={() => setActiveTab('notifications')}
+              onClick={() => { setActiveTab('notifications'); setSidebarOpen(false); }}
               style={{
                 position: 'relative',
                 background: 'none',

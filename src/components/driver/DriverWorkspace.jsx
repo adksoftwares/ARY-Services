@@ -425,7 +425,7 @@ export default function DriverWorkspace({ onNotice }) {
   const gpsInfo = getGpsFreshness(presence.updatedAt, presence.accuracyM);
 
   return (
-    <main className="driver-workspace-container driver-field-workspace">
+    <main className="driver-workspace-container driver-field-workspace driver-accessible-workspace">
       {/* 1. Giant Glanceable Online / Offline Switch */}
       <div className={`driver-master-switch-card driver-shift-panel ${presence.online ? 'online' : 'offline'}`}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
@@ -667,7 +667,7 @@ export default function DriverWorkspace({ onNotice }) {
       </div>
 
       {error && (
-        <div className="driver-workspace-error" role="alert" aria-live="assertive" style={{
+        <div className="driver-workspace-error" role="alert" aria-live="assertive" aria-atomic="true" style={{
           background: 'var(--color-danger-50, #fef2f2)',
           border: '1px solid var(--color-danger-200, #fecaca)',
           borderRadius: 'var(--radius-md, 8px)',
@@ -832,6 +832,7 @@ export default function DriverWorkspace({ onNotice }) {
               <div
                 key={option.value}
                 role="checkbox"
+                aria-label={option.label}
                 aria-checked={isChecked}
                 tabIndex={0}
                 onClick={() => toggleService(option.value)}
