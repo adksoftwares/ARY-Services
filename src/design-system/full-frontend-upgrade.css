@@ -2014,3 +2014,13 @@ textarea { min-height: 96px; }
  .admin-review-queue .admin-service-request-card { padding:15px!important; }
  .admin-review-queue .admin-service-request-card h3 { font-size:1rem!important; overflow-wrap:anywhere; }
 }
+
+
+/* Booking and provider job list feedback */
+.provider-jobs-workspace [role="status"],.customer-bookings-workspace [role="status"] { font-variant-numeric:tabular-nums; }
+.provider-jobs-workspace :is(input,button):focus-visible,.customer-bookings-workspace :is(input,button,a):focus-visible { outline:3px solid rgba(35,126,91,.25); outline-offset:3px; }
+.provider-jobs-workspace .ds-state-box,.customer-bookings-workspace .ds-state-box { max-width:100%; }
+@media(max-width:640px) {
+ .provider-jobs-workspace .ds-state-box,.customer-bookings-workspace .ds-state-box { padding-inline:12px; }
+ .provider-jobs-workspace [role="status"],.customer-bookings-workspace [role="status"] { white-space:normal!important; }
+}
