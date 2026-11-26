@@ -224,7 +224,7 @@ export default function BookingModal({
       size="md"
       footer={footerContent}
     >
-      <div className="booking-wizard-content">
+      <div className="booking-wizard-content customer-booking-wizard">
         {/* Multi-step Progress Bar (Steps 1-4) */}
         {step < 5 && (
           <div className="booking-stepper-container">
