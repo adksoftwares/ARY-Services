@@ -336,7 +336,7 @@ export default function ProviderDashboard({
           </div>
         </div>
 
-        <ul className="provider-nav-list">
+        <ul className="provider-nav-list" aria-label="Provider workspace sections">
           {navItems.map(item => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -519,7 +519,9 @@ export default function ProviderDashboard({
 
         <button
           type="button"
-          className={`provider-bottom-tab ${['quotes', 'schedule', 'reviews', 'inventory', 'profile'].includes(activeTab) ? 'active' : ''}`}
+          className={`provider-bottom-tab ${isMobileMenuOpen || ['quotes', 'schedule', 'reviews', 'inventory', 'profile'].includes(activeTab) ? 'active' : ''}`}
+          aria-haspopup="dialog"
+          aria-expanded={isMobileMenuOpen}
           onClick={() => setIsMobileMenuOpen(true)}
         >
           <Menu size={20} />
