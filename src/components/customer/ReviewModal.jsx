@@ -79,7 +79,7 @@ export default function ReviewModal({ isOpen, onClose, booking, onSuccess, onRev
       isBottomSheet={true}
       size="sm"
     >
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+      <form className="customer-review-modal-form" onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
         <div>
           <b>Booking #{String(booking.id).slice(-6)} · {booking.providerName || 'Service provider'}</b>
           <p style={{ margin: '4px 0 0', fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
