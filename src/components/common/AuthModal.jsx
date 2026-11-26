@@ -190,7 +190,7 @@ export default function AuthModal({ onNotice }) {
   return (
     <div className="modal-backdrop" onClick={closeAuthModal}>
       <div
-        className="modal-card"
+        className="modal-card ary-auth-modal-card"
         onClick={e => e.stopPropagation()}
         role="dialog"
         aria-modal="true"

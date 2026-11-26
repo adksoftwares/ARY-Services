@@ -48,7 +48,7 @@ export default function OfflineBanner() {
 
   if (justReconnected) {
     return (
-      <div className="connection-banner connection-banner--online" role="status" aria-live="polite">
+      <div className="connection-banner connection-banner--online ary-offline-banner" role="status" aria-live="polite">
         <Wifi size={16} aria-hidden="true" />
         <span>Connection restored. You can continue using ARY Services.</span>
       </div>
@@ -56,7 +56,7 @@ export default function OfflineBanner() {
   }
 
   return (
-    <div className="connection-banner connection-banner--offline" role="alert" aria-live="assertive">
+    <div className="connection-banner connection-banner--offline ary-offline-banner" role="alert" aria-live="assertive">
       <WifiOff size={16} aria-hidden="true" />
       <span>
         <strong>You're offline.</strong> Some actions may be unavailable. Check your connection and retry when you're back online.
