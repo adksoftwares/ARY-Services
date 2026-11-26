@@ -82,3 +82,9 @@
   - Accessible retry actions for admin service request errors (#215).
 - Resolved duplicate `@import` paths in `src/design-system/provider-admin-driver-detail.css`.
 - Passed all quality gates: 35/35 Vitest tests passed, security regression passed, smoke test flows passed, root Vite build passed with 0 warnings, all 4 individual app builds passed, and backend storage/dispatch suites passed.
+
+## 2026-11-26 — Cross-Role Ecosystem Navigation & Portal Visual Polish
+- Refined `CustomerApp.jsx` authentication check allowing all logged-in roles to view My Bookings and auto-detect location.
+- Polished hero text contrast for `DriverPortalView.jsx` and `ProviderPortalView.jsx` with high-contrast text against dark backgrounds.
+- Upgraded mobile ergonomics in `customer.css` for `.ary-ecosystem-switcher` and `.ary-eco-tab` ensuring clean touch interaction on small screens.
+- Passed all quality gates: 35/35 Vitest unit tests passed, security regression passed, smoke test flows passed, root Vite build passed with 0 warnings, all 4 individual app builds passed, and backend storage/dispatch suites passed.

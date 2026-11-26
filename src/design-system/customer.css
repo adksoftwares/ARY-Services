@@ -3340,48 +3340,43 @@
 .ary-ecosystem-bar {
   background: var(--surface-primary, #ffffff);
   border-bottom: 1px solid var(--border-subtle, rgba(22, 101, 52, 0.1));
-  padding: 8px 16px;
+  padding: 6px 12px;
   display: flex;
   justify-content: center;
   align-items: center;
-  position: sticky;
-  top: 56px;
-  z-index: 150;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  position: relative;
+  z-index: 20;
   transition: all 0.2s ease;
 }
 
 .ary-ecosystem-switcher {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   background: var(--surface-muted, #f1f5f9);
-  padding: 4px;
+  padding: 3px;
   border-radius: 9999px;
   border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.06));
-  max-width: 100%;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-}
-.ary-ecosystem-switcher::-webkit-scrollbar {
-  display: none;
+  width: 100%;
+  max-width: 520px;
 }
 
 .ary-eco-tab {
+  flex: 1;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
+  justify-content: center;
+  gap: 4px;
+  padding: 7px 4px;
   border-radius: 9999px;
   text-decoration: none;
-  font-size: 13px;
+  font-size: 11.5px;
   font-weight: 700;
   color: var(--text-secondary, #64748b);
   transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
   white-space: nowrap;
   user-select: none;
+  text-align: center;
 }
 
 .ary-eco-tab:hover {
@@ -3453,11 +3448,14 @@
 
 @media (max-width: 640px) {
   .ary-ecosystem-bar {
-    top: 50px;
-    padding: 6px 10px;
+    padding: 6px 8px;
   }
   .ary-eco-tab {
-    padding: 7px 12px;
-    font-size: 12px;
+    padding: 6px 2px;
+    font-size: 11px;
+    gap: 3px;
+  }
+  .ary-eco-icon {
+    font-size: 13px;
   }
 }

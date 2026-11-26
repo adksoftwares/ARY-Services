@@ -87,11 +87,11 @@ export default function DriverPortalView({ onNotice }) {
           <span>ARY MOBILITY & COURIER DISPATCH</span>
         </div>
 
-        <h1 style={{ fontSize: 'clamp(22px, 5vw, 32px)', fontWeight: 800, margin: '0 0 12px', lineHeight: 1.25 }}>
+        <h1 style={{ fontSize: 'clamp(22px, 5vw, 32px)', fontWeight: 800, margin: '0 0 12px', lineHeight: 1.25, color: '#ffffff' }}>
           Drive Tuk, Car or Deliver Groceries Across Sri Lanka
         </h1>
 
-        <p style={{ fontSize: '15px', color: '#94a3b8', maxWidth: 580, margin: '0 auto 28px', lineHeight: 1.6 }}>
+        <p style={{ fontSize: '15px', color: '#e2e8f0', maxWidth: 580, margin: '0 auto 28px', lineHeight: 1.6 }}>
           Maximize your daily earnings by taking city passenger rides and retail/grocery merchant parcel deliveries with smart instant dispatch.
         </p>
 

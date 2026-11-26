@@ -31,3 +31,6 @@
 10. **Synced Full Frontend Rebuild Foundation (5b5c817 - PRs #198–#215)**:
    - Integrated 19 upstream PRs delivering unified app shells, provider/admin/driver detail stylesheets, customer booking/location rebuild, modal/keypad polish, and dispatch controls.
    - All quality gates verified cleanly with zero warnings.
+11. **Cross-Role Ecosystem Navigation & Portal Visual Polish**:
+   - Refined cross-role navigation, high-contrast portal text, and mobile touch switcher.
+   - All builds, 35 Vitest tests, and smoke test checks passed cleanly.

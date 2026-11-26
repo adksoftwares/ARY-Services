@@ -219,7 +219,7 @@ function CustomerHeader({ address, launchCity, onOpenLocationModal, onOpenProfil
         <Link to="/driver" className={`nav-link-btn ${isDriver ? 'active' : ''}`}>
           <Bike size={15} /> Driver
         </Link>
-        {currentUser?.accountType === 'customer' && (
+        {currentUser && (
           <Link to="/bookings" className="nav-link-btn">
             <ClipboardList size={15} /> My Bookings
           </Link>
@@ -793,7 +793,7 @@ function CustomerWorkspace() {
 
   // Auto-detect current location on Customer Sign In / initial mount
   useEffect(() => {
-    if (currentUser?.accountType === 'customer') {
+    if (currentUser) {
       if (!autoDetectDoneRef.current) {
         autoDetectDoneRef.current = true;
         handleAutoDetectLocation();
@@ -801,11 +801,11 @@ function CustomerWorkspace() {
     } else {
       autoDetectDoneRef.current = false;
     }
-  }, [currentUser?.id, currentUser?.accountType, handleAutoDetectLocation]);
+  }, [currentUser?.id, handleAutoDetectLocation]);
 
   const fetchBookings = useCallback(async () => {
     const requestId = ++bookingRequestRef.current;
-    if (!currentUser?.token || currentUser.accountType !== 'customer') {
+    if (!currentUser?.token) {
       setBookings([]);
       setLoadingBookings(false);
       return;
@@ -823,7 +823,7 @@ function CustomerWorkspace() {
     } finally {
       if (requestId === bookingRequestRef.current) setLoadingBookings(false);
     }
-  }, [currentUser?.token, currentUser?.accountType]);
+  }, [currentUser?.token]);
 
   useEffect(() => {
     fetchProviders();

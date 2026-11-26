@@ -209,11 +209,11 @@ export default function ProviderPortalView({ onNotice }) {
           <span>ARY SERVICE PARTNER NETWORK</span>
         </div>
 
-        <h1 style={{ fontSize: 'clamp(22px, 5vw, 32px)', fontWeight: 800, margin: '0 0 12px', lineHeight: 1.25 }}>
+        <h1 style={{ fontSize: 'clamp(22px, 5vw, 32px)', fontWeight: 800, margin: '0 0 12px', lineHeight: 1.25, color: '#ffffff' }}>
           Grow Your Service Business in Sri Lanka
         </h1>
 
-        <p style={{ fontSize: '15px', color: 'rgba(255, 255, 255, 0.9)', maxWidth: 580, margin: '0 auto 28px', lineHeight: 1.6 }}>
+        <p style={{ fontSize: '15px', color: 'rgba(255, 255, 255, 0.95)', maxWidth: 580, margin: '0 auto 28px', lineHeight: 1.6 }}>
           Connect with verified homeowners and businesses looking for electricians, plumbers, AC technicians and repair professionals in Colombo, Kandy, Galle and nationwide.
         </p>
 
