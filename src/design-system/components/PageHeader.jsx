@@ -19,7 +19,7 @@ export function PageHeader({
     }}>
       {/* Optional Breadcrumb */}
       {breadcrumb && (
-        <nav aria-label="Breadcrumb" style={{
+        <nav className="ds-page-breadcrumb" aria-label="Breadcrumb" style={{
           marginBottom: 'var(--space-2, 8px)',
           fontSize: 'var(--text-xs, 0.75rem)',
           color: 'var(--text-muted, #74857b)'
@@ -36,7 +36,7 @@ export function PageHeader({
         flexWrap: 'wrap',
         gap: 'var(--space-4, 16px)'
       }}>
-        <div style={{ flex: 1, minWidth: '260px' }}>
+        <div className="ds-page-header-copy" style={{ flex: 1, minWidth: 0 }}>
           {/* Eyebrow / Tagline */}
           {eyebrow && (
             <div style={{
@@ -60,7 +60,7 @@ export function PageHeader({
               <button
                 type="button"
                 onClick={onBack}
-                aria-label="Go back"
+                aria-label="Go back" className="ds-page-back-button"
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
@@ -78,7 +78,7 @@ export function PageHeader({
               </button>
             )}
 
-            <h1 style={{
+            <h1 className="ds-page-title" style={{
               margin: 0,
               fontFamily: 'var(--font-heading)',
               fontSize: 'clamp(1.5rem, 3vw, 2.25rem)',
@@ -95,7 +95,7 @@ export function PageHeader({
 
           {/* Subtitle */}
           {subtitle && (
-            <p style={{
+            <p className="ds-page-subtitle" style={{
               margin: 'var(--space-2, 8px) 0 0',
               fontSize: 'var(--text-sm, 0.8125rem)',
               color: 'var(--text-secondary, #4a5c53)',
@@ -109,7 +109,7 @@ export function PageHeader({
 
         {/* Action Controls */}
         {actions && (
-          <div style={{
+          <div className="ds-page-header-actions" style={{
             display: 'flex',
             alignItems: 'center',
             gap: 'var(--space-2-5, 10px)',
