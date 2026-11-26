@@ -7,7 +7,7 @@ export default function LanguageSwitcher({ variant = 'segmented' }) {
 
   if (variant === 'select') {
     return (
-      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+      <div className="ds-language-switcher-select" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
         <Globe size={15} color="var(--color-neutral-500, #64748b)" />
         <select
           value={language}
@@ -37,6 +37,7 @@ export default function LanguageSwitcher({ variant = 'segmented' }) {
   // Segmented compact toggle (EN | සිං | தமி)
   return (
     <div
+      className="ds-language-switcher"
       role="group"
       aria-label="Language selection"
       style={{

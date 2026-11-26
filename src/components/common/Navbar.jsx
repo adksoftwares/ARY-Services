@@ -16,7 +16,7 @@ export default function Navbar({ onNotice, pendingCount = 0 }) {
 
   return (
     <header className={`topbar customer-nav-shell ${menuOpen ? "nav-menu-open" : ""}`}>
-      <div className="nav-brand-row">
+      <div className="nav-brand-row customer-nav-brand-row">
       <Link to="/" className="brand" aria-label="ARY Services home">
         <span className="brand-mark">A</span>
         <span>ARY <b>Services</b></span>
@@ -26,7 +26,7 @@ export default function Navbar({ onNotice, pendingCount = 0 }) {
       </button>
       </div>
 
-      <nav id="ary-primary-navigation" className="header-nav-links" aria-label="Main navigation">
+      <nav id="ary-primary-navigation" className="header-nav-links customer-primary-navigation" aria-label="Main navigation">
         <NavLink to="/" end className={({ isActive }) => `nav-link-btn ${isActive ? 'active' : ''}`} onClick={() => setMenuOpen(false)}>
           <Search size={14} /> Explore
         </NavLink>
@@ -72,7 +72,7 @@ export default function Navbar({ onNotice, pendingCount = 0 }) {
       </nav>
 
       {currentUser ? (
-        <div className="user-profile">
+        <div className="user-profile customer-user-profile">
           <span className="user-badge">
             <User size={14} />
             <span>{currentUser.fullName}</span>
