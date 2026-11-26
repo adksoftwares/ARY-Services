@@ -38,7 +38,7 @@ export default function Navbar({ onNotice, pendingCount = 0 }) {
         )}
 
         {currentUser && currentUser.accountType === 'driver' && (
-          <NavLink to="/driver-work" className={({ isActive }) => `nav-link-btn ${isActive ? 'active' : ''}`}><Bike size={14} /> Driver Services</NavLink>
+          <NavLink to="/driver-work" className={({ isActive }) => `nav-link-btn ${isActive ? 'active' : ''}`} onClick={() => setMenuOpen(false)}><Bike size={14} /> Driver Services</NavLink>
         )}
 
         {currentUser && currentUser.accountType === 'provider' && (
@@ -65,8 +65,8 @@ export default function Navbar({ onNotice, pendingCount = 0 }) {
 
         {currentUser && currentUser.accountType === 'admin' && (
           <>
-            <NavLink to="/admin" className={({ isActive }) => `nav-link-btn ${isActive ? 'active' : ''}`}><Shield size={14} /> Super Admin</NavLink>
-            <NavLink to="/admin/driver-applications" className={({ isActive }) => `nav-link-btn ${isActive ? 'active' : ''}`}>Driver Approvals</NavLink>
+            <NavLink to="/admin" className={({ isActive }) => `nav-link-btn ${isActive ? 'active' : ''}`} onClick={() => setMenuOpen(false)}><Shield size={14} /> Super Admin</NavLink>
+            <NavLink to="/admin/driver-applications" className={({ isActive }) => `nav-link-btn ${isActive ? 'active' : ''}`} onClick={() => setMenuOpen(false)}>Driver Approvals</NavLink>
           </>
         )}
       </nav>
@@ -83,7 +83,7 @@ export default function Navbar({ onNotice, pendingCount = 0 }) {
           </button>
         </div>
       ) : (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className="nav-auth-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <button className="sign-in" onClick={() => { setMenuOpen(false); openAuthModal('login'); }}>
             Sign in
           </button>
