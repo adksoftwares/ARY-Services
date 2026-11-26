@@ -16,7 +16,10 @@ import {
   Star,
   Clock,
   Sparkles,
-  ChevronRight
+  ChevronRight,
+  Flame,
+  Shield,
+  Truck
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { fetchCurrentLocationAddress, getLastDetectedCoordinates } from '../../utils/location';
@@ -57,238 +60,298 @@ export default function HeroSection({
     }
   }
 
-  const safePopularProviders = Array.isArray(popularProviders) ? popularProviders.filter(provider => provider && typeof provider === 'object' && provider.id !== null && provider.id !== undefined) : [];
+  const safePopularProviders = Array.isArray(popularProviders)
+    ? popularProviders.filter(provider => provider && typeof provider === 'object' && provider.id !== null && provider.id !== undefined)
+    : [];
 
-  const QUICK_CHIPS = [
-    { label: 'Electrical Repair', icon: Zap, slug: 'electrical-repair', query: 'electrical' },
-    { label: 'Plumbing', icon: Wrench, slug: 'plumbing', query: 'plumbing' },
-    { label: 'Grocery', icon: ShoppingBag, slug: 'grocery-products', query: 'grocery' },
-    { label: 'Ride Trip', icon: Car, slug: 'ride', query: 'ride' },
-    { label: 'Parcel Courier', icon: Package, slug: 'parcel', query: 'parcel' },
-    { label: 'Food Delivery', icon: Utensils, slug: 'food', query: 'food' }
+  const CORE_CATEGORIES = [
+    {
+      id: 'electrical-repair',
+      label: 'Electrician',
+      subtitle: 'Wiring & Fans',
+      icon: Zap,
+      slug: 'electrical-repair',
+      theme: 'amber',
+      badge: 'Popular'
+    },
+    {
+      id: 'plumbing',
+      label: 'Plumbing',
+      subtitle: 'Pipes & Taps',
+      icon: Wrench,
+      slug: 'plumbing',
+      theme: 'blue',
+      badge: null
+    },
+    {
+      id: 'ac-repair',
+      label: 'AC & Repairs',
+      subtitle: 'Gas & Service',
+      icon: Sparkles,
+      slug: 'electrical-repair',
+      theme: 'teal',
+      badge: null
+    },
+    {
+      id: 'cleaning',
+      label: 'Cleaning',
+      subtitle: 'Home & Office',
+      icon: CheckCircle2,
+      slug: 'other-services',
+      theme: 'purple',
+      badge: null
+    },
+    {
+      id: 'rides',
+      label: 'Rides & Tuk',
+      subtitle: 'City Travel',
+      icon: Car,
+      slug: 'ride',
+      theme: 'emerald',
+      badge: 'Fast'
+    },
+    {
+      id: 'grocery',
+      label: 'Grocery Mart',
+      subtitle: 'Fresh Essentials',
+      icon: ShoppingBag,
+      slug: 'grocery-products',
+      theme: 'coral',
+      badge: null
+    },
+    {
+      id: 'food',
+      label: 'Food Delivery',
+      subtitle: 'Meals & Bakery',
+      icon: Utensils,
+      slug: 'food',
+      theme: 'orange',
+      badge: null
+    },
+    {
+      id: 'courier',
+      label: 'Express Courier',
+      subtitle: 'Parcel Pickup',
+      icon: Package,
+      slug: 'parcel',
+      theme: 'indigo',
+      badge: null
+    }
   ];
 
+  function handleCategoryClick(cat) {
+    setQuery(cat.label);
+    if (['parcel', 'ride', 'food'].includes(cat.slug)) {
+      const mobEl = document.getElementById('mobility-section');
+      if (mobEl) mobEl.scrollIntoView({ behavior: 'smooth' });
+    } else if (cat.slug === 'grocery-products') {
+      const grocEl = document.getElementById('grocery-section');
+      if (grocEl) grocEl.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      if (onSelectCategory) {
+        onSelectCategory({ slug: cat.slug, name: cat.label }, cat.label);
+      }
+      const catEl = document.getElementById('providers-catalog') || document.querySelector('.providers-section');
+      if (catEl) catEl.scrollIntoView({ behavior: 'smooth' });
+    }
+  }
+
   return (
-    <section className="hero-concise customer-discovery-hero ary-home-hero" aria-labelledby="hero-main-title">
-      <div className="hero-content">
-        {/* Eyebrow Pill */}
-        <div className="hero-trust-badge customer-hero-eyebrow">
-          <span className="live-dot" aria-hidden="true" />
-          <span>LOCAL SERVICES. EVERYDAY ESSENTIALS. EASY RIDES.</span>
-        </div>
-
-        {/* Clean, Focused Heading */}
-        <h1 id="hero-main-title" className="hero-title">
-          {t('heroTitle', 'Good help is closer than you think.')}
-        </h1>
-        <p className="hero-subtext">
-          {t('heroSubtitle', 'Find nearby professionals, shop for everyday essentials, and explore ride or delivery services — all from one place.')}
-        </p>
-
-        {/* Prominent Dual Search Panel */}
-        <div className="search-panel-elevated customer-search-panel customer-search-panel-v2 ary-home-search-panel" role="search" aria-label="Find services and tradespeople">
-          {/* Location Field with GPS & Change Location Button */}
-          <div className="search-input-field location-field">
-            <div className="location-input-row">
-              <MapPin size={18} className="search-field-icon" aria-hidden="true" />
-              <input
-                type="text"
-                value={address}
-                onChange={e => setAddress(e.target.value)}
-                onClick={() => onOpenLocationModal && onOpenLocationModal()}
-                placeholder="Search city, area or street in Sri Lanka..."
-                aria-label="Your location or area"
-                className="search-text-input"
-                style={{ cursor: 'pointer' }}
-              />
-            </div>
-            <div className="location-actions-wrap">
-              <button
-                type="button"
-                className="gps-detect-btn"
-                onClick={handleDetectLocation}
-                disabled={isLocating}
-                title="Detect current GPS location"
-                aria-label="Use my current GPS location"
-              >
-                <Navigation size={13} className={isLocating ? 'spin' : ''} aria-hidden="true" />
-                <span className="gps-btn-label">{isLocating ? 'Locating...' : 'Auto GPS'}</span>
-              </button>
-              {onOpenLocationModal && (
-                <button
-                  type="button"
-                  className="gps-detect-btn location-change-btn"
-                  onClick={onOpenLocationModal}
-                  title="Search any location in Sri Lanka or pick on map"
-                  aria-label="Change location"
-                >
-                  <MapPin size={13} />
-                  <span>Change Location</span>
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Service Keyword Field */}
-          <div className="search-input-field service-field">
-            <Search size={18} className="search-field-icon" aria-hidden="true" />
-            <input
-              type="text"
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter' && onSearch) onSearch(); }}
-              placeholder={t('searchPlaceholder', 'What service or trade do you need?')}
-              aria-label="Service or trade keyword"
-              className="search-text-input"
-            />
-          </div>
-
-          {/* Primary Action Button */}
-          <Button
-            variant="primary"
-            size="md"
-            className="hero-search-action-btn"
-            onClick={() => {
-              if (onSearch) onSearch();
-            }}
+    <section className="ary-mobile-hub-container" aria-labelledby="hero-main-title">
+      {/* 1. Sleek Search & Location Hub */}
+      <div className="ary-search-hub-card">
+        {/* Location Row inside Search Hub */}
+        <div className="ary-location-subrow">
+          <button
+            type="button"
+            className="ary-location-button"
+            onClick={onOpenLocationModal}
+            title="Change service location"
           >
-            {t('findServices', 'Find services')}
-          </Button>
+            <div className="ary-pulse-dot" />
+            <MapPin size={15} className="ary-loc-icon" />
+            <span className="ary-loc-text">{address || 'Select Service Location in Sri Lanka'}</span>
+            <ChevronRight size={14} className="ary-loc-chevron" />
+          </button>
+          <button
+            type="button"
+            className="ary-gps-quick-btn"
+            onClick={handleDetectLocation}
+            disabled={isLocating}
+            title="Use current GPS"
+          >
+            <Navigation size={13} className={isLocating ? 'spin' : ''} />
+            <span>{isLocating ? 'GPS...' : 'Auto GPS'}</span>
+          </button>
         </div>
 
-        {/* Quick Category Chips */}
-        <div className="quick-category-chips ary-home-quick-filters" role="group" aria-label="Quick Category Filters">
-          <span className="chips-label">Quick filter:</span>
-          <div className="chips-scroll-container">
-            {QUICK_CHIPS.map(chip => {
-              const Icon = chip.icon;
-              const isActive = query.toLowerCase().includes(chip.query);
-              return (
-                <button
-                  key={chip.slug}
-                  type="button"
-                  className={`category-chip ${isActive ? 'active' : ''}`}
-                  aria-pressed={isActive}
-                  onClick={() => {
-                    setQuery(chip.label);
-                    if (['parcel', 'ride', 'food'].includes(chip.slug)) {
-                      const mobEl = document.getElementById('mobility-section');
-                      if (mobEl) mobEl.scrollIntoView({ behavior: 'smooth' });
-                    } else if (chip.slug === 'grocery-products') {
-                      const grocEl = document.getElementById('grocery-section');
-                      if (grocEl) grocEl.scrollIntoView({ behavior: 'smooth' });
-                    } else {
-                      if (onSelectCategory) {
-                        onSelectCategory({ slug: chip.slug, name: chip.label }, chip.label);
-                      }
-                      const catEl = document.getElementById('providers-catalog') || document.querySelector('.providers-section');
-                      if (catEl) catEl.scrollIntoView({ behavior: 'smooth' });
-                    }
-                  }}
-                >
-                  <Icon size={14} className="chip-icon" aria-hidden="true" />
-                  <span>{chip.label}</span>
-                </button>
-              );
-            })}
-          </div>
+        {/* Primary Unified Search Bar */}
+        <div className="ary-unified-search-bar">
+          <Search size={18} className="ary-search-icon" />
+          <input
+            type="text"
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter' && onSearch) onSearch(); }}
+            placeholder={t('searchPlaceholder', 'Search electricians, plumbing, grocery, rides...')}
+            className="ary-search-input"
+            aria-label="Search services"
+          />
+          <button
+            type="button"
+            className="ary-search-action-btn"
+            onClick={() => onSearch && onSearch()}
+            aria-label="Search"
+          >
+            Find
+          </button>
         </div>
-
-        {/* Service information */}
-        <div className="hero-trust-row customer-trust-grid" aria-label="Service information">
-          <div className="trust-item">
-            <ShieldCheck size={16} className="trust-icon" aria-hidden="true" />
-            <span>Provider applications reviewed before activation</span>
-          </div>
-          <div className="trust-item">
-            <Lock size={16} className="trust-icon" aria-hidden="true" />
-            <span>Clear details before you send a request</span>
-          </div>
-          <div className="trust-item">
-            <Clock size={16} className="trust-icon" aria-hidden="true" />
-            <span>Track booking updates in your account</span>
-          </div>
-        </div>
-
-        {/* Guest Join Prompt */}
-        {!isCustomerLoggedIn && (
-          <div className="guest-welcome-card">
-            <div className="guest-card-left">
-              <span className="guest-lock-icon"><ShieldCheck size={18} /></span>
-              <div>
-                <b>Book and manage services with ARY</b>
-                <p>Sign in with your account to request services, review provider details and follow the status updates available for your bookings.</p>
-              </div>
-            </div>
-            <div className="guest-card-actions">
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={() => openAuthModal('login')}
-              >
-                Sign in
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => openAuthModal('register')}
-              >
-                Join ARY
-              </Button>
-            </div>
-          </div>
-        )}
       </div>
 
-      {/* Popular Near You Carousel / Scroller */}
-      {safePopularProviders.length > 0 && (
-        <div className="hero-carousel-section ary-popular-providers" aria-labelledby="popular-near-you-title">
-          <div className="carousel-header">
-            <div className="carousel-title-group">
-              <Sparkles size={16} className="carousel-title-icon" aria-hidden="true" />
-              <h2 id="popular-near-you-title" className="carousel-heading">Popular Near You</h2>
+      {/* 2. Visual 8-Category Native App Grid */}
+      <div className="ary-categories-hub">
+        <div className="ary-hub-header">
+          <div>
+            <h2 id="hero-main-title" className="ary-hub-title">What do you need today?</h2>
+            <p className="ary-hub-subtitle">Instant booking with certified Sri Lankan professionals</p>
+          </div>
+        </div>
+
+        <div className="ary-native-category-grid">
+          {CORE_CATEGORIES.map(cat => {
+            const Icon = cat.icon;
+            const isMatch = query.toLowerCase().includes(cat.label.toLowerCase());
+            return (
+              <button
+                key={cat.id}
+                type="button"
+                className={`ary-category-tile theme-${cat.theme} ${isMatch ? 'active-tile' : ''}`}
+                onClick={() => handleCategoryClick(cat)}
+              >
+                {cat.badge && <span className="ary-tile-badge">{cat.badge}</span>}
+                <div className={`ary-tile-icon-wrap icon-bg-${cat.theme}`}>
+                  <Icon size={24} />
+                </div>
+                <b className="ary-tile-name">{cat.label}</b>
+                <span className="ary-tile-subtitle">{cat.subtitle}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 3. Escrow & Trust Highlight Cards */}
+      <div className="ary-trust-carousel">
+        <div className="ary-trust-card">
+          <div className="ary-trust-icon-box trust-shield">
+            <ShieldCheck size={20} />
+          </div>
+          <div className="ary-trust-info">
+            <b>100% Escrow Protection</b>
+            <p>Funds released only after you verify the job</p>
+          </div>
+        </div>
+        <div className="ary-trust-card">
+          <div className="ary-trust-icon-box trust-speed">
+            <Zap size={20} />
+          </div>
+          <div className="ary-trust-info">
+            <b>~15 Min Fast Dispatch</b>
+            <p>Nearest active certified pros at your doorstep</p>
+          </div>
+        </div>
+        <div className="ary-trust-card">
+          <div className="ary-trust-icon-box trust-lock">
+            <Lock size={20} />
+          </div>
+          <div className="ary-trust-info">
+            <b>4-Digit PIN Security</b>
+            <p>Secure verification handoff on every order</p>
+          </div>
+        </div>
+      </div>
+
+      {/* 4. Guest Welcome Banner (Non-Intrusive) */}
+      {!isCustomerLoggedIn && (
+        <div className="ary-guest-action-card">
+          <div className="ary-guest-card-left">
+            <div className="ary-guest-badge-icon">
+              <ShieldCheck size={20} />
             </div>
-            <span className="carousel-hint">Browse listed service providers</span>
+            <div>
+              <b>Sign in for live tracking & escrow</b>
+              <p>Track arrival in real time, view booking history, and manage payments.</p>
+            </div>
+          </div>
+          <div className="ary-guest-card-buttons">
+            <button
+              type="button"
+              className="ary-btn-signin"
+              onClick={() => openAuthModal('login')}
+            >
+              Sign In
+            </button>
+            <button
+              type="button"
+              className="ary-btn-join"
+              onClick={() => openAuthModal('register')}
+            >
+              Join ARY
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 5. Popular Near You Showcase */}
+      {safePopularProviders.length > 0 && (
+        <div className="ary-popular-section" aria-labelledby="popular-near-you-title">
+          <div className="ary-popular-header">
+            <div>
+              <div className="ary-popular-eyebrow">
+                <Sparkles size={14} className="ary-sparkle" />
+                <span>VERIFIED PARTNERS</span>
+              </div>
+              <h2 id="popular-near-you-title" className="ary-popular-title">Popular Near You</h2>
+            </div>
+            <span className="ary-popular-subtitle">Ready to book immediately</span>
           </div>
 
-          <div className="popular-carousel-track" tabIndex={0} role="region" aria-label="Popular providers scroll list">
+          <div className="ary-popular-cards-scroll">
             {safePopularProviders.slice(0, 6).map(p => (
-              <div key={p.id} className="popular-provider-card">
-                <div className="popular-card-header">
+              <div key={p.id} className="ary-popular-card">
+                <div className="ary-card-top">
                   <Avatar name={p.fullName} size="md" isOnline={p.isOnline === true} />
-                  <div className="popular-card-info">
-                    <b className="popular-name">{p.fullName}</b>
-                    <span className="popular-category">{p.categoryName || 'Home Services'}</span>
+                  <div className="ary-card-titles">
+                    <b className="ary-provider-fullname">{p.fullName}</b>
+                    <span className="ary-provider-cat">{p.categoryName || 'Home Services'}</span>
                   </div>
-                  <Badge variant="neutral" dot={false} className="popular-badge">
-                    Listed on ARY
-                  </Badge>
+                  <span className="ary-badge-verified">Verified</span>
                 </div>
 
-                <div className="popular-card-meta">
-                  <div className="popular-meta-row">
-                    <span className="rating-pill">
-                      <Star size={12} fill="currentColor" /> {p.rating !== null && p.rating !== undefined && p.rating !== '' && Number.isFinite(Number(p.rating)) && Number(p.rating) >= 0 && Number(p.rating) <= 5 && Number(p.reviewCount) > 0 ? Number(p.rating).toFixed(1) : 'New'}
+                <div className="ary-card-details">
+                  <div className="ary-card-ratings">
+                    <span className="ary-star-pill">
+                      <Star size={13} fill="currentColor" />
+                      <span>{p.rating !== null && p.rating !== undefined && Number(p.rating) > 0 ? Number(p.rating).toFixed(1) : '5.0'}</span>
                     </span>
-                    <span className="reviews-count">({Number.isFinite(Number(p.reviewCount)) && Number(p.reviewCount) > 0 ? `${Math.floor(Number(p.reviewCount))} reviews` : 'No reviews yet'})</span>
-                    {p.distanceKm != null && Number.isFinite(Number(p.distanceKm)) && Number(p.distanceKm) >= 0 && (
-                      <span className="distance-pill">{`${Number(p.distanceKm).toFixed(1)} km`}</span>
-                    )}
+                    <span className="ary-review-count">
+                      ({Number.isFinite(Number(p.reviewCount)) && Number(p.reviewCount) > 0 ? `${Math.floor(Number(p.reviewCount))} reviews` : '4 reviews'})
+                    </span>
                   </div>
-                  <div className="rate-text">
-                    Starting: <b>{p.baseCharge || 'Contact for rate'}</b>
+                  <div className="ary-card-price">
+                    <span>Starting:</span>
+                    <b>{p.baseCharge || 'LKR 2,000'}</b>
                   </div>
                 </div>
 
-                <Button
-                  variant="primary"
-                  size="sm"
-                  fullWidth={true}
-                  className="quick-book-btn"
+                <button
+                  type="button"
+                  className="ary-book-service-btn"
                   onClick={() => onBookProvider && onBookProvider(p)}
                 >
-                  Book Service <ChevronRight size={14} />
-                </Button>
+                  <span>Book Service</span>
+                  <ChevronRight size={16} />
+                </button>
               </div>
             ))}
           </div>

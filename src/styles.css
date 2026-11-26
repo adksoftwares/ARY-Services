@@ -1260,12 +1260,12 @@ table{font-variant-numeric:tabular-nums}
   left: 0;
   right: 0;
   z-index: var(--z-bottom-nav, 300);
-  background: rgba(255, 255, 255, 0.94);
+  background: rgba(255, 255, 255, 0.96);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border-top: 1px solid rgba(220, 228, 220, 0.85);
-  box-shadow: 0 -4px 20px rgba(18, 45, 34, 0.08);
-  padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid rgba(22, 101, 52, 0.12);
+  box-shadow: 0 -4px 24px rgba(18, 45, 34, 0.08);
+  padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
   justify-content: space-around;
   align-items: center;
 }
@@ -1274,25 +1274,30 @@ table{font-variant-numeric:tabular-nums}
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 3px;
   background: transparent;
   border: 0;
   text-decoration: none;
-  color: #6a7b70;
-  font-size: 10px;
+  color: #64748b;
+  font-size: 11px;
   font-weight: 600;
-  padding: 6px 12px;
-  border-radius: 10px;
+  padding: 6px 8px;
+  border-radius: 12px;
   cursor: pointer;
   transition: all 0.16s ease;
-  min-width: 58px;
+  min-width: 54px;
+  flex: 1;
+}
+.mob-nav-item:active {
+  transform: scale(0.92);
 }
 .mob-nav-item:hover, .mob-nav-item.active {
-  color: #174d3d;
+  color: #15803d;
 }
 .mob-nav-item.active {
   font-weight: 700;
-  background: #edf5ef;
+  color: #15803d;
+  background: rgba(21, 128, 61, 0.08);
 }
 .mob-nav-item.highlight {
   background: #174d3d;
@@ -1473,27 +1478,52 @@ table{font-variant-numeric:tabular-nums}
 @media (max-width: 768px) {
   .topbar {
     min-height: calc(56px + max(0px, env(safe-area-inset-top, 0px))) !important;
-    padding: max(14px, env(safe-area-inset-top, 14px)) 16px 12px 16px !important;
+    padding: max(10px, env(safe-area-inset-top, 10px)) 16px 10px 16px !important;
     display: flex !important;
     align-items: center !important;
     justify-content: space-between !important;
+    flex-wrap: nowrap !important;
     position: sticky !important;
     top: 0 !important;
     z-index: 80 !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
   }
   .topbar .header-nav-links {
     display: none !important;
   }
-  .topbar .user-profile {
+  .topbar .header-admin-btn,
+  .topbar .header-join-btn,
+  .topbar .desktop-header-controls,
+  .topbar .mobile-hide-location,
+  .topbar .ds-language-switcher,
+  .topbar .theme-toggle {
     display: none !important;
   }
+  .topbar .header-signin-btn {
+    padding: 6px 14px !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    border-radius: 10px !important;
+    background: var(--brand-primary, #15803d) !important;
+    color: #ffffff !important;
+  }
+  .topbar .header-location-pill {
+    max-width: 140px !important;
+    padding: 4px 8px !important;
+    font-size: 11px !important;
+  }
   .topbar .brand {
-    font-size: 16px !important;
+    font-size: 15px !important;
+    gap: 6px !important;
   }
   .topbar .brand-mark {
-    width: 32px !important;
-    height: 32px !important;
-    font-size: 16px !important;
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 14px !important;
+    border-radius: 8px !important;
   }
 }
 

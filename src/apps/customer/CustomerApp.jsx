@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
+import React, { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BrowserRouter, Link, Navigate, Route, Routes, useNavigate, useLocation } from 'react-router-dom';
 import {
   Search,
@@ -86,7 +86,7 @@ function CustomerHeader({ address, launchCity, onOpenLocationModal, onOpenProfil
         <button
           type="button"
           onClick={onOpenLocationModal}
-          className="header-location-pill"
+          className="header-location-pill mobile-hide-location"
           title="Click to view or change your delivery and service location"
           style={{
             display: 'inline-flex',
@@ -151,8 +151,10 @@ function CustomerHeader({ address, launchCity, onOpenLocationModal, onOpenProfil
       </nav>
 
       <div className="customer-header-controls" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <LanguageSwitcher />
-        <ThemeToggle />
+        <div className="desktop-header-controls" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <LanguageSwitcher />
+          <ThemeToggle />
+        </div>
 
         {currentUser ? (
           <div className="user-profile customer-header-user-actions">
@@ -322,6 +324,7 @@ function AdminPortalView({ onNotice }) {
   const [services, setServices] = useState(initialAdminServices);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
   const isAdmin = currentUser?.accountType === 'admin';
+  const adminUsersRequestRef = useRef(0);
 
   const fetchAdminUsers = useCallback(async () => {
     const requestId = ++adminUsersRequestRef.current;
@@ -453,7 +456,6 @@ function CustomerWorkspace() {
   const autoDetectDoneRef = React.useRef(false);
   const providerRequestRef = React.useRef(0);
   const bookingRequestRef = React.useRef(0);
-  const adminUsersRequestRef = React.useRef(0);
 
   // Hardware Back Button Handling for Capacitor WebView & Native Android
   useEffect(() => {
@@ -756,12 +758,6 @@ function CustomerWorkspace() {
                   setBookingProvider({ ...provider, selectedService: service || null });
                   setBookingOpen(true);
                 }}
-              />
-
-              <CategoryGrid
-                services={SERVICES}
-                selectedCategory={selectedCategory}
-                onSelectCategory={handleCategorySelect}
               />
 
               <ProviderCatalog
