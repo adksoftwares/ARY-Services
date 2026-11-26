@@ -1955,3 +1955,30 @@ textarea { min-height: 96px; }
 @media(prefers-reduced-motion:reduce) {
  .ds-page-back-button { transition:none; }
 }
+
+
+/* Role workspace navigation and field accessibility */
+.admin-sidebar-backdrop { border:0; padding:0; cursor:default; }
+.admin-sidebar-backdrop:focus-visible { outline:3px solid rgba(35,126,91,.35); outline-offset:-3px; }
+.admin-sidebar[aria-label] { min-width:0; }
+.admin-nav-item:focus-visible,.admin-menu-toggle:focus-visible,.admin-topbar-actions button:focus-visible { outline:3px solid rgba(35,126,91,.28); outline-offset:2px; }
+.admin-search-input:focus-visible { outline:0; border-color:var(--ary-green)!important; box-shadow:0 0 0 3px rgba(35,126,91,.13); }
+.provider-nav-item:focus-visible,.provider-bottom-tab:focus-visible { outline:3px solid rgba(35,126,91,.28); outline-offset:2px; position:relative; z-index:1; }
+.provider-bottom-nav { padding-bottom:env(safe-area-inset-bottom, 0px); }
+.provider-content-area { min-width:0; }
+.driver-accessible-workspace { min-width:0; }
+.driver-accessible-workspace :is(button,[role="checkbox"],input,select,a):focus-visible { outline:3px solid rgba(35,126,91,.3); outline-offset:3px; }
+.driver-accessible-workspace [role="checkbox"] { min-width:0; }
+.driver-accessible-workspace .driver-workspace-error { overflow-wrap:anywhere; }
+@media(max-width:640px) {
+ .admin-topbar { gap:9px; }
+ .admin-topbar-left,.admin-topbar-actions { min-width:0; }
+ .admin-search-wrapper { min-width:0; }
+ .admin-search-input { width:100%; min-width:0; }
+ .admin-sidebar { max-width:min(88vw, 340px); }
+ .provider-bottom-nav { min-height:64px; }
+ .provider-bottom-tab { min-width:0; }
+}
+@media(prefers-reduced-motion:reduce) {
+ .admin-sidebar,.admin-sidebar-backdrop,.provider-bottom-tab { scroll-behavior:auto!important; transition:none!important; }
+}
