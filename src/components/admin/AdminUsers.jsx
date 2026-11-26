@@ -107,6 +107,15 @@ export default function AdminUsers({
     }
   }
 
+  const hasActiveFilters = Boolean(searchQuery.trim()) || roleFilter !== 'all' || statusFilter !== 'all';
+
+  const clearFilters = () => {
+    setSearchQuery('');
+    setRoleFilter('all');
+    setStatusFilter('all');
+    setCurrentPage(1);
+  };
+
   const roleOptions = [
     { id: 'all', value: 'all', label: `All (${users.length})` },
     { id: 'customer', value: 'customer', label: 'Customers' },
@@ -124,7 +133,8 @@ export default function AdminUsers({
           <div style={{ position: 'relative', flex: 1, minWidth: 260, maxWidth: 420 }}>
             <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
             <input
-              type="text"
+              type="search"
+              aria-label="Search users by name, phone, email, or area"
               placeholder="Search by name, phone, email, or area..."
               value={searchQuery}
               onChange={(e) => {
@@ -144,9 +154,10 @@ export default function AdminUsers({
 
           {/* Quick Stats Pill & Refresh */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontSize: '0.82rem', color: 'var(--color-neutral-500, #64748b)' }}>
+            <span role="status" aria-live="polite" style={{ fontSize: '0.82rem', color: 'var(--color-neutral-500, #64748b)' }}>
               Showing <b>{filteredUsers.length}</b> of <b>{users.length}</b> accounts
             </span>
+            {hasActiveFilters && <Button variant="ghost" size="sm" onClick={clearFilters}>Clear filters</Button>}
             <Button variant="ghost" size="sm" onClick={onRefresh} loading={isLoadingUsers}>
               <RefreshCw size={14} /> Refresh
             </Button>
@@ -177,6 +188,7 @@ export default function AdminUsers({
               <button
                 key={st.id}
                 type="button"
+                aria-pressed={statusFilter === st.id}
                 onClick={() => {
                   setStatusFilter(st.id);
                   setCurrentPage(1);
@@ -233,6 +245,8 @@ export default function AdminUsers({
                       icon={Users}
                       title="No accounts found"
                       description="No registered platform accounts match your selected filter criteria."
+                      actionLabel={hasActiveFilters ? "Clear filters" : undefined}
+                      onAction={hasActiveFilters ? clearFilters : undefined}
                     />
                   </td>
                 </tr>

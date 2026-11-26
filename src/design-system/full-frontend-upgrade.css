@@ -1982,3 +1982,15 @@ textarea { min-height: 96px; }
 @media(prefers-reduced-motion:reduce) {
  .admin-sidebar,.admin-sidebar-backdrop,.provider-bottom-tab { scroll-behavior:auto!important; transition:none!important; }
 }
+
+
+/* Admin user filter recovery and dispatch empty-state actions */
+.admin-users-table-scroll { max-width:100%; overscroll-behavior-x:contain; }
+.admin-users-table-scroll table { min-width:720px; }
+.admin-users-table-scroll :is(th,td) { overflow-wrap:anywhere; }
+.admin-users-table-scroll .sortable:focus-visible { outline:3px solid rgba(35,126,91,.28); outline-offset:3px; border-radius:5px; }
+.admin-users-table-scroll .ds-state-box { max-width:100%; }
+@media(max-width:640px) {
+ .admin-users-table-scroll { border-radius:12px; }
+ .admin-users-table-scroll table { min-width:680px; }
+}
