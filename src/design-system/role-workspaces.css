@@ -1,0 +1,167 @@
+/*
+ * ARY Services — Role Workspace System
+ * Purpose-built responsive interaction surfaces for all four application roles.
+ */
+:root {
+  --ary-space-1: 4px; --ary-space-2: 8px; --ary-space-3: 12px;
+  --ary-space-4: 16px; --ary-space-5: 20px; --ary-space-6: 24px;
+}
+.ary-app-root :where(button,a,[role="button"]) { -webkit-tap-highlight-color:transparent; }
+.ary-app-root :where(button:not(:disabled),a,[role="button"]) { transition:background-color .16s ease,border-color .16s ease,box-shadow .16s ease,color .16s ease,transform .16s ease; }
+
+/* Provider: stable navigation rail + work canvas + mobile dock */
+.ary-provider-root .provider-layout-body {
+ display:grid; grid-template-columns:248px minmax(0,1fr); gap:24px;
+ width:min(100% - 48px,1500px); margin:24px auto 40px; align-items:start;
+}
+.ary-provider-root .provider-sidebar {
+ position:sticky; top:88px; min-width:0; padding:18px;
+ border:1px solid var(--ary-border); border-radius:20px;
+ background:var(--ary-surface); box-shadow:var(--ary-shadow-soft);
+}
+.ary-provider-root .provider-sidebar-header { padding:4px 6px 18px; border-bottom:1px solid var(--ary-border); }
+.ary-provider-root .provider-nav-list { display:grid; gap:5px; margin-top:14px; }
+.ary-provider-root .provider-nav-item {
+ min-height:44px; display:flex; align-items:center; gap:11px;
+ padding:10px 12px; border:1px solid transparent; border-radius:11px;
+ color:var(--ary-muted); font-weight:650;
+}
+.ary-provider-root .provider-nav-item.active {
+ color:var(--ary-brand-strong); background:var(--ary-brand-soft);
+ border-color:#d2e4d8;
+}
+.ary-provider-root .provider-content-area { min-width:0; }
+.ary-provider-root .provider-bottom-nav { display:none; }
+.ary-provider-root :where(.provider-content-area > section,.provider-content-area > div) { min-width:0; }
+.ary-provider-root :where(.provider-nav-badge,.provider-bottom-tab-badge) {
+ min-width:19px; min-height:19px; padding:2px 6px; border-radius:99px;
+ background:var(--ary-brand-soft); color:var(--ary-brand-strong); font-size:.7rem; font-weight:800;
+}
+
+/* Driver: task-first controls, dispatch card and field actions */
+.ary-driver-root .driver-workspace-container { width:min(100% - 40px,1050px); margin:24px auto 44px; }
+.ary-driver-root .driver-field-workspace { display:grid; gap:18px; }
+.ary-driver-root :where(.driver-master-switch-card,.driver-shift-panel,.driver-active-hud-card) {
+ min-width:0; padding:clamp(16px,2.5vw,24px); border:1px solid var(--ary-border);
+ border-radius:20px; background:var(--ary-surface); box-shadow:var(--ary-shadow-soft);
+}
+.ary-driver-root .driver-shift-panel { display:flex; align-items:center; justify-content:space-between; gap:16px; }
+.ary-driver-root .driver-shift-panel.online { border-color:#9ccab0; background:linear-gradient(120deg,var(--ary-surface),var(--ary-brand-soft)); }
+.ary-driver-root .driver-giant-power-btn { min-height:54px; min-width:148px; border-radius:14px; font-weight:800; }
+.ary-driver-root .driver-active-hud-card { border-top:4px solid var(--ary-brand); }
+.ary-driver-root .driver-active-top-bar { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:10px; }
+.ary-driver-root .driver-route-container { display:grid; gap:12px; margin:18px 0; }
+.ary-driver-root .driver-route-point { display:grid; grid-template-columns:36px minmax(0,1fr); gap:12px; align-items:start; }
+.ary-driver-root .driver-quick-actions-bar { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+.ary-driver-root .driver-field-action-btn { min-height:48px; border-radius:12px; font-weight:750; }
+.ary-driver-root .driver-workspace-error { padding:13px 15px; border:1px solid #edc4bc; border-radius:12px; background:#fff4f1; color:#8c3427; }
+
+/* Admin: responsive navigation + data canvas */
+.ary-admin-root .admin-layout {
+ display:grid; grid-template-columns:260px minmax(0,1fr); min-height:100vh; min-height:100dvh;
+ background:var(--ary-canvas);
+}
+.ary-admin-root .admin-sidebar {
+ position:sticky; top:0; height:100vh; height:100dvh; overflow-y:auto;
+ padding:20px 14px; border-right:1px solid var(--ary-border);
+ background:var(--ary-surface);
+}
+.ary-admin-root .admin-sidebar-header { padding:4px 8px 20px; border-bottom:1px solid var(--ary-border); }
+.ary-admin-root .admin-nav-list { display:grid; gap:4px; margin-top:16px; }
+.ary-admin-root .admin-nav-item {
+ min-height:44px; display:flex; align-items:center; gap:10px;
+ padding:10px 12px; border:1px solid transparent; border-radius:10px;
+ color:var(--ary-muted); font-weight:650;
+}
+.ary-admin-root .admin-nav-item.active { color:var(--ary-brand-strong); background:var(--ary-brand-soft); border-color:#d2e4d8; }
+.ary-admin-root .admin-canvas { min-width:0; }
+.ary-admin-root .admin-topbar {
+ position:sticky; top:0; z-index:60; display:flex; align-items:center;
+ justify-content:space-between; gap:16px; min-height:68px;
+ padding:12px clamp(16px,3vw,32px); border-bottom:1px solid var(--ary-border);
+ background:rgba(255,255,255,.94); backdrop-filter:blur(14px);
+}
+.ary-admin-root .admin-page-container { width:min(100% - 48px,1440px); margin:24px auto 48px; min-width:0; }
+.ary-admin-root .admin-search-wrapper { min-width:min(300px,36vw); }
+.ary-admin-root .admin-search-input { min-height:42px; border:1px solid var(--ary-border); border-radius:10px; }
+
+/* Customer account, provider profile and booking journey */
+.ary-customer-root .customer-account-workspace { width:min(100% - 36px,980px); margin:26px auto 48px; }
+.ary-customer-root .account-profile-hero {
+ display:flex; align-items:center; gap:18px; padding:clamp(18px,3vw,28px);
+ border:1px solid var(--ary-border); border-radius:20px; background:var(--ary-surface);
+ box-shadow:var(--ary-shadow-soft);
+}
+.ary-customer-root .account-sub-nav { display:flex; gap:8px; overflow-x:auto; padding:6px 1px 12px; scrollbar-width:thin; }
+.ary-customer-root .account-nav-pill { flex:0 0 auto; min-height:42px; padding:9px 15px; border-radius:999px; }
+.ary-customer-root .account-nav-pill.active { background:var(--ary-brand-soft); color:var(--ary-brand-strong); }
+.ary-customer-root .account-section-card {
+ margin-top:16px; padding:clamp(16px,2.5vw,24px); border:1px solid var(--ary-border);
+ border-radius:17px; background:var(--ary-surface); box-shadow:var(--ary-shadow-soft);
+}
+.ary-customer-root .role-choice-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.ary-customer-root .role-choice-card { min-width:0; padding:16px; border:1px solid var(--ary-border); border-radius:14px; background:var(--ary-canvas); }
+.ary-customer-root .customer-booking-wizard { width:100%; max-width:720px; margin-inline:auto; }
+.ary-customer-root .booking-wizard-content { padding:clamp(14px,3vw,24px); }
+.ary-customer-root .booking-stepper-container { margin-bottom:22px; }
+.ary-customer-root .time-slots-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+.ary-customer-root .time-slot-btn { min-height:48px; border:1px solid var(--ary-border); border-radius:11px; }
+.ary-customer-root .time-slot-btn.active { border-color:var(--ary-brand); background:var(--ary-brand-soft); color:var(--ary-brand-strong); }
+.ary-customer-root .booking-summary-card,.ary-customer-root .reviews-summary-card {
+ padding:16px; border:1px solid var(--ary-border); border-radius:14px; background:var(--ary-canvas);
+}
+.ary-customer-root .customer-provider-detail { padding-bottom:12px; }
+.ary-customer-root .provider-detail-header { display:flex; align-items:flex-start; gap:16px; }
+.ary-customer-root .provider-highlights-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+.ary-customer-root .detail-services-list { display:grid; gap:10px; }
+.ary-customer-root .detail-service-card { display:flex; justify-content:space-between; align-items:center; gap:14px; padding:14px; border:1px solid var(--ary-border); border-radius:13px; }
+.ary-customer-root .provider-sticky-book-bar { position:sticky; bottom:0; z-index:8; display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 0 max(12px,env(safe-area-inset-bottom)); background:var(--ary-surface); border-top:1px solid var(--ary-border); }
+
+/* Dark mode surfaces and table overflow */
+[data-theme="dark"] .ary-app-root :where(.provider-sidebar,.admin-sidebar,.admin-topbar,.account-profile-hero,.account-section-card,.booking-summary-card,.reviews-summary-card,.detail-service-card) {
+ background:var(--ary-surface); border-color:var(--ary-border); color:var(--ary-ink);
+}
+[data-theme="dark"] .ary-driver-root .driver-workspace-error { background:#351f1c; color:#ffc2b7; border-color:#754239; }
+.ary-app-root :where(.table-responsive,.table-wrapper) { max-width:100%; overflow-x:auto; overscroll-behavior-x:contain; }
+@media(max-width:980px) {
+ .ary-provider-root .provider-layout-body { grid-template-columns:210px minmax(0,1fr); gap:16px; width:calc(100% - 32px); }
+ .ary-admin-root .admin-layout { grid-template-columns:228px minmax(0,1fr); }
+ .ary-admin-root .admin-page-container { width:calc(100% - 32px); }
+}
+@media(max-width:760px) {
+ .ary-provider-root .provider-layout-body { display:block; width:calc(100% - 24px); margin:14px auto 92px; }
+ .ary-provider-root .provider-sidebar { display:none; }
+ .ary-provider-root .provider-content-area { padding:0; }
+ .ary-provider-root .provider-bottom-nav {
+  position:fixed; inset:auto 0 0; z-index:100; display:flex; gap:4px;
+  overflow-x:auto; padding:8px 8px max(9px,env(safe-area-inset-bottom));
+  border-top:1px solid var(--ary-border); background:rgba(255,255,255,.97);
+  box-shadow:0 -8px 28px rgba(22,44,32,.08); backdrop-filter:blur(16px);
+ }
+ .ary-provider-root .provider-bottom-tab { flex:1 0 66px; min-height:56px; display:grid; place-items:center; align-content:center; gap:3px; border-radius:10px; font-size:.68rem; }
+ .ary-driver-root .driver-workspace-container { width:calc(100% - 24px); margin:14px auto 28px; }
+ .ary-driver-root .driver-shift-panel { align-items:stretch; flex-direction:column; }
+ .ary-driver-root .driver-giant-power-btn { width:100%; }
+ .ary-driver-root .driver-quick-actions-bar { grid-template-columns:repeat(2,minmax(0,1fr)); }
+ .ary-admin-root .admin-layout { display:block; }
+ .ary-admin-root .admin-sidebar { position:fixed; inset:0 auto 0 0; z-index:120; width:min(290px,86vw); height:100dvh; transform:translateX(-105%); transition:transform .2s ease; box-shadow:var(--ary-shadow-raised); }
+ .ary-admin-root .admin-sidebar.open { transform:translateX(0); }
+ .ary-admin-root .admin-sidebar-backdrop.open { position:fixed; inset:0; z-index:110; background:rgba(10,25,17,.48); }
+ .ary-admin-root .admin-page-container { width:calc(100% - 24px); margin:16px auto 32px; }
+ .ary-admin-root .admin-topbar { padding:10px 12px; }
+ .ary-admin-root .admin-search-wrapper { min-width:0; width:min(48vw,260px); }
+ .ary-customer-root .customer-account-workspace { width:calc(100% - 24px); margin:14px auto 32px; }
+ .ary-customer-root .account-profile-hero { align-items:flex-start; }
+}
+@media(max-width:480px) {
+ .ary-customer-root .account-profile-hero { flex-direction:column; }
+ .ary-customer-root .role-choice-grid,.ary-customer-root .time-slots-grid,.ary-customer-root .provider-highlights-grid { grid-template-columns:1fr; }
+ .ary-customer-root .provider-detail-header { flex-direction:column; }
+ .ary-customer-root .detail-service-card { align-items:flex-start; flex-direction:column; }
+ .ary-customer-root .provider-sticky-book-bar { align-items:stretch; flex-direction:column; }
+ .ary-admin-root .admin-search-wrapper { display:none; }
+ .ary-driver-root .driver-quick-actions-bar { grid-template-columns:1fr 1fr; }
+}
+@media(prefers-reduced-motion:reduce) {
+ .ary-app-root * { transition-duration:.01ms !important; animation-duration:.01ms !important; }
+}
