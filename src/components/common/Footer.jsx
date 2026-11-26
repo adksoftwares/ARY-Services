@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import {
   ArrowUpRight,
   ShieldCheck,
@@ -18,10 +19,10 @@ export default function Footer() {
       <div className="footer-main-grid">
         {/* Col 1: Brand & Identity */}
         <div className="footer-col footer-col-brand">
-          <a className="brand footer-brand" href="/" aria-label="ARY Services Home">
+          <Link className="brand footer-brand" to="/" aria-label="ARY Services Home">
             <span className="brand-mark">A</span>
             <span>ARY <b>Services</b></span>
-          </a>
+          </Link>
           <p className="footer-brand-desc">
             An on-demand service marketplace connecting local service providers, grocery and retail merchants, drivers, and customers across Sri Lanka.
           </p>
@@ -39,10 +40,10 @@ export default function Footer() {
         <div className="footer-col">
           <h4 className="footer-col-title">Platform Apps</h4>
           <ul className="footer-links-list">
-            <li><a href="/">Customer Marketplace</a></li>
-            <li><a href="/provider">Provider Workspace</a></li>
-            <li><a href="/driver">Driver Dispatch App</a></li>
-            <li><a href="/admin">Super Admin Portal</a></li>
+            <li><Link to="/">Customer Marketplace</Link></li>
+            <li><Link to="/provider">Provider Workspace</Link></li>
+            <li><Link to="/driver-work">Driver Dispatch App</Link></li>
+            <li><Link to="/admin">Super Admin Portal</Link></li>
           </ul>
         </div>
 
