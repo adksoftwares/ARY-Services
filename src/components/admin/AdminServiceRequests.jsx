@@ -11,6 +11,7 @@ export default function AdminServiceRequests({ onNotice }) {
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState('');
   const [error, setError] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const canReview = Boolean(currentUser?.token && currentUser.accountType === 'admin');
 
   const loadRequests = useCallback(async () => {
@@ -48,6 +49,9 @@ export default function AdminServiceRequests({ onNotice }) {
     });
   }, [canReview, currentUser?.token, loadRequests]);
 
+  const normalizedSearch = searchQuery.trim().toLowerCase();
+  const visibleRequests = requests.filter(item => [item.serviceName, item.categoryName, item.providerName, item.providerLocation, item.description, item.id].filter(value => value !== null && value !== undefined).some(value => String(value).toLowerCase().includes(normalizedSearch)));
+
   async function handleReview(item, status) {
     if (!canReview || !item || item.id === null || item.id === undefined || item.providerId === null || item.providerId === undefined || !['approved', 'rejected'].includes(status) || busyId) return;
     const requestKey = `${item.providerId}:${item.id}`;
@@ -78,7 +82,7 @@ export default function AdminServiceRequests({ onNotice }) {
   }
 
   return (
-    <div className="admin-service-requests-view" style={{ display: 'grid', gap: '16px' }}>
+    <div className="admin-service-requests-view admin-review-queue" style={{ display: 'grid', gap: '16px' }}>
       {/* 1. Header Card */}
       <Card style={{ padding: '16px 20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14 }}>
@@ -103,6 +107,16 @@ export default function AdminServiceRequests({ onNotice }) {
       {error && <div role="alert" style={{ padding: '12px 14px', borderRadius: 8, background: 'var(--color-danger-50, #fef2f2)', color: 'var(--color-danger-700, #b91c1c)', fontSize: '0.85rem' }}>{error}</div>}
 
       {/* 2. Requests List */}
+      {!loading && requests.length > 0 && (
+        <Card style={{ padding: '14px 16px' }}>
+          <div className="admin-request-search-row">
+            <label htmlFor="admin-service-request-search">Search service requests</label>
+            <input id="admin-service-request-search" type="search" value={searchQuery} onChange={event => setSearchQuery(event.target.value)} placeholder="Service, provider, category or location…" />
+            <span role="status" aria-live="polite" aria-atomic="true">{visibleRequests.length} of {requests.length} requests</span>
+            {searchQuery && <Button size="sm" variant="ghost" onClick={() => setSearchQuery('')}>Clear</Button>}
+          </div>
+        </Card>
+      )}
       {loading ? (
         <Card style={{ padding: '28px', color: 'var(--color-neutral-600, #475569)' }}>Loading service requests…</Card>
       ) : requests.length === 0 ? (
@@ -115,7 +129,7 @@ export default function AdminServiceRequests({ onNotice }) {
         </Card>
       ) : (
         <div style={{ display: 'grid', gap: '14px' }}>
-          {requests.map(item => {
+          {visibleRequests.map(item => {
             const requestKey = `${item.providerId}:${item.id}`;
             const isBusy = busyId === requestKey;
 
@@ -193,6 +207,7 @@ export default function AdminServiceRequests({ onNotice }) {
               </Card>
             );
           })}
+          {visibleRequests.length === 0 && <Card style={{ padding: '28px', textAlign: 'center' }}><EmptyState icon={BriefcaseBusiness} title="No matching requests" description="Try a different service, provider or location search." actionLabel="Clear search" onAction={() => setSearchQuery('')} /></Card>}
         </div>
       )}
     </div>
