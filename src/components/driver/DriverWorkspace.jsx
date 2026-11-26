@@ -732,7 +732,7 @@ export default function DriverWorkspace({ onNotice }) {
             : "You are currently offline. Tap 'Go Online Now' above to start receiving trips."}
         />
       ) : filteredAvailableJobs.length === 0 ? (
-        <EmptyState icon={Search} title="No matching dispatches" description="Try another service filter or a shorter pickup or destination search." />
+        <EmptyState icon={Search} title="No matching dispatches" description="Try another service filter or a shorter pickup or destination search." actionLabel="Clear filters" onAction={() => { setJobSearch(''); setJobFilter('all'); }} />
       ) : (
         <div style={{ display: 'grid', gap: '14px', marginBottom: '24px' }}>
           {filteredAvailableJobs.map(job => {
