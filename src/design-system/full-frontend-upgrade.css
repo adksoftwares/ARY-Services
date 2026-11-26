@@ -1820,3 +1820,66 @@ textarea { min-height: 96px; }
 @media(prefers-reduced-motion:reduce) {
  .customer-bookings-polish *, .customer-provider-detail *, .customer-account-workspace * { scroll-behavior:auto!important; transition:none!important; }
 }
+
+
+/* Grocery marketplace and mobility customer journeys */
+.customer-grocery-experience { min-width:0; }
+.customer-grocery-experience .grocery-toolbar { display:flex; align-items:center; flex-wrap:wrap; gap:10px; }
+.customer-grocery-experience .grocery-search-input { min-width:0; flex:1 1 240px; min-height:46px; border-radius:12px; }
+.customer-grocery-experience .category-scroll-pills { display:flex; gap:8px; max-width:100%; overflow-x:auto; padding:4px 1px 9px; overscroll-behavior-x:contain; scrollbar-width:thin; -webkit-overflow-scrolling:touch; }
+.customer-grocery-experience .category-scroll-pills > * { flex:0 0 auto; }
+.customer-grocery-experience .product-catalog-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(min(100%,205px),1fr)); gap:14px; align-items:stretch; }
+.customer-grocery-experience .product-item-card { display:flex; flex-direction:column; min-width:0; height:100%; border:1px solid var(--ary-line); border-radius:16px; background:var(--ary-surface); overflow:hidden; box-shadow:var(--ary-shadow-card); }
+.customer-grocery-experience .product-img-box { min-width:0; overflow:hidden; }
+.customer-grocery-experience .product-card-body { display:flex; flex:1; flex-direction:column; min-width:0; gap:8px; }
+.customer-grocery-experience .product-name,.customer-grocery-experience .product-shop { overflow-wrap:anywhere; }
+.customer-grocery-experience .product-price-row { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:7px; }
+.customer-grocery-experience .qty-stepper-box { display:flex; align-items:center; justify-content:flex-end; gap:8px; }
+.customer-grocery-experience .qty-stepper-box button { min-width:36px; min-height:36px; }
+.customer-grocery-experience .persistent-cart-bar { position:sticky; bottom:10px; z-index:4; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-top:18px; padding:13px 16px; border:1px solid var(--ary-line); border-radius:16px; background:var(--ary-surface); box-shadow:0 10px 30px rgba(20,45,31,.13); }
+.customer-grocery-experience button:focus-visible,.customer-mobility-experience button:focus-visible { outline:3px solid rgba(35,126,91,.27); outline-offset:2px; }
+.customer-mobility-experience { min-width:0; }
+.customer-mobility-experience .mobility-grid-layout { display:grid; grid-template-columns:minmax(0,1.4fr) minmax(250px,.8fr); gap:18px; align-items:start; }
+.customer-mobility-experience .mobility-form-card,.customer-mobility-experience .mobility-info-sidebar { min-width:0; border:1px solid var(--ary-line); border-radius:17px; background:var(--ary-surface); box-shadow:var(--ary-shadow-card); }
+.customer-mobility-experience .mobility-form-card { padding:clamp(14px,2.5vw,22px); }
+.customer-mobility-experience .mobility-form-card input,.customer-mobility-experience .mobility-form-card textarea,.customer-mobility-experience .mobility-form-card select { max-width:100%; min-height:45px; border-radius:10px; }
+.customer-mobility-experience .mobility-form-card :is(input,textarea,select):focus-visible { outline:0; border-color:var(--ary-green)!important; box-shadow:0 0 0 3px rgba(35,126,91,.13); }
+.customer-mobility-experience .gps-location-bar { display:flex; flex-wrap:wrap; align-items:center; gap:9px; min-width:0; }
+.customer-mobility-experience .mobility-hint-text { overflow-wrap:anywhere; }
+.customer-mobility-experience .mobility-info-sidebar { position:sticky; top:90px; overflow:hidden; }
+.customer-mobility-experience .mobility-jobs-list { display:grid; gap:12px; }
+.customer-mobility-experience .mobility-job-card { min-width:0; border:1px solid var(--ary-line); border-radius:15px; background:var(--ary-surface); box-shadow:var(--ary-shadow-card); overflow:hidden; }
+.customer-mobility-experience .mobility-route-box { min-width:0; overflow-wrap:anywhere; }
+.customer-mobility-experience .pin-handoff-card { min-width:0; overflow-wrap:anywhere; }
+.customer-category-discovery .customer-category-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(min(100%,245px),1fr)); gap:12px; }
+.customer-category-discovery .customer-category-grid .service-card { display:flex; align-items:center; min-width:0; min-height:92px; gap:12px; border:1px solid var(--ary-line); border-radius:15px; background:var(--ary-surface); text-align:left; transition:border-color .16s ease,transform .16s ease,box-shadow .16s ease; }
+.customer-category-discovery .customer-category-grid .service-card:hover { border-color:var(--ary-green); transform:translateY(-2px); box-shadow:var(--ary-shadow-card); }
+.customer-category-discovery .service-card-copy { min-width:0; overflow-wrap:anywhere; }
+.customer-category-discovery .service-card-copy small { display:block; line-height:1.45; }
+.customer-category-discovery .card-arrow { flex:0 0 auto; }
+[data-theme="dark"] .customer-grocery-experience .product-item-card,
+[data-theme="dark"] .customer-grocery-experience .persistent-cart-bar,
+[data-theme="dark"] .customer-mobility-experience .mobility-form-card,
+[data-theme="dark"] .customer-mobility-experience .mobility-info-sidebar,
+[data-theme="dark"] .customer-mobility-experience .mobility-job-card,
+[data-theme="dark"] .customer-category-discovery .service-card { background:var(--ary-surface); border-color:var(--ary-line); }
+@media(max-width:900px) {
+ .customer-mobility-experience .mobility-grid-layout { grid-template-columns:minmax(0,1fr); }
+ .customer-mobility-experience .mobility-info-sidebar { position:static; }
+}
+@media(max-width:620px) {
+ .customer-grocery-experience .product-catalog-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+ .customer-grocery-experience .product-item-card { border-radius:12px; }
+ .customer-grocery-experience .persistent-cart-bar { bottom:6px; padding:11px; border-radius:13px; }
+ .customer-grocery-experience .persistent-cart-bar > * { min-width:0; }
+ .customer-mobility-experience .mobility-form-card { padding:13px; border-radius:14px; }
+ .customer-mobility-experience .gps-location-bar { align-items:stretch; }
+ .customer-category-discovery .customer-category-grid { grid-template-columns:minmax(0,1fr); gap:9px; }
+ .customer-category-discovery .customer-category-grid .service-card { min-height:78px; }
+}
+@media(max-width:360px) {
+ .customer-grocery-experience .product-catalog-grid { grid-template-columns:minmax(0,1fr); }
+}
+@media(prefers-reduced-motion:reduce) {
+ .customer-category-discovery .customer-category-grid .service-card { transition:none; }
+}
