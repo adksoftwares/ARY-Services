@@ -162,3 +162,78 @@ button { touch-action: manipulation; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
+
+
+/* Product-wide app shell and role workspace system */
+.ary-app-root {
+  min-height: 100vh;
+  min-height: 100dvh;
+  isolation: isolate;
+  background: var(--ary-canvas);
+  color: var(--ary-ink);
+}
+.ary-app-root > .topbar {
+  position: sticky;
+  top: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+.ary-app-root :where(main, .provider-dashboard, .driver-workspace, .admin-workspace) {
+  min-width: 0;
+}
+.ary-app-root :where(input, select, textarea) {
+  min-height: 42px;
+  border-radius: 10px;
+}
+.ary-app-root :where(button:not(.mob-nav-item)) { cursor: pointer; }
+.ary-app-root :where(button:disabled) { cursor: not-allowed; opacity: .58; }
+.ary-app-root :where(table) { border-collapse: separate; border-spacing: 0; }
+.ary-app-root :where(th) { color: var(--ary-muted); font-size: .75rem; font-weight: 750; letter-spacing: .035em; }
+.ary-app-root :where(td, th) { padding: 12px 14px; }
+.ary-app-root :where(.toast,[role="status"].toast) {
+  border-radius: 13px;
+  box-shadow: var(--ary-shadow-raised);
+}
+.ary-provider-root, .ary-driver-root, .ary-admin-root {
+  background: var(--ary-canvas);
+}
+.ary-provider-root .topbar,
+.ary-driver-root .topbar,
+.ary-admin-root .topbar {
+  min-height: 68px;
+}
+.ary-provider-root :where(.provider-dashboard, .provider-workspace),
+.ary-driver-root :where(.driver-workspace, .driver-field-workspace),
+.ary-admin-root :where(.admin-workspace, .admin-overview-workspace) {
+  width: min(100% - 40px, 1480px);
+  margin-inline: auto;
+}
+.ary-provider-root :where(.provider-sidebar, .provider-main),
+.ary-driver-root :where(.driver-sidebar, .driver-main),
+.ary-admin-root :where(.admin-sidebar, .admin-main) { min-width: 0; }
+.ary-provider-root :where(.provider-card, .provider-panel),
+.ary-driver-root :where(.driver-card, .driver-panel),
+.ary-admin-root :where(.admin-card, .admin-panel) {
+  border: 1px solid var(--ary-border);
+  border-radius: var(--ary-radius-md);
+  background: var(--ary-surface);
+  box-shadow: var(--ary-shadow-soft);
+}
+@media (max-width: 760px) {
+  .ary-app-root > .topbar { gap: 8px; }
+  .ary-app-root .user-profile { max-width: 100%; }
+  .ary-app-root .user-badge { max-width: min(48vw, 220px); }
+  .ary-app-root .user-badge > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ary-provider-root :where(.provider-dashboard, .provider-workspace),
+  .ary-driver-root :where(.driver-workspace, .driver-field-workspace),
+  .ary-admin-root :where(.admin-workspace, .admin-overview-workspace) {
+    width: min(100% - 24px, 720px);
+  }
+}
+@media (max-width: 420px) {
+  .ary-app-root > .topbar { padding-inline: 12px; }
+  .ary-app-root .brand { font-size: .94rem; }
+}
