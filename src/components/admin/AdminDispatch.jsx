@@ -98,6 +98,8 @@ export default function AdminDispatch({
             {/* Auto Refresh Toggle */}
             <button
               type="button"
+              aria-pressed={autoRefresh}
+              aria-label={autoRefresh ? 'Pause live dispatch auto-refresh' : 'Resume live dispatch auto-refresh'}
               onClick={() => setAutoRefresh(prev => !prev)}
               style={{
                 display: 'flex',

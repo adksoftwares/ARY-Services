@@ -420,8 +420,11 @@ export default function GroceryInventory() {
       </div>
 
       {error && (
-        <div style={{ background: '#fef2f2', color: '#b91c1c', padding: 12, borderRadius: 8, fontSize: 13 }}>
-          {error}
+        <div role="alert" aria-live="assertive" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, background: 'var(--color-danger-50, #fef2f2)', color: 'var(--color-danger-700, #b91c1c)', border: '1px solid var(--color-danger-200, #fecaca)', padding: '12px 14px', borderRadius: 10, fontSize: 13 }}>
+          <span>{error}</span>
+          <Button type="button" size="sm" variant="outline" onClick={load} loading={loading} disabled={loading}>
+            <RefreshCw size={14} /> Retry
+          </Button>
         </div>
       )}
 
