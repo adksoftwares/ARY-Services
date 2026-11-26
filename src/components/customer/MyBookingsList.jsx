@@ -165,7 +165,7 @@ export default function MyBookingsList({
           <input type="search" value={bookingSearch} onChange={event => setBookingSearch(event.target.value)} placeholder="Search by booking, service, provider or address" aria-label="Search booking history" style={{ width: '100%', minWidth: 0, border: 0, outline: 0, background: 'transparent', color: 'var(--color-neutral-900, #0f172a)', font: 'inherit', fontSize: '0.88rem' }} />
         </label>
         {bookingSearch && <button type="button" onClick={() => setBookingSearch('')} style={{ minHeight: 40, border: 0, borderRadius: 8, padding: '8px 12px', background: 'var(--color-brand-50, #edf7f2)', color: 'var(--color-brand-700, #174d3d)', fontWeight: 700, cursor: 'pointer' }}>Clear search</button>}
-        <span aria-live="polite" style={{ color: 'var(--color-neutral-500, #64748b)', fontSize: '0.78rem' }}>{filteredBookings.length} result{filteredBookings.length === 1 ? '' : 's'}</span>
+        <span role="status" aria-live="polite" aria-atomic="true" style={{ color: 'var(--color-neutral-500, #64748b)', fontSize: '0.78rem' }}>{filteredBookings.length} result{filteredBookings.length === 1 ? '' : 's'}</span>
       </div>
 
       {/* Tabs navigation */}
