@@ -61,7 +61,7 @@ export default function ProviderDetailModal({
       isBottomSheet={true}
       size="md"
     >
-      <div className="provider-detail-content">
+      <div className="provider-detail-content customer-provider-detail">
         {/* Header Profile Section */}
         <div className="provider-detail-header">
           <Avatar name={provider.fullName} size="xl" isOnline={provider.isOnline === true} />
