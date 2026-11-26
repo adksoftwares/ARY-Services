@@ -14,7 +14,7 @@ export default function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="site-footer-modern" role="contentinfo">
+    <footer className="site-footer-modern ary-site-footer" role="contentinfo">
       {/* Upper Expanded Section */}
       <div className="footer-main-grid">
         {/* Col 1: Brand & Identity */}
