@@ -112,7 +112,7 @@ export default function ProviderSchedule({
   const hasAnyJobs = filteredBookings.length > 0;
 
   return (
-    <div className="provider-schedule-view" data-workspace="provider-schedule" style={{ display: 'grid', gap: '20px' }}>
+    <div className="provider-schedule-view ary-provider-schedule" data-workspace="provider-schedule" style={{ display: 'grid', gap: '20px' }}>
       {/* 1. Header & Filter */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
         <div>
