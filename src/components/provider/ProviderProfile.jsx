@@ -79,7 +79,7 @@ export default function ProviderProfile({
   }
 
   return (
-    <div className="provider-profile-view" data-workspace="provider-profile" style={{ display: 'grid', gap: '20px' }}>
+    <div className="provider-profile-view ary-provider-profile" data-workspace="provider-profile" style={{ display: 'grid', gap: '20px' }}>
       {/* 1. Verification Status Banner */}
       <ProviderVerificationBanner currentUser={currentUser} />
 
