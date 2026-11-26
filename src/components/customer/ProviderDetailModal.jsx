@@ -114,20 +114,13 @@ export default function ProviderDetailModal({
               const serviceKeyValue = serviceKey(srv, idx);
               const isSelected = selectedServiceKey === serviceKeyValue;
               return (
-                <div
+                <button
                   key={serviceKeyValue}
+                  type="button"
                   className="detail-service-card"
-                  style={{ border: isSelected ? '2px solid var(--color-brand-600, #174d3d)' : '1px solid var(--color-border-subtle, #e2e8f0)', background: isSelected ? 'var(--color-brand-50, #edf7f2)' : 'var(--color-surface, #fff)', cursor: 'pointer' }}
+                  style={{ border: isSelected ? '2px solid var(--color-brand-600, #174d3d)' : '1px solid var(--color-border-subtle, #e2e8f0)', background: isSelected ? 'var(--color-brand-50, #edf7f2)' : 'var(--color-surface, #fff)', cursor: 'pointer', width: '100%', textAlign: 'left', color: 'inherit', font: 'inherit' }}
                   onClick={() => setSelectedServiceId(serviceKeyValue)}
-                  role="button"
-                  tabIndex={0}
                   aria-pressed={isSelected}
-                  onKeyDown={event => {
-                    if (event.key === 'Enter' || event.key === ' ') {
-                      event.preventDefault();
-                      setSelectedServiceId(serviceKeyValue);
-                    }
-                  }}
                 >
                   <div className="service-info-left">
                     <b className="service-item-name">{srv.serviceName || srv.categoryName || 'Additional service'}</b>
@@ -138,7 +131,7 @@ export default function ProviderDetailModal({
                     <span>Starting at</span>
                     <b>{formatRate(srv.baseCharge) || providerRate || 'Contact for rate'}</b>
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>
