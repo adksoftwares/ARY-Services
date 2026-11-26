@@ -2213,3 +2213,90 @@ footer.site-footer-modern,
  .ary-driver-root .driver-earnings-metrics { grid-template-columns:1fr 1fr; }
  .ary-admin-root .dispatch-radar-container { display:grid; }
 }
+
+
+/* Customer location picker and booking conversion journey */
+.ary-customer-root .customer-location-picker {
+ width:min(94vw,620px); max-height:min(92dvh,900px); overflow:hidden;
+ border:1px solid var(--ary-border); border-radius:22px;
+ background:var(--ary-surface); box-shadow:0 28px 90px rgba(12,31,21,.24);
+}
+.ary-customer-root .customer-location-picker .modal-header {
+ flex:0 0 auto; padding:20px 22px 14px; border-bottom:1px solid var(--ary-border);
+}
+.ary-customer-root .customer-location-picker :where(input,select) {
+ min-height:44px; border:1px solid var(--ary-border); border-radius:11px;
+ background:var(--ary-canvas); color:var(--ary-ink);
+}
+.ary-customer-root .customer-location-picker :where(input,select):focus {
+ outline:0; border-color:var(--ary-brand); box-shadow:var(--ary-focus);
+}
+.ary-customer-root .customer-location-picker .location-picker-tabs {
+ display:flex; gap:8px; padding:12px 18px; border-bottom:1px solid var(--ary-border);
+}
+.ary-customer-root .customer-location-picker .location-picker-tab {
+ flex:1; min-height:42px; border:1px solid var(--ary-border); border-radius:10px;
+ background:var(--ary-canvas); color:var(--ary-muted); font-weight:700;
+}
+.ary-customer-root .customer-location-picker .location-picker-tab.active {
+ border-color:#a9cbb6; background:var(--ary-brand-soft); color:var(--ary-brand-strong);
+}
+.ary-customer-root .customer-location-picker .location-search-results {
+ display:grid; gap:7px; max-height:280px; overflow:auto; padding:8px 2px;
+}
+.ary-customer-root .customer-location-picker .location-search-result {
+ width:100%; min-height:48px; display:flex; align-items:center; gap:10px;
+ padding:10px 12px; border:1px solid var(--ary-border); border-radius:11px;
+ background:var(--ary-surface); text-align:left;
+}
+.ary-customer-root .customer-location-picker .location-search-result:hover,
+.ary-customer-root .customer-location-picker .location-search-result[aria-selected="true"] {
+ border-color:#a9cbb6; background:var(--ary-brand-soft);
+}
+.ary-customer-root .customer-location-picker .location-preset-grid {
+ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px;
+}
+.ary-customer-root .customer-location-picker .location-picker-map {
+ min-height:280px; overflow:hidden; border-radius:14px;
+}
+.ary-customer-root .customer-booking-wizard { display:grid; gap:16px; }
+.ary-customer-root .customer-booking-wizard .provider-quick-card {
+ display:grid; gap:4px; padding:14px 16px; border:1px solid var(--ary-border);
+ border-radius:13px; background:var(--ary-brand-soft); color:var(--ary-ink);
+}
+.ary-customer-root .customer-booking-wizard .wizard-step-pane { display:grid; gap:14px; min-width:0; }
+.ary-customer-root .customer-booking-wizard .wizard-form-label { display:grid; gap:7px; color:var(--ary-muted); font-weight:700; }
+.ary-customer-root .customer-booking-wizard :where(input,textarea,select) {
+ width:100%; min-width:0; min-height:44px; padding:10px 12px;
+ border:1px solid var(--ary-border); border-radius:11px; background:var(--ary-canvas); color:var(--ary-ink);
+}
+.ary-customer-root .customer-booking-wizard :where(input,textarea,select):focus {
+ outline:0; border-color:var(--ary-brand); box-shadow:var(--ary-focus);
+}
+.ary-customer-root .customer-booking-wizard .wizard-error-banner {
+ display:flex; align-items:flex-start; gap:9px; padding:12px 14px;
+ border:1px solid #e7b8b0; border-radius:11px; background:#fff3f0; color:#8d3327;
+}
+.ary-customer-root .customer-provider-detail .provider-title-row { display:flex; align-items:center; flex-wrap:wrap; gap:8px; }
+.ary-customer-root .customer-provider-detail .provider-ratings-row { display:flex; align-items:center; flex-wrap:wrap; gap:8px; }
+.ary-customer-root .customer-provider-detail .highlight-pill {
+ display:flex; align-items:center; gap:7px; min-width:0; padding:10px 12px;
+ border:1px solid var(--ary-border); border-radius:11px; background:var(--ary-canvas);
+ color:var(--ary-muted); font-size:.82rem;
+}
+.ary-customer-root .customer-provider-detail .warranty-callout-card {
+ padding:13px 15px; border:1px solid #d8e5dc; border-radius:12px; background:var(--ary-brand-soft);
+}
+.ary-driver-root .driver-earnings-container > :first-child { min-width:0; }
+.ary-driver-root .driver-trip-history-card { overflow:hidden; }
+.ary-driver-root .driver-trip-history-card :where(table,.history-table) { min-width:620px; }
+@media(max-width:600px) {
+ .ary-customer-root .customer-location-picker { width:calc(100vw - 20px); max-height:94dvh; border-radius:18px; }
+ .ary-customer-root .customer-location-picker .modal-header { padding:16px 16px 12px; }
+ .ary-customer-root .customer-location-picker .location-preset-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+ .ary-customer-root .customer-location-picker .location-picker-map { min-height:240px; }
+ .ary-customer-root .customer-booking-wizard .booking-stepper-container { overflow-x:auto; }
+}
+@media(prefers-reduced-motion:reduce) {
+ .ary-customer-root .customer-location-picker * { scroll-behavior:auto; }
+}
