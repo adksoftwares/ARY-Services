@@ -829,27 +829,25 @@ export default function DriverWorkspace({ onNotice }) {
             const isChecked = selectedServices.includes(option.value);
 
             return (
-              <div
+              <button
                 key={option.value}
-                role="checkbox"
-                aria-label={option.label}
-                aria-checked={isChecked}
-                tabIndex={0}
+                type="button"
+                aria-pressed={isChecked}
+                aria-label={`${option.label}: ${isChecked ? 'selected' : 'not selected'}`}
                 onClick={() => toggleService(option.value)}
-                onKeyDown={event => {
-                  if (event.key === 'Enter' || event.key === ' ') {
-                    event.preventDefault();
-                    toggleService(option.value);
-                  }
-                }}
                 style={{
                   display: 'flex',
                   alignItems: 'flex-start',
                   gap: 10,
+                  width: '100%',
+                  minHeight: 76,
                   padding: '12px 14px',
                   borderRadius: 'var(--radius-md, 8px)',
                   border: isChecked ? '2px solid var(--color-brand-600, #174d3d)' : '1px solid var(--color-border, #cbd5e1)',
                   background: isChecked ? 'var(--color-brand-50, #edf7f2)' : 'var(--color-surface, #fff)',
+                  color: 'inherit',
+                  font: 'inherit',
+                  textAlign: 'left',
                   cursor: 'pointer',
                   userSelect: 'none'
                 }}
@@ -874,7 +872,7 @@ export default function DriverWorkspace({ onNotice }) {
                     {option.description}
                   </p>
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>
