@@ -195,6 +195,17 @@ export default function ProviderCatalog({
           </div>
         </div>
 
+        <div className="catalog-results-summary" aria-live="polite" aria-atomic="true">
+          <div className="catalog-results-copy">
+            <strong>{isLoading ? 'Finding providers…' : `${filteredProviders.length} provider${filteredProviders.length === 1 ? '' : 's'} found`}</strong>
+            <span>{selectedCategory ? `In ${selectedCategory.name}` : 'Across available services'} · Showing {Math.min(displayedProviders.length, filteredProviders.length)} of {filteredProviders.length}</span>
+          </div>
+          {activeFiltersCount > 0 && (
+            <button type="button" className="catalog-clear-filters" onClick={resetFilters}>
+              <X size={14} aria-hidden="true" /> Clear {activeFiltersCount} {activeFiltersCount === 1 ? 'filter' : 'filters'}
+            </button>
+          )}
+        </div>
         {/* Geofence Proximity Badge */}
         {safeProviders.some(p => p.distanceKm != null && Number.isFinite(Number(p.distanceKm)) && Number(p.distanceKm) >= 0) && (
           <div className="geofence-banner">
@@ -398,6 +409,7 @@ export default function ProviderCatalog({
               value={maxPrice}
               onChange={e => setMaxPrice(Number(e.target.value))}
               className="filter-range-input"
+              aria-label="Maximum starting charge in Sri Lankan rupees"
             />
             <div className="range-bounds">
               <span>LKR 1,000</span>
@@ -419,6 +431,7 @@ export default function ProviderCatalog({
               value={maxDistance}
               onChange={e => setMaxDistance(Number(e.target.value))}
               className="filter-range-input"
+              aria-label="Maximum provider distance in kilometres"
             />
             <div className="range-bounds">
               <span>5 km</span>

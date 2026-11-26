@@ -69,7 +69,7 @@ export default function HeroSection({
   ];
 
   return (
-    <section className="hero-concise" aria-labelledby="hero-main-title">
+    <section className="hero-concise customer-discovery-hero" aria-labelledby="hero-main-title">
       <div className="hero-content">
         {/* Eyebrow Pill */}
         <div className="hero-trust-badge">
@@ -86,7 +86,7 @@ export default function HeroSection({
         </p>
 
         {/* Prominent Dual Search Panel */}
-        <div className="search-panel-elevated" role="search" aria-label="Find services and tradespeople">
+        <div className="search-panel-elevated customer-search-panel" role="search" aria-label="Find services and tradespeople">
           {/* Location Field with GPS & Change Location Button */}
           <div className="search-input-field location-field">
             <div className="location-input-row">
