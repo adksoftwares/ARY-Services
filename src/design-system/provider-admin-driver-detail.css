@@ -2300,3 +2300,37 @@ footer.site-footer-modern,
 @media(prefers-reduced-motion:reduce) {
  .ary-customer-root .customer-location-picker * { scroll-behavior:auto; }
 }
+
+/* Focused modal surfaces across customer, driver and administrator flows */
+.ary-app-root :where(.admin-danger-modal-content,.admin-password-modal-form,.driver-gps-permission-content,.driver-release-modal-content,.customer-review-modal-form,.customer-dispute-modal-form) {
+ display:grid; gap:14px; min-width:0;
+}
+.ary-app-root :where(.admin-danger-modal-content,.admin-password-modal-form,.driver-gps-permission-content,.driver-release-modal-content,.customer-review-modal-form,.customer-dispute-modal-form) :where(input,textarea,select) {
+ width:100%; min-width:0; min-height:44px; padding:10px 12px;
+ border:1px solid var(--ary-border); border-radius:11px;
+ background:var(--ary-canvas); color:var(--ary-ink);
+}
+.ary-app-root :where(.admin-danger-modal-content,.admin-password-modal-form,.driver-gps-permission-content,.driver-release-modal-content,.customer-review-modal-form,.customer-dispute-modal-form) :where(input,textarea,select):focus {
+ outline:0; border-color:var(--ary-brand); box-shadow:var(--ary-focus);
+}
+.ary-app-root :where(.admin-danger-modal-content,.driver-release-modal-content) [role="alert"],
+.ary-app-root .customer-dispute-modal-form .security-notice-box {
+ padding:13px 14px; border-radius:12px; line-height:1.55;
+}
+.ary-app-root .driver-pin-keypad-grid {
+ display:grid; grid-template-columns:repeat(3,minmax(58px,1fr));
+ gap:10px; width:min(100%,260px); margin-inline:auto;
+}
+.ary-app-root .driver-pin-keypad-grid .keypad-digit-btn {
+ min-height:54px; border:1px solid var(--ary-border); border-radius:13px;
+ background:var(--ary-surface); color:var(--ary-ink); font-size:1.2rem; font-weight:800;
+ box-shadow:var(--ary-shadow-soft);
+}
+.ary-app-root .driver-pin-keypad-grid .keypad-digit-btn:active { transform:scale(.97); background:var(--ary-brand-soft); }
+[data-theme="dark"] .ary-app-root .driver-pin-keypad-grid .keypad-digit-btn {
+ background:var(--ary-surface); border-color:var(--ary-border); color:var(--ary-ink);
+}
+@media(max-width:480px) {
+ .ary-app-root :where(.admin-danger-modal-content,.admin-password-modal-form,.driver-gps-permission-content,.driver-release-modal-content,.customer-review-modal-form,.customer-dispute-modal-form) { gap:12px; }
+ .ary-app-root .driver-pin-keypad-grid { width:min(100%,240px); gap:8px; }
+}
