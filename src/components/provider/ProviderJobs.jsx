@@ -258,7 +258,7 @@ export default function ProviderJobs({
           <input type="search" value={jobSearch} onChange={event => setJobSearch(event.target.value)} placeholder="Search jobs by reference, service, customer or area" aria-label="Search provider jobs" style={{ width: '100%', minWidth: 0, border: 0, outline: 0, background: 'transparent', color: 'var(--color-neutral-900, #0f172a)', font: 'inherit', fontSize: '0.88rem' }} />
         </label>
         {jobSearch && <button type="button" onClick={() => setJobSearch('')} style={{ minHeight: 40, border: 0, borderRadius: 8, padding: '8px 12px', background: 'var(--color-brand-50, #edf7f2)', color: 'var(--color-brand-700, #174d3d)', fontWeight: 700, cursor: 'pointer' }}>Clear search</button>}
-        <span aria-live="polite" style={{ color: 'var(--color-neutral-500, #64748b)', fontSize: '0.78rem' }}>{filteredBookings.length} matching job{filteredBookings.length === 1 ? '' : 's'}</span>
+        <span role="status" aria-live="polite" aria-atomic="true" style={{ color: 'var(--color-neutral-500, #64748b)', fontSize: '0.78rem' }}>{filteredBookings.length} matching job{filteredBookings.length === 1 ? '' : 's'}</span>
       </div>
 
       {/* 2. Filter Tabs */}
@@ -630,8 +630,10 @@ export default function ProviderJobs({
       ) : (
         <EmptyState
           icon={AlertTriangle}
-          title="No booking requests in this category"
-          description="Requests that match your services will appear here when they are available."
+          title={jobSearch.trim() ? "No matching booking requests" : "No booking requests in this category"}
+          description={jobSearch.trim() ? "No jobs match your search in this view. Clear the search and view all requests to continue." : "Requests that match your services will appear here when they are available."}
+          actionLabel={jobSearch.trim() || filterTab !== 'all' ? "Clear filters" : undefined}
+          onAction={jobSearch.trim() || filterTab !== 'all' ? () => { setJobSearch(''); setFilterTab('all'); } : undefined}
         />
       )}
 
