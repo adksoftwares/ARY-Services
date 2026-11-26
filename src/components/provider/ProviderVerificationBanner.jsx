@@ -97,7 +97,7 @@ export default function ProviderVerificationBanner({ currentUser }) {
 
   if (status === 'rejected' || status === 'suspended') {
     return (
-      <div style={{
+      <div className="provider-verification-banner" style={{
         background: 'var(--color-danger-50, #fef2f2)',
         border: '1px solid var(--color-danger-200, #fecaca)',
         borderRadius: 'var(--radius-lg, 12px)',
