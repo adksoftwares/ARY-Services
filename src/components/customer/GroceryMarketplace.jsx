@@ -251,7 +251,7 @@ export default function GroceryMarketplace() {
   };
 
   return (
-    <section className="grocery-marketplace-section" id="grocery-section" aria-labelledby="grocery-heading">
+    <section className="grocery-marketplace-section customer-grocery-experience" id="grocery-section" aria-labelledby="grocery-heading">
       <div className="section-heading">
         <div>
           <div className="eyebrow">LOCAL SHOPS & ESSENTIALS</div>
@@ -387,7 +387,7 @@ export default function GroceryMarketplace() {
       )}
 
       {/* Search and Category Filter Toolbar */}
-      <div className="grocery-toolbar">
+      <div className="grocery-toolbar customer-grocery-toolbar">
         <Input
           placeholder="Search rice, dhal, milk, cooking oil, gas cylinder..."
           value={query}
@@ -428,7 +428,7 @@ export default function GroceryMarketplace() {
 
       {/* Product Grid / Loading Skeletons */}
       {loading ? (
-        <div className="product-catalog-grid">
+        <div className="product-catalog-grid customer-grocery-product-grid">
           {[1, 2, 3, 4, 5, 6].map(n => (
             <div key={n} className="product-item-card skeleton-card">
               <Skeleton width="100%" height="80px" />
@@ -513,7 +513,7 @@ export default function GroceryMarketplace() {
 
       {/* Persistent Floating Cart Bar (Shown when items > 0) */}
       {cartLines.length > 0 && (
-        <div className="persistent-cart-bar" role="region" aria-label="Persistent Shopping Cart">
+        <div className="persistent-cart-bar customer-grocery-cart-bar" role="region" aria-label="Persistent Shopping Cart">
           <div className="persistent-cart-left">
             <div className="cart-count-badge">
               <ShoppingCart size={18} />
