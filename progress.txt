@@ -52,3 +52,18 @@
   - Frontend accessibility, interactive quality, and component test coverage (`0393a7f`, `a554dcb`, `7c514ad`).
   - Expanded design system test suite to 35 tests covering Avatar, DataDisplay, Modal, Tabs, Toast, Badge, Input, and Button.
 - Verified quality gates: 35/35 Vitest unit tests passed, security regression check passed, smoke test flows passed, root Vite build passed, all 4 monorepo app builds passed, and backend storage/dispatch tests passed.
+
+## 2026-11-26 — Synced 20 Upstream Commits from GitHub (PRs #178–#197)
+- Fetched and fast-forward pulled latest updates from `origin/main` (commits up to `718c8e4`).
+- Integrated 20 upstream pull requests covering:
+  - Customer homepage mobile redesign and responsive global navigation (#178, #192).
+  - Provider, Driver, and Admin workspace layouts and review queue search polish (#179, #180, #196).
+  - Driver mobile earnings and dispatch field workflow (#181, #184).
+  - Customer discovery, bookings recovery, and Admin cash review screens (#182, #189, #190, #197).
+  - Grocery inventory, orders marketplace, and provider wallet UX (#183, #188).
+  - Admin audit activity and overview dashboard responsive UX (#185, #186).
+  - Provider profile, services, and schedule ergonomics (#187).
+  - Grocery and mobility customer UX improvements (#191).
+  - Shared design system states, page headers, and role workspace accessibility (#193, #194, #195).
+- Cleaned up duplicate input type attribute in AdminWorkspace.jsx.
+- Verified quality gates: 35/35 Vitest unit tests passed, security regression check passed, smoke test flows passed, root Vite build passed with zero warnings, and all 4 monorepo app builds passed.

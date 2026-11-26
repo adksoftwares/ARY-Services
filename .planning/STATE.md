@@ -4,7 +4,7 @@
 
 ### Active Git Branch
 - Branch: `upgrade/10-phase-platform-hardening`
-- Synced With: `origin/main` (commit `7c514ad`) and `origin/upgrade/10-phase-platform-hardening`
+- Synced With: `origin/main` (commit `718c8e4`) and `origin/upgrade/10-phase-platform-hardening`
 
 ### Completed Milestones
 1. **Network Error Resilience**: Resolved Capacitor `Failed to fetch` by ensuring all client endpoints use `${API_BASE}`, eliminating bare `/api` and double `/api/api` calls.
@@ -26,3 +26,6 @@
 8. **Synced Frontend Experience & Accessibility (7c514ad)**:
    - Fast-forwarded 9 upstream commits covering full frontend upgrade, avatar fallbacks, accessible data display, tabs, and modals.
    - Vitest suite expanded to 35 tests, all passing cleanly.
+9. **Synced Role Workspaces & Navigation Polish (718c8e4 - PRs #178–#197)**:
+   - Integrated 20 upstream PRs covering customer homepage redesign, admin audit activity, driver field dispatch, provider wallet/reviews, and shared design system states.
+   - All quality gates verified cleanly with zero warnings.

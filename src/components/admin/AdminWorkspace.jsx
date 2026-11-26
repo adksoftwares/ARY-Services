@@ -532,9 +532,8 @@ export default function AdminWorkspace({
             <div className="admin-search-wrapper">
               <Search size={15} className="admin-search-icon" />
               <input
-                type="text"
-                className="admin-search-input"
                 type="search"
+                className="admin-search-input"
                 aria-label="Search platform users"
                 placeholder="Search platform users..."
                 value={globalSearch}
