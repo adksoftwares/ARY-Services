@@ -73,8 +73,8 @@ function CustomerHeader({ address, launchCity, onOpenLocationModal, onOpenProfil
   const navigate = useNavigate();
 
   return (
-    <header className="topbar">
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+    <header className="topbar customer-main-header">
+      <div className="customer-header-brand-group" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         <Link to="/" className="brand" aria-label="ARY Services home">
           <span className="brand-mark">A</span>
           <span>ARY <b>Services</b></span>
@@ -125,7 +125,7 @@ function CustomerHeader({ address, launchCity, onOpenLocationModal, onOpenProfil
         </button>
       </div>
 
-      <nav className="header-nav-links">
+      <nav className="header-nav-links customer-header-links">
         <Link to="/" className="nav-link-btn">
           <Search size={15} /> Explore
         </Link>
@@ -150,12 +150,12 @@ function CustomerHeader({ address, launchCity, onOpenLocationModal, onOpenProfil
         )}
       </nav>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <div className="customer-header-controls" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
         <LanguageSwitcher />
         <ThemeToggle />
 
         {currentUser ? (
-          <div className="user-profile">
+          <div className="user-profile customer-header-user-actions">
             <NotificationCenter />
             <button
               type="button"
@@ -175,7 +175,7 @@ function CustomerHeader({ address, launchCity, onOpenLocationModal, onOpenProfil
             </button>
           </div>
         ) : (
-          <div className="header-guest-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className="header-guest-actions customer-header-guest-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Button
               variant="ghost"
               size="sm"
@@ -225,7 +225,7 @@ function CustomerMobileBottomNav({ bookingsCount = 0, onOpenProfile, onOpenAlert
   const isAdminPath = location.pathname === '/admin';
 
   return (
-    <nav className="mobile-bottom-nav" aria-label="Mobile Bottom Navigation">
+    <nav className="mobile-bottom-nav customer-mobile-bottom-nav" aria-label="Mobile Bottom Navigation">
       {/* 1. Home */}
       <Link to="/" className={`mob-nav-item ${isHome ? 'active' : ''}`}>
         <Home size={20} />
