@@ -143,7 +143,7 @@ export default function CustomerLocationModal({
   return (
     <div className="modal-backdrop" onClick={onClose} style={{ zIndex: 10000 }}>
       <div
-        className="modal-card location-picker-card"
+        className="modal-card location-picker-card customer-location-picker"
         onClick={e => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
