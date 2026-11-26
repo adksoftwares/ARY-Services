@@ -2094,3 +2094,5 @@ footer.site-footer-modern,
     justify-content: center;
   }
 }
+
+@import './design-system/frontend-foundation.css';
