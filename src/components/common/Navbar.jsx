@@ -1,11 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { User, LogOut, ArrowRight, Search, ClipboardList, Shield, Briefcase, Bike } from 'lucide-react';
+import { User, LogOut, ArrowRight, Search, ClipboardList, Shield, Briefcase, Bike, Menu, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 export default function Navbar({ onNotice, pendingCount = 0 }) {
   const { currentUser, openAuthModal, logout } = useAuth();
   const navigate = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   function handleSignOutClick() {
     logout();
@@ -14,29 +15,34 @@ export default function Navbar({ onNotice, pendingCount = 0 }) {
   }
 
   return (
-    <header className="topbar">
+    <header className={`topbar customer-nav-shell ${menuOpen ? "nav-menu-open" : ""}`}>
+      <div className="nav-brand-row">
       <Link to="/" className="brand" aria-label="ARY Services home">
         <span className="brand-mark">A</span>
         <span>ARY <b>Services</b></span>
       </Link>
+      <button type="button" className="nav-menu-toggle" aria-label={menuOpen ? "Close navigation menu" : "Open navigation menu"} aria-expanded={menuOpen} aria-controls="ary-primary-navigation" onClick={() => setMenuOpen(value => !value)}>
+        {menuOpen ? <X size={20} /> : <Menu size={20} />}
+      </button>
+      </div>
 
-      <nav className="header-nav-links">
-        <NavLink to="/" end className={({ isActive }) => `nav-link-btn ${isActive ? 'active' : ''}`}>
+      <nav id="ary-primary-navigation" className="header-nav-links" aria-label="Main navigation">
+        <NavLink to="/" end className={({ isActive }) => `nav-link-btn ${isActive ? 'active' : ''}`} onClick={() => setMenuOpen(false)}>
           <Search size={14} /> Explore
         </NavLink>
 
         {currentUser && currentUser.accountType === 'customer' && (
-          <NavLink to="/bookings" className={({ isActive }) => `nav-link-btn ${isActive ? 'active' : ''}`}>
+          <NavLink to="/bookings" className={({ isActive }) => `nav-link-btn ${isActive ? 'active' : ''}`} onClick={() => setMenuOpen(false)}>
             <ClipboardList size={14} /> My Bookings
           </NavLink>
         )}
 
         {currentUser && currentUser.accountType === 'driver' && (
-          <NavLink to="/driver-work" className={({ isActive }) => `nav-link-btn ${isActive ? 'active' : ''}`}><Bike size={14} /> Driver Services</NavLink>
+          <NavLink to="/driver-work" className={({ isActive }) => `nav-link-btn ${isActive ? 'active' : ''}`} onClick={() => setMenuOpen(false)}><Bike size={14} /> Driver Services</NavLink>
         )}
 
         {currentUser && currentUser.accountType === 'provider' && (
-          <NavLink to="/provider" className={({ isActive }) => `nav-link-btn ${isActive ? 'active' : ''}`} style={{ position: 'relative' }}>
+          <NavLink to="/provider" className={({ isActive }) => `nav-link-btn ${isActive ? 'active' : ''}`} style={{ position: 'relative' }} onClick={() => setMenuOpen(false)}>
             <Briefcase size={14} /> Provider Workspace
             {pendingCount > 0 && (
               <span style={{
@@ -59,8 +65,8 @@ export default function Navbar({ onNotice, pendingCount = 0 }) {
 
         {currentUser && currentUser.accountType === 'admin' && (
           <>
-            <NavLink to="/admin" className={({ isActive }) => `nav-link-btn ${isActive ? 'active' : ''}`}><Shield size={14} /> Super Admin</NavLink>
-            <NavLink to="/admin/driver-applications" className={({ isActive }) => `nav-link-btn ${isActive ? 'active' : ''}`}>Driver Approvals</NavLink>
+            <NavLink to="/admin" className={({ isActive }) => `nav-link-btn ${isActive ? 'active' : ''}`} onClick={() => setMenuOpen(false)}><Shield size={14} /> Super Admin</NavLink>
+            <NavLink to="/admin/driver-applications" className={({ isActive }) => `nav-link-btn ${isActive ? 'active' : ''}`} onClick={() => setMenuOpen(false)}>Driver Approvals</NavLink>
           </>
         )}
       </nav>
@@ -72,19 +78,19 @@ export default function Navbar({ onNotice, pendingCount = 0 }) {
             <span>{currentUser.fullName}</span>
             <small className="user-role-tag">{currentUser.accountType}</small>
           </span>
-          <button className="sign-out-btn" onClick={handleSignOutClick} title="Sign out">
+          <button className="sign-out-btn" onClick={() => { setMenuOpen(false); handleSignOutClick(); }} title="Sign out">
             <LogOut size={14} /> Sign out
           </button>
         </div>
       ) : (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <button className="sign-in" onClick={() => openAuthModal('login')}>
+        <div className="nav-auth-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button className="sign-in" onClick={() => { setMenuOpen(false); openAuthModal('login'); }}>
             Sign in
           </button>
           <button
             type="button"
             className="register-nav-btn"
-            onClick={() => openAuthModal('register')}
+            onClick={() => { setMenuOpen(false); openAuthModal('register'); }}
             style={{
               background: '#174d3d',
               color: 'white',
