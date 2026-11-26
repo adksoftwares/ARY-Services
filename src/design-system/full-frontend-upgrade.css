@@ -1918,3 +1918,10 @@ textarea { min-height: 96px; }
  .site-footer-modern .footer-main-grid { grid-template-columns:minmax(0,1fr); }
  .customer-nav-shell .user-role-tag { display:none; }
 }
+
+@media(max-width:900px) {
+ .customer-nav-shell .nav-auth-actions { margin-left:auto; }
+}
+@media(max-width:560px) {
+ .customer-nav-shell .nav-auth-actions { width:100%; justify-content:flex-end; }
+}
