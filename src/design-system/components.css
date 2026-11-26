@@ -40,28 +40,32 @@
   pointer-events: none;
 }
 
-/* Button Sizes */
+/* Button Sizes - Ergonomic Mobile Tap Targets (Min 44-52px) */
 .ds-btn-sm {
-  height: 36px;
-  min-height: 36px;
-  padding: 0 var(--space-3);
-  font-size: var(--text-xs);
-  border-radius: var(--radius-sm);
+  height: 38px;
+  min-height: 38px;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 10px;
 }
 
 .ds-btn-md {
-  height: 44px;
-  min-height: 44px;
-  padding: 0 var(--space-4);
-  font-size: var(--text-sm);
+  height: 48px;
+  min-height: 48px;
+  padding: 0 20px;
+  font-size: 14.5px;
+  font-weight: 700;
+  border-radius: 14px;
 }
 
 .ds-btn-lg {
-  height: 50px;
-  min-height: var(--touch-target-min);
-  padding: 0 var(--space-6);
-  font-size: var(--text-md);
-  border-radius: var(--radius-lg);
+  height: 52px;
+  min-height: 52px;
+  padding: 0 26px;
+  font-size: 16px;
+  font-weight: 800;
+  border-radius: 16px;
 }
 
 .ds-btn-full {

@@ -2798,8 +2798,8 @@
 }
 
 .ary-loc-text {
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 800;
   color: var(--text-primary, #1e293b);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2814,14 +2814,15 @@
 .ary-gps-quick-btn {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  background: var(--brand-subtle, rgba(21, 128, 61, 0.08));
+  gap: 6px;
+  min-height: 38px;
+  background: var(--brand-subtle, rgba(21, 128, 61, 0.09));
   color: var(--brand-primary, #15803d);
-  border: 1px solid rgba(21, 128, 61, 0.2);
-  border-radius: 9999px;
-  padding: 4px 10px;
-  font-size: 11px;
-  font-weight: 700;
+  border: 1px solid rgba(21, 128, 61, 0.25);
+  border-radius: 12px;
+  padding: 0 14px;
+  font-size: 12.5px;
+  font-weight: 800;
   cursor: pointer;
   flex-shrink: 0;
   transition: all 0.2s ease;
@@ -2829,25 +2830,29 @@
 .ary-gps-quick-btn:hover {
   background: rgba(21, 128, 61, 0.16);
 }
+.ary-gps-quick-btn:active {
+  transform: scale(0.96);
+}
 
 .ary-unified-search-bar {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-height: 52px;
   background: var(--surface-muted, #f1f5f3);
-  border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.06));
-  border-radius: 14px;
-  padding: 8px 12px;
-  transition: border-color 0.2s ease;
+  border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.08));
+  border-radius: 16px;
+  padding: 4px 6px 4px 14px;
+  transition: all 0.2s ease;
 }
 .ary-unified-search-bar:focus-within {
   border-color: var(--brand-primary, #15803d);
   background: var(--surface-primary, #ffffff);
-  box-shadow: 0 0 0 3px rgba(21, 128, 61, 0.12);
+  box-shadow: 0 0 0 3px rgba(21, 128, 61, 0.15);
 }
 
 .ary-search-icon {
-  color: var(--text-secondary, #64748b);
+  color: var(--brand-primary, #15803d);
   flex-shrink: 0;
 }
 
@@ -2855,7 +2860,8 @@
   flex: 1;
   border: none;
   background: transparent;
-  font-size: 14px;
+  font-size: 15px;
+  font-weight: 500;
   color: var(--text-primary, #0f172a);
   font-family: inherit;
   outline: none;
@@ -2863,23 +2869,30 @@
 }
 .ary-search-input::placeholder {
   color: var(--text-muted, #94a3b8);
-  font-size: 13px;
+  font-size: 13.5px;
 }
 
 .ary-search-action-btn {
-  background: var(--brand-primary, #15803d);
+  min-height: 44px;
+  background: linear-gradient(135deg, #15803d 0%, #166534 100%);
   color: #ffffff;
   border: none;
-  border-radius: 10px;
-  padding: 7px 16px;
-  font-size: 13px;
-  font-weight: 700;
+  border-radius: 12px;
+  padding: 0 22px;
+  font-size: 14.5px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  box-shadow: 0 4px 12px rgba(21, 128, 61, 0.28);
   cursor: pointer;
   flex-shrink: 0;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
 }
 .ary-search-action-btn:hover {
-  background: var(--brand-hover, #166534);
+  background: linear-gradient(135deg, #166534 0%, #14532d 100%);
+  box-shadow: 0 6px 16px rgba(21, 128, 61, 0.35);
+}
+.ary-search-action-btn:active {
+  transform: scale(0.96);
 }
 
 /* 2. Categories Hub */
@@ -2928,12 +2941,12 @@
   align-items: center;
   text-align: center;
   background: var(--surface-primary, #ffffff);
-  border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.06));
-  border-radius: 18px;
-  padding: 12px 6px 10px;
-  box-shadow: 0 3px 10px -2px rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.07));
+  border-radius: 20px;
+  padding: 14px 6px 12px;
+  box-shadow: 0 4px 14px -2px rgba(0, 0, 0, 0.05);
   cursor: pointer;
-  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   text-decoration: none;
   user-select: none;
 }
@@ -2942,7 +2955,7 @@
 }
 .ary-category-tile.active-tile {
   border-color: var(--brand-primary, #15803d);
-  box-shadow: 0 0 0 2px rgba(21, 128, 61, 0.2);
+  box-shadow: 0 0 0 3px rgba(21, 128, 61, 0.2);
 }
 
 .ary-tile-badge {
@@ -2959,12 +2972,13 @@
 }
 
 .ary-tile-icon-wrap {
-  width: 48px;
-  height: 48px;
-  border-radius: 15px;
+  width: 52px;
+  height: 52px;
+  border-radius: 17px;
   display: grid;
   place-items: center;
-  margin-bottom: 7px;
+  margin-bottom: 8px;
+  box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.08);
   transition: transform 0.2s ease;
 }
 .ary-category-tile:hover .ary-tile-icon-wrap {
@@ -3098,14 +3112,19 @@
 
 .ary-btn-signin {
   flex: 1;
+  min-height: 48px;
   background: #ffffff;
   color: #15803d;
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 14.5px;
+  font-weight: 800;
   border: none;
-  border-radius: 12px;
-  padding: 10px 16px;
+  border-radius: 14px;
+  padding: 0 16px;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   transition: all 0.15s ease;
 }
 .ary-btn-signin:active {
@@ -3114,14 +3133,18 @@
 
 .ary-btn-join {
   flex: 1;
-  background: rgba(255, 255, 255, 0.16);
+  min-height: 48px;
+  background: rgba(255, 255, 255, 0.18);
   color: #ffffff;
-  font-size: 13px;
-  font-weight: 700;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 12px;
-  padding: 10px 16px;
+  font-size: 14.5px;
+  font-weight: 800;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 14px;
+  padding: 0 16px;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   transition: all 0.15s ease;
 }
 .ary-btn-join:active {
@@ -3176,21 +3199,21 @@
 }
 
 .ary-popular-card {
-  flex: 0 0 280px;
+  flex: 0 0 295px;
   background: var(--surface-primary, #ffffff);
   border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.08));
-  border-radius: 20px;
-  padding: 16px;
-  box-shadow: 0 6px 18px -3px rgba(0, 0, 0, 0.05);
+  border-radius: 22px;
+  padding: 18px;
+  box-shadow: 0 10px 28px -4px rgba(0, 0, 0, 0.06);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
 }
 
 .ary-card-top {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .ary-card-titles {
@@ -3200,8 +3223,8 @@
 
 .ary-provider-fullname {
   display: block;
-  font-size: 14px;
-  font-weight: 700;
+  font-size: 15px;
+  font-weight: 800;
   color: var(--text-primary, #0f172a);
   line-height: 1.3;
   word-break: break-word;
@@ -3209,7 +3232,7 @@
 
 .ary-provider-cat {
   display: block;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text-secondary, #64748b);
   margin-top: 2px;
 }
@@ -3219,9 +3242,9 @@
   color: #065f46;
   border: 1px solid #a7f3d0;
   border-radius: 9999px;
-  font-size: 10px;
+  font-size: 10.5px;
   font-weight: 800;
-  padding: 2px 8px;
+  padding: 3px 9px;
   flex-shrink: 0;
 }
 
@@ -3229,28 +3252,28 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 10px;
+  padding: 10px 12px;
   background: var(--surface-muted, #f8faf9);
-  border-radius: 12px;
+  border-radius: 14px;
 }
 
 .ary-card-ratings {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
 }
 
 .ary-star-pill {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
-  font-size: 12px;
+  gap: 4px;
+  font-size: 12.5px;
   font-weight: 800;
   color: #d97706;
 }
 
 .ary-review-count {
-  font-size: 11px;
+  font-size: 11.5px;
   color: var(--text-secondary, #64748b);
 }
 
@@ -3259,34 +3282,37 @@
 }
 .ary-card-price span {
   display: block;
-  font-size: 10px;
+  font-size: 10.5px;
   color: var(--text-muted, #94a3b8);
 }
 .ary-card-price b {
-  font-size: 13px;
+  font-size: 14.5px;
   font-weight: 800;
   color: var(--brand-primary, #15803d);
 }
 
 .ary-book-service-btn {
   width: 100%;
+  min-height: 50px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  background: var(--brand-primary, #15803d);
+  gap: 8px;
+  background: linear-gradient(135deg, #15803d 0%, #166534 100%);
   color: #ffffff;
   border: none;
-  border-radius: 12px;
-  padding: 10px 16px;
-  font-size: 13px;
-  font-weight: 700;
+  border-radius: 14px;
+  padding: 12px 20px;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  box-shadow: 0 6px 18px -2px rgba(21, 128, 61, 0.35);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 .ary-book-service-btn:active {
   transform: scale(0.97);
-  background: var(--brand-hover, #166534);
+  box-shadow: 0 3px 10px -2px rgba(21, 128, 61, 0.4);
 }
 
 /* Dark Theme Overrides for ARY Mobile Hub */
