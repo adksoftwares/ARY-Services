@@ -1925,3 +1925,33 @@ textarea { min-height: 96px; }
 @media(max-width:560px) {
  .customer-nav-shell .nav-auth-actions { width:100%; justify-content:flex-end; }
 }
+
+
+/* Shared design-system component refinement */
+.ds-page-header { min-width:0; }
+.ds-page-header-copy { min-width:0!important; }
+.ds-page-title { overflow-wrap:anywhere; }
+.ds-page-subtitle { max-width:min(100%, 720px); }
+.ds-page-header-actions { min-width:0; }
+.ds-page-back-button { flex:0 0 auto; transition:background .16s ease,border-color .16s ease; }
+.ds-page-back-button:hover { border-color:var(--ary-green)!important; background:var(--ary-surface-muted, #f3f6f2)!important; }
+.ds-page-back-button:focus-visible,.ds-page-header-actions :is(button,a):focus-visible { outline:3px solid rgba(35,126,91,.25); outline-offset:3px; }
+.ds-empty-state,.ds-error-state { width:100%; min-width:0; }
+.ds-state-title { overflow-wrap:anywhere; }
+.ds-state-desc { max-width:58ch; overflow-wrap:anywhere; }
+.ds-skeleton { display:block; max-width:100%; }
+.ds-skeleton-text { border-radius:999px; }
+.ds-skeleton-rect { border-radius:var(--radius-md, 10px); }
+.ds-skeleton-circle { flex-shrink:0; }
+.ds-skip-link:focus { top:12px!important; }
+@media(max-width:640px) {
+ .ds-page-header { margin-bottom:18px!important; }
+ .ds-page-header > div:last-child { align-items:stretch!important; }
+ .ds-page-header-copy { flex-basis:100%; }
+ .ds-page-title { font-size:clamp(1.35rem,6vw,1.8rem)!important; }
+ .ds-page-header-actions { width:100%; }
+ .ds-page-header-actions > * { max-width:100%; }
+}
+@media(prefers-reduced-motion:reduce) {
+ .ds-page-back-button { transition:none; }
+}

@@ -17,7 +17,7 @@ export function Skeleton({
 
   return (
     <span
-      className={`ds-skeleton ${variant === 'circle' ? 'ds-skeleton-circle' : ''} ${className}`}
+      className={`ds-skeleton ds-skeleton-${variant} ${variant === 'circle' ? 'ds-skeleton-circle' : ''} ${className}`}
       style={inlineStyles}
       aria-hidden="true"
     />
@@ -33,7 +33,7 @@ export function EmptyState({
   className = ''
 }) {
   return (
-    <div className={`ds-state-box ${className}`} role="status">
+    <div className={`ds-state-box ds-empty-state ${className}`} role="status" aria-live="polite" aria-atomic="true">
       <div className="ds-state-icon" aria-hidden="true">
         <Icon size={26} />
       </div>
@@ -55,7 +55,7 @@ export function ErrorState({
   className = ''
 }) {
   return (
-    <div className={`ds-state-box ${className}`} role="alert">
+    <div className={`ds-state-box ds-error-state ${className}`} role="alert" aria-live="assertive" aria-atomic="true">
       <div className="ds-state-icon" style={{ color: 'var(--color-danger-600)', background: 'var(--color-danger-50)' }} aria-hidden="true">
         <AlertCircle size={26} />
       </div>
