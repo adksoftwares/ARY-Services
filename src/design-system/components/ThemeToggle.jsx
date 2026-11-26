@@ -7,7 +7,7 @@ export function ThemeToggle({ showSunlight = false, className = '' }) {
 
   if (showSunlight) {
     return (
-      <div className={`theme-toggle-segmented ${className}`} role="group" aria-label="Theme Selection">
+      <div className={`theme-toggle-segmented ary-theme-toggle-segmented ${className}`} role="group" aria-label="Theme Selection">
         <button
           type="button"
           className={`theme-segment-btn ${theme === 'light' ? 'active' : ''}`}
@@ -42,7 +42,7 @@ export function ThemeToggle({ showSunlight = false, className = '' }) {
   return (
     <button
       type="button"
-      className={`theme-toggle-btn ${className}`}
+      className={`theme-toggle-btn ary-theme-toggle-btn ${className}`}
       onClick={toggleTheme}
       aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
       title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
