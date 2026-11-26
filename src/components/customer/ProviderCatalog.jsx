@@ -265,9 +265,7 @@ export default function ProviderCatalog({
                     <div className="provider-card-body">
                       {/* Top Row: Avatar & Name */}
                       <div className="provider-card-top">
-                        <div
-                          className="provider-avatar-wrap"
-                        >
+                        <div className="provider-header-identity">
                           <Avatar name={provider.fullName} size="md" isOnline={provider.isOnline === true} />
                           <div className="provider-name-block">
                             <b className="provider-name">{provider.fullName}</b>

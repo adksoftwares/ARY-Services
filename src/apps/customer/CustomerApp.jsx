@@ -1015,7 +1015,7 @@ function CustomerWorkspace() {
                 </Suspense>
               </div>
 
-              <div id="grocery-section">
+              <div className="customer-grocery-container">
                 <Suspense fallback={<SectionFallback />}>
                   <GroceryMarketplace />
                 </Suspense>
