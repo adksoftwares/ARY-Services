@@ -169,7 +169,7 @@ export default function MobilityServices({ onNotice }) {
   };
 
   return (
-    <section className="services-section" id="mobility-services" aria-labelledby="mobility-heading">
+    <section className="services-section customer-mobility-experience" id="mobility-services" aria-labelledby="mobility-heading">
       <div className="section-heading">
         <div>
           <div className="eyebrow">DEDICATED MOBILITY FLEETS</div>
@@ -191,9 +191,9 @@ export default function MobilityServices({ onNotice }) {
         />
       </div>
 
-      <div className="mobility-grid-layout">
+      <div className="mobility-grid-layout customer-mobility-layout">
         {/* Form Column */}
-        <form onSubmit={submit} className="mobility-form-card">
+        <form onSubmit={submit} className="mobility-form-card customer-mobility-form">
           <div className="mobility-form-header">
             <b>
               {mode === 'food' ? <Utensils size={18} /> : mode === 'parcel' ? <PackageCheck size={18} /> : <Car size={18} />}
@@ -409,7 +409,7 @@ export default function MobilityServices({ onNotice }) {
 
       {/* Active Requests Feed with Live Status Stepper */}
       {currentUser?.token && (
-        <section className="active-mobility-feed" aria-labelledby="active-mobility-title">
+        <section className="active-mobility-feed customer-mobility-requests" aria-labelledby="active-mobility-title">
           <div className="section-heading" style={{ marginTop: 'var(--space-8)' }}>
             <div>
               <div className="eyebrow">YOUR REQUEST STATUS</div>

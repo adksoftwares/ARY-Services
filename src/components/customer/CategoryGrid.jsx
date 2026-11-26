@@ -20,7 +20,7 @@ export default function CategoryGrid({
         </span>
       </div>
 
-      <div className="service-grid">
+      <div className="service-grid customer-category-grid">
         {safeServices.map(service => {
           const Icon = service.icon || Sparkles;
           const isSelected = selectedCategory?.id === service.id;
@@ -33,7 +33,7 @@ export default function CategoryGrid({
               onClick={() => onSelectCategory?.(service)}
             >
               <span className={'service-icon ' + (service.color || 'lilac')}>
-                <Icon size={25} />
+                <Icon size={25} aria-hidden="true" />
               </span>
               <span className="service-card-copy">
                 <b>{service.name || 'Service category'}</b>
