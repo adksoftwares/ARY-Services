@@ -1,0 +1,127 @@
+/*
+ * ARY Services — Discovery, commerce and operations screens
+ * Shared page patterns for browsing, booking, provider work and administration.
+ */
+.ary-customer-root .customer-provider-catalog,
+.ary-customer-root .customer-category-discovery,
+.ary-customer-root .customer-grocery-experience,
+.ary-customer-root .customer-mobility-experience,
+.ary-customer-root .customer-bookings-workspace { min-width:0; }
+.ary-customer-root :where(.providers-header,.section-heading) {
+ display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap;
+ margin-bottom:18px;
+}
+.ary-customer-root :where(.catalog-heading,.section-heading h2) { color:var(--ary-ink); letter-spacing:-.035em; }
+.ary-customer-root .catalog-toolbar {
+ display:flex; align-items:center; justify-content:space-between; gap:10px;
+ flex-wrap:wrap; padding:12px; border:1px solid var(--ary-border);
+ border-radius:14px; background:var(--ary-surface);
+}
+.ary-customer-root :where(.catalog-filter-group,.catalog-sort-group) { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.ary-customer-root :where(.catalog-filter-btn,.catalog-pill-btn) {
+ min-height:38px; padding:8px 12px; border:1px solid var(--ary-border);
+ border-radius:10px; background:var(--ary-surface); color:var(--ary-muted); font-weight:650;
+}
+.ary-customer-root :where(.catalog-filter-btn.active,.catalog-pill-btn.active) {
+ border-color:#a8cbb6; background:var(--ary-brand-soft); color:var(--ary-brand-strong);
+}
+.ary-customer-root .providers-grid,
+.ary-customer-root .customer-category-grid,
+.ary-customer-root .customer-grocery-product-grid {
+ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; min-width:0;
+}
+.ary-customer-root .provider-card-item,
+.ary-customer-root .service-card,
+.ary-customer-root .product-item-card {
+ min-width:0; overflow:hidden; border:1px solid var(--ary-border);
+ border-radius:16px; background:var(--ary-surface); box-shadow:var(--ary-shadow-soft);
+}
+.ary-customer-root .provider-card-item { display:flex; flex-direction:column; }
+.ary-customer-root .provider-card-body { display:grid; gap:12px; padding:16px; }
+.ary-customer-root .provider-card-top { display:flex; align-items:flex-start; gap:12px; }
+.ary-customer-root .provider-name-block { min-width:0; }
+.ary-customer-root .provider-name { color:var(--ary-ink); font-weight:800; overflow-wrap:anywhere; }
+.ary-customer-root .provider-meta-row { display:flex; flex-wrap:wrap; gap:8px 12px; color:var(--ary-muted); font-size:.82rem; }
+.ary-customer-root .provider-card-actions-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:auto; }
+.ary-customer-root :where(.view-details-btn,.book-provider-btn) { min-height:42px; border-radius:10px; font-weight:750; }
+.ary-customer-root .service-card { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px; }
+.ary-customer-root .service-card.active-category-card { border-color:#9dc5ad; background:var(--ary-brand-soft); }
+.ary-customer-root .customer-grocery-toolbar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.ary-customer-root .grocery-search-input { flex:1 1 220px; min-height:44px; border:1px solid var(--ary-border); border-radius:11px; }
+.ary-customer-root .category-scroll-pills { display:flex; gap:8px; overflow-x:auto; padding:8px 0 12px; scrollbar-width:thin; }
+.ary-customer-root .cat-pill-btn { flex:0 0 auto; min-height:38px; padding:8px 13px; border-radius:999px; }
+.ary-customer-root .product-item-card { display:flex; flex-direction:column; }
+.ary-customer-root .product-card-body { display:grid; gap:8px; padding:13px; }
+.ary-customer-root .product-name { color:var(--ary-ink); font-weight:750; }
+.ary-customer-root .product-price { color:var(--ary-brand-strong); font-weight:850; }
+.ary-customer-root .qty-stepper-box { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.ary-customer-root .persistent-cart-bar {
+ position:sticky; bottom:10px; z-index:12; display:flex; justify-content:space-between;
+ align-items:center; gap:14px; margin-top:18px; padding:13px 16px;
+ border:1px solid var(--ary-border); border-radius:15px; background:var(--ary-surface);
+ box-shadow:var(--ary-shadow-raised);
+}
+.ary-customer-root .customer-mobility-layout { display:grid; grid-template-columns:minmax(0,1.25fr) minmax(250px,.75fr); gap:18px; }
+.ary-customer-root .customer-mobility-form,
+.ary-customer-root .mobility-info-sidebar { min-width:0; padding:18px; border:1px solid var(--ary-border); border-radius:17px; background:var(--ary-surface); box-shadow:var(--ary-shadow-soft); }
+.ary-customer-root .mobility-form-card { display:grid; gap:14px; }
+.ary-customer-root .mobility-jobs-list { display:grid; gap:12px; }
+.ary-customer-root .mobility-job-card,
+.ary-customer-root .booking-card-item { min-width:0; padding:16px; border:1px solid var(--ary-border); border-radius:15px; background:var(--ary-surface); box-shadow:var(--ary-shadow-soft); }
+.ary-customer-root .booking-history-search-row { display:flex; gap:10px; flex-wrap:wrap; }
+.ary-customer-root .bookings-tabs-bar { display:flex; gap:8px; overflow-x:auto; padding:10px 0; }
+.ary-customer-root .bookings-feed { display:grid; gap:13px; }
+.ary-customer-root .booking-details-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.ary-customer-root .booking-card-footer,
+.ary-customer-root .booking-action-buttons { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; }
+.ary-customer-root .booking-payment-status { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:99px; background:var(--ary-brand-soft); color:var(--ary-brand-strong); font-size:.78rem; font-weight:750; }
+
+/* Provider operations */
+.ary-provider-root .provider-jobs-container { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+.ary-provider-root .job-card,
+.ary-provider-root .quote-composer-card,
+.ary-provider-root .provider-services-manager-view,
+.ary-provider-root .provider-schedule-view,
+.ary-provider-root .provider-wallet-container {
+ min-width:0; padding:clamp(15px,2.2vw,22px); border:1px solid var(--ary-border);
+ border-radius:16px; background:var(--ary-surface); box-shadow:var(--ary-shadow-soft);
+}
+.ary-provider-root .job-detail-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+.ary-provider-root .provider-form-group { display:grid; gap:7px; min-width:0; }
+.ary-provider-root :where(.provider-form-label,.wizard-form-label) { color:var(--ary-muted); font-size:.83rem; font-weight:750; }
+.ary-provider-root :where(.provider-form-input,.provider-form-select,.provider-form-textarea) {
+ width:100%; min-width:0; min-height:44px; padding:10px 12px;
+ border:1px solid var(--ary-border); border-radius:10px; background:var(--ary-canvas); color:var(--ary-ink);
+}
+.ary-provider-root .job-actions-row { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+
+/* Admin operations tables and approval queues */
+.ary-admin-root .admin-application-cards { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+.ary-admin-root .admin-cash-reconciliation-view { min-width:0; padding:clamp(14px,2vw,22px); border:1px solid var(--ary-border); border-radius:16px; background:var(--ary-surface); }
+.ary-admin-root .admin-users-table-scroll { max-width:100%; overflow-x:auto; border:1px solid var(--ary-border); border-radius:14px; background:var(--ary-surface); }
+.ary-admin-root .admin-table { width:100%; min-width:680px; border-collapse:separate; border-spacing:0; }
+.ary-admin-root .admin-table th { position:sticky; top:0; z-index:2; padding:12px 14px; background:var(--ary-canvas); text-align:left; }
+.ary-admin-root .admin-table td { padding:13px 14px; border-top:1px solid var(--ary-border); vertical-align:middle; }
+.ary-admin-root .admin-table-actions { display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
+[data-theme="dark"] .ary-app-root :where(.provider-card-item,.service-card,.product-item-card,.mobility-job-card,.booking-card-item,.job-card,.quote-composer-card,.provider-services-manager-view,.provider-schedule-view,.provider-wallet-container,.admin-cash-reconciliation-view,.admin-users-table-scroll) {
+ background:var(--ary-surface); border-color:var(--ary-border); color:var(--ary-ink);
+}
+@media(max-width:1000px) {
+ .ary-customer-root .providers-grid,.ary-customer-root .customer-grocery-product-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+ .ary-customer-root .customer-mobility-layout { grid-template-columns:1fr; }
+}
+@media(max-width:760px) {
+ .ary-customer-root .providers-grid,.ary-customer-root .customer-category-grid,.ary-customer-root .customer-grocery-product-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+ .ary-customer-root .provider-card-body { padding:12px; }
+ .ary-customer-root .provider-card-actions-row { grid-template-columns:1fr; }
+ .ary-customer-root .persistent-cart-bar { position:sticky; bottom:8px; align-items:stretch; flex-direction:column; }
+ .ary-provider-root .provider-jobs-container { grid-template-columns:1fr; }
+ .ary-admin-root .admin-application-cards { grid-template-columns:1fr; }
+}
+@media(max-width:480px) {
+ .ary-customer-root .providers-grid,.ary-customer-root .customer-category-grid,.ary-customer-root .customer-grocery-product-grid { grid-template-columns:1fr; }
+ .ary-customer-root .booking-details-grid,.ary-provider-root .job-detail-grid { grid-template-columns:1fr; }
+ .ary-customer-root .service-card { padding:13px; }
+ .ary-customer-root .provider-card-actions-row { grid-template-columns:1fr 1fr; }
+ .ary-customer-root .customer-grocery-cart-bar { gap:9px; }
+}
