@@ -116,7 +116,7 @@ export default function AccountView({ onNotice, onClose }) {
   const driverApp = applications.driver;
 
   return (
-    <div className="account-view-container" role="region" aria-label="Account and Profile Management">
+    <div className="account-view-container customer-account-workspace" role="region" aria-label="Account and Profile Management">
       {/* User Identity Header Card */}
       <div className="account-profile-hero">
         <Avatar name={currentUser.fullName} size="xl" />

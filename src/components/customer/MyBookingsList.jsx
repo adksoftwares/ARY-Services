@@ -142,7 +142,7 @@ export default function MyBookingsList({
   };
 
   return (
-    <section className="my-bookings-container customer-bookings-workspace" aria-labelledby="bookings-main-title">
+    <section className="my-bookings-container customer-bookings-workspace customer-bookings-polish" aria-labelledby="bookings-main-title">
       <div className="section-heading">
         <div>
           <div className="eyebrow">YOUR ACTIVE REQUESTS</div>
@@ -159,7 +159,7 @@ export default function MyBookingsList({
         </Button>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '0 0 12px', flexWrap: 'wrap' }}>
+      <div className="booking-history-search-row" style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '0 0 12px', flexWrap: 'wrap' }}>
         <label style={{ display: 'flex', alignItems: 'center', gap: 8, flex: '1 1 260px', minWidth: 0, border: '1px solid var(--color-border, #cbd5e1)', borderRadius: 10, padding: '0 12px', minHeight: 44, background: 'var(--color-surface, #fff)' }}>
           <Search size={16} aria-hidden="true" style={{ color: 'var(--color-neutral-500, #64748b)', flexShrink: 0 }} />
           <input type="search" value={bookingSearch} onChange={event => setBookingSearch(event.target.value)} placeholder="Search by booking, service, provider or address" aria-label="Search booking history" style={{ width: '100%', minWidth: 0, border: 0, outline: 0, background: 'transparent', color: 'var(--color-neutral-900, #0f172a)', font: 'inherit', fontSize: '0.88rem' }} />
