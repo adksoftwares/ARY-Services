@@ -106,7 +106,8 @@ export default function AccountView({ onNotice, onClose }) {
   async function handleSwitchRole(targetRole) {
     try {
       await switchRole(targetRole);
-      window.location.href = targetRole === 'provider' ? '/provider.html' : targetRole === 'driver' ? '/driver.html' : '/';
+      onClose?.();
+      navigate(targetRole === 'provider' ? '/provider' : targetRole === 'driver' ? '/driver' : '/');
     } catch (err) {
       onNotice?.(err.message);
     }

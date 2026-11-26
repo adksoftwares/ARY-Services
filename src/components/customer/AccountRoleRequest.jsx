@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { BriefcaseBusiness, Bike, ArrowRight, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 export default function AccountRoleRequest({ onNotice }) {
   const { currentUser, applyForRole, switchRole } = useAuth();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [role, setRole] = useState('provider');
   const [category, setCategory] = useState('other-services');
@@ -47,7 +49,7 @@ export default function AccountRoleRequest({ onNotice }) {
   async function openRole(nextRole) {
     try {
       await switchRole(nextRole);
-      window.location.href = nextRole === 'provider' ? '/provider.html' : nextRole === 'driver' ? '/driver.html' : '/';
+      navigate(nextRole === 'provider' ? '/provider' : nextRole === 'driver' ? '/driver' : '/');
     } catch (error) {
       onNotice?.(error.message);
     }

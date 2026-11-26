@@ -23,7 +23,9 @@ import {
   Bell,
   Home,
   MapPin,
-  ChevronDown
+  ChevronDown,
+  BriefcaseBusiness,
+  Navigation
 } from 'lucide-react';
 import CustomerLocationModal from '../../components/customer/CustomerLocationModal';
 import { App } from '@capacitor/app';
@@ -52,6 +54,8 @@ const MobilityServices = lazy(() => import('../../components/customer/MobilitySe
 const MyBookingsList = lazy(() => import('../../components/customer/MyBookingsList'));
 const DesignSystemShowcase = lazy(() => import('../../components/design-system-showcase/DesignSystemShowcase'));
 const AdminWorkspace = lazy(() => import('../../components/admin/AdminWorkspace'));
+const ProviderPortalView = lazy(() => import('../../components/provider/ProviderPortalView'));
+const DriverPortalView = lazy(() => import('../../components/driver/DriverPortalView'));
 
 const SectionFallback = () => (
   <div style={{ padding: 'var(--space-6) var(--space-4)', display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
@@ -71,83 +75,167 @@ const SERVICES = [
 function CustomerHeader({ address, launchCity, onOpenLocationModal, onOpenProfile }) {
   const { currentUser, openAuthModal, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const isCustomer = location.pathname === '/' || location.pathname === '/bookings';
+  const isProvider = location.pathname === '/provider';
+  const isDriver = location.pathname === '/driver';
+  const isAdmin = location.pathname === '/admin';
 
   return (
     <header className="topbar customer-main-header">
       <div className="customer-header-brand-group" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-        <Link to="/" className="brand" aria-label="ARY Services home">
-          <span className="brand-mark">A</span>
-          <span>ARY <b>Services</b></span>
+        <Link to={isProvider ? '/provider' : isDriver ? '/driver' : isAdmin ? '/admin' : '/'} className="brand" aria-label="ARY Home">
+          {isProvider ? (
+            <>
+              <span className="brand-mark" style={{ background: 'linear-gradient(135deg, #059669 0%, #047857 100%)' }}>P</span>
+              <span>ARY <b>Partner</b></span>
+            </>
+          ) : isDriver ? (
+            <>
+              <span className="brand-mark" style={{ background: 'linear-gradient(135deg, #d97706 0%, #b45309 100%)' }}>D</span>
+              <span>ARY <b>Driver</b></span>
+            </>
+          ) : isAdmin ? (
+            <>
+              <span className="brand-mark" style={{ background: 'linear-gradient(135deg, #dc2626 0%, #991b1b 100%)' }}>A</span>
+              <span>ARY <b>Admin</b></span>
+            </>
+          ) : (
+            <>
+              <span className="brand-mark">A</span>
+              <span>ARY <b>Services</b></span>
+            </>
+          )}
         </Link>
 
-        {launchCity && !address && <span style={{fontSize:11,fontWeight:600,color:'var(--text-secondary)',whiteSpace:'nowrap'}}>{launchCity}</span>}
+        {isCustomer && launchCity && !address && (
+          <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{launchCity}</span>
+        )}
 
-        {/* Dynamic Location Switcher Button */}
-        <button
-          type="button"
-          onClick={onOpenLocationModal}
-          className="header-location-pill mobile-hide-location"
-          title="Click to view or change your delivery and service location"
-          style={{
+        {/* Dynamic Location Switcher Button (for Customer view) */}
+        {isCustomer && (
+          <button
+            type="button"
+            onClick={onOpenLocationModal}
+            className="header-location-pill mobile-hide-location"
+            title="Click to view or change your delivery and service location"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '7px',
+              background: 'var(--surface-muted, rgba(21, 128, 61, 0.08))',
+              border: '1px solid var(--border-subtle, rgba(21, 128, 61, 0.25))',
+              borderRadius: '9999px',
+              padding: '5px 12px',
+              fontSize: '12px',
+              cursor: 'pointer',
+              color: 'var(--text-primary, inherit)',
+              maxWidth: '220px',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            <span style={{
+              width: '6px',
+              height: '6px',
+              borderRadius: '50%',
+              background: '#10b981',
+              boxShadow: '0 0 0 2px rgba(16, 185, 129, 0.2)',
+              flexShrink: 0
+            }} />
+            <MapPin size={13} style={{ color: 'var(--brand-primary, #15803d)', flexShrink: 0 }} />
+            <span style={{
+              fontWeight: 600,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              fontSize: '12px'
+            }}>
+              {address || 'Select Location'}
+            </span>
+            <ChevronDown size={12} style={{ opacity: 0.6, flexShrink: 0 }} />
+          </button>
+        )}
+
+        {isProvider && (
+          <span style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: '7px',
-            background: 'var(--surface-muted, rgba(21, 128, 61, 0.08))',
-            border: '1px solid var(--border-subtle, rgba(21, 128, 61, 0.25))',
+            gap: '6px',
+            background: 'rgba(5, 150, 105, 0.12)',
+            color: '#059669',
+            border: '1px solid rgba(5, 150, 105, 0.25)',
             borderRadius: '9999px',
-            padding: '5px 12px',
-            fontSize: '12px',
-            cursor: 'pointer',
-            color: 'var(--text-primary, inherit)',
-            maxWidth: '220px',
-            transition: 'all 0.2s ease'
-          }}
-        >
-          <span style={{
-            width: '6px',
-            height: '6px',
-            borderRadius: '50%',
-            background: '#10b981',
-            boxShadow: '0 0 0 2px rgba(16, 185, 129, 0.2)',
-            flexShrink: 0
-          }} />
-          <MapPin size={13} style={{ color: 'var(--brand-primary, #15803d)', flexShrink: 0 }} />
-          <span style={{
-            fontWeight: 600,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-            fontSize: '12px'
+            padding: '4px 10px',
+            fontSize: '11.5px',
+            fontWeight: 700
           }}>
-            {address || 'Select Location'}
+            <BriefcaseBusiness size={13} /> Partner Hub
           </span>
-          <ChevronDown size={12} style={{ opacity: 0.6, flexShrink: 0 }} />
-        </button>
+        )}
+
+        {isDriver && (
+          <span style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            background: 'rgba(217, 119, 6, 0.12)',
+            color: '#d97706',
+            border: '1px solid rgba(217, 119, 6, 0.25)',
+            borderRadius: '9999px',
+            padding: '4px 10px',
+            fontSize: '11.5px',
+            fontWeight: 700
+          }}>
+            <Bike size={13} /> Mobility Hub
+          </span>
+        )}
+
+        {isAdmin && (
+          <span style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            background: 'rgba(239, 68, 68, 0.12)',
+            color: '#ef4444',
+            border: '1px solid rgba(239, 68, 68, 0.25)',
+            borderRadius: '9999px',
+            padding: '4px 10px',
+            fontSize: '11.5px',
+            fontWeight: 700
+          }}>
+            <ShieldCheck size={13} /> Super Admin
+          </span>
+        )}
       </div>
 
       <nav className="header-nav-links customer-header-links">
-        <Link to="/" className="nav-link-btn">
+        <Link to="/" className={`nav-link-btn ${isCustomer ? 'active' : ''}`}>
           <Search size={15} /> Explore
+        </Link>
+        <Link to="/provider" className={`nav-link-btn ${isProvider ? 'active' : ''}`}>
+          <BriefcaseBusiness size={15} /> Partner
+        </Link>
+        <Link to="/driver" className={`nav-link-btn ${isDriver ? 'active' : ''}`}>
+          <Bike size={15} /> Driver
         </Link>
         {currentUser?.accountType === 'customer' && (
           <Link to="/bookings" className="nav-link-btn">
             <ClipboardList size={15} /> My Bookings
           </Link>
         )}
-        {currentUser?.accountType === 'admin' && (
-          <Link
-            to="/admin"
-            className="nav-link-btn"
-            style={{
-              background: 'rgba(239, 68, 68, 0.12)',
-              color: '#ef4444',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              fontWeight: 600
-            }}
-          >
-            <ShieldCheck size={15} /> Super Admin Panel
-          </Link>
-        )}
+        <Link
+          to="/admin"
+          className="nav-link-btn"
+          style={{
+            background: isAdmin ? '#ef4444' : 'rgba(239, 68, 68, 0.12)',
+            color: isAdmin ? '#ffffff' : '#ef4444',
+            border: '1px solid rgba(239, 68, 68, 0.3)',
+            fontWeight: 600
+          }}
+        >
+          <ShieldCheck size={15} /> Admin
+        </Link>
       </nav>
 
       <div className="customer-header-controls" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -224,7 +312,125 @@ function CustomerMobileBottomNav({ bookingsCount = 0, onOpenProfile, onOpenAlert
 
   const isHome = location.pathname === '/';
   const isBookings = location.pathname === '/bookings';
-  const isAdminPath = location.pathname === '/admin';
+  const isProvider = location.pathname === '/provider';
+  const isDriver = location.pathname === '/driver';
+  const isAdmin = location.pathname === '/admin';
+
+  if (isProvider) {
+    return (
+      <nav className="mobile-bottom-nav provider-mobile-bottom-nav" aria-label="Provider Bottom Navigation">
+        <Link to="/provider" className="mob-nav-item active">
+          <BriefcaseBusiness size={20} />
+          <span>Partner</span>
+        </Link>
+        <Link to="/" className="mob-nav-item">
+          <Home size={20} />
+          <span>Customer</span>
+        </Link>
+        <Link to="/driver" className="mob-nav-item">
+          <Bike size={20} />
+          <span>Driver</span>
+        </Link>
+        <button
+          type="button"
+          className="mob-nav-item"
+          onClick={() => {
+            if (!currentUser) openAuthModal('login');
+            else if (onOpenAlerts) onOpenAlerts();
+          }}
+        >
+          <Bell size={20} />
+          <span>Alerts</span>
+        </button>
+        {currentUser ? (
+          <button type="button" className="mob-nav-item" onClick={onOpenProfile}>
+            <UserRound size={20} />
+            <span>Profile</span>
+          </button>
+        ) : (
+          <button type="button" className="mob-nav-item" onClick={() => openAuthModal('login')}>
+            <LogIn size={20} />
+            <span>Sign In</span>
+          </button>
+        )}
+      </nav>
+    );
+  }
+
+  if (isDriver) {
+    return (
+      <nav className="mobile-bottom-nav driver-mobile-bottom-nav" aria-label="Driver Bottom Navigation">
+        <Link to="/driver" className="mob-nav-item active">
+          <Navigation size={20} />
+          <span>Driver</span>
+        </Link>
+        <Link to="/" className="mob-nav-item">
+          <Home size={20} />
+          <span>Customer</span>
+        </Link>
+        <Link to="/provider" className="mob-nav-item">
+          <BriefcaseBusiness size={20} />
+          <span>Partner</span>
+        </Link>
+        <button
+          type="button"
+          className="mob-nav-item"
+          onClick={() => {
+            if (!currentUser) openAuthModal('login');
+            else if (onOpenAlerts) onOpenAlerts();
+          }}
+        >
+          <Bell size={20} />
+          <span>Alerts</span>
+        </button>
+        {currentUser ? (
+          <button type="button" className="mob-nav-item" onClick={onOpenProfile}>
+            <UserRound size={20} />
+            <span>Profile</span>
+          </button>
+        ) : (
+          <button type="button" className="mob-nav-item" onClick={() => openAuthModal('login')}>
+            <LogIn size={20} />
+            <span>Sign In</span>
+          </button>
+        )}
+      </nav>
+    );
+  }
+
+  if (isAdmin) {
+    return (
+      <nav className="mobile-bottom-nav admin-mobile-bottom-nav" aria-label="Admin Bottom Navigation">
+        <Link to="/admin" className="mob-nav-item active">
+          <ShieldCheck size={20} />
+          <span>Admin</span>
+        </Link>
+        <Link to="/" className="mob-nav-item">
+          <Home size={20} />
+          <span>Customer</span>
+        </Link>
+        <Link to="/provider" className="mob-nav-item">
+          <BriefcaseBusiness size={20} />
+          <span>Partner</span>
+        </Link>
+        <Link to="/driver" className="mob-nav-item">
+          <Bike size={20} />
+          <span>Driver</span>
+        </Link>
+        {currentUser ? (
+          <button type="button" className="mob-nav-item" onClick={onOpenProfile}>
+            <UserRound size={20} />
+            <span>Account</span>
+          </button>
+        ) : (
+          <button type="button" className="mob-nav-item" onClick={() => openAuthModal('admin')}>
+            <LogIn size={20} />
+            <span>Sign In</span>
+          </button>
+        )}
+      </nav>
+    );
+  }
 
   return (
     <nav className="mobile-bottom-nav customer-mobile-bottom-nav" aria-label="Mobile Bottom Navigation">
@@ -262,15 +468,7 @@ function CustomerMobileBottomNav({ bookingsCount = 0, onOpenProfile, onOpenAlert
         <span>Orders</span>
       </button>
 
-      {/* Admin navigation is shown only inside an authenticated admin session. */}
-      {currentUser?.accountType === 'admin' && (
-        <Link to="/admin" className={`mob-nav-item ${isAdminPath ? 'active' : ''}`}>
-          <ShieldCheck size={20} />
-          <span>Admin</span>
-        </Link>
-      )}
-
-      {/* 5. Alerts / Notifications */}
+      {/* 4. Alerts / Notifications */}
       <button
         type="button"
         className="mob-nav-item"
@@ -286,7 +484,7 @@ function CustomerMobileBottomNav({ bookingsCount = 0, onOpenProfile, onOpenAlert
         <span>Alerts</span>
       </button>
 
-      {/* 6. Account */}
+      {/* 5. Account */}
       {currentUser ? (
         <button
           type="button"
@@ -725,6 +923,40 @@ function CustomerWorkspace() {
         onOpenProfile={() => setProfileModalOpen(true)}
       />
 
+      {/* Multi-Account Ecosystem Switcher */}
+      <nav className="ary-ecosystem-bar" aria-label="Account Portals">
+        <div className="ary-ecosystem-switcher">
+          <Link
+            to="/"
+            className={`ary-eco-tab ${location.pathname === '/' || location.pathname === '/bookings' ? 'active' : ''}`}
+          >
+            <span className="ary-eco-icon">🛒</span>
+            <span className="ary-eco-label">Customer</span>
+          </Link>
+          <Link
+            to="/provider"
+            className={`ary-eco-tab ary-eco-provider ${location.pathname === '/provider' ? 'active' : ''}`}
+          >
+            <span className="ary-eco-icon">⚡</span>
+            <span className="ary-eco-label">Partner Pro</span>
+          </Link>
+          <Link
+            to="/driver"
+            className={`ary-eco-tab ary-eco-driver ${location.pathname === '/driver' ? 'active' : ''}`}
+          >
+            <span className="ary-eco-icon">🚗</span>
+            <span className="ary-eco-label">Driver & Courier</span>
+          </Link>
+          <Link
+            to="/admin"
+            className={`ary-eco-tab ary-eco-admin ${location.pathname === '/admin' ? 'active' : ''}`}
+          >
+            <span className="ary-eco-icon">🛡️</span>
+            <span className="ary-eco-label">Super Admin</span>
+          </Link>
+        </div>
+      </nav>
+
       <main tabIndex={-1}>
         <Routes>
           <Route path="/" element={
@@ -804,6 +1036,18 @@ function CustomerWorkspace() {
                 onQuoteDecision={handleQuoteDecision}
                 onExploreServices={() => navigate('/')}
               />
+            </Suspense>
+          } />
+
+          <Route path="/provider" element={
+            <Suspense fallback={<SectionFallback />}>
+              <ProviderPortalView onNotice={setNotice} />
+            </Suspense>
+          } />
+
+          <Route path="/driver" element={
+            <Suspense fallback={<SectionFallback />}>
+              <DriverPortalView onNotice={setNotice} />
             </Suspense>
           } />
 
