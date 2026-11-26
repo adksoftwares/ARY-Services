@@ -170,18 +170,18 @@ function ProviderWorkspace() {
   return (
     <div className="provider-app-shell ary-app-root ary-provider-root">
       <OfflineBanner />
-      <header className="topbar">
+      <header className="topbar provider-main-header">
         <Link to="/" className="brand" aria-label="ARY Services Provider home">
           <span className="brand-mark">A</span><span>ARY <b>Provider</b></span>
         </Link>
-        <nav className="header-nav-links">
+        <nav className="header-nav-links provider-header-links">
           <span className="nav-link-btn active"><BriefcaseBusiness size={14}/> Partner Workspace</span>
         </nav>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className="provider-header-controls" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <LanguageSwitcher />
           <ThemeToggle />
           {isProvider ? (
-            <div className="user-profile">
+            <div className="user-profile role-header-user-profile">
               <NotificationCenter/>
               <span className="user-badge" title="Provider account">
                 <UserRound size={14}/>

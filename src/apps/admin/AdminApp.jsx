@@ -83,7 +83,7 @@ function AdminPortal() {
         />
       ) : (
         <>
-          <header className="topbar">
+          <header className="topbar admin-main-header">
             <Link to="/" className="brand" aria-label="ARY Services Admin home">
               <span className="brand-mark">A</span><span>ARY <b>Admin</b></span>
             </Link>

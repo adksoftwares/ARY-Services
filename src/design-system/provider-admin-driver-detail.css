@@ -2461,3 +2461,52 @@ footer.site-footer-modern,
 }
 [data-theme="dark"] .customer-main-header { background:rgba(19,31,24,.97); border-color:var(--ary-border); }
 [data-theme="dark"] .customer-mobile-bottom-nav { background:rgba(19,31,24,.97); border-color:var(--ary-border); }
+
+
+/* Provider, driver and admin portal header consistency */
+.ary-provider-root .provider-main-header,
+.ary-driver-root .driver-main-header,
+.ary-admin-root .admin-main-header {
+ display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,auto);
+ align-items:center; gap:clamp(12px,2vw,26px);
+ min-height:70px; padding:10px clamp(16px,3vw,36px);
+ background:var(--ary-surface); border-bottom:1px solid var(--ary-border);
+ box-shadow:0 3px 16px rgba(20,45,32,.04);
+}
+.ary-provider-root .provider-header-links,
+.ary-driver-root .driver-header-links,
+.ary-admin-root .admin-header-links { display:flex; justify-content:center; align-items:center; gap:6px; }
+.ary-app-root :where(.provider-header-controls,.driver-header-controls,.admin-header-controls) { display:flex; align-items:center; justify-content:flex-end; gap:8px; min-width:0; }
+.ary-app-root .role-header-user-profile { display:flex; align-items:center; justify-content:flex-end; gap:8px; min-width:0; }
+.ary-app-root .role-header-user-profile .user-badge { max-width:180px; min-width:0; }
+.ary-app-root .role-header-user-profile .user-badge span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ary-app-root :where(.provider-main-header,.driver-main-header,.admin-main-header) .sign-in,
+.ary-app-root :where(.provider-main-header,.driver-main-header,.admin-main-header) .sign-out-btn {
+ min-height:40px; padding:8px 12px; border:1px solid var(--ary-border); border-radius:10px;
+ background:var(--ary-surface); color:var(--ary-ink); font-weight:700;
+}
+@media(max-width:900px) {
+ .ary-provider-root .provider-main-header,
+ .ary-driver-root .driver-main-header,
+ .ary-admin-root .admin-main-header { grid-template-columns:minmax(0,1fr) auto; gap:8px 12px; }
+ .ary-provider-root .provider-header-links,
+ .ary-driver-root .driver-header-links,
+ .ary-admin-root .admin-header-links { display:none; }
+}
+@media(max-width:640px) {
+ .ary-provider-root .provider-main-header,
+ .ary-driver-root .driver-main-header,
+ .ary-admin-root .admin-main-header {
+  display:flex; flex-wrap:wrap; justify-content:space-between; gap:9px;
+  min-height:0; padding:10px 12px;
+ }
+ .ary-provider-root .provider-main-header > .brand,
+ .ary-driver-root .driver-main-header > .brand,
+ .ary-admin-root .admin-main-header > .brand { flex:1 1 auto; }
+ .ary-app-root :where(.provider-header-controls,.driver-header-controls,.admin-header-controls) { width:100%; justify-content:space-between; padding-top:8px; border-top:1px solid var(--ary-border); }
+ .ary-app-root .role-header-user-profile { flex:1; justify-content:space-between; }
+ .ary-app-root .role-header-user-profile .user-badge { flex:1; max-width:none; }
+}
+[data-theme="dark"] .ary-app-root :where(.provider-main-header,.driver-main-header,.admin-main-header) {
+ background:var(--ary-surface); border-color:var(--ary-border);
+}
