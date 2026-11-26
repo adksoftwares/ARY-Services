@@ -77,18 +77,18 @@ function DriverPortal() {
   return (
     <div className="driver-app-shell ary-app-root ary-driver-root">
       <OfflineBanner />
-      <header className="topbar">
+      <header className="topbar driver-main-header">
         <Link to="/" className="brand" aria-label="ARY Services Driver home">
           <span className="brand-mark">A</span><span>ARY <b>Driver</b></span>
         </Link>
-        <nav className="header-nav-links">
+        <nav className="header-nav-links driver-header-links">
           <span className="nav-link-btn active"><Bike size={14}/> Driver Workspace</span>
         </nav>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className="driver-header-controls" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <LanguageSwitcher />
           <ThemeToggle />
           {isDriver ? (
-            <div className="user-profile">
+            <div className="user-profile role-header-user-profile">
               <NotificationCenter/>
               <span className="user-badge" title="Driver account">
                 <UserRound size={14}/>
