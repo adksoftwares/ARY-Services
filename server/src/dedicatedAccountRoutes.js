@@ -1,289 +1,312 @@
-import { fileURLToPath } from 'url';
-import path from 'path';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { readPersistentState, mutatePersistentState } from './storage.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const driverDataFile = path.join(__dirname, '..', 'data', 'driver-services.json');
-const groceryOrdersFile = path.join(__dirname, '..', 'data', 'grocery-orders.json');
-const groceryProductsFile = path.join(__dirname, '..', 'data', 'grocery-products.json');
-
-/**
- * Dedicated Account-Scoped APIs for ARY Services
- * 
- * Provides clean, fully isolated endpoints for:
- * 1. Customer Portal  (/api/customer/*)
- * 2. Partner Pro Hub   (/api/provider/*)
- * 3. Driver & Courier  (/api/driver/*)
- * 4. Super Admin Console (/api/admin/*)
- */
 export function registerDedicatedAccountRoutes(app, {
   requireAuth,
   requireAdmin,
-  publishEvent,
-  getBookings,
   getUsers,
   updateUser,
-  recordAdminAudit
+  getBookings,
+  getReviews = async () => [],
+  getLedgerEntries = async () => [],
+  recordAdminAudit = async () => {}
 }) {
+  const driverDataFile = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'data', 'driver-services.json');
+  const groceryOrdersFile = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'data', 'grocery-orders.json');
+  const emptyDriverState = { applications: [], jobs: [], presence: {} };
 
-  // =========================================================================
-  // 1. CUSTOMER PORTAL DEDICATED APIS (/api/customer/*)
-  // =========================================================================
+  async function getDriverState() {
+    return await readPersistentState('driver-services', driverDataFile, emptyDriverState);
+  }
 
-  // Customer Profile & Dashboard
+  async function getGroceryOrders() {
+    return await readPersistentState('grocery_orders', groceryOrdersFile, []);
+  }
+
+  // ==========================================================================
+  // 1. DEDICATED CUSTOMER PORTAL APIS (/api/customer/*)
+  // ==========================================================================
+
+  // GET /api/customer/profile - Customer Profile & Account Summary
   app.get('/api/customer/profile', requireAuth, async (req, res) => {
     try {
       const users = await getUsers();
-      const me = users.find(u => u.id === req.user.id);
-      if (!me) return res.status(404).json({ error: 'Customer not found.' });
+      const user = users.find(u => u.id === req.user.id) || req.user;
+      const bookings = await getBookings();
+      const userBookings = bookings.filter(b => b.customerId === req.user.id);
+      const groceryOrders = await getGroceryOrders();
+      const userGrocery = groceryOrders.filter(o => o.customerId === req.user.id);
 
-      const allBookings = await getBookings();
-      const myBookings = allBookings.filter(b => b.customerId === me.id);
-      
-      const allGroceryOrders = await readPersistentState('grocery_orders', groceryOrdersFile, []);
-      const myGroceryOrders = allGroceryOrders.filter(o => o.customerId === me.id);
+      const driverState = await getDriverState();
+      const userMobility = (driverState.jobs || []).filter(j => j.customerId === req.user.id);
 
-      const driverState = await readPersistentState('driver-services', driverDataFile, { jobs: [] });
-      const myMobility = (driverState.jobs || []).filter(j => j.customerId === me.id);
+      const completedBookings = userBookings.filter(b => b.status === 'completed');
+      const activeBookings = userBookings.filter(b => ['requested', 'accepted', 'in_progress', 'quoted'].includes(b.status));
+      const activeOrders = userGrocery.filter(o => !['delivered', 'cancelled'].includes(o.status)).length +
+                           userMobility.filter(m => !['completed', 'cancelled'].includes(m.status)).length;
 
+      const summary = {
+        totalBookings: userBookings.length,
+        completedBookings: completedBookings.length,
+        activeBookings: activeBookings.length,
+        activeOrders,
+        totalSpent: completedBookings.reduce((sum, b) => sum + (Number(b.baseAmount) || 0), 0)
+      };
+
+      const { passwordHash: _, ...safeProfile } = user;
       res.json({
-        profile: {
-          id: me.id,
-          fullName: me.fullName,
-          phone: me.phone,
-          email: me.email,
-          location: me.location,
-          coordinates: me.coordinates || null,
-          accountType: me.accountType,
-          status: me.status,
-          createdAt: me.createdAt
-        },
-        summary: {
-          activeBookings: myBookings.filter(b => ['pending', 'accepted', 'in_progress'].includes(b.status)).length,
-          completedBookings: myBookings.filter(b => b.status === 'completed').length,
-          totalGroceryOrders: myGroceryOrders.length,
-          activeMobilityTrips: myMobility.filter(m => !['completed', 'cancelled'].includes(m.status)).length
-        }
+        profile: safeProfile,
+        summary
       });
     } catch (err) {
-      console.error('Customer profile error:', err);
-      res.status(500).json({ error: 'Could not fetch customer profile.' });
+      console.error('Customer profile API error:', err);
+      res.status(500).json({ error: 'Failed to load customer profile.' });
     }
   });
 
-  // Customer Active Bookings List
+  // GET /api/customer/bookings - Isolated Customer Bookings List
   app.get('/api/customer/bookings', requireAuth, async (req, res) => {
     try {
-      const allBookings = await getBookings();
-      const myBookings = allBookings
+      const bookings = await getBookings();
+      const userBookings = bookings
         .filter(b => b.customerId === req.user.id)
         .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-      res.json({ bookings: myBookings });
+      res.json({ bookings: userBookings });
     } catch (err) {
-      res.status(500).json({ error: 'Could not fetch customer bookings.' });
+      console.error('Customer bookings API error:', err);
+      res.status(500).json({ error: 'Failed to load customer bookings.' });
     }
   });
 
-  // Customer Grocery Orders
+  // GET /api/customer/orders - Isolated Customer Grocery & Mobility Orders
   app.get('/api/customer/orders', requireAuth, async (req, res) => {
     try {
-      const orders = await readPersistentState('grocery_orders', groceryOrdersFile, []);
-      const myOrders = orders
-        .filter(o => o.customerId === req.user.id)
-        .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-      res.json({ orders: myOrders });
+      const groceryOrders = await getGroceryOrders();
+      const userGrocery = groceryOrders.filter(o => o.customerId === req.user.id);
+      const driverState = await getDriverState();
+      const userMobility = (driverState.jobs || []).filter(j => j.customerId === req.user.id);
+
+      res.json({
+        groceryOrders: userGrocery,
+        mobilityJobs: userMobility
+      });
     } catch (err) {
-      res.status(500).json({ error: 'Could not fetch customer orders.' });
+      console.error('Customer orders API error:', err);
+      res.status(500).json({ error: 'Failed to load customer orders.' });
     }
   });
 
-  // Customer Mobility Requests (Rides, Parcels, Food)
-  app.get('/api/customer/mobility', requireAuth, async (req, res) => {
+  // GET /api/customer/dashboard - Aggregated Customer Hub
+  app.get('/api/customer/dashboard', requireAuth, async (req, res) => {
     try {
-      const driverState = await readPersistentState('driver-services', driverDataFile, { jobs: [] });
-      const myJobs = (driverState.jobs || [])
-        .filter(j => j.customerId === req.user.id)
-        .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-      res.json({ jobs: myJobs });
+      const bookings = await getBookings();
+      const userBookings = bookings.filter(b => b.customerId === req.user.id);
+      const recent = userBookings.slice(0, 5);
+      const active = userBookings.filter(b => ['requested', 'accepted', 'in_progress'].includes(b.status));
+
+      res.json({
+        recentBookings: recent,
+        activeBookings: active,
+        count: userBookings.length
+      });
     } catch (err) {
-      res.status(500).json({ error: 'Could not fetch customer mobility requests.' });
+      res.status(500).json({ error: 'Failed to load customer dashboard.' });
     }
   });
 
-  // =========================================================================
-  // 2. PARTNER PRO PORTAL DEDICATED APIS (/api/provider/*)
-  // =========================================================================
+  // ==========================================================================
+  // 2. DEDICATED PARTNER PRO PORTAL APIS (/api/provider/*)
+  // ==========================================================================
 
-  // Provider Overview KPI Dashboard
+  // GET /api/provider/dashboard - Partner Pro Performance & KPI Metrics
   app.get('/api/provider/dashboard', requireAuth, async (req, res) => {
     try {
       const users = await getUsers();
-      const me = users.find(u => u.id === req.user.id);
-      if (!me) return res.status(404).json({ error: 'Provider not found.' });
+      const provider = users.find(u => u.id === req.user.id) || req.user;
+      const bookings = await getBookings();
+      const providerBookings = bookings.filter(b => b.providerId === req.user.id);
 
-      const allBookings = await getBookings();
-      const myBookings = allBookings.filter(b => b.providerId === me.id);
-      
-      const pendingJobs = myBookings.filter(b => b.status === 'pending');
-      const activeJobs = myBookings.filter(b => ['accepted', 'in_progress'].includes(b.status));
-      const completedJobs = myBookings.filter(b => b.status === 'completed');
+      const completed = providerBookings.filter(b => b.status === 'completed');
+      const inProgress = providerBookings.filter(b => b.status === 'in_progress');
+      const pendingQuotes = providerBookings.filter(b => b.status === 'quoted' || b.quoteRequired);
 
-      // Calculate total earnings from completed jobs
-      const totalEarned = completedJobs.reduce((sum, b) => {
-        const val = Number(String(b.finalPrice || b.baseCharge || 0).replace(/[^\d.]/g, ''));
-        return sum + (Number.isFinite(val) ? val : 0);
-      }, 0);
+      const totalEarnings = completed.reduce((sum, b) => sum + (Number(b.providerPayout) || Number(b.baseAmount) || 0), 0);
+      const reviews = await getReviews();
+      const providerReviews = reviews.filter(r => r.providerId === req.user.id);
+      const avgRating = providerReviews.length > 0
+        ? Number((providerReviews.reduce((sum, r) => sum + (Number(r.rating) || 0), 0) / providerReviews.length).toFixed(1))
+        : Number(provider.rating || 5.0);
 
-      // Check grocery store orders if applicable
-      const allGroceryOrders = await readPersistentState('grocery_orders', groceryOrdersFile, []);
-      const myStoreOrders = allGroceryOrders.filter(o => o.providerId === me.id);
+      const completionRate = providerBookings.length > 0
+        ? Math.round((completed.length / providerBookings.length) * 100)
+        : 100;
 
+      const kpis = {
+        totalJobs: providerBookings.length,
+        completedJobs: completed.length,
+        inProgressJobs: inProgress.length,
+        pendingQuotes: pendingQuotes.length,
+        totalEarnings,
+        walletBalance: provider.walletBalance || totalEarnings,
+        rating: avgRating,
+        reviewCount: providerReviews.length,
+        completionRate
+      };
+
+      const { passwordHash: _, ...safeProvider } = provider;
       res.json({
-        provider: {
-          id: me.id,
-          fullName: me.fullName,
-          phone: me.phone,
-          category: me.category,
-          categoryName: me.categoryName,
-          status: me.status,
-          providerStatus: me.providerStatus,
-          isOnline: me.isOnline === true,
-          rating: me.rating || 5.0,
-          totalReviews: me.totalReviews || 0,
-          approvedServices: me.approvedServices || []
-        },
-        kpis: {
-          pendingRequests: pendingJobs.length,
-          activeJobsCount: activeJobs.length,
-          completedJobsCount: completedJobs.length,
-          totalEarnedLkr: totalEarned,
-          storeOrdersCount: myStoreOrders.length
-        },
-        recentJobs: myBookings.slice(0, 10)
+        provider: safeProvider,
+        kpis
       });
     } catch (err) {
-      console.error('Provider dashboard error:', err);
-      res.status(500).json({ error: 'Could not fetch provider dashboard.' });
+      console.error('Provider dashboard API error:', err);
+      res.status(500).json({ error: 'Failed to load provider dashboard.' });
     }
   });
 
-  // Provider Assigned & Broadcasted Jobs
+  // GET /api/provider/jobs - Partner Pro Jobs & Tasks
   app.get('/api/provider/jobs', requireAuth, async (req, res) => {
     try {
-      const allBookings = await getBookings();
-      const myCategory = req.user.category;
-      
-      const jobs = allBookings.filter(b => {
-        // Direct assignment to this provider
-        if (b.providerId === req.user.id) return true;
-        // Broadcast pool jobs in provider's approved category
-        if (b.status === 'broadcast_pool' && (!myCategory || b.categorySlug === myCategory)) return true;
-        return false;
-      }).sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+      const bookings = await getBookings();
+      const providerBookings = bookings
+        .filter(b => b.providerId === req.user.id)
+        .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 
-      res.json({ jobs });
+      res.json({ jobs: providerBookings });
     } catch (err) {
-      res.status(500).json({ error: 'Could not fetch provider jobs.' });
+      console.error('Provider jobs API error:', err);
+      res.status(500).json({ error: 'Failed to load provider jobs.' });
     }
   });
 
-  // =========================================================================
-  // 3. DRIVER & COURIER PORTAL DEDICATED APIS (/api/driver/*)
-  // =========================================================================
+  // PATCH /api/provider/status - Partner Pro Online Status & Operating Mode
+  app.patch('/api/provider/status', requireAuth, async (req, res) => {
+    try {
+      const { isOnline, operatingMode } = req.body;
+      const updated = await updateUser(req.user.id, current => {
+        if (typeof isOnline === 'boolean') current.isOnline = isOnline;
+        if (operatingMode && ['shop', 'mobile', 'online'].includes(operatingMode)) {
+          current.operatingMode = operatingMode;
+        }
+        current.updatedAt = new Date().toISOString();
+        return current;
+      });
 
-  // Driver HUD Overview & Radar
+      if (!updated) return res.status(404).json({ error: 'Provider not found.' });
+      const { passwordHash: _, ...safeUpdated } = updated;
+      res.json({ provider: safeUpdated, isOnline: safeUpdated.isOnline });
+    } catch (err) {
+      console.error('Provider status API error:', err);
+      res.status(500).json({ error: 'Failed to update provider status.' });
+    }
+  });
+
+  // ==========================================================================
+  // 3. DEDICATED DRIVER & COURIER PORTAL APIS (/api/driver/*)
+  // ==========================================================================
+
+  // GET /api/driver/dashboard - Driver HUD Presence & Activity Metrics
   app.get('/api/driver/dashboard', requireAuth, async (req, res) => {
     try {
-      const driverState = await readPersistentState('driver-services', driverDataFile, { jobs: [], presence: {} });
-      const myPresence = driverState.presence?.[req.user.id] || { online: false };
-      
-      const allJobs = driverState.jobs || [];
-      const myActiveJob = allJobs.find(j => j.driverId === req.user.id && ['claimed', 'arrived_pickup', 'picked_up', 'in_transit'].includes(j.status));
-      const myCompletedTrips = allJobs.filter(j => j.driverId === req.user.id && j.status === 'delivered');
+      const driverState = await getDriverState();
+      const driverPresence = driverState.presence?.[req.user.id] || { online: false };
+      const driverJobs = (driverState.jobs || []).filter(j => j.driverId === req.user.id);
 
-      // Available jobs currently looking for drivers
-      const availableRadarJobs = (myPresence.online === true)
-        ? allJobs.filter(j => j.status === 'requested' || j.status === 'broadcasted')
-        : [];
+      const today = new Date().toISOString().slice(0, 10);
+      const todayJobs = driverJobs.filter(j => (j.createdAt || '').startsWith(today));
+      const completedToday = todayJobs.filter(j => j.status === 'completed' || j.status === 'delivered');
 
-      // Calculate total cash collected and earnings
-      const todayTotal = myCompletedTrips.reduce((acc, t) => acc + (Number(t.estimatedFare || t.fare || 0) || 0), 0);
+      const todayEarnings = completedToday.reduce((sum, j) => sum + (Number(j.fare) || Number(j.driverPayout) || 0), 0);
+
+      const stats = {
+        totalTrips: driverJobs.length,
+        todayTrips: completedToday.length,
+        todayEarnings,
+        rating: 4.9,
+        acceptanceRate: 98
+      };
 
       res.json({
-        presence: myPresence,
-        activeJob: myActiveJob || null,
-        availableRadarJobs,
-        stats: {
-          todayTripsCount: myCompletedTrips.length,
-          todayEarningsLkr: todayTotal,
-          rating: 4.9
-        }
+        presence: driverPresence,
+        stats
       });
     } catch (err) {
-      console.error('Driver dashboard error:', err);
-      res.status(500).json({ error: 'Could not fetch driver dashboard.' });
+      console.error('Driver dashboard API error:', err);
+      res.status(500).json({ error: 'Failed to load driver dashboard.' });
     }
   });
 
-  // =========================================================================
-  // 4. SUPER ADMIN PORTAL DEDICATED APIS (/api/admin/*)
-  // =========================================================================
+  // GET /api/driver/jobs - Driver Dispatched & History Jobs
+  app.get('/api/driver/jobs', requireAuth, async (req, res) => {
+    try {
+      const driverState = await getDriverState();
+      const allJobs = driverState.jobs || [];
+      const myJobs = allJobs.filter(j => j.driverId === req.user.id || (j.status === 'broadcasted' && !j.driverId));
 
-  // Admin Consolidated Executive Dashboard
+      res.json({ jobs: myJobs });
+    } catch (err) {
+      console.error('Driver jobs API error:', err);
+      res.status(500).json({ error: 'Failed to load driver jobs.' });
+    }
+  });
+
+  // ==========================================================================
+  // 4. DEDICATED SUPER ADMIN PORTAL APIS (/api/admin/*)
+  // ==========================================================================
+
+  // GET /api/admin/executive-dashboard - Consolidated Executive Financials & Platform Pulse
   app.get('/api/admin/executive-dashboard', requireAdmin, async (_req, res) => {
     try {
       const users = await getUsers();
       const bookings = await getBookings();
-      const driverState = await readPersistentState('driver-services', driverDataFile, { jobs: [], presence: {} });
-      const groceryOrders = await readPersistentState('grocery_orders', groceryOrdersFile, []);
+      const driverState = await getDriverState();
 
-      // User breakdowns
-      const customersCount = users.filter(u => u.accountType === 'customer' || !u.accountType).length;
-      const providersCount = users.filter(u => u.accountType === 'provider').length;
-      const verifiedProvidersCount = users.filter(u => u.accountType === 'provider' && u.providerStatus === 'approved').length;
-      const driversCount = users.filter(u => u.accountType === 'driver' || (Array.isArray(u.roles) && u.roles.includes('driver'))).length;
-      
-      // Drivers online right now
-      const onlineDriversCount = Object.values(driverState.presence || {}).filter(p => p && p.online === true).length;
+      const customers = users.filter(u => u.accountType === 'customer' || !u.accountType);
+      const providers = users.filter(u => u.accountType === 'provider');
+      const drivers = users.filter(u => u.accountType === 'driver' || (u.roles || []).includes('driver'));
+      const admins = users.filter(u => u.accountType === 'admin');
 
-      // Platform Financials Calculation
-      const completedBookings = bookings.filter(b => b.status === 'completed');
-      const grossServiceVolume = completedBookings.reduce((sum, b) => {
-        const val = Number(String(b.finalPrice || b.baseCharge || 0).replace(/[^\d.]/g, ''));
-        return sum + (Number.isFinite(val) ? val : 0);
-      }, 0);
+      const totalVolume = bookings.reduce((sum, b) => sum + (Number(b.baseAmount) || 0), 0);
+      const platformFees = bookings
+        .filter(b => b.status === 'completed')
+        .reduce((sum, b) => sum + (Number(b.platformFee) || 0), 0);
 
-      const completedOrders = groceryOrders.filter(o => o.status === 'delivered');
-      const grossGroceryVolume = completedOrders.reduce((sum, o) => sum + (Number(o.total || 0) || 0), 0);
+      const escrowLocked = bookings
+        .filter(b => ['accepted', 'in_progress', 'quoted'].includes(b.status))
+        .reduce((sum, b) => sum + (Number(b.baseAmount) || 0), 0);
 
-      const totalGrossVolume = grossServiceVolume + grossGroceryVolume;
-      const platformRevenueLkr = Math.round(totalGrossVolume * 0.10); // Standard 10% platform commission
+      const totalSettled = bookings
+        .filter(b => b.status === 'completed')
+        .reduce((sum, b) => sum + (Number(b.providerPayout) || Number(b.baseAmount) || 0), 0);
 
-      res.json({
-        executive: {
-          totalUsers: users.length,
-          customersCount,
-          providersCount,
-          verifiedProvidersCount,
-          driversCount,
-          onlineDriversCount,
-          activeBookingsCount: bookings.filter(b => ['pending', 'accepted', 'in_progress', 'broadcast_pool'].includes(b.status)).length,
-          completedBookingsCount: completedBookings.length,
-          totalGroceryOrders: groceryOrders.length,
-          activeMobilityJobs: (driverState.jobs || []).filter(j => !['completed', 'delivered', 'cancelled'].includes(j.status)).length,
-          financials: {
-            grossVolumeLkr: totalGrossVolume,
-            platformRevenueLkr,
-            currency: 'LKR'
-          }
-        }
-      });
+      const activeDisputes = bookings.filter(b => b.status === 'disputed' || b.disputeStatus === 'opened').length;
+      const activeDispatches = (driverState.jobs || []).filter(j => ['assigned', 'in_transit', 'picking_up'].includes(j.status)).length;
+
+      const executive = {
+        financials: {
+          totalVolume,
+          platformFees,
+          escrowLocked,
+          totalSettled
+        },
+        userCounts: {
+          customers: customers.length,
+          providers: providers.length,
+          drivers: drivers.length,
+          admins: admins.length,
+          total: users.length
+        },
+        activeDisputes,
+        activeDispatches,
+        totalBookings: bookings.length,
+        systemHealth: 'optimal'
+      };
+
+      res.json({ executive });
     } catch (err) {
-      console.error('Admin executive dashboard error:', err);
-      res.status(500).json({ error: 'Could not fetch executive dashboard.' });
+      console.error('Admin executive dashboard API error:', err);
+      res.status(500).json({ error: 'Failed to load executive dashboard.' });
     }
   });
-
-  console.log('✅ Dedicated Account-Scoped APIs successfully registered for Customer, Provider, Driver, and Admin.');
 }
