@@ -1,0 +1,997 @@
+/**
+ * ARY Services - Master Rebuild & Precision Alignment System
+ * Built from the ground up for Customer, Provider, Driver, and Admin portals.
+ * Ensures 100% human-crafted alignment, zero text clipping, zero horizontal overflow,
+ * and high-contrast, beautiful UI/UX across all mobile and desktop viewports.
+ */
+
+/* ==========================================================================
+   0. Global Reset & Box Model Foundation
+   ========================================================================== */
+*, *::before, *::after {
+  box-sizing: border-box !important;
+}
+
+html, body {
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100% !important;
+  max-width: 100vw !important;
+  overflow-x: hidden !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+  text-rendering: optimizeLegibility !important;
+  background-color: var(--color-bg, #f8fafc) !important;
+  color: var(--text-primary, #0f172a) !important;
+}
+
+#root, .app-shell, .ary-app-root {
+  width: 100% !important;
+  max-width: 100vw !important;
+  overflow-x: hidden !important;
+  min-height: 100vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* Prevent any awkward word-breaking mid-word across all text */
+h1, h2, h3, h4, h5, h6, p, span, b, strong, a, button, label {
+  word-break: normal !important;
+  overflow-wrap: break-word !important;
+}
+
+/* Standard Touch-Target sizing for mobile accessibility (44px min) */
+button, input, select, textarea, .btn, .nav-link-btn {
+  touch-action: manipulation !important;
+}
+
+/* ==========================================================================
+   1. Universal Top Header & Navigation
+   ========================================================================== */
+.customer-header {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 100 !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8) !important;
+  padding: 10px 16px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+}
+
+[data-theme="dark"] .customer-header {
+  background: rgba(15, 23, 42, 0.95) !important;
+  border-bottom-color: rgba(51, 65, 85, 0.8) !important;
+}
+
+.brand-logo-wrap {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  text-decoration: none !important;
+}
+
+.brand-icon {
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 10px !important;
+  background: #15803d !important;
+  color: #ffffff !important;
+  display: grid !important;
+  place-items: center !important;
+  font-weight: 800 !important;
+  font-size: 18px !important;
+  box-shadow: 0 2px 8px rgba(21, 128, 61, 0.3) !important;
+}
+
+.brand-name {
+  font-size: 18px !important;
+  font-weight: 800 !important;
+  color: #0f172a !important;
+  letter-spacing: -0.02em !important;
+}
+
+[data-theme="dark"] .brand-name {
+  color: #f8fafc !important;
+}
+
+/* ==========================================================================
+   2. Ecosystem Portals Switcher (Customer | Partner | Driver | Admin)
+   ========================================================================== */
+.ary-ecosystem-bar {
+  position: relative !important;
+  top: auto !important;
+  z-index: 90 !important;
+  background: #ffffff !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  padding: 8px 12px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+[data-theme="dark"] .ary-ecosystem-bar {
+  background: #0f172a !important;
+  border-bottom-color: #334155 !important;
+}
+
+.ary-ecosystem-switcher {
+  display: flex !important;
+  align-items: center !important;
+  background: #f1f5f9 !important;
+  border-radius: 12px !important;
+  padding: 3px !important;
+  gap: 3px !important;
+  max-width: 1080px !important;
+  margin: 0 auto !important;
+  width: 100% !important;
+}
+
+[data-theme="dark"] .ary-ecosystem-switcher {
+  background: #1e293b !important;
+}
+
+.ary-eco-tab {
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 5px !important;
+  padding: 8px 4px !important;
+  border-radius: 9px !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  text-decoration: none !important;
+  color: #64748b !important;
+  transition: all 0.15s ease !important;
+  white-space: nowrap !important;
+  border: none !important;
+  background: transparent !important;
+}
+
+.ary-eco-tab.active {
+  background: #ffffff !important;
+  color: #15803d !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
+}
+
+.ary-eco-tab.active.ary-eco-provider {
+  color: #047857 !important;
+}
+
+.ary-eco-tab.active.ary-eco-driver {
+  color: #b45309 !important;
+}
+
+.ary-eco-tab.active.ary-eco-admin {
+  color: #dc2626 !important;
+}
+
+[data-theme="dark"] .ary-eco-tab.active {
+  background: #334155 !important;
+  color: #34d399 !important;
+}
+
+@media (max-width: 480px) {
+  .ary-eco-tab {
+    padding: 7px 2px !important;
+    font-size: 11px !important;
+    gap: 3px !important;
+  }
+}
+
+/* ==========================================================================
+   3. PORTAL 1: CUSTOMER APP (Search, Categories, Providers, Grocery, Mobility)
+   ========================================================================== */
+
+/* Main Customer Container */
+.ary-mobile-hub-container,
+.customer-provider-catalog,
+.grocery-marketplace-section,
+.services-section {
+  width: 100% !important;
+  max-width: 1080px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  box-sizing: border-box !important;
+}
+
+/* 3.1 Search Hub Card */
+.ary-search-hub-card {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 20px !important;
+  padding: 14px 16px !important;
+  box-shadow: 0 4px 20px rgba(18, 45, 34, 0.06) !important;
+  margin-bottom: 20px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+}
+
+[data-theme="dark"] .ary-search-hub-card {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+.ary-location-subrow {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  padding-bottom: 10px !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+}
+
+[data-theme="dark"] .ary-location-subrow {
+  border-bottom-color: #334155 !important;
+}
+
+.ary-location-button {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  cursor: pointer !important;
+  text-align: left !important;
+}
+
+.ary-loc-text {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  font-size: 13.5px !important;
+  font-weight: 700 !important;
+  color: #1e293b !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+[data-theme="dark"] .ary-loc-text {
+  color: #f8fafc !important;
+}
+
+.ary-gps-quick-btn {
+  flex-shrink: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  min-height: 36px !important;
+  padding: 0 12px !important;
+  border-radius: 9999px !important;
+  background: rgba(21, 128, 61, 0.1) !important;
+  color: #15803d !important;
+  border: 1px solid rgba(21, 128, 61, 0.2) !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+}
+
+/* Primary Search Row */
+.ary-unified-search-bar {
+  display: flex !important;
+  align-items: center !important;
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 14px !important;
+  padding: 4px 6px 4px 14px !important;
+  gap: 8px !important;
+}
+
+[data-theme="dark"] .ary-unified-search-bar {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+.ary-search-input {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  border: none !important;
+  outline: none !important;
+  background: transparent !important;
+  font-size: 14px !important;
+  color: #0f172a !important;
+  font-weight: 500 !important;
+}
+
+[data-theme="dark"] .ary-search-input {
+  color: #f8fafc !important;
+}
+
+.ary-search-action-btn {
+  min-height: 40px !important;
+  padding: 0 18px !important;
+  border-radius: 10px !important;
+  background: #15803d !important;
+  color: #ffffff !important;
+  border: none !important;
+  font-size: 13.5px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  flex-shrink: 0 !important;
+}
+
+/* 3.2 Category Hub Grid (8 Categories) */
+.ary-category-hub-grid {
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 12px !important;
+  margin: 16px 0 28px !important;
+}
+
+@media (max-width: 640px) {
+  .ary-category-hub-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 8px !important;
+  }
+}
+
+.ary-category-tile {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 16px !important;
+  padding: 12px 6px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  text-align: center !important;
+  cursor: pointer !important;
+  position: relative !important;
+  transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+  min-width: 0 !important;
+}
+
+[data-theme="dark"] .ary-category-tile {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+.ary-category-tile:active {
+  transform: scale(0.96) !important;
+}
+
+.ary-category-icon-circle {
+  width: 48px !important;
+  height: 48px !important;
+  border-radius: 14px !important;
+  display: grid !important;
+  place-items: center !important;
+  margin-bottom: 8px !important;
+}
+
+.ary-category-label {
+  font-size: 12px !important;
+  font-weight: 750 !important;
+  color: #0f172a !important;
+  line-height: 1.25 !important;
+  margin: 0 !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+[data-theme="dark"] .ary-category-label {
+  color: #f8fafc !important;
+}
+
+.ary-category-sub {
+  font-size: 10px !important;
+  color: #64748b !important;
+  margin-top: 2px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  max-width: 100% !important;
+}
+
+/* 3.3 Verified Service Provider Cards */
+.providers-grid {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.provider-card-item {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  border-radius: 18px !important;
+  border: 1px solid #e2e8f0 !important;
+  background: #ffffff !important;
+  box-shadow: 0 4px 16px rgba(18, 45, 34, 0.05) !important;
+  padding: 18px !important;
+  box-sizing: border-box !important;
+}
+
+[data-theme="dark"] .provider-card-item {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+.provider-card-top {
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+.provider-header-identity,
+.provider-avatar-wrap {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  width: auto !important;
+  height: auto !important;
+  background: transparent !important;
+}
+
+.provider-name-block {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 3px !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+}
+
+.provider-name {
+  font-size: 16px !important;
+  font-weight: 750 !important;
+  color: #0f172a !important;
+  line-height: 1.35 !important;
+  word-break: normal !important;
+  overflow-wrap: break-word !important;
+  white-space: normal !important;
+  display: block !important;
+  min-width: 0 !important;
+}
+
+[data-theme="dark"] .provider-name {
+  color: #f8fafc !important;
+}
+
+.provider-category-tag {
+  display: inline-flex !important;
+  align-self: flex-start !important;
+  padding: 3px 8px !important;
+  border-radius: 6px !important;
+  background: rgba(22, 101, 52, 0.08) !important;
+  color: #166534 !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  white-space: nowrap !important;
+}
+
+[data-theme="dark"] .provider-category-tag {
+  background: rgba(52, 211, 153, 0.15) !important;
+  color: #34d399 !important;
+}
+
+.provider-meta-row {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  margin: 14px 0 16px !important;
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  padding: 12px 14px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+[data-theme="dark"] .provider-meta-row {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+.provider-meta-item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  font-size: 13px !important;
+  color: #475569 !important;
+  line-height: 1.4 !important;
+}
+
+[data-theme="dark"] .provider-meta-item {
+  color: #94a3b8 !important;
+}
+
+.provider-meta-item.provider-rate {
+  border-top: 1px solid #e2e8f0 !important;
+  padding-top: 8px !important;
+  margin-top: 2px !important;
+  font-size: 13.5px !important;
+  color: #15803d !important;
+  font-weight: 750 !important;
+}
+
+[data-theme="dark"] .provider-meta-item.provider-rate {
+  border-top-color: #334155 !important;
+  color: #34d399 !important;
+}
+
+.provider-card-actions-row {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 10px !important;
+  margin-top: auto !important;
+  width: 100% !important;
+}
+
+.view-details-btn,
+.book-provider-btn {
+  min-height: 44px !important;
+  border-radius: 10px !important;
+  font-size: 13.5px !important;
+  font-weight: 700 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  cursor: pointer !important;
+}
+
+.view-details-btn {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #1e293b !important;
+}
+
+[data-theme="dark"] .view-details-btn {
+  background: #1e293b !important;
+  border-color: #475569 !important;
+  color: #f8fafc !important;
+}
+
+.book-provider-btn {
+  background: #15803d !important;
+  border: 1px solid #15803d !important;
+  color: #ffffff !important;
+}
+
+/* 3.4 Grocery Marketplace (2-Column Grid Zero Overflow) */
+.grocery-marketplace-section {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  overflow-x: hidden !important;
+  padding: 24px 12px 60px !important;
+}
+
+.product-catalog-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  margin: 0 !important;
+}
+
+.product-item-card {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+  padding: 10px 10px 12px !important;
+  border-radius: 14px !important;
+  border: 1px solid #e2e8f0 !important;
+  background: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+}
+
+[data-theme="dark"] .product-item-card {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+.product-img-box {
+  width: 100% !important;
+  height: 84px !important;
+  border-radius: 10px !important;
+  background: #f1f5f9 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: relative !important;
+  color: #15803d !important;
+}
+
+[data-theme="dark"] .product-img-box {
+  background: #0f172a !important;
+  color: #34d399 !important;
+}
+
+.product-card-body {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  margin-top: 8px !important;
+}
+
+.product-cat-label {
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  color: #64748b !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.04em !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.product-name {
+  font-size: 13.5px !important;
+  font-weight: 700 !important;
+  color: #0f172a !important;
+  line-height: 1.3 !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  min-height: 35px !important;
+}
+
+[data-theme="dark"] .product-name {
+  color: #f8fafc !important;
+}
+
+.product-spec {
+  font-size: 11px !important;
+  color: #64748b !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.product-price-row {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  gap: 2px !important;
+  margin: 4px 0 !important;
+}
+
+.product-price {
+  font-size: 1.05rem !important;
+  font-weight: 800 !important;
+  color: #15803d !important;
+}
+
+[data-theme="dark"] .product-price {
+  color: #34d399 !important;
+}
+
+.product-shop {
+  font-size: 11px !important;
+  color: #64748b !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 3px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  max-width: 100% !important;
+}
+
+.qty-stepper-box {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 4px !important;
+  margin-top: auto !important;
+  padding-top: 6px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.qty-stepper-box button {
+  min-width: 34px !important;
+  max-width: 34px !important;
+  width: 34px !important;
+  min-height: 34px !important;
+  height: 34px !important;
+  padding: 0 !important;
+  border-radius: 8px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+  border: 1px solid #cbd5e1 !important;
+  background: #f8fafc !important;
+  cursor: pointer !important;
+}
+
+[data-theme="dark"] .qty-stepper-box button {
+  background: #334155 !important;
+  border-color: #475569 !important;
+  color: #f8fafc !important;
+}
+
+.qty-counter {
+  min-width: 22px !important;
+  font-size: 13.5px !important;
+  font-weight: 750 !important;
+  text-align: center !important;
+  flex: 1 !important;
+}
+
+/* 3.5 Mobility Fleets Section */
+.customer-mobility-experience {
+  padding: 24px 14px 60px !important;
+}
+
+.customer-mobility-form {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 18px !important;
+  padding: 20px 16px !important;
+  box-shadow: 0 4px 16px rgba(18, 45, 34, 0.05) !important;
+}
+
+[data-theme="dark"] .customer-mobility-form {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+/* ==========================================================================
+   4. PORTAL 2: PARTNER PRO DASHBOARD (.provider-dashboard)
+   ========================================================================== */
+.provider-portal-container {
+  width: 100% !important;
+  max-width: 1200px !important;
+  margin: 0 auto !important;
+  padding: 16px 14px 80px !important;
+  box-sizing: border-box !important;
+}
+
+.provider-stats-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
+  gap: 12px !important;
+  margin-bottom: 20px !important;
+}
+
+@media (max-width: 640px) {
+  .provider-stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+.stat-card {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 16px !important;
+  padding: 16px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+}
+
+[data-theme="dark"] .stat-card {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+.stat-val {
+  font-size: 1.5rem !important;
+  font-weight: 800 !important;
+  color: #0f172a !important;
+  line-height: 1.2 !important;
+}
+
+[data-theme="dark"] .stat-val {
+  color: #f8fafc !important;
+}
+
+.stat-lbl {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #64748b !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.04em !important;
+}
+
+/* ==========================================================================
+   5. PORTAL 3: DRIVER & COURIER HUD (.driver-workspace-container)
+   ========================================================================== */
+.driver-workspace-container {
+  width: 100% !important;
+  max-width: 720px !important;
+  margin: 0 auto !important;
+  padding: 16px 14px 90px !important;
+  box-sizing: border-box !important;
+}
+
+.driver-master-switch-card {
+  border-radius: 20px !important;
+  padding: 20px !important;
+  margin-bottom: 18px !important;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.08) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 14px !important;
+}
+
+.driver-master-switch-card.online {
+  background: linear-gradient(135deg, #064e3b 0%, #065f46 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid #047857 !important;
+}
+
+.driver-master-switch-card.offline {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+[data-theme="dark"] .driver-master-switch-card.offline {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+.driver-giant-power-btn {
+  min-height: 54px !important;
+  border-radius: 14px !important;
+  font-size: 16px !important;
+  font-weight: 800 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 10px !important;
+  width: 100% !important;
+  cursor: pointer !important;
+  border: none !important;
+}
+
+.driver-giant-power-btn.go-online {
+  background: #15803d !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 16px rgba(21, 128, 61, 0.4) !important;
+}
+
+.driver-giant-power-btn.go-offline {
+  background: #dc2626 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 16px rgba(220, 38, 38, 0.4) !important;
+}
+
+/* ==========================================================================
+   6. PORTAL 4: SUPER ADMIN CONSOLE (.admin-layout)
+   ========================================================================== */
+.admin-layout {
+  display: flex !important;
+  min-height: 100vh !important;
+  background: #f8fafc !important;
+  color: #0f172a !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+[data-theme="dark"] .admin-layout {
+  background: #0f172a !important;
+  color: #f8fafc !important;
+}
+
+.admin-content {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  padding: 24px 20px 80px !important;
+  max-width: 1440px !important;
+  margin: 0 auto !important;
+  width: 100% !important;
+}
+
+@media (max-width: 768px) {
+  .admin-content {
+    padding: 16px 12px 80px !important;
+  }
+}
+
+.admin-kpi-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) !important;
+  gap: 14px !important;
+  margin-bottom: 24px !important;
+}
+
+@media (max-width: 640px) {
+  .admin-kpi-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+}
+
+/* ==========================================================================
+   7. Customer Mobile Bottom Navigation (Persistent & High-Contrast)
+   ========================================================================== */
+.customer-mobile-bottom-nav {
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 999 !important;
+  background: rgba(255, 255, 255, 0.97) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  border-top: 1px solid #e2e8f0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-around !important;
+  height: 64px !important;
+  padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.06) !important;
+}
+
+[data-theme="dark"] .customer-mobile-bottom-nav {
+  background: rgba(15, 23, 42, 0.97) !important;
+  border-top-color: #334155 !important;
+}
+
+.mob-nav-item {
+  flex: 1 1 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  color: #64748b !important;
+  text-decoration: none !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  padding: 6px 0 !important;
+  background: transparent !important;
+  border: none !important;
+  cursor: pointer !important;
+}
+
+.mob-nav-item.active {
+  color: #15803d !important;
+}
+
+[data-theme="dark"] .mob-nav-item.active {
+  color: #34d399 !important;
+}
+
+.mob-nav-badge {
+  position: absolute !important;
+  top: -4px !important;
+  right: -8px !important;
+  background: #ef4444 !important;
+  color: #ffffff !important;
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  border-radius: 9999px !important;
+  padding: 1px 5px !important;
+  min-width: 16px !important;
+  text-align: center !important;
+  line-height: 14px !important;
+}

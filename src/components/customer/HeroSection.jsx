@@ -193,7 +193,7 @@ export default function HeroSection({
             value={query}
             onChange={e => setQuery(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && onSearch) onSearch(); }}
-            placeholder={t('searchPlaceholder', 'Search electricians, plumbing, grocery, rides...')}
+            placeholder={t('searchPlaceholder', 'Search services, groceries, rides...')}
             className="ary-search-input"
             aria-label="Search services"
           />

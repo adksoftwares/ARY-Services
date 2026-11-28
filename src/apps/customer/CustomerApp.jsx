@@ -930,28 +930,28 @@ function CustomerWorkspace() {
             to="/"
             className={`ary-eco-tab ${location.pathname === '/' || location.pathname === '/bookings' ? 'active' : ''}`}
           >
-            <span className="ary-eco-icon">🛒</span>
+            <ShoppingBag size={14} className="ary-eco-icon" />
             <span className="ary-eco-label">Customer</span>
           </Link>
           <Link
             to="/provider"
             className={`ary-eco-tab ary-eco-provider ${location.pathname === '/provider' ? 'active' : ''}`}
           >
-            <span className="ary-eco-icon">⚡</span>
+            <BriefcaseBusiness size={14} className="ary-eco-icon" />
             <span className="ary-eco-label">Partner Pro</span>
           </Link>
           <Link
             to="/driver"
             className={`ary-eco-tab ary-eco-driver ${location.pathname === '/driver' ? 'active' : ''}`}
           >
-            <span className="ary-eco-icon">🚗</span>
+            <Bike size={14} className="ary-eco-icon" />
             <span className="ary-eco-label">Driver & Courier</span>
           </Link>
           <Link
             to="/admin"
             className={`ary-eco-tab ary-eco-admin ${location.pathname === '/admin' ? 'active' : ''}`}
           >
-            <span className="ary-eco-icon">🛡️</span>
+            <ShieldCheck size={14} className="ary-eco-icon" />
             <span className="ary-eco-label">Super Admin</span>
           </Link>
         </div>

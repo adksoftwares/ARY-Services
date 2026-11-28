@@ -18,6 +18,7 @@
 @import './design-system/role-workspaces.css';
 @import './design-system/discovery-commerce-operations.css';
 @import './design-system/provider-admin-driver-detail.css';
+@import './design-system/master-rebuild.css';
 
 
 /* Sign-in required prompt & Modal styles */
