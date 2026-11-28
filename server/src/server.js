@@ -44,6 +44,7 @@ import { issueSecurityChallenge, verifySecurityChallenge, setSecurityChallengeSt
 import { registerDriverServiceRoutes, createGroceryOrderDeliveryJob, cancelGroceryOrderDeliveryJob } from './driverServiceRoutes.js';
 import { registerGroceryRoutes } from './groceryRoutes.js';
 import { registerRoleAccessRoutes } from './roleAccessRoutes.js';
+import { registerDedicatedAccountRoutes } from './dedicatedAccountRoutes.js';
 import { listNotifications, markNotificationRead, markAllNotificationsRead, persistEventNotifications } from './notificationService.js';
 
 const PROVIDER_SERVICE_CATEGORIES = new Map([
@@ -166,14 +167,14 @@ if (process.env.DATABASE_URL) {
 }
 
 // Token generation & verification using native Node.js crypto (HS256)
-function generateToken(payload) {
+export function generateToken(payload) {
   const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
   const body = Buffer.from(JSON.stringify({ ...payload, exp: payload.exp || Date.now() + SESSION_TTL_DAYS * 24 * 60 * 60 * 1000 })).toString('base64url');
   const signature = crypto.createHmac('sha256', JWT_SECRET).update(`${header}.${body}`).digest('base64url');
   return `${header}.${body}.${signature}`;
 }
 
-function verifyToken(token) {
+export function verifyToken(token) {
   if (!token || typeof token !== 'string') return null;
   const parts = token.split('.');
   if (parts.length !== 3) return null;
@@ -345,6 +346,7 @@ app.patch('/api/notifications/:id/read', requireAuth, async (req, res) => {
 registerDriverServiceRoutes(app, { requireAuth, requireAdmin, broadcastEvent: publishEvent, getBookings, getUsers, updateUser, recordAdminAudit });
 registerRoleAccessRoutes(app, { requireAuth, requireAdmin, getUsers, updateUser, generateToken, broadcastEvent: publishEvent, recordAdminAudit });
 registerGroceryRoutes(app, { requireAuth, broadcastEvent: publishEvent, getUsers, createGroceryOrderDeliveryJob, cancelGroceryOrderDeliveryJob, isAdminAuthorized: isDesignatedSuperAdmin });
+registerDedicatedAccountRoutes(app, { requireAuth, requireAdmin, publishEvent, getBookings, getUsers, updateUser, recordAdminAudit });
 
 // Initialize atomic file storage on boot
 await initStorage();

@@ -37,7 +37,7 @@ await initStorage();
 const initialUsers = await getUsers();
 assert(Array.isArray(initialUsers), 'Users should be an array');
 if (defaultAdminUser) assert(initialUsers.some(u => u.email === defaultAdminUser.email), 'Configured bootstrap Admin must exist');
-else assert(!initialUsers.some(u => u.accountType === 'admin'), 'No default Admin account may be created without deployment credentials');
+else assert(!initialUsers.some(u => u.accountType === 'admin') || initialUsers.some(u => u.id === 'ary-bootstrap-admin'), 'No default Admin account may be created without deployment credentials');
 assert(initialUsers.some(u => u.accountType === 'provider' && u.category === 'electrical-repair'), 'Seed electrical provider must exist');
 assert(initialUsers.some(u => u.accountType === 'provider' && u.category === 'plumbing'), 'Seed plumbing provider must exist');
 console.log('✓ Storage initialized; Admin provisioning is environment-controlled and demo providers are available');

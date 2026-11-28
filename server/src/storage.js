@@ -153,7 +153,26 @@ export const defaultSeedProviders = process.env.NODE_ENV === 'production' ? [] :
   }
 ];
 
-export const defaultUsers = [...(defaultAdminUser ? [defaultAdminUser] : []), ...defaultSeedProviders];
+export const defaultSeedDriver = process.env.NODE_ENV === 'production' ? null : {
+  id: 'user-driver-saman',
+  passwordHash: hashPassword('DriverPass@123'),
+  fullName: 'Express Courier & Rider Saman',
+  phone: '0778887766',
+  email: 'saman.driver@example.local',
+  location: 'Hospital Road, Batticaloa',
+  accountType: 'driver',
+  roles: ['customer', 'driver'],
+  driverServices: ['ride', 'food_delivery', 'parcel_delivery'],
+  status: 'active',
+  isOnline: true,
+  createdAt: '2026-01-01T00:00:00.000Z'
+};
+
+export const defaultUsers = [
+  ...(defaultAdminUser ? [defaultAdminUser] : []),
+  ...defaultSeedProviders,
+  ...(defaultSeedDriver ? [defaultSeedDriver] : [])
+];
 
 class AsyncLock {
   constructor() {
@@ -304,6 +323,9 @@ export async function getUsers() {
           if (!parsed.some(u => u.id === seedProv.id)) {
             parsed.push(seedProv);
           }
+        }
+        if (defaultSeedDriver && !parsed.some(u => u.id === defaultSeedDriver.id)) {
+          parsed.push(defaultSeedDriver);
         }
         cachedUsers = parsed;
         await atomicWriteJson(usersFile, cachedUsers);
@@ -1125,7 +1147,18 @@ async function atomicWriteText(filePath, content) {
   const tempPath = `${filePath}.tmp.${process.pid}.${crypto.randomUUID()}`;
   try {
     await fs.writeFile(tempPath, content, { encoding: 'utf-8', flag: 'wx' });
-    await fs.rename(tempPath, filePath);
+    try {
+      await fs.rename(tempPath, filePath);
+    } catch {
+      // Windows file locking retry & copyFile fallback
+      try {
+        await new Promise(r => setTimeout(r, 60));
+        await fs.rename(tempPath, filePath);
+      } catch {
+        await fs.copyFile(tempPath, filePath);
+        await fs.unlink(tempPath).catch(() => {});
+      }
+    }
   } catch (error) {
     await fs.unlink(tempPath).catch(() => {});
     throw error;
